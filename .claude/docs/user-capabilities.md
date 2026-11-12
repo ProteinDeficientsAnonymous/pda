@@ -21,12 +21,12 @@ A rejected applicant can't sign in or public-RSVP (the form and `/my-rsvps` both
 | see location, whatsapp/partiful links | ❌ | official events open to public RSVP, via token link | official/club only | ✅ |
 | RSVP | official public events, via public form (becomes a public rsvper); not after a rejected join request | same, managed at `/my-rsvps` | official/club only | ✅ |
 | see guest list | ❌ | events they RSVP'd to | events they RSVP'd to | events they RSVP'd to |
-| comment | ❌ | events they RSVP'd to | events they RSVP'd to | events they RSVP'd to |
+| comment | ❌ | events they RSVP'd to | official/club events they RSVP'd to | events they RSVP'd to |
 | create events | ❌ | ❌ | ❌ | community + drafts; official/club need a tag permission |
 | co-host | ❌ | ❌ | ❌ | ✅ |
 | download one event's `.ics` | public fields | public fields | full, even for community events (see open questions) | full |
 
-On a community event, a limited user sees exactly what a visitor sees and can't act on it (`community/events/limited_access.py`). Hosts, co-hosts and `manage_events` holders can always see guests and comment.
+On a community event, a limited user sees exactly what a visitor sees and can't act on it (`community/events/limited_access.py`). Hosts, co-hosts and `manage_events` holders can always see guests and comment. They can only add or invite people who could see the event: never archived, guidelines-paused or `none` users (a public rsvper already on the list stays manageable), and limited users only on official/club events (`can_be_guest`).
 
 A pause drafts the events someone hosts alone and drops their host spot, leaving the draft hostless. As creator they can still open a hostless draft, while paused and after a restore, but can't edit, publish or rsvp to it: a restore doesn't return the host spot. A creator a host removed can't open the draft. A `manage_events` holder can publish it or invite them back as co-host. The drafts list and the detail page share one rule (`community/events/_hosts.py`).
 
