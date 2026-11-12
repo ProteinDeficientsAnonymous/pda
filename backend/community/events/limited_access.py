@@ -1,5 +1,5 @@
 from django.db.models import Q
-from users.models import MembershipStatus
+from users.models import LIMITED_STATUSES, MembershipStatus
 
 from community.models import EventType, PageVisibility
 from community.validation import Code, raise_validation
@@ -13,6 +13,15 @@ LIMITED_ACCESS_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
 def is_limited(user) -> bool:
     """Signed in without full access: tentative or attendance-paused; no other status signs in."""
     return user is not None and user.membership_status != MembershipStatus.ACTIVE_MEMBER
+
+
+# Guidelines-paused, archived and `none` users can't sign in, so they can't be a guest.
+_GUEST_STATUSES = (MembershipStatus.ACTIVE_MEMBER, *LIMITED_STATUSES)
+
+
+def can_be_guest(user, event) -> bool:
+    """Whether a host may add or invite this user to the event."""
+    return user.membership_status in _GUEST_STATUSES
 
 
 def limited_access_event_q() -> Q:
