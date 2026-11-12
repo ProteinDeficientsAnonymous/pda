@@ -14,11 +14,12 @@ from users.permissions import PermissionKey
 from users.roles import Role
 
 from community.dev_tools.seed_guard import is_seed_allowed
-from community.models import Event, EventComment, EventType, RSVPStatus
+from community.models import Event, EventComment, EventType, JoinRequest, RSVPStatus
 
-from ._seed_join_requests import reset_join_requests, seed_join_form_questions, seed_join_requests
+from ._seed_join_requests import seed_join_form_questions, seed_join_requests
 from ._seed_shared import (
     apply_rsvp,
+    default_role,
     get_or_create_seed_user,
     questionnaire_snapshot,
     seed_event_rsvp_questions,
@@ -35,6 +36,7 @@ from ._seed_staging_data import (
     condition_label,
     nonmember_email,
     nonmember_phone,
+    onboarded_member_defaults,
     perm_email,
     perm_phone,
     privacy_phone,
@@ -49,7 +51,7 @@ from ._seed_staging_rsvps import (
     TOKEN_EXPIRED,
     TOKEN_NONE,
 )
-from ._seed_staging_statuses import reset_status_join_requests, seed_status_people
+from ._seed_staging_statuses import seed_status_people
 
 # Block 04 holds users created by approving seeded join requests; reset must clear it too.
 SEEDED_PHONE_PREFIXES = tuple(f"+1702555{block:02d}" for block in range(1, 8))
@@ -116,8 +118,7 @@ class Command(BaseCommand):
         EventComment.objects.filter(author__in=User.objects.filter(seeded)).delete()
         User.objects.filter(seeded).delete()
         Role.objects.filter(name__startswith="perm: ").delete()
-        reset_join_requests()
-        reset_status_join_requests()
+        JoinRequest.objects.filter(seeded).delete()
         self.stdout.write("  reset: removed staging-scoped rows")
 
     def _seed_perm_roles(self) -> dict[str, Role]:
@@ -137,18 +138,10 @@ class Command(BaseCommand):
 
     def _seed_perm_users(self, roles: dict[str, Role]) -> list[User]:
         users: list[User] = []
-        member_role = self._member_role()
+        member_role = default_role("member")
         now = timezone.now()
         for index, key in enumerate(PermissionKey.values):
-            defaults = {
-                "first_name": f"perm: {key}",
-                "email": perm_email(key),
-                "membership_status": MembershipStatus.ACTIVE_MEMBER,
-                "needs_onboarding": False,
-                "onboarded_at": now,
-                "guidelines_consent_at": now,
-                "sms_consent_at": now,
-            }
+            defaults = onboarded_member_defaults(f"perm: {key}", perm_email(key), now)
             user, created = get_or_create_seed_user(
                 perm_phone(index), PASSWORD, defaults, [roles[key]]
             )
@@ -156,10 +149,6 @@ class Command(BaseCommand):
             users.append(user)
             self.stdout.write(f"  {'created' if created else 'exists'} user: {user.full_name}")
         return users
-
-    def _member_role(self) -> Role:
-        role, _ = Role.objects.get_or_create(name="member", defaults={"is_default": True})
-        return role
 
     def _apply_condition_user_fields(self, user, combo, index, now) -> None:
         has_email, guidelines_done, sms_done = combo
@@ -183,7 +172,7 @@ class Command(BaseCommand):
         )
 
     def _seed_condition_users(self) -> list[User]:
-        member_role = self._member_role()
+        member_role = default_role("member")
         now = timezone.now()
         users: list[User] = []
         for index, combo in enumerate(condition_combinations()):
@@ -204,7 +193,7 @@ class Command(BaseCommand):
         return users
 
     def _seed_privacy_users(self) -> list[User]:
-        member_role = self._member_role()
+        member_role = default_role("member")
         now = timezone.now()
         users: list[User] = []
         for index, spec in enumerate(PRIVACY_SPECS):
@@ -233,19 +222,14 @@ class Command(BaseCommand):
         return users
 
     def _seed_reset_member(self) -> User:
-        now = timezone.now()
         defaults = {
-            "first_name": "reset: needs password reset",
-            "email": reset_member_email(),
-            "membership_status": MembershipStatus.ACTIVE_MEMBER,
-            "needs_onboarding": False,
-            "onboarded_at": now,
+            **onboarded_member_defaults(
+                "reset: needs password reset", reset_member_email(), timezone.now()
+            ),
             "needs_password_reset": True,
-            "guidelines_consent_at": now,
-            "sms_consent_at": now,
         }
         user, created = get_or_create_seed_user(
-            reset_member_phone(), PASSWORD, defaults, [self._member_role()]
+            reset_member_phone(), PASSWORD, defaults, [default_role("member")]
         )
         if not created and not user.needs_password_reset:
             user.needs_password_reset = True

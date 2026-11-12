@@ -1,8 +1,7 @@
 from io import StringIO
 
 import pytest
-from community.management.commands._seed_staging_data import PASSWORD
-from community.management.commands._seed_staging_statuses import STATUS_PHONE_PREFIX, status_phone
+from community.management.commands._seed_staging_data import PASSWORD, status_phone
 from community.models import JoinRequest, JoinRequestStatus
 from community.shared import validate_display_name
 from django.core.management import call_command
@@ -16,7 +15,7 @@ def test_reset_seeds_admin_and_every_membership_status():
     out = StringIO()
     call_command("seed_staging", "--reset", stdout=out)
 
-    users = list(User.objects.filter(phone_number__startswith=STATUS_PHONE_PREFIX))
+    users = list(User.objects.filter(phone_number__startswith="+170255507"))
     expected = set(MembershipStatus.values) - {MembershipStatus.NONE}
     assert {u.membership_status for u in users} == expected
     archived_from = {u.status_before_archive for u in users if u.archived_at is not None}

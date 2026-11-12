@@ -4,20 +4,14 @@ from dataclasses import dataclass
 
 from django.utils import timezone
 from users.models import MembershipStatus, User
-from users.roles import Role
 
 from community.join_requests.approval import provision_tentative_user
 from community.models import JoinRequest, JoinRequestStatus
 
-from ._seed_shared import get_or_create_seed_user
-from ._seed_staging_data import PASSWORD
+from ._seed_shared import default_role, get_or_create_seed_user
+from ._seed_staging_data import PASSWORD, onboarded_member_defaults, status_email, status_phone
 
-STATUS_PHONE_PREFIX = "+170255507"
 ADMIN_ROLES = ("admin", "member")
-
-
-def status_phone(index: int) -> str:
-    return f"{STATUS_PHONE_PREFIX}{index:02d}"
 
 
 @dataclass(frozen=True)
@@ -41,34 +35,24 @@ STATUS_SPECS = [
 ]
 
 
-def reset_status_join_requests() -> None:
-    JoinRequest.objects.filter(phone_number__startswith=STATUS_PHONE_PREFIX).delete()
-
-
 def _person_fields(first_name: str, index: int) -> dict:
     now = timezone.now()
     return {
         "first_name": first_name,
         "last_name": "Staging",
-        "email": f"status{index:02d}@staging.example",
+        "email": status_email(index),
         "guidelines_consent_at": now,
         "sms_consent_at": now,
     }
 
 
 def _onboarded_defaults(first_name: str, index: int) -> dict:
-    return {
-        **_person_fields(first_name, index),
-        "membership_status": MembershipStatus.ACTIVE_MEMBER,
-        "needs_onboarding": False,
-        "onboarded_at": timezone.now(),
-    }
+    defaults = onboarded_member_defaults(first_name, status_email(index), timezone.now())
+    return {**defaults, "last_name": "Staging"}
 
 
 def _seed_admin(stdout) -> User:
-    roles = [
-        Role.objects.get_or_create(name=n, defaults={"is_default": True})[0] for n in ADMIN_ROLES
-    ]
+    roles = [default_role(name) for name in ADMIN_ROLES]
     user, created = get_or_create_seed_user(
         status_phone(0), PASSWORD, _onboarded_defaults("Admin", 0), roles
     )
@@ -118,7 +102,7 @@ def _apply_status(user: User, spec: StatusSpec, admin: User) -> None:
 
 def _seed_member_in_status(spec: StatusSpec, index: int, admin: User) -> tuple[User, bool]:
     defaults = _onboarded_defaults(spec.first_name, index)
-    roles = [Role.objects.get(name="member")]
+    roles = [default_role("member")]
     user, created = get_or_create_seed_user(status_phone(index), PASSWORD, defaults, roles)
     if created:
         _apply_status(user, spec, admin)
