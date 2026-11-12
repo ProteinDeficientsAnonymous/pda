@@ -263,18 +263,19 @@ class User(AbstractUser):
             self.membership_status_changed_by = by
         return list(STATUS_CHANGE_FIELDS)
 
-    def set_guidelines_pause(self, paused: bool, *, by: "User | None") -> list[str]:
-        """A guidelines pause replaces any attendance pause; lifting it leaves an attendance pause."""
-        if paused == self.is_guidelines_paused:
-            return []
-        self.attendance_paused_at = None if paused else timezone.now()
-        status = (
-            MembershipStatus.GUIDELINES_PAUSED if paused else MembershipStatus.ATTENDANCE_PAUSED
-        )
-        if not paused:
-            self.has_joined_whatsapp = False
-        fields = ["attendance_paused_at", "has_joined_whatsapp"]
-        return [*fields, *self.set_membership_status(status, by=by)]
+    def apply_guidelines_pause(self, *, by: "User | None") -> list[str]:
+        """A guidelines pause replaces any attendance pause."""
+        self.attendance_paused_at = None
+        self.unpaused_at = None
+        status_fields = self.set_membership_status(MembershipStatus.GUIDELINES_PAUSED, by=by)
+        return ["attendance_paused_at", "unpaused_at", *status_fields]
+
+    def lift_guidelines_pause(self, *, by: "User | None") -> list[str]:
+        # Lifting leaves them limited until a compliant in-person check-in.
+        self.attendance_paused_at = timezone.now()
+        self.has_joined_whatsapp = False
+        status_fields = self.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED, by=by)
+        return ["attendance_paused_at", "has_joined_whatsapp", *status_fields]
 
     @property
     def is_guidelines_paused(self) -> bool:
