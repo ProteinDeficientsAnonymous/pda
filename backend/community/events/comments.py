@@ -26,6 +26,7 @@ from community.events._comment_schemas import (
     ReactionToggleIn,
     ReactorOut,
 )
+from community.events.limited_access import event_viewer_for
 from community.events.read_visibility import enforce_event_read_visibility
 from community.events.viewer import resolve_event_viewer
 from community.models import (
@@ -60,7 +61,8 @@ def _can_post_comments(
     co_host_pks: set[str] | None = None,
 ) -> bool:
     """Posting requires either an RSVP or host/admin privilege on the event."""
-    if user is None:
+    # An attendance pause leaves can't-go RSVP rows behind, so gate limited users first.
+    if event_viewer_for(user, event) is None:
         return False
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
