@@ -15,7 +15,7 @@ from users.roles import Role
 
 @pytest.fixture
 def set_pause(api_client, manage_users_headers, django_capture_on_commit_callbacks):
-    def patch(user, paused: bool, field: str = "is_paused"):
+    def patch(user, paused: bool, field: str = "guidelines_paused"):
         with django_capture_on_commit_callbacks(execute=True):
             response = api_client.patch(
                 f"/api/auth/users/{user.pk}/",
