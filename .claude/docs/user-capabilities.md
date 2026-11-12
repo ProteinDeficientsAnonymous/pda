@@ -28,6 +28,8 @@ A rejected applicant can't sign in or public-RSVP (the form and `/my-rsvps` both
 
 On a community event, a limited user sees exactly what a visitor sees and can't act on it (`community/events/limited_access.py`). Hosts, co-hosts and `manage_events` holders can always see guests and comment.
 
+A pause drafts the events someone hosts alone and drops their host spot. As creator they can still open that draft, while paused and after a restore, but can't edit or publish it: a restore doesn't return the host spot. A `manage_events` holder can publish it or invite them back as co-host. The drafts list and the detail page share one rule (`community/events/_hosts.py`).
+
 ## People
 
 | | visitor | public rsvper | limited | member |

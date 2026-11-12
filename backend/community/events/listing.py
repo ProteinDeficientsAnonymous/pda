@@ -5,6 +5,7 @@ from django.utils import timezone
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
+from community.events._hosts import hosted_by_q
 from community.events.helpers import (
     my_rsvp_fields,
     tags_out,
@@ -55,26 +56,16 @@ def list_count_annotations():
     }
 
 
-def _viewer_is_cohost(auth_user) -> Exists:
-    return Exists(
-        Event.co_hosts.through.objects.filter(event_id=OuterRef("pk"), user_id=auth_user.pk)
-    )
-
-
 def _viewer_is_invited(auth_user) -> Exists:
     return Exists(
         Event.invited_users.through.objects.filter(event_id=OuterRef("pk"), user_id=auth_user.pk)
     )
 
 
-def _hosted_by(auth_user):
-    return Q(created_by=auth_user) | _viewer_is_cohost(auth_user)
-
-
 def _status_q(status: str, auth_user, is_authed) -> Q:
     """Status and visibility rules: cancelled and draft rows are the viewer's own."""
     if status in (EventStatus.CANCELLED, EventStatus.DRAFT):
-        return Q(status=status) & _hosted_by(auth_user)
+        return Q(status=status) & hosted_by_q(auth_user)
     q = Q(status=EventStatus.ACTIVE)
     if not is_authed:
         q &= Q(visibility=PageVisibility.PUBLIC)
@@ -103,8 +94,7 @@ def filter_invite_only(events, auth_user, status: str):
         return events
     return events.filter(
         ~Q(visibility=PageVisibility.INVITE_ONLY)
-        | Q(created_by=auth_user)
-        | _viewer_is_cohost(auth_user)
+        | hosted_by_q(auth_user)
         | _viewer_is_invited(auth_user)
     )
 
@@ -132,7 +122,7 @@ def _scope_q(auth_user, hosted: bool, upcoming: bool) -> Q:
     """hosted keeps the viewer's created/co-hosted rows; upcoming drops rows where is_past holds."""
     q = Q()
     if hosted:
-        q &= _hosted_by(auth_user)
+        q &= hosted_by_q(auth_user)
     if upcoming:
         q &= ~is_past_q(timezone.now())
     return q
