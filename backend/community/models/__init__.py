@@ -2,6 +2,7 @@ from community.models.attendance_reminder import AttendanceMilestone, Attendance
 from community.models.choices import (
     CONDITION_SOURCE_TYPES,
     MATCHABLE_RSVP_STATUSES,
+    OPEN_JOIN_REQUEST_STATUSES,
     RSVP_CHOICE_TYPES,
     RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
@@ -84,6 +85,7 @@ __all__ = [
     "InvitePermission",
     "JoinFormQuestionType",
     "JoinRequestStatus",
+    "OPEN_JOIN_REQUEST_STATUSES",
     "EventFormat",
     "PageVisibility",
     "PollAvailability",
