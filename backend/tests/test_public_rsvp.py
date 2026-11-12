@@ -23,7 +23,7 @@ from community.models import (
 )
 from community.validation import Code
 from notifications.models import Notification, NotificationType
-from users.models import MEMBER_STATUSES, MembershipStatus, PublicRsvpToken, User
+from users.models import MEMBER_STATUSES, SIGN_IN_STATUSES, MembershipStatus, PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import (
     URL_TEMPLATE,
@@ -180,12 +180,15 @@ class TestPublicRsvpDedup:
 
 @pytest.mark.django_db
 class TestPublicRsvpMemberCollision:
-    def test_phone_belongs_to_member(self, api_client, official_event, fake_email_sender):
+    @pytest.mark.parametrize("status", SIGN_IN_STATUSES)
+    def test_phone_that_can_sign_in_must_sign_in(
+        self, api_client, official_event, fake_email_sender, status
+    ):
         User.objects.create_user(
             phone_number="+14155550123",
             first_name="A",
             last_name="Member",
-            membership_status=MembershipStatus.ACTIVE_MEMBER,
+            membership_status=status,
         )
 
         response = post(api_client, official_event)
