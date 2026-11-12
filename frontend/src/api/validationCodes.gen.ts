@@ -40,6 +40,7 @@ export const Code = {
     AttendanceOpensLater: 'event.attendance_opens_later',
     NoPlusOneToCheckIn: 'event.no_plus_one_to_check_in',
     PermDenied: 'event.perm_denied',
+    GuestNotEligible: 'event.guest_not_eligible',
     BlastInvalidAudience: 'event.blast_invalid_audience',
     BlastNoRecipients: 'event.blast_no_recipients',
     WouldRemoveNonMembers: 'event.would_remove_non_members',
@@ -348,6 +349,7 @@ export type ValidationCode =
   | 'event.attendance_opens_later'
   | 'event.no_plus_one_to_check_in'
   | 'event.perm_denied'
+  | 'event.guest_not_eligible'
   | 'event.blast_invalid_audience'
   | 'event.blast_no_recipients'
   | 'event.would_remove_non_members'
@@ -580,6 +582,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.attendance_opens_later': [],
   'event.no_plus_one_to_check_in': [],
   'event.perm_denied': ['action'],
+  'event.guest_not_eligible': [],
   'event.blast_invalid_audience': [],
   'event.blast_no_recipients': [],
   'event.would_remove_non_members': ['count'],

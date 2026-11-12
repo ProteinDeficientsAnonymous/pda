@@ -171,6 +171,11 @@
         ]
       },
       {
+        "name": "GUEST_NOT_ELIGIBLE",
+        "value": "event.guest_not_eligible",
+        "params": []
+      },
+      {
         "name": "BLAST_INVALID_AUDIENCE",
         "value": "event.blast_invalid_audience",
         "params": []

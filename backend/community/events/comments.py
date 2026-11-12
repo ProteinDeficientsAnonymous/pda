@@ -26,6 +26,7 @@ from community.events._comment_schemas import (
     ReactionToggleIn,
     ReactorOut,
 )
+from community.events.limited_access import enforce_limited_write_access, event_viewer_for
 from community.events.read_visibility import enforce_event_read_visibility
 from community.events.viewer import resolve_event_viewer
 from community.models import (
@@ -178,6 +179,7 @@ def _build_list_out(event: Event, viewer) -> EventCommentListOut:
 
 
 def _require_rsvp_for_post(event: Event, user) -> None:
+    enforce_limited_write_access(user, event, "post_comment")
     if not _can_post_comments(event, user):
         raise_validation(Code.Comment.RSVP_REQUIRED, status_code=403)
 
@@ -199,7 +201,7 @@ def list_comments(request, event_id: UUID):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    viewer = resolve_event_viewer(request, event_id)
+    viewer = event_viewer_for(resolve_event_viewer(request, event_id), event)
     enforce_event_read_visibility(event, viewer)
     return Status(200, _build_list_out(event, viewer))
 
