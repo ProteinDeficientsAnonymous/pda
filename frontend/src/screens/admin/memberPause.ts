@@ -6,8 +6,12 @@ const MANAGED_STATUSES: readonly MembershipStatusValue[] = [
   MembershipStatus.Tentative,
 ];
 
-export function isAttendancePaused(member: Pick<Member, 'attendancePausedAt'>): boolean {
-  return member.attendancePausedAt !== null;
+export function isGuidelinesPaused(member: Pick<Member, 'membershipStatus'>): boolean {
+  return member.membershipStatus === MembershipStatus.GuidelinesPaused;
+}
+
+export function isAttendancePaused(member: Pick<Member, 'membershipStatus'>): boolean {
+  return member.membershipStatus === MembershipStatus.AttendancePaused;
 }
 
 export function isTentative(member: Pick<Member, 'membershipStatus'>): boolean {
