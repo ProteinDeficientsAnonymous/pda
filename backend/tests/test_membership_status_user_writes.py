@@ -134,7 +134,7 @@ def test_guidelines_paused_member_stays_in_members():
 
 def test_switching_from_guidelines_to_attendance_pause(api_client, manage_users_headers):
     member = make_user()
-    _set_guidelines_pause(api_client, manage_users_headers, member, True)
+    _patch_guidelines_pause(api_client, manage_users_headers, member, True)
     response = api_client.patch(
         f"/api/auth/users/{member.pk}/",
         {"is_paused": False, "attendance_paused": True},
