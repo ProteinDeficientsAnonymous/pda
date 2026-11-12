@@ -8,13 +8,8 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, Field
-from users.models import (
-    FULL_MEMBER_STATUSES,
-    PUBLIC_FORM_PHONE_REGION,
-    PublicRsvpToken,
-    User,
-    validate_phone,
-)
+from users.models import FULL_MEMBER_STATUSES, PublicRsvpToken, User
+from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community.field_limits import FieldLimit
 from community.shared import ErrorOut

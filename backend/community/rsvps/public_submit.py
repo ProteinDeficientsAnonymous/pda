@@ -12,14 +12,8 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
-from users.models import (
-    FULL_MEMBER_STATUSES,
-    PUBLIC_FORM_PHONE_REGION,
-    PublicRsvpToken,
-    User,
-    status_change_stamp,
-    validate_phone,
-)
+from users.models import FULL_MEMBER_STATUSES, PublicRsvpToken, User, status_change_stamp
+from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import RsvpAnswer

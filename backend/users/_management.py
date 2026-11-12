@@ -27,14 +27,9 @@ from users.helpers import (
     validate_member_role_required,
     visible_name,
 )
-from users.models import (
-    ADMIN_ENTERED_PHONE_REGION,
-    MembershipStatus,
-    User,
-    status_change_stamp,
-    validate_phone,
-)
+from users.models import MembershipStatus, User, status_change_stamp
 from users.permissions import PermissionKey
+from users.phone import ADMIN_ENTERED_PHONE_REGION, validate_phone
 from users.roles import Role
 from users.schemas import (
     BulkUserCreateIn,
