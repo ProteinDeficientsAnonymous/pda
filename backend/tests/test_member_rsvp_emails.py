@@ -200,12 +200,9 @@ class TestHostSetRsvpEmail:
         assert _subjects(fake_email_sender, "member@e.com") == []
 
     @LIMITED_USER_FACTORIES
-    @pytest.mark.parametrize(
-        ("event_type", "gets_manage_link"),
-        [(EventType.OFFICIAL, False), (EventType.COMMUNITY, True)],
-    )
-    def test_host_set_limited_user_gets_member_email_only_on_official(
-        self, test_user, fake_email_sender, make_limited, event_type, gets_manage_link
+    @pytest.mark.parametrize("event_type", [EventType.OFFICIAL, EventType.CLUB])
+    def test_host_set_limited_user_gets_member_email_on_official(
+        self, test_user, fake_email_sender, make_limited, event_type
     ):
         event = _event(test_user, event_type=event_type)
         guest = make_limited("+14155550101", "signed-in@e.com")
@@ -213,8 +210,7 @@ class TestHostSetRsvpEmail:
         _host_set(event, test_user, guest, RSVPStatus.ATTENDING)
 
         assert _subjects(fake_email_sender, "signed-in@e.com") == ["you're in for picnic"]
-        text = fake_email_sender.send.call_args.kwargs["text"]
-        assert ("/my-rsvps?token=" in text) is gets_manage_link
+        assert "/my-rsvps?token=" not in fake_email_sender.send.call_args.kwargs["text"]
 
     def test_host_set_public_rsvper_gets_manage_link(self, test_user, fake_email_sender):
         event = _event(test_user)
