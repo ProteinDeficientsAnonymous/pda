@@ -110,6 +110,24 @@ class TestMemberWaitlistPromotionEmail:
         assert f"/events/{event.slug or event.id}" in promoted[0]["text"]
         assert "my-rsvps?token=" not in promoted[0]["text"]
 
+    def test_promoted_guidelines_paused_member_gets_member_email(
+        self, test_user, fake_email_sender
+    ):
+        event = _event(test_user, max_attendees=1)
+        EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
+        paused = make_user(
+            email="paused@e.com",
+            membership_status=MembershipStatus.GUIDELINES_PAUSED,
+        )
+        EventRSVP.objects.create(event=event, user=paused, status=RSVPStatus.WAITLISTED)
+
+        _rsvp(Client(), event, test_user, RSVPStatus.CANT_GO)
+
+        assert _subjects(fake_email_sender, "paused@e.com") == [
+            "you're off the waitlist for picnic"
+        ]
+        assert "/my-rsvps?token=" not in fake_email_sender.send.call_args.kwargs["text"]
+
     def test_promoted_unpaid_member_is_told_to_pay(self, test_user, fake_email_sender):
         event = _event(
             test_user, max_attendees=1, price="$10", venmo_link="https://venmo.com/u/host"
@@ -182,12 +200,9 @@ class TestHostSetRsvpEmail:
         assert _subjects(fake_email_sender, "member@e.com") == []
 
     @LIMITED_USER_FACTORIES
-    @pytest.mark.parametrize(
-        ("event_type", "gets_manage_link"),
-        [(EventType.OFFICIAL, False), (EventType.COMMUNITY, True)],
-    )
-    def test_host_set_limited_user_gets_member_email_only_on_official(
-        self, test_user, fake_email_sender, make_limited, event_type, gets_manage_link
+    @pytest.mark.parametrize("event_type", [EventType.OFFICIAL, EventType.CLUB])
+    def test_host_set_limited_user_gets_member_email_on_official(
+        self, test_user, fake_email_sender, make_limited, event_type
     ):
         event = _event(test_user, event_type=event_type)
         guest = make_limited("+14155550101", "signed-in@e.com")
@@ -195,22 +210,6 @@ class TestHostSetRsvpEmail:
         _host_set(event, test_user, guest, RSVPStatus.ATTENDING)
 
         assert _subjects(fake_email_sender, "signed-in@e.com") == ["you're in for picnic"]
-        text = fake_email_sender.send.call_args.kwargs["text"]
-        assert ("/my-rsvps?token=" in text) is gets_manage_link
-
-    def test_host_seating_guidelines_paused_member_gets_member_email(
-        self, test_user, fake_email_sender
-    ):
-        event = _event(test_user)
-        paused = make_user(
-            email="paused@e.com",
-            membership_status=MembershipStatus.GUIDELINES_PAUSED,
-        )
-        EventRSVP.objects.create(event=event, user=paused, status=RSVPStatus.WAITLISTED)
-
-        _host_set(event, test_user, paused, RSVPStatus.ATTENDING)
-
-        assert _subjects(fake_email_sender, "paused@e.com") == ["you're in for picnic"]
         assert "/my-rsvps?token=" not in fake_email_sender.send.call_args.kwargs["text"]
 
     def test_host_set_public_rsvper_gets_manage_link(self, test_user, fake_email_sender):
