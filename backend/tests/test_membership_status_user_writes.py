@@ -34,10 +34,16 @@ def test_attendance_pause(api_client, manage_users_headers):
     assert _status(member) == MembershipStatus.ATTENDANCE_PAUSED
 
 
-def test_attendance_unpause(api_client, manage_users_headers):
+def test_attendance_unpause_is_refused(api_client, manage_users_headers):
     paused = make_attendance_paused()
-    _set_attendance_pause(api_client, manage_users_headers, paused, False)
-    assert _status(paused) == MembershipStatus.ACTIVE_MEMBER
+    response = api_client.patch(
+        f"/api/auth/users/{paused.pk}/",
+        {"attendance_paused": False},
+        content_type="application/json",
+        **manage_users_headers,
+    )
+    assert response.status_code == 400
+    assert _status(paused) == MembershipStatus.ATTENDANCE_PAUSED
 
 
 def test_archive_clears_is_member(api_client, manage_users_headers):
@@ -96,7 +102,7 @@ def test_guidelines_pause_and_unpause(api_client, manage_users_headers):
         == MembershipStatus.ATTENDANCE_PAUSED
     )
     assert member.attendance_paused_at is not None
-    assert member.unpaused_at is None
+    assert member.unpaused_at is not None
 
 
 def test_attendance_pause_refused_while_guidelines_paused(api_client, manage_users_headers):

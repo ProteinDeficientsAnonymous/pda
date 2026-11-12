@@ -38,12 +38,13 @@ def _sends(fake_email_sender) -> list[dict]:
 
 @pytest.mark.django_db
 class TestManualUnpause:
-    def test_lifting_the_last_pause_emails_and_stamps(self, patch_user, fake_email_sender):
+    def test_lifting_a_guidelines_pause_emails_and_stamps(self, patch_user, fake_email_sender):
         WhatsAppLinkConfig.objects.update_or_create(pk=1, defaults={"link": "https://wa.example"})
-        user = _member(has_joined_whatsapp=True, **ATTENDANCE)
-        response = patch_user(user, {"attendance_paused": False})
+        user = _member(has_joined_whatsapp=True, **GUIDELINES)
+        response = patch_user(user, {"guidelines_paused": False})
         assert response.json()["unpaused_at"] is not None
         assert user.unpaused_at is not None
+        assert user.membership_status == MembershipStatus.ATTENDANCE_PAUSED
         assert user.has_joined_whatsapp is False
         [sent] = _sends(fake_email_sender)
         assert "official or club event" in sent["text"]
@@ -56,18 +57,11 @@ class TestManualUnpause:
             ({}, {"guidelines_paused": True}),
             ({}, {"first_name": "Sam"}),
             (GUIDELINES, {"first_name": "Sam"}),
-            (GUIDELINES, {"guidelines_paused": False, "attendance_paused": True}),
-            (GUIDELINES, {"guidelines_paused": False}),
+            (ATTENDANCE, {"first_name": "Sam"}),
         ],
-        ids=[
-            "pausing",
-            "never_paused",
-            "still_paused",
-            "into_attendance_pause",
-            "lifting_guidelines",
-        ],
+        ids=["pausing", "never_paused", "still_guidelines_paused", "still_attendance_paused"],
     )
-    def test_no_email_or_stamp_while_a_pause_remains(
+    def test_no_email_or_stamp_without_lifting_a_guidelines_pause(
         self, patch_user, fake_email_sender, pause, payload
     ):
         user = _member(**pause)
@@ -90,13 +84,13 @@ class TestManualUnpause:
         [
             (
                 {
-                    "attendance_paused_at": timezone.now(),
+                    "membership_status": MembershipStatus.ARCHIVED,
                     "archived_at": timezone.now(),
-                    "status_before_archive": MembershipStatus.ATTENDANCE_PAUSED,
+                    "status_before_archive": MembershipStatus.GUIDELINES_PAUSED,
                 },
-                {"attendance_paused": False},
+                {"guidelines_paused": False},
             ),
-            ({**ATTENDANCE, "email": ""}, {"attendance_paused": False}),
+            ({**GUIDELINES, "email": ""}, {"guidelines_paused": False}),
         ],
         ids=["archived", "no_email"],
     )
@@ -110,6 +104,15 @@ class TestManualUnpause:
 
     def test_send_error_does_not_fail_the_unpause(self, patch_user, fake_email_sender):
         fake_email_sender.send.side_effect = RuntimeError("provider down")
+        user = _member(**GUIDELINES)
+        assert patch_user(user, {"guidelines_paused": False}).status_code == 200
+        assert user.is_guidelines_paused is False
+
+    def test_lifting_an_attendance_pause_is_refused(self, patch_user, fake_email_sender):
         user = _member(**ATTENDANCE)
-        assert patch_user(user, {"attendance_paused": False}).status_code == 200
-        assert user.attendance_paused_at is None
+        response = patch_user(user, {"attendance_paused": False})
+        assert response.status_code == 400
+        assert response.json()["detail"][0]["code"] == "user.attendance_pause_lifts_on_check_in"
+        assert user.membership_status == MembershipStatus.ATTENDANCE_PAUSED
+        assert user.unpaused_at is None
+        assert _sends(fake_email_sender) == []

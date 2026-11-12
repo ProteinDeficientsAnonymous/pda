@@ -251,9 +251,17 @@ class User(AbstractUser):
     @property
     def is_guidelines_paused(self) -> bool:
         """True for an archived user archived while guidelines-paused too, so archiving can't shed it."""
+        return self._pause_status() == MembershipStatus.GUIDELINES_PAUSED
+
+    @property
+    def is_attendance_paused(self) -> bool:
+        """True for an archived user archived while attendance-paused too."""
+        return self._pause_status() == MembershipStatus.ATTENDANCE_PAUSED
+
+    def _pause_status(self) -> str | None:
         if self.membership_status == MembershipStatus.ARCHIVED:
-            return self.status_before_archive == MembershipStatus.GUIDELINES_PAUSED
-        return self.membership_status == MembershipStatus.GUIDELINES_PAUSED
+            return self.status_before_archive
+        return self.membership_status
 
     @property
     def full_name(self) -> str:

@@ -5,7 +5,7 @@ from community.models import Event, EventStatus, JoinRequestStatus
 from django.utils import timezone
 from users.models import MembershipStatus
 
-from tests._users import make_attendance_paused, make_user
+from tests._users import make_user
 
 pytestmark = pytest.mark.django_db
 
@@ -30,7 +30,6 @@ def _archive(api_client, headers, user):
     ("make", "body", "before"),
     [
         (make_user, {"attendance_paused": True}, MembershipStatus.ATTENDANCE_PAUSED),
-        (make_attendance_paused, {"attendance_paused": False}, MembershipStatus.ACTIVE_MEMBER),
         (make_user, {"guidelines_paused": True}, MembershipStatus.GUIDELINES_PAUSED),
         (
             lambda **f: make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED, **f),
@@ -38,7 +37,7 @@ def _archive(api_client, headers, user):
             MembershipStatus.ATTENDANCE_PAUSED,
         ),
     ],
-    ids=["attendance-pause", "attendance-unpause", "guidelines-pause", "guidelines-unpause"],
+    ids=["attendance-pause", "guidelines-pause", "guidelines-unpause"],
 )
 def test_pause_writers_leave_an_archived_user_archived(
     api_client, manage_users_headers, make, body, before
