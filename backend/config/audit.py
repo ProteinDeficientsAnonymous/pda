@@ -71,7 +71,7 @@ def _actor_and_ip(request):
     if is_request_anonymized(request):
         return None, "anon"
     user = getattr(request, "auth", None)
-    # Spoof-resistant client IP (rightmost-untrusted hop); see config/ratelimit.py.
+    # Spoof-resistant client IP (rightmost non-internal hop); see config/ratelimit.py.
     return (user if user and hasattr(user, "pk") else None), client_ip(request)
 
 
