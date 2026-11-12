@@ -69,7 +69,7 @@ def _validate_magic_user(request, magic: MagicLoginToken) -> None:
             request,
             target=AuditTarget(type=AuditTargetType.USER, id=str(magic.user.pk)),
         )
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+        raise_validation(Code.Auth.ACCOUNT_GUIDELINES_PAUSED, status_code=403)
 
 
 def _consume_magic_token(request, token: str) -> MagicLoginToken:
