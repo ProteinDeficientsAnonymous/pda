@@ -54,7 +54,7 @@ class TestMagicLogin:
         magic = MagicLoginToken.create_for_user(test_user)
         response = api_client.get(f"/api/auth/magic-login/{magic.token}/")
         assert response.status_code == 403
-        assert_error_code(response, Code.Auth.ACCOUNT_PAUSED)
+        assert_error_code(response, Code.Auth.ACCOUNT_GUIDELINES_PAUSED)
 
     def test_magic_login_marks_token_used(self, api_client, test_user):
         magic = MagicLoginToken.create_for_user(test_user)

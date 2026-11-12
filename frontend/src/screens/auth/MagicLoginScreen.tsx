@@ -53,7 +53,7 @@ export default function MagicLoginScreen() {
           return;
         }
         if (
-          hasErrorCode(err, Code.Auth.AccountPaused) ||
+          hasErrorCode(err, Code.Auth.AccountGuidelinesPaused) ||
           hasErrorCode(err, Code.Auth.AccountArchived) ||
           hasErrorCode(err, Code.Auth.NotAMember)
         ) {
