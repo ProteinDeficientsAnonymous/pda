@@ -3,12 +3,13 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { JoinRequestStatus, type JoinRequestSummary, type RsvpBreakdown } from '@/api/join';
-import { REJECTION_REASON_LABELS, RejectionReason } from '@/api/rejectionEmail';
+import { rejectionReasonText } from '@/api/rejectionEmail';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { AttendedEventsNote } from './AttendedEventsNote';
+import { PreviousArchiveNote, PreviousRejectionNote } from './JoinRequestPreviousRejection';
 import { TentativeActions } from './JoinRequestTentativeSection';
 import { JoinRequestWhatsappToggle } from './JoinRequestWhatsappToggle';
 import { SendMessageDialog } from './SendMessageDialog';
@@ -62,7 +63,7 @@ export function JoinRequestCard({
           {request.previouslyArchived ? (
             <span
               className="bg-warning-subtle text-warning rounded-full px-2 py-0.5 text-xs"
-              title="this phone number belongs to a previously archived member — approving will restore their account"
+              title="this phone number belongs to a previously archived account — approving or tentatively approving restores it"
             >
               previously archived
             </span>
@@ -78,6 +79,8 @@ export function JoinRequestCard({
           <StatusBadge status={request.status} />
         </div>
       </header>
+      <PreviousArchiveNote archive={request.previousArchive} />
+      <PreviousRejectionNote rejection={request.previousRejection} />
 
       {request.answers.length > 0 ? (
         <dl className="mt-2 flex flex-col gap-2">
@@ -261,11 +264,8 @@ function DecisionAttribution({ request }: { request: JoinRequestSummary }) {
 }
 
 function RejectionReasonLine({ request }: { request: JoinRequestSummary }) {
-  if (!request.rejectionReason) return null;
-  const text =
-    request.rejectionReason === RejectionReason.OTHER
-      ? request.rejectionNote
-      : REJECTION_REASON_LABELS[request.rejectionReason];
+  const text = rejectionReasonText(request.rejectionReason, request.rejectionNote);
+  if (!text) return null;
   return <p className="text-muted mt-1 text-xs whitespace-pre-wrap">reason: {text}</p>;
 }
 

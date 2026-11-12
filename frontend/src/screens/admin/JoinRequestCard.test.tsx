@@ -2,6 +2,8 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { JoinRequestStatus, type JoinRequestSummary } from '@/api/join';
+import { RejectionReason } from '@/api/rejectionEmail';
+import { MembershipStatus } from '@/models/user';
 import { makeRequest } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -48,5 +50,71 @@ describe('JoinRequestCard decision', () => {
     );
 
     expect(screen.getByText(/rejected by sam vettor on jan 2/)).toBeInTheDocument();
+  });
+});
+
+describe('JoinRequestCard previous archive', () => {
+  it('shows when and by whom they were archived', () => {
+    renderCard(
+      makeRequest({
+        previouslyArchived: true,
+        previousArchive: {
+          archivedAt: '2025-08-14T18:00:00Z',
+          archivedByName: 'Robin Admin',
+          pausedStatus: null,
+        },
+      }),
+    );
+
+    expect(
+      screen.getByText('previously archived on aug 14, 2025 by robin admin'),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    [MembershipStatus.GuidelinesPaused, 'while guidelines-paused'],
+    [MembershipStatus.AttendancePaused, 'while event rqmt paused'],
+  ])('notes the %s pause they were archived under', (pausedStatus, note) => {
+    renderCard(
+      makeRequest({
+        previouslyArchived: true,
+        previousArchive: { archivedAt: null, archivedByName: null, pausedStatus },
+      }),
+    );
+
+    expect(screen.getByText(`previously archived ${note}`)).toBeInTheDocument();
+  });
+
+  it('omits the note on a first-time applicant', () => {
+    renderCard(makeRequest());
+
+    expect(screen.queryByText(/previously archived on/)).not.toBeInTheDocument();
+  });
+});
+
+describe('JoinRequestCard previous rejection', () => {
+  it('shows who rejected the earlier request, when, and why', () => {
+    renderCard(
+      makeRequest({
+        previouslyRejected: true,
+        previousRejection: {
+          statusChangedAt: '2025-11-02T18:00:00Z',
+          statusChangedByName: 'Sam Vettor',
+          rejectionReason: RejectionReason.OTHER,
+          rejectionNote: 'asked about leather boots',
+        },
+      }),
+    );
+
+    expect(
+      screen.getByText(/previously rejected by sam vettor on nov 2, 2025/),
+    ).toBeInTheDocument();
+    expect(screen.getByText('reason: asked about leather boots')).toBeInTheDocument();
+  });
+
+  it('omits the note on a first-time applicant', () => {
+    renderCard(makeRequest());
+
+    expect(screen.queryByText(/previously rejected by/)).not.toBeInTheDocument();
   });
 });
