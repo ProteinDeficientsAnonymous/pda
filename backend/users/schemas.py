@@ -166,7 +166,6 @@ class UserOut(BaseModel):
     whatsapp_reminder_opt_out: bool = False
     attendance_nudge_opt_out: bool = False
     host_digest_opt_out: bool = False
-    is_paused: bool = False
     attendance_paused_at: datetime | None = None
     restored_at: datetime | None = None
     unpaused_at: datetime | None = None
@@ -220,7 +219,6 @@ class UserOut(BaseModel):
             whatsapp_reminder_opt_out=user.whatsapp_reminder_opt_out,
             attendance_nudge_opt_out=user.attendance_nudge_opt_out,
             host_digest_opt_out=user.host_digest_opt_out,
-            is_paused=user.is_guidelines_paused,
             attendance_paused_at=user.attendance_paused_at,
             restored_at=user.restored_at,
             unpaused_at=user.unpaused_at,
@@ -315,7 +313,7 @@ class UserPatchIn(BaseModel):
     first_name: str | None = Field(default=None, max_length=FieldLimit.FIRST_NAME)
     last_name: str | None = Field(default=None, max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
-    is_paused: bool | None = None
+    guidelines_paused: bool | None = None
     attendance_paused: bool | None = None
     has_joined_whatsapp: bool | None = None
 
