@@ -27,7 +27,7 @@ from community.events.schemas import (
     HostRSVPIn,
     HostRSVPPaymentIn,
 )
-from community.models import MATCHABLE_RSVP_STATUSES, Event, EventRSVP, RSVPStatus
+from community.models import MATCHABLE_RSVP_STATUSES, CancelReason, Event, EventRSVP, RSVPStatus
 from community.rsvps._payment_verification import (
     PaymentVerificationChange,
     apply_payment_verification,
@@ -36,8 +36,7 @@ from community.rsvps._payment_verification import (
 )
 from community.rsvps.member import (
     payment_audit_details,
-    resolve_cancelled_at,
-    resolve_pre_cancel_status,
+    resolve_cancel_fields,
     resolve_rsvp_status,
     validate_rsvp_status,
 )
@@ -108,8 +107,7 @@ def _apply_host_rsvp_in_transaction(
         defaults={
             "status": final_status,
             "has_plus_one": final_plus_one,
-            "cancelled_at": resolve_cancelled_at(existing, final_status),
-            "pre_cancel_status": resolve_pre_cancel_status(existing, final_status),
+            **resolve_cancel_fields(existing, final_status, CancelReason.HOST),
             "paid_confirmed_at": new_confirmed_at,
         },
     )
