@@ -205,6 +205,7 @@ class Code:
         ANSWER_REQUIRED = "join_request.answer_required"  # params: { label: str }
         ANSWER_TOO_LONG = "join_request.answer_too_long"  # params: { label: str, max: int }
         ANSWER_INVALID_OPTION = "join_request.answer_invalid_option"  # params: { label: str }
+        ANSWER_INVALID_FORMAT = "join_request.answer_invalid_format"  # params: { label: str }
         INVALID_STATUS = "join_request.invalid_status"  # params: { allowed: [str] }
         NOT_APPROVED = "join_request.not_approved"
         ALREADY_LOGGED_IN = "join_request.already_logged_in"

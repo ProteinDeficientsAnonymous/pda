@@ -38,6 +38,7 @@ const JOIN_QUESTION_TYPES = [
   QuestionType.Text,
   QuestionType.Textarea,
   QuestionType.Select,
+  QuestionType.Checkbox,
 ] as const satisfies readonly JoinQuestionType[];
 
 export type JoinQuestionTypeOption = QuestionTypeOption & { value: JoinQuestionType };

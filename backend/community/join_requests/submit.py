@@ -17,7 +17,12 @@ from notifications.service import create_join_request_notifications
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from users.models import PUBLIC_FORM_PHONE_REGION, User, can_sign_in_q, validate_phone
 
-from community._question_answers import assert_single_choice_member, is_answer_empty
+from community._question_answers import (
+    assert_checkbox_members,
+    assert_single_choice_member,
+    checkbox_values,
+    is_answer_empty,
+)
 from community.field_limits import FieldLimit
 from community.models import (
     OPEN_JOIN_REQUEST_STATUSES,
@@ -36,13 +41,15 @@ from community.validation import Code, ValidationException, raise_validation
 
 router = Router()
 
+JoinAnswerIn = str | list[str]
+
 
 class JoinRequestIn(BaseModel):
     first_name: str = Field(default="", max_length=FieldLimit.FIRST_NAME)
     last_name: str = Field(default="", max_length=FieldLimit.LAST_NAME)
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     email: EmailStr
-    answers: dict[str, str] = {}
+    answers: dict[str, JoinAnswerIn] = {}
     # Consent timestamps are recorded on the join request for TCPA/Twilio proof (see #501).
     sms_consent: bool = False
     guidelines_consent: bool = False
@@ -51,9 +58,9 @@ class JoinRequestIn(BaseModel):
 
     @field_validator("answers")
     @classmethod
-    def validate_answer_lengths(cls, v: dict[str, str]) -> dict[str, str]:
+    def validate_answer_lengths(cls, v: dict[str, JoinAnswerIn]) -> dict[str, JoinAnswerIn]:
         for key, answer in v.items():
-            if len(answer) > FieldLimit.DESCRIPTION:
+            if len("".join(answer)) > FieldLimit.DESCRIPTION:
                 raise_validation(
                     Code.JoinRequest.ANSWER_TOO_LONG,
                     field=f"answers.{key}",
@@ -98,40 +105,39 @@ class CheckPhoneIn(BaseModel):
     phone_number: str = Field(max_length=FieldLimit.PHONE)
 
 
-def _validate_answers(
-    answers: dict[str, str],
-    questions: dict[str, JoinFormQuestion],
-) -> None:
-    """Validate answers against questions. Raises ValidationException on failure."""
-    for q_id, q in questions.items():
-        answer = answers.get(q_id, "").strip()
-        if q.required and is_answer_empty(answer):
-            raise_validation(
-                Code.JoinRequest.ANSWER_REQUIRED,
-                field=f"answers.{q_id}",
-                label=q.label,
-            )
-        if q.field_type == JoinFormQuestionType.SELECT and not is_answer_empty(answer):
-            assert_single_choice_member(
-                answer,
-                q.options,
-                code=Code.JoinRequest.ANSWER_INVALID_OPTION,
-                field=f"answers.{q_id}",
-                label=q.label,
-            )
+def _normalize_answer(q: JoinFormQuestion, answer: JoinAnswerIn, field: str) -> JoinAnswerIn:
+    if q.field_type == JoinFormQuestionType.CHECKBOX:
+        code = Code.JoinRequest.ANSWER_INVALID_OPTION
+        assert_checkbox_members(answer, q.options, code=code, field=field, label=q.label)
+        return list(dict.fromkeys(checkbox_values(answer)))
+    if isinstance(answer, list):
+        raise_validation(Code.JoinRequest.ANSWER_INVALID_FORMAT, field=field, label=q.label)
+    text = answer.strip()
+    if q.field_type == JoinFormQuestionType.SELECT and text:
+        code = Code.JoinRequest.ANSWER_INVALID_OPTION
+        assert_single_choice_member(text, q.options, code=code, field=field, label=q.label)
+    return text
 
 
 def _build_custom_answers(
-    answers: dict[str, str],
+    answers: dict[str, JoinAnswerIn],
     questions: dict[str, JoinFormQuestion],
 ) -> dict:
-    """Snapshot answers with their labels."""
+    """Validate answers and snapshot them with their labels. Raises ValidationException."""
     result = {}
     for q_id, q in questions.items():
-        answer = answers.get(q_id, "").strip()
-        if answer:
-            result[q_id] = {"label": q.label, "answer": answer}
+        field = f"answers.{q_id}"
+        answer = _normalize_answer(q, answers.get(q_id, ""), field)
+        if is_answer_empty(answer):
+            if q.required:
+                raise_validation(Code.JoinRequest.ANSWER_REQUIRED, field=field, label=q.label)
+            continue
+        result[q_id] = {"label": q.label, "answer": answer}
     return result
+
+
+def _format_answer(answer: JoinAnswerIn) -> str:
+    return ", ".join(answer) if isinstance(answer, list) else answer
 
 
 def send_join_request_email(full_name: str, phone: str, custom_answers: dict) -> None:
@@ -142,7 +148,7 @@ def send_join_request_email(full_name: str, phone: str, custom_answers: dict) ->
         # Flatten to single-line so a newline in the name can't forge email headers.
         safe_subject = flatten_to_single_line(f"New PDA Join Request: {full_name}")
         answer_lines = "\n".join(
-            f"{data['label']}: {data['answer']}" for data in custom_answers.values()
+            f"{data['label']}: {_format_answer(data['answer'])}" for data in custom_answers.values()
         )
         send_mail(
             subject=safe_subject,
@@ -273,8 +279,6 @@ def submit_join_request(request, payload: JoinRequestIn):
     matched_user, email_claimed = _resolve_submission_user(validated_phone, normalized_email)
 
     questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
-    _validate_answers(payload.answers, questions)
-
     custom_answers = _build_custom_answers(payload.answers, questions)
 
     now = timezone.now()
