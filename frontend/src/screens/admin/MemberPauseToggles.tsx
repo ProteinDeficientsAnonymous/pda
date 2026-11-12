@@ -7,6 +7,7 @@ import {
   fetchGuidelinesPausePreview,
   type PauseImpactEvent,
   type PauseOutcome,
+  type PausePreview,
   type PauseRole,
 } from '@/api/attendancePausePreview';
 import { Toggle } from '@/components/ui/Toggle';
@@ -63,18 +64,18 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
     const { fetchPreview, title } = PAUSE_DIALOG[field];
     setLoading(true);
     try {
-      const events = await fetchPreview(memberId);
+      const lines = describePreview(await fetchPreview(memberId));
       const ok =
-        events.length === 0 ||
+        lines.length === 0 ||
         (await confirm({
           title,
-          message: `here's what happens to their upcoming events once you save:\n\n${events.map(describeImpact).join('\n')}`,
+          message: `here's what the pause changes once you save:\n\n${lines.join('\n')}`,
           confirmLabel: 'pause',
           destructive: true,
         }));
       if (ok) onChange({ ...base, [field]: true });
     } catch (err) {
-      toast.error(extractApiErrorOr(err, "couldn't load their upcoming events — try again"));
+      toast.error(extractApiErrorOr(err, "couldn't load the pause preview — try again"));
     } finally {
       setLoading(false);
     }
@@ -108,6 +109,15 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
       {confirmElement}
     </>
   );
+}
+
+function describePreview(preview: PausePreview): string[] {
+  const lines = preview.events.map(describeImpact);
+  if (preview.strippedRoles.length > 0) {
+    lines.push(`• roles removed: ${preview.strippedRoles.join(', ').toLowerCase()}`);
+  }
+  if (preview.clearsWhatsapp) lines.push('• marked as not in the whatsapp group');
+  return lines;
 }
 
 function describeImpact(e: PauseImpactEvent): string {
