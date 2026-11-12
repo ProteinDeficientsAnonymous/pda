@@ -151,6 +151,20 @@ class TestResolveUser:
         token.revoke()
         assert PublicRsvpToken.resolve_user(token.token) is None
 
+    @pytest.mark.parametrize(
+        "status",
+        [
+            MembershipStatus.TENTATIVE,
+            MembershipStatus.ATTENDANCE_PAUSED,
+            MembershipStatus.ACTIVE_MEMBER,
+            MembershipStatus.GUIDELINES_PAUSED,
+        ],
+    )
+    def test_user_who_can_sign_in_or_is_paused_returns_none(self, public_rsvper, status):
+        token = PublicRsvpToken.issue(public_rsvper)
+        User.objects.filter(pk=public_rsvper.pk).update(membership_status=status)
+        assert PublicRsvpToken.resolve_user(token.token) is None
+
 
 @pytest.mark.django_db
 class TestRevoke:

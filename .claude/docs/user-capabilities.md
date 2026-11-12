@@ -3,7 +3,7 @@
 What each user type can do, as the backend enforces it. For how people move between types, see [user-states.md](user-states.md).
 
 - **visitor** — not signed in.
-- **public rsvper** — `membership_status=none`; RSVP'd through the public form, uses a `/my-rsvps` token link, never signs in.
+- **public rsvper** — `membership_status=none`; RSVP'd through the public form, uses a `/my-rsvps` token link, never signs in. A token link stops resolving once its user can sign in or is guidelines-paused (`PublicRsvpToken.resolve_user`).
 - **limited** — signed in without full access: tentative or attendance-paused. Both get the same access, though attendance-paused users still hold membership (`is_member`) and the member role.
 - **member** — `membership_status=active_member`. Elevated roles add the permissions further down.
 

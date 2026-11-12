@@ -424,19 +424,16 @@ class PublicRsvpToken(models.Model):
 
     @classmethod
     def resolve_user(cls, token: str) -> "User | None":
-        """Resolve a token string to its User, or None if the token is unusable.
-
-        Returns None when the token is unknown, expired (expires_at < now),
-        revoked (revoked_at set), or its user is guidelines-paused. Endpoints in
-        stages 3/4 reuse this and map a None result to their own 404. Never logs
-        the user in.
-        """
+        """The token's user; None if the token is unusable or its user can sign in or is paused."""
         if not token:
             return None
         row = cls.objects.select_related("user").filter(token=token).first()
-        if row is None or not row.is_valid or row.user.is_guidelines_paused:
+        if row is None or not row.is_valid:
             return None
-        return row.user
+        user = row.user
+        if user.is_guidelines_paused or user.membership_status in SIGN_IN_STATUSES:
+            return None
+        return user
 
 
 @receiver(m2m_changed, sender=User.roles.through)
