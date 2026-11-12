@@ -1,3 +1,10 @@
+# [0.232.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.231.3...v0.232.0) (2026-11-12)
+
+
+### Features
+
+* 2398 - record why an rsvp was cancelled ([#2406](https://github.com/ProteinDeficientsAnonymous/pda/issues/2406)) ([e086ff2](https://github.com/ProteinDeficientsAnonymous/pda/commit/e086ff200b59fcc8d08876bbb11ce45eaeafa22a))
+
 ## [0.231.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.231.2...v0.231.3) (2026-11-12)
 
 
