@@ -21,7 +21,7 @@ export function fetchGuidelinesPausePreview(userId: string): Promise<PauseImpact
 }
 
 async function fetchPausePreview(path: string): Promise<PauseImpactEvent[]> {
-  const { data } = await apiClient.get<components['schemas']['AttendancePausePreviewOut']>(path);
+  const { data } = await apiClient.get<components['schemas']['PausePreviewOut']>(path);
   return data.events.map((e) => ({
     id: e.id,
     title: e.title,
