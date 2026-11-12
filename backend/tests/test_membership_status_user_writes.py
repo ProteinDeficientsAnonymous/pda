@@ -1,5 +1,6 @@
 import pytest
 from community.validation import Code
+from django.utils import timezone
 from users.models import MEMBER_STATUSES, MembershipStatus, User
 from users.permissions import PermissionKey
 
@@ -27,10 +28,24 @@ def _set_attendance_pause(api_client, headers, user, paused):
     assert response.status_code == 200
 
 
+def test_attendance_pause(api_client, manage_users_headers):
+    member = make_user()
+    _set_attendance_pause(api_client, manage_users_headers, member, True)
+    assert _status(member) == MembershipStatus.ATTENDANCE_PAUSED
+
+
 def test_attendance_unpause(api_client, manage_users_headers):
     paused = make_attendance_paused()
     _set_attendance_pause(api_client, manage_users_headers, paused, False)
     assert _status(paused) == MembershipStatus.ACTIVE_MEMBER
+
+
+def test_archive_clears_is_member(api_client, manage_users_headers):
+    member = make_user(last_login=timezone.now())
+    response = api_client.delete(f"/api/auth/users/{member.pk}/", **manage_users_headers)
+    assert response.status_code == 204
+    assert _status(member) == MembershipStatus.ARCHIVED
+    assert member.is_member is False
 
 
 @pytest.mark.parametrize(
@@ -116,3 +131,16 @@ def test_guidelines_paused_member_stays_in_members():
     assert paused.membership_status == MembershipStatus.GUIDELINES_PAUSED
     assert User.objects.members().filter(pk=paused.pk).exists()
     assert not User.objects.active_members().filter(pk=paused.pk).exists()
+
+
+def test_switching_from_guidelines_to_attendance_pause(api_client, manage_users_headers):
+    member = make_user()
+    _patch_guidelines_pause(api_client, manage_users_headers, member, True)
+    response = api_client.patch(
+        f"/api/auth/users/{member.pk}/",
+        {"guidelines_paused": False, "attendance_paused": True},
+        content_type="application/json",
+        **manage_users_headers,
+    )
+    assert response.status_code == 200
+    assert _status(member) == MembershipStatus.ATTENDANCE_PAUSED

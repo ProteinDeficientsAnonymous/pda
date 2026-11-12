@@ -152,7 +152,6 @@ class UserManager(BaseUserManager):
     def create_superuser(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("is_member", True)
         extra_fields.setdefault("membership_status", MembershipStatus.ACTIVE_MEMBER)
         return self.create_user(phone_number, password, **extra_fields)
 
@@ -162,8 +161,6 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=20, unique=True)
     first_name = models.CharField(max_length=64, blank=True, default="")
     last_name = models.CharField(max_length=64, blank=True, default="")
-    # Defaults False; non-members are excluded via objects.members().
-    is_member = models.BooleanField(default=False, db_index=True)
     membership_status = models.CharField(
         max_length=20,
         choices=MembershipStatus.choices,
@@ -275,6 +272,10 @@ class User(AbstractUser):
         self.attendance_paused_at = timezone.now()
         status_fields = self.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED, by=by)
         return ["attendance_paused_at", *status_fields]
+
+    @property
+    def is_member(self) -> bool:
+        return self.membership_status in MEMBER_STATUSES
 
     @property
     def is_guidelines_paused(self) -> bool:

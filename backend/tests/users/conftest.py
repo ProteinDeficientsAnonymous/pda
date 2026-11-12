@@ -30,6 +30,5 @@ def non_member(db):
         phone_number="+12025550402",
         first_name="Non-member",
         last_name="User",
-        is_member=False,
         membership_status=MembershipStatus.NONE,
     )

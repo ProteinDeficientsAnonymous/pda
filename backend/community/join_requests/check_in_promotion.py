@@ -53,9 +53,8 @@ def _restore_attendance_paused(request, user: User) -> bool:
     user.attendance_paused_at = None
     user.attendance_grace_notified_at = None
     user.restored_at = timezone.now()
-    user.is_member = True
     # Saved before grant_membership: roles on non-members are rejected.
-    fields = ["attendance_paused_at", "attendance_grace_notified_at", "restored_at", "is_member"]
+    fields = ["attendance_paused_at", "attendance_grace_notified_at", "restored_at"]
     user.save(
         update_fields=[
             *fields,

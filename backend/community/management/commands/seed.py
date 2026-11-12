@@ -90,7 +90,6 @@ class Command(BaseCommand):
             "last_name": data.last_name,
             "email": data.email,
             "bio": data.bio,
-            "is_member": True,
             "membership_status": MembershipStatus.ACTIVE_MEMBER,
             "guidelines_consent_at": now,
             "sms_consent_at": now,
@@ -130,7 +129,6 @@ class Command(BaseCommand):
                     "first_name": data.first_name,
                     "last_name": data.last_name,
                     "email": data.email,
-                    "is_member": False,
                     "membership_status": MembershipStatus.NONE,
                 },
             )

@@ -39,7 +39,6 @@ def public_rsvper(db):
     return User.objects.create_user(
         phone_number="+12025559105",
         first_name="Walkin",
-        is_member=False,
         membership_status=MembershipStatus.NONE,
     )
 

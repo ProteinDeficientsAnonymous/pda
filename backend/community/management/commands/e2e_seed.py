@@ -163,10 +163,7 @@ def month_end(now: datetime, *, months_ago: int = 0) -> datetime:
 
 def _screen_user(**fields) -> User:
     user = User.objects.create_user(
-        password=E2E_PASSWORD,
-        is_member=True,
-        membership_status=MembershipStatus.ACTIVE_MEMBER,
-        **fields,
+        password=E2E_PASSWORD, membership_status=MembershipStatus.ACTIVE_MEMBER, **fields
     )
     user.guidelines_consent_at = _CONSENT_AT
     user.sms_consent_at = _CONSENT_AT
@@ -233,7 +230,6 @@ def _seed_member_screens() -> dict:
         first_name="River",
         last_name="Guest",
         email="river@example.com",
-        is_member=False,
         membership_status=MembershipStatus.NONE,
         password=E2E_PASSWORD,
     )
@@ -303,7 +299,6 @@ def _seed_member_screens() -> dict:
         first_name="Casey",
         last_name="Consent",
         email="casey@example.com",
-        is_member=True,
         membership_status=MembershipStatus.ACTIVE_MEMBER,
         has_seen_veganniversary=True,
         guidelines_consent_at=None,
@@ -391,7 +386,6 @@ def _seed_waitlist_screens() -> dict:
         first_name="Pat",
         last_name="Guest",
         email=None,
-        is_member=False,
         membership_status=MembershipStatus.NONE,
     )
     event = Event.objects.create(

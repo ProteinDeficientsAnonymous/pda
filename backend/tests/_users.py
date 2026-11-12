@@ -23,7 +23,6 @@ def make_user(*permissions: PermissionKey, **fields) -> User:
 
 def make_attendance_paused(**fields) -> User:
     return make_user(
-        is_member=False,
         membership_status=MembershipStatus.ATTENDANCE_PAUSED,
         attendance_paused_at=timezone.now(),
         **fields,

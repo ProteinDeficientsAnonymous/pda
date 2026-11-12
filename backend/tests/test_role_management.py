@@ -193,7 +193,6 @@ class TestNonMemberCannotHoldRole:
             phone_number="+12025559001",
             first_name="Non",
             last_name="Member",
-            is_member=False,
             membership_status=MembershipStatus.NONE,
         )
 

@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from community.join_requests.approval import maybe_promote_tentative
-from community.models import JoinRequestStatus
+from community.models import JoinRequest, JoinRequestStatus
 from django.utils import timezone
 from users.models import MembershipStatus, Role
 
@@ -35,6 +35,24 @@ def _decide(api_client, headers, join_request, status):
     )
     assert response.status_code == 200
     return response.json()
+
+
+def test_archived_member_can_submit_join_form(api_client, why_join_id, archived_member):
+    response = api_client.post(
+        "/api/community/join-request/",
+        {
+            "first_name": "Coming",
+            "last_name": "Back",
+            "phone_number": PHONE,
+            "email": "comingback@example.com",
+            "answers": {why_join_id: "i want to return"},
+            "sms_consent": True,
+            "guidelines_consent": True,
+        },
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    assert JoinRequest.objects.get(phone_number=PHONE).status == JoinRequestStatus.PENDING
 
 
 def test_marking_tentative_unarchives(

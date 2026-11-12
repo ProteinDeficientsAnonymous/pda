@@ -31,7 +31,6 @@ class TestPromotePublicRsvper:
             phone_number="+12025551900",
             first_name="Rsvper",
             email="public@example.com",
-            is_member=False,
             membership_status=MembershipStatus.NONE,
         )
         PublicRsvpToken.issue(user)
@@ -151,7 +150,6 @@ class TestPromoteTentativeMember:
         user = User.objects.create_user(
             phone_number="+12025551901",
             first_name="Temp",
-            is_member=False,
             membership_status=MembershipStatus.NONE,
         )
         user.first_name = ""
