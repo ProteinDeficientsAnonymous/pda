@@ -191,9 +191,15 @@ class TestMemberAttendanceAnalyticsEndpoint:
         assert ids.index(str(candidate.pk)) < ids.index(str(compliant.pk))
 
     @pytest.mark.parametrize(
-        "status", [MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED]
+        ("status", "flag"),
+        [
+            (MembershipStatus.GUIDELINES_PAUSED, "is_guidelines_paused"),
+            (MembershipStatus.ATTENDANCE_PAUSED, "is_attendance_paused"),
+        ],
     )
-    def test_paused_member_included_and_labeled(self, api_client, host_user, events_admin, status):
+    def test_paused_member_included_and_labeled(
+        self, api_client, host_user, events_admin, status, flag
+    ):
         paused = User.objects.create_user(
             phone_number="+12025552002",
             password="x",
@@ -202,7 +208,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         )
         response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(paused.pk))
-        assert row["is_paused"] is True
+        assert row[flag] is True
         assert row["is_pause_candidate"] is False
 
     def test_archived_member_excluded(self, api_client, events_admin):

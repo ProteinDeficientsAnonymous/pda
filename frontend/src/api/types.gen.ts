@@ -4859,13 +4859,15 @@ export interface components {
             didnt_go_count: number;
             /** Full Name */
             full_name: string;
+            /** Is Attendance Paused */
+            is_attendance_paused: boolean;
+            /** Is Guidelines Paused */
+            is_guidelines_paused: boolean;
             /**
              * Is Pause Candidate
              * @default false
              */
             is_pause_candidate: boolean;
-            /** Is Paused */
-            is_paused: boolean;
             /** Last Qualifying At */
             last_qualifying_at?: string | null;
             /** Months Since Last Qualifying */
@@ -6024,11 +6026,6 @@ export interface components {
              */
             is_member: boolean;
             /**
-             * Is Paused
-             * @default false
-             */
-            is_paused: boolean;
-            /**
              * Is Superuser
              * @default false
              */
@@ -6152,10 +6149,10 @@ export interface components {
             email?: string | null;
             /** First Name */
             first_name?: string | null;
+            /** Guidelines Paused */
+            guidelines_paused?: boolean | null;
             /** Has Joined Whatsapp */
             has_joined_whatsapp?: boolean | null;
-            /** Is Paused */
-            is_paused?: boolean | null;
             /** Last Name */
             last_name?: string | null;
             /** Phone Number */
