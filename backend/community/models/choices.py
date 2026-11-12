@@ -137,6 +137,13 @@ class RSVPStatus(models.TextChoices):
     REMOVED = "removed", "Removed"
 
 
+class CancelReason(models.TextChoices):
+    SELF = "self", "Self"
+    HOST = "host", "Host"
+    PAUSE = "pause", "Pause"
+    ARCHIVE = "archive", "Archive"
+
+
 # Guests a payment import can match and verify.
 MATCHABLE_RSVP_STATUSES = frozenset({RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED})
 

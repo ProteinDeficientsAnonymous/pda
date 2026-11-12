@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community.models import EventRSVP, EventStatus, EventType, RSVPStatus
+from community.models import CancelReason, EventRSVP, EventStatus, EventType, RSVPStatus
 from django.utils import timezone
 from tests._events import make_event, make_rsvp
 from users._archive import release_upcoming_rsvps
@@ -81,7 +81,7 @@ class TestArchiveHelperEventFilter:
         make_rsvp(official, member)
         make_rsvp(community, member)
 
-        release_upcoming_rsvps(rf.get("/"), member, ~KEPT_RSVP_EVENT_Q)
+        release_upcoming_rsvps(rf.get("/"), member, CancelReason.PAUSE, ~KEPT_RSVP_EVENT_Q)
 
         assert EventRSVP.objects.get(event=official, user=member).status == RSVPStatus.ATTENDING
         assert EventRSVP.objects.get(event=community, user=member).status == RSVPStatus.CANT_GO

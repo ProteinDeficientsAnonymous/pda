@@ -4,14 +4,18 @@ from datetime import timedelta
 
 import pytest
 from community.events.helpers import cancellations
-from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
+from community.models import AttendanceStatus, CancelReason, Event, EventRSVP, RSVPStatus
 from community.rsvps.counts import (
     count_attended,
     count_didnt_go,
     count_no_response,
     count_no_shows,
 )
-from community.rsvps.member import resolve_cancelled_at, resolve_pre_cancel_status
+from community.rsvps.member import (
+    resolve_cancel_reason,
+    resolve_cancelled_at,
+    resolve_pre_cancel_status,
+)
 from django.conf import settings
 from django.utils import timezone
 
@@ -204,6 +208,34 @@ class TestResolveCancelledAt:
             cancelled_at=cancelled,
         )
         assert resolve_cancelled_at(rsvp, RSVPStatus.CANT_GO) == cancelled
+
+
+@pytest.mark.django_db
+class TestResolveCancelReason:
+    def test_new_cant_go_takes_the_given_reason(self):
+        assert (
+            resolve_cancel_reason(None, RSVPStatus.CANT_GO, CancelReason.HOST) == CancelReason.HOST
+        )
+
+    def test_clears_when_leaving_cant_go(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event,
+            user=members[0],
+            status=RSVPStatus.CANT_GO,
+            cancel_reason=CancelReason.PAUSE,
+        )
+        assert resolve_cancel_reason(rsvp, RSVPStatus.ATTENDING, CancelReason.SELF) is None
+
+    def test_keeps_the_original_reason_when_still_cant_go(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event,
+            user=members[0],
+            status=RSVPStatus.CANT_GO,
+            cancel_reason=CancelReason.PAUSE,
+        )
+        assert (
+            resolve_cancel_reason(rsvp, RSVPStatus.CANT_GO, CancelReason.HOST) == CancelReason.PAUSE
+        )
 
 
 @pytest.mark.django_db

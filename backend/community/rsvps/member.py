@@ -29,7 +29,7 @@ from community.events.limited_access import (
 )
 from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import EventOut, RSVPIn
-from community.models import Event, EventComment, EventRSVP, RSVPStatus
+from community.models import CancelReason, Event, EventComment, EventRSVP, RSVPStatus
 from community.rsvps.answers import (
     AnswersIn,
     answers_required_for_status,
@@ -147,6 +147,17 @@ def resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
     if existing is not None and existing.status == RSVPStatus.CANT_GO:
         return existing.cancelled_at
     return timezone.now()
+
+
+def resolve_cancel_reason(
+    existing: EventRSVP | None, final_status: str, reason: CancelReason
+) -> str | None:
+    """Kept, cleared and stamped in step with resolve_cancelled_at."""
+    if final_status != RSVPStatus.CANT_GO:
+        return None
+    if existing is not None and existing.status == RSVPStatus.CANT_GO:
+        return existing.cancel_reason
+    return reason
 
 
 def resolve_pre_cancel_status(existing: EventRSVP | None, final_status: str) -> str | None:
@@ -348,6 +359,7 @@ def apply_rsvp_in_transaction(event_id, user, rsvp: RsvpApply) -> tuple[str, lis
             "status": final_status,
             "has_plus_one": final_plus_one,
             "cancelled_at": resolve_cancelled_at(existing, final_status),
+            "cancel_reason": resolve_cancel_reason(existing, final_status, CancelReason.SELF),
             "pre_cancel_status": resolve_pre_cancel_status(existing, final_status),
             "paid_confirmed_at": new_confirmed_at,
             "questionnaire_responses": answers_snapshot,
