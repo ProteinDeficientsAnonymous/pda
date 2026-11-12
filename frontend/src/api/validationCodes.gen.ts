@@ -114,7 +114,9 @@ export const Code = {
   Auth: {
     InvalidCredentials: 'auth.invalid_credentials',
     AccountArchived: 'auth.account_archived',
-    AccountPaused: 'auth.account_paused',
+    AccountGuidelinesPaused: 'auth.account_guidelines_paused',
+    AccountRejected: 'auth.account_rejected',
+    NotAMember: 'auth.not_a_member',
     MagicLinkInvalidOrExpired: 'auth.magic_link_invalid_or_expired',
     MagicLinkAlreadyUsed: 'auth.magic_link_already_used',
     AlreadySignedInAsDifferentUser: 'auth.already_signed_in_as_different_user',
@@ -152,6 +154,7 @@ export const Code = {
     CannotHardDeleteLoggedIn: 'user.cannot_hard_delete_logged_in',
     CannotPauseSelf: 'user.cannot_pause_self',
     CannotPauseAdmin: 'user.cannot_pause_admin',
+    GuidelinesPaused: 'user.guidelines_paused',
     RoleIdsNotFound: 'user.role_ids_not_found',
     InvalidBirthday: 'user.invalid_birthday',
     InvalidVeganniversary: 'user.invalid_veganniversary',
@@ -186,6 +189,7 @@ export const Code = {
   JoinRequest: {
     NotFound: 'join_request.not_found',
     AlreadyDecided: 'join_request.already_decided',
+    TentativeCannotBeRejected: 'join_request.tentative_cannot_be_rejected',
     OnlyRejectedCanBeUnRejected: 'join_request.only_rejected_can_be_un_rejected',
     AlreadyMember: 'join_request.already_member',
     PhoneAlreadyInvited: 'join_request.phone_already_invited',
@@ -399,7 +403,9 @@ export type ValidationCode =
   | 'display_name.needs_a_letter'
   | 'auth.invalid_credentials'
   | 'auth.account_archived'
-  | 'auth.account_paused'
+  | 'auth.account_guidelines_paused'
+  | 'auth.account_rejected'
+  | 'auth.not_a_member'
   | 'auth.magic_link_invalid_or_expired'
   | 'auth.magic_link_already_used'
   | 'auth.already_signed_in_as_different_user'
@@ -429,6 +435,7 @@ export type ValidationCode =
   | 'user.cannot_hard_delete_logged_in'
   | 'user.cannot_pause_self'
   | 'user.cannot_pause_admin'
+  | 'user.guidelines_paused'
   | 'user.role_ids_not_found'
   | 'user.invalid_birthday'
   | 'user.invalid_veganniversary'
@@ -459,6 +466,7 @@ export type ValidationCode =
   | 'survey.condition_source_in_use'
   | 'join_request.not_found'
   | 'join_request.already_decided'
+  | 'join_request.tentative_cannot_be_rejected'
   | 'join_request.only_rejected_can_be_un_rejected'
   | 'join_request.already_member'
   | 'join_request.phone_already_invited'
@@ -626,7 +634,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'display_name.needs_a_letter': [],
   'auth.invalid_credentials': [],
   'auth.account_archived': [],
-  'auth.account_paused': [],
+  'auth.account_guidelines_paused': [],
+  'auth.account_rejected': [],
+  'auth.not_a_member': [],
   'auth.magic_link_invalid_or_expired': [],
   'auth.magic_link_already_used': [],
   'auth.already_signed_in_as_different_user': [],
@@ -656,6 +666,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'user.cannot_hard_delete_logged_in': [],
   'user.cannot_pause_self': [],
   'user.cannot_pause_admin': [],
+  'user.guidelines_paused': [],
   'user.role_ids_not_found': [],
   'user.invalid_birthday': [],
   'user.invalid_veganniversary': [],
@@ -686,6 +697,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.condition_source_in_use': ['label'],
   'join_request.not_found': [],
   'join_request.already_decided': [],
+  'join_request.tentative_cannot_be_rejected': [],
   'join_request.only_rejected_can_be_un_rejected': [],
   'join_request.already_member': [],
   'join_request.phone_already_invited': [],

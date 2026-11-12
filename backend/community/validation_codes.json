@@ -488,8 +488,18 @@
         "params": []
       },
       {
-        "name": "ACCOUNT_PAUSED",
-        "value": "auth.account_paused",
+        "name": "ACCOUNT_GUIDELINES_PAUSED",
+        "value": "auth.account_guidelines_paused",
+        "params": []
+      },
+      {
+        "name": "ACCOUNT_REJECTED",
+        "value": "auth.account_rejected",
+        "params": []
+      },
+      {
+        "name": "NOT_A_MEMBER",
+        "value": "auth.not_a_member",
         "params": []
       },
       {
@@ -647,6 +657,11 @@
       {
         "name": "CANNOT_PAUSE_ADMIN",
         "value": "user.cannot_pause_admin",
+        "params": []
+      },
+      {
+        "name": "GUIDELINES_PAUSED",
+        "value": "user.guidelines_paused",
         "params": []
       },
       {
@@ -828,6 +843,11 @@
       {
         "name": "ALREADY_DECIDED",
         "value": "join_request.already_decided",
+        "params": []
+      },
+      {
+        "name": "TENTATIVE_CANNOT_BE_REJECTED",
+        "value": "join_request.tentative_cannot_be_rejected",
         "params": []
       },
       {

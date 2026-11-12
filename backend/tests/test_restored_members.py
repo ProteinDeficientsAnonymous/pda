@@ -68,9 +68,8 @@ class TestRestoredMembers:
         "fields",
         [
             {"archived_at": timezone.now(), "membership_status": MembershipStatus.ARCHIVED},
-            {"is_paused": True, "membership_status": MembershipStatus.GUIDELINES_PAUSED},
+            {"membership_status": MembershipStatus.GUIDELINES_PAUSED},
             {
-                "is_member": False,
                 "membership_status": MembershipStatus.ATTENDANCE_PAUSED,
                 "attendance_paused_at": timezone.now(),
             },

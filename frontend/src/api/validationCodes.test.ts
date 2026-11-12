@@ -53,6 +53,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says to lift a guidelines pause before an attendance pause', () => {
+    expect(messageForCode({ code: Code.User.GuidelinesPaused, field: 'attendance_paused' })).toBe(
+      'lift the guidelines pause before pausing for attendance',
+    );
+  });
+
   it('explains an empty cash app csv', () => {
     expect(messageForCode({ code: Code.CashAppImport.CsvEmpty, field: null })).toMatch(
       /doesn't have any rows/,
@@ -169,6 +175,12 @@ describe('messageForCode', () => {
     expect(messageForCode({ code: Code.MemberRestoredEmail.BodyTooLong, field: 'body' })).toBe(
       'welcome back email is too long',
     );
+  });
+
+  it('says a tentative request is archived, not rejected', () => {
+    expect(
+      messageForCode({ code: Code.JoinRequest.TentativeCannotBeRejected, field: null }),
+    ).toMatch(/archive them from the members screen/);
   });
 
   it('points to the existing open join request', () => {

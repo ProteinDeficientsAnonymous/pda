@@ -85,6 +85,8 @@ PAUSED_STATUSES = (MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDAN
 FULL_MEMBER_STATUSES = (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.GUIDELINES_PAUSED)
 SIGN_IN_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
 MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
+# The admin members screen lists tentative people too, so they can be archived.
+MANAGED_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
 
 
 class WeekStart:
@@ -110,15 +112,13 @@ class UserManager(BaseUserManager):
         """
         return self.get_queryset().filter(membership_status__in=MEMBER_STATUSES)
 
-    def members_or_attendance_paused(self):
-        """Members plus attendance-paused ex-members, who admins still manage as members."""
-        return self.get_queryset().filter(
-            models.Q(is_member=True) | models.Q(attendance_paused_at__isnull=False)
-        )
-
     def members_or_archived(self):
         """Members plus archived members: everyone admins manage as members."""
         return self.get_queryset().filter(membership_status__in=MEMBER_OR_ARCHIVED)
+
+    def managed(self):
+        """Everyone on the admin members screen: members and tentative people."""
+        return self.get_queryset().filter(membership_status__in=MANAGED_STATUSES)
 
     def active_members(self):
         """Members for member-facing surfaces; the directory also drops onboarding-pending ones."""
@@ -126,7 +126,6 @@ class UserManager(BaseUserManager):
         return self.get_queryset().filter(
             membership_status=MembershipStatus.ACTIVE_MEMBER,
             is_active=True,
-            is_paused=False,
             archived_at__isnull=True,
         )
 
@@ -153,7 +152,6 @@ class UserManager(BaseUserManager):
     def create_superuser(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("is_member", True)
         extra_fields.setdefault("membership_status", MembershipStatus.ACTIVE_MEMBER)
         return self.create_user(phone_number, password, **extra_fields)
 
@@ -163,8 +161,6 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=20, unique=True)
     first_name = models.CharField(max_length=64, blank=True, default="")
     last_name = models.CharField(max_length=64, blank=True, default="")
-    # Defaults False; non-members are excluded via objects.members().
-    is_member = models.BooleanField(default=False, db_index=True)
     membership_status = models.CharField(
         max_length=20,
         choices=MembershipStatus.choices,
@@ -211,7 +207,6 @@ class User(AbstractUser):
     attendance_nudge_opt_out = models.BooleanField(default=False)
     host_digest_opt_out = models.BooleanField(default=False)
     host_digest_last_sent_at = models.DateTimeField(null=True, blank=True)
-    is_paused = models.BooleanField(default=False)
     attendance_paused_at = models.DateTimeField(null=True, blank=True)
     restored_at = models.DateTimeField(null=True, blank=True)
     unpaused_at = models.DateTimeField(null=True, blank=True)
@@ -262,6 +257,24 @@ class User(AbstractUser):
             self.membership_status_changed_at = timezone.now()
             self.membership_status_changed_by = by
         return list(STATUS_CHANGE_FIELDS)
+
+    def apply_guidelines_pause(self, *, by: "User | None") -> list[str]:
+        """A guidelines pause replaces any attendance pause."""
+        self.attendance_paused_at = None
+        self.unpaused_at = None
+        self.has_joined_whatsapp = False
+        status_fields = self.set_membership_status(MembershipStatus.GUIDELINES_PAUSED, by=by)
+        return ["attendance_paused_at", "unpaused_at", "has_joined_whatsapp", *status_fields]
+
+    def lift_guidelines_pause(self, *, by: "User | None") -> list[str]:
+        # Lifting leaves them limited until a compliant in-person check-in.
+        self.attendance_paused_at = timezone.now()
+        status_fields = self.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED, by=by)
+        return ["attendance_paused_at", *status_fields]
+
+    @property
+    def is_member(self) -> bool:
+        return self.membership_status in MEMBER_STATUSES
 
     @property
     def is_guidelines_paused(self) -> bool:
@@ -404,7 +417,7 @@ class PublicRsvpToken(models.Model):
         Rejects members — a converted/existing member must use the member flow,
         not the scoped non-member RSVP link.
         """
-        if user.is_member:
+        if user.membership_status in FULL_MEMBER_STATUSES:
             raise ValidationError("Cannot issue a non-member RSVP token for a member.")
         return cls.objects.create(
             user=user,
@@ -419,7 +432,7 @@ class PublicRsvpToken(models.Model):
         Extends the newest valid token still within its absolute lifetime (so an
         emailed link keeps resolving), else issues a fresh one. Rejects members.
         """
-        if user.is_member:
+        if user.membership_status in FULL_MEMBER_STATUSES:
             raise ValidationError("Cannot issue a non-member RSVP token for a member.")
         existing = user.rsvp_tokens.first()
         max_age_cutoff = timezone.now() - timedelta(days=PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS)
@@ -441,7 +454,7 @@ class PublicRsvpToken(models.Model):
         if not token:
             return None
         row = cls.objects.select_related("user").filter(token=token).first()
-        if row is None or not row.is_valid or row.user.is_paused:
+        if row is None or not row.is_valid or row.user.is_guidelines_paused:
             return None
         return row.user
 

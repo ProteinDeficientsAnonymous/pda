@@ -1,6 +1,8 @@
+from datetime import datetime, timedelta
+
 import pytest
 from community.join_requests.approval import maybe_promote_tentative
-from community.models import JoinRequestStatus
+from community.models import JoinRequest, JoinRequestStatus
 from django.utils import timezone
 from users.models import MembershipStatus, Role
 
@@ -33,6 +35,24 @@ def _decide(api_client, headers, join_request, status):
     )
     assert response.status_code == 200
     return response.json()
+
+
+def test_archived_member_can_submit_join_form(api_client, why_join_id, archived_member):
+    response = api_client.post(
+        "/api/community/join-request/",
+        {
+            "first_name": "Coming",
+            "last_name": "Back",
+            "phone_number": PHONE,
+            "email": "comingback@example.com",
+            "answers": {why_join_id: "i want to return"},
+            "sms_consent": True,
+            "guidelines_consent": True,
+        },
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    assert JoinRequest.objects.get(phone_number=PHONE).status == JoinRequestStatus.PENDING
 
 
 def test_marking_tentative_unarchives(
@@ -76,6 +96,42 @@ def test_marking_tentative_keeps_an_archived_pause(
     assert paused.membership_status == status
     assert paused.archived_at is None
     assert paused.status_before_archive is None
+
+
+def _listed(api_client, headers, join_request):
+    response = api_client.get("/api/community/join-requests/", **headers)
+    assert response.status_code == 200
+    return next(r for r in response.json() if r["id"] == str(join_request.id))
+
+
+def test_card_shows_who_archived_them_and_when(
+    api_client, vettor_headers, sample_join_request, archived_member
+):
+    row = _listed(api_client, vettor_headers, sample_join_request)
+    assert row["previously_archived"] is True
+    assert row["previous_archive"]["archived_by_name"] == "Vettor"
+    archived_at = datetime.fromisoformat(row["previous_archive"]["archived_at"])
+    assert abs(archived_at - archived_member.archived_at) < timedelta(seconds=1)
+    assert row["previous_archive"]["paused_status"] is None
+
+
+@pytest.mark.parametrize(
+    "status", [MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED]
+)
+def test_card_names_the_pause_they_were_archived_under(
+    api_client, vettor_headers, sample_join_request, status
+):
+    make_user(phone_number=PHONE, archived_at=timezone.now(), status_before_archive=status)
+    row = _listed(api_client, vettor_headers, sample_join_request)
+    assert row["previous_archive"]["paused_status"] == status
+
+
+def test_card_has_no_archive_for_a_first_time_applicant(
+    api_client, vettor_headers, sample_join_request
+):
+    row = _listed(api_client, vettor_headers, sample_join_request)
+    assert row["previously_archived"] is False
+    assert row["previous_archive"] is None
 
 
 def test_check_in_does_not_promote_a_guidelines_paused_tentative(

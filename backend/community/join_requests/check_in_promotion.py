@@ -30,8 +30,10 @@ class CheckInOutcome(StrEnum):
 
 def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome | None:
     """Promote a tentative applicant or restore an attendance-paused member on their check-in."""
-    # Nobody vouches for their own check-in.
-    if user.pk == request.auth.pk or not is_official_or_club(event.event_type):
+    # Nobody vouches for their own check-in; an archived user comes back only through a vetter.
+    if user.pk == request.auth.pk or user.archived_at is not None:
+        return None
+    if not is_official_or_club(event.event_type):
         return None
     if user.membership_status == MembershipStatus.ATTENDANCE_PAUSED:
         return CheckInOutcome.RESTORED if _restore_attendance_paused(request, user) else None
@@ -52,9 +54,8 @@ def _restore_attendance_paused(request, user: User) -> bool:
     user.attendance_paused_at = None
     user.attendance_grace_notified_at = None
     user.restored_at = timezone.now()
-    user.is_member = True
     # Saved before grant_membership: roles on non-members are rejected.
-    fields = ["attendance_paused_at", "attendance_grace_notified_at", "restored_at", "is_member"]
+    fields = ["attendance_paused_at", "attendance_grace_notified_at", "restored_at"]
     user.save(
         update_fields=[
             *fields,

@@ -202,7 +202,6 @@ def test_seed_staging_reset_removes_only_scoped_rows():
         phone_number="+17025559999",
         first_name="real",
         last_name="person",
-        is_member=True,
         membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
     call_command("seed_staging")
@@ -270,9 +269,7 @@ def test_seed_staging_reset_removes_approval_created_join_request_users():
     # then collides with the reseeded pending request and suppresses the welcome
     # modal (no token minted). --reset must clear the join-request band's users too.
     orphan = User.objects.create(
-        phone_number=joinreq_phone(0),
-        is_member=True,
-        membership_status=MembershipStatus.ACTIVE_MEMBER,
+        phone_number=joinreq_phone(0), membership_status=MembershipStatus.ACTIVE_MEMBER
     )
     call_command("seed_staging", "--reset")
     assert not User.objects.filter(phone_number=joinreq_phone(0)).exists()
@@ -379,17 +376,9 @@ def test_seed_staging_creates_join_requests_matching_specs():
         assert bool(jr.email) is spec.has_email
         assert jr.sms_consent_at is not None
         assert jr.guidelines_consent_at is not None
-        if spec.status == JoinRequestStatus.APPROVED:
-            assert jr.approved_at is not None
-            assert jr.approved_by is not None
-            assert jr.rejected_at is None
-        elif spec.status == JoinRequestStatus.REJECTED:
-            assert jr.rejected_at is not None
-            assert jr.rejected_by is not None
-            assert jr.approved_at is None
-        else:
-            assert jr.approved_at is None
-            assert jr.rejected_at is None
+        decided = spec.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED)
+        assert (jr.status_changed_at is not None) is decided
+        assert (jr.status_changed_by is not None) is decided
 
 
 @pytest.mark.django_db

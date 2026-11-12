@@ -1,3 +1,21 @@
+# [0.229.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.228.0...v0.229.0) (2026-11-12)
+
+
+### Bug Fixes
+
+* **users:** a guidelines pause clears has_joined_whatsapp; lifting it leaves the flag ([32cf2e9](https://github.com/ProteinDeficientsAnonymous/pda/commit/32cf2e93cff6e42b2a6c89015700dd68182299d4))
+* **users:** lifting a guidelines pause clears is_member with the attendance pause it leaves ([4aaea8d](https://github.com/ProteinDeficientsAnonymous/pda/commit/4aaea8dc6b85cabf0e0ad1bcc797d5bfcdeeb889))
+* **users:** refuse an attendance pause while guidelines-paused, and keep archived users off is_member ([f0d58a1](https://github.com/ProteinDeficientsAnonymous/pda/commit/f0d58a1d5a9686201db3f4ef652e20a85e57d1b3))
+
+
+### Features
+
+* **users:** a guidelines pause is a membership status, exclusive with the attendance pause ([e302a5c](https://github.com/ProteinDeficientsAnonymous/pda/commit/e302a5cd520776421252fbeca5b454ddae4ba574))
+* **users:** a guidelines pause is a membership status, exclusive with the attendance pause ([dfd5d81](https://github.com/ProteinDeficientsAnonymous/pda/commit/dfd5d8164544c904f5fb64fc02fed43f441330c5))
+* **users:** a guidelines pause is a membership status; the attendance report reads it ([#2373](https://github.com/ProteinDeficientsAnonymous/pda/issues/2373)) ([16fd669](https://github.com/ProteinDeficientsAnonymous/pda/commit/16fd66994998820458fbf711edad23c3635e10dd))
+* **users:** drop the is_member sync from the guidelines pause ([e5c4573](https://github.com/ProteinDeficientsAnonymous/pda/commit/e5c457335edd6b392e3ff1190a8aba5ea3d5ad61))
+* **users:** refuse an attendance pause on a guidelines-paused member ([#2352](https://github.com/ProteinDeficientsAnonymous/pda/issues/2352)) ([8edd987](https://github.com/ProteinDeficientsAnonymous/pda/commit/8edd987a49f50f36e071cbf615dc15d9e1539dd9))
+
 # [0.228.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.227.3...v0.228.0) (2026-11-11)
 
 

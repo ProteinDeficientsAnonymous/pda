@@ -325,22 +325,6 @@
         "title": "AttendanceMarkOut",
         "type": "object"
       },
-      "AttendancePausePreviewOut": {
-        "properties": {
-          "events": {
-            "items": {
-              "$ref": "#/components/schemas/PauseImpactEventOut"
-            },
-            "title": "Events",
-            "type": "array"
-          }
-        },
-        "required": [
-          "events"
-        ],
-        "title": "AttendancePausePreviewOut",
-        "type": "object"
-      },
       "AttendanceReportOut": {
         "properties": {
           "club_no_show_count": {
@@ -4579,29 +4563,6 @@
             "title": "Answers",
             "type": "array"
           },
-          "approved_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Approved At"
-          },
-          "approved_by_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Approved By Name"
-          },
           "approved_via_event_id": {
             "anyOf": [
               {
@@ -4682,6 +4643,26 @@
             "title": "Phone Number",
             "type": "string"
           },
+          "previous_archive": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreviousArchiveOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "previous_rejection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreviousRejectionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "previously_archived": {
             "default": false,
             "title": "Previously Archived",
@@ -4691,29 +4672,6 @@
             "default": false,
             "title": "Previously Rejected",
             "type": "boolean"
-          },
-          "rejected_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rejected At"
-          },
-          "rejected_by_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rejected By Name"
           },
           "rejection_note": {
             "default": "",
@@ -4737,12 +4695,7 @@
             "title": "Status",
             "type": "string"
           },
-          "submitted_at": {
-            "format": "date-time",
-            "title": "Submitted At",
-            "type": "string"
-          },
-          "tentative_at": {
+          "status_changed_at": {
             "anyOf": [
               {
                 "format": "date-time",
@@ -4752,9 +4705,9 @@
                 "type": "null"
               }
             ],
-            "title": "Tentative At"
+            "title": "Status Changed At"
           },
-          "tentative_by_name": {
+          "status_changed_by_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -4763,7 +4716,12 @@
                 "type": "null"
               }
             ],
-            "title": "Tentative By Name"
+            "title": "Status Changed By Name"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
           },
           "upcoming_club_count": {
             "default": 0,
@@ -5253,13 +5211,17 @@
             "title": "Full Name",
             "type": "string"
           },
+          "is_attendance_paused": {
+            "title": "Is Attendance Paused",
+            "type": "boolean"
+          },
+          "is_guidelines_paused": {
+            "title": "Is Guidelines Paused",
+            "type": "boolean"
+          },
           "is_pause_candidate": {
             "default": false,
             "title": "Is Pause Candidate",
-            "type": "boolean"
-          },
-          "is_paused": {
-            "title": "Is Paused",
             "type": "boolean"
           },
           "last_qualifying_at": {
@@ -5303,7 +5265,8 @@
           "user_id",
           "full_name",
           "phone_number",
-          "is_paused"
+          "is_guidelines_paused",
+          "is_attendance_paused"
         ],
         "title": "MemberAttendanceRowOut",
         "type": "object"
@@ -5782,6 +5745,22 @@
         "title": "PauseOutcome",
         "type": "string"
       },
+      "PausePreviewOut": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/PauseImpactEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "PausePreviewOut",
+        "type": "object"
+      },
       "PauseRole": {
         "enum": [
           "rsvp",
@@ -5876,6 +5855,84 @@
           "total_responses"
         ],
         "title": "PollResultsOut",
+        "type": "object"
+      },
+      "PreviousArchiveOut": {
+        "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "archived_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived By Name"
+          },
+          "paused_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MembershipStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "PreviousArchiveOut",
+        "type": "object"
+      },
+      "PreviousRejectionOut": {
+        "properties": {
+          "rejection_note": {
+            "default": "",
+            "title": "Rejection Note",
+            "type": "string"
+          },
+          "rejection_reason": {
+            "default": "",
+            "title": "Rejection Reason",
+            "type": "string"
+          },
+          "status_changed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Changed At"
+          },
+          "status_changed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Changed By Name"
+          }
+        },
+        "title": "PreviousRejectionOut",
         "type": "object"
       },
       "PublicRsvpIn": {
@@ -8078,11 +8135,6 @@
             "title": "Is Member",
             "type": "boolean"
           },
-          "is_paused": {
-            "default": false,
-            "title": "Is Paused",
-            "type": "boolean"
-          },
           "is_superuser": {
             "default": false,
             "title": "Is Superuser",
@@ -8306,6 +8358,17 @@
             ],
             "title": "First Name"
           },
+          "guidelines_paused": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guidelines Paused"
+          },
           "has_joined_whatsapp": {
             "anyOf": [
               {
@@ -8316,17 +8379,6 @@
               }
             ],
             "title": "Has Joined Whatsapp"
-          },
-          "is_paused": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Paused"
           },
           "last_name": {
             "anyOf": [
@@ -9886,7 +9938,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AttendancePausePreviewOut"
+                  "$ref": "#/components/schemas/PausePreviewOut"
                 }
               }
             },
@@ -9980,6 +10032,64 @@
           }
         ],
         "summary": "List Member Attended Events",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/users/{user_id}/guidelines-pause-preview/": {
+      "get": {
+        "operationId": "users__attendance_pause_api_guidelines_pause_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PausePreviewOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Guidelines Pause Preview",
         "tags": [
           "auth"
         ]
@@ -17069,6 +17179,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
           },
           "422": {
             "content": {

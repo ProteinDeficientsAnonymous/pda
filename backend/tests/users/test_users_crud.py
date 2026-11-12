@@ -306,7 +306,6 @@ class TestSearchUsers:
             User(
                 phone_number=f"+1555001{i:04d}",
                 first_name=f"Searchable User {i}",
-                is_member=True,
                 membership_status=MembershipStatus.ACTIVE_MEMBER,
             )
             for i in range(11)
@@ -319,16 +318,13 @@ class TestSearchUsers:
         assert len(response.json()) <= 10
 
     def test_search_excludes_paused_users(self, api_client, auth_headers, other_user):
-        other_user.is_paused = True
-        other_user.save(update_fields=["is_paused"])
+        other_user.save(update_fields=other_user.apply_guidelines_pause(by=None))
         response = api_client.get("/api/auth/users/search/?q=Other", **auth_headers)
         assert response.status_code == 200
         ids = [u["id"] for u in response.json()]
         assert str(other_user.pk) not in ids
 
     def test_search_excludes_non_members(self, api_client, auth_headers, other_user):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
         other_user.save(
             update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
         )

@@ -11,10 +11,11 @@ from community.validation import Code, ValidationException, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
+from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
 
-from users._attendance_pause import apply_attendance_pause_patch
+from users._attendance_pause import apply_attendance_pause_patch, release_held_events
 from users._unpause import has_pause, mark_unpaused
 from users.helpers import (
     check_and_set_email,
@@ -22,7 +23,6 @@ from users.helpers import (
     create_user_with_role,
     is_admin,
     resolve_name_fields,
-    strip_elevated_roles,
     validate_admin_role_change,
     validate_member_role_required,
     visible_name,
@@ -160,7 +160,6 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
 
         user = User.objects.create_user(
             phone_number=validated_phone,
-            is_member=True,
             membership_status=MembershipStatus.ACTIVE_MEMBER,
             needs_onboarding=True,
             **status_change_stamp(request.auth),
@@ -255,10 +254,8 @@ def list_users(request, include_non_members: bool = False):
     # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
     reportable = reportable_events_q(prefix="event_rsvps__event")
-    # Default is members plus attendance-paused; the opt-in adds public-RSVP non-members.
-    base = (
-        User.objects.all() if include_non_members else User.objects.members_or_attendance_paused()
-    )
+    # The opt-in adds public-RSVP non-members.
+    base = User.objects.all() if include_non_members else User.objects.managed()
     users = (
         base.filter(archived_at__isnull=True)
         .prefetch_related("roles")
@@ -310,12 +307,15 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
-    old_is_paused = user.is_paused
+    was_guidelines_paused = user.is_guidelines_paused
     was_paused = has_pause(user)
-    _apply_user_patch(user, user_id, payload, requester_id=str(request.auth.pk))
-    user.save()
-
-    _audit_user_update(request, user, user_id, payload, old_is_paused)
+    _apply_user_patch(user, user_id, payload, requester=request.auth)
+    with transaction.atomic():
+        user.save()
+        released = None
+        if payload.guidelines_paused and not was_guidelines_paused:
+            released = release_held_events(request, user, MembershipStatus.GUIDELINES_PAUSED)[1]
+        _audit_user_update(request, user_id, payload, was_guidelines_paused, released)
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
     if was_paused and not has_pause(user):
@@ -324,22 +324,23 @@ def update_user(request, user_id: str, payload: UserPatchIn):
 
 
 def _audit_user_update(
-    request, user: User, user_id: str, payload: UserPatchIn, old_is_paused: bool
+    request, user_id: str, payload: UserPatchIn, was_guidelines_paused: bool, released: dict | None
 ) -> None:
     """Emit the audit entry for an update_user PATCH.
 
-    A pause transition takes priority — pausing also strips non-member roles and
-    records the removed ids. Otherwise a plain field change logs user_updated.
+    A pause transition takes priority, recording what the pause released. Otherwise a
+    plain field change logs user_updated.
     """
-    is_pause_transition = payload.is_paused is not None and payload.is_paused != old_is_paused
+    is_pause_transition = (
+        payload.guidelines_paused is not None and payload.guidelines_paused != was_guidelines_paused
+    )
     if is_pause_transition:
-        action = "user_paused" if payload.is_paused else "user_unpaused"
-        details = {"removed_role_ids": strip_elevated_roles(user)} if payload.is_paused else None
+        action = "user_paused" if payload.guidelines_paused else "user_unpaused"
         audit_log(
             logging.WARNING,
             action,
             request,
-            target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=details),
+            target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=released),
         )
         return
 
@@ -366,8 +367,8 @@ def _patch_phone(user: User, user_id: str, phone_number: str) -> None:
     user.phone_number = validate_phone(phone_number, ADMIN_ENTERED_PHONE_REGION)
 
 
-def _validate_pause_change(user: User, is_paused: bool | None, requester_id: str) -> None:
-    if not is_paused:
+def _validate_pause_change(user: User, paused: bool | None, requester_id: str) -> None:
+    if not paused:
         return
     if requester_id == str(user.pk):
         raise_validation(Code.User.CANNOT_PAUSE_SELF, status_code=400)
@@ -375,21 +376,37 @@ def _validate_pause_change(user: User, is_paused: bool | None, requester_id: str
         raise_validation(Code.User.CANNOT_PAUSE_ADMIN, status_code=400)
 
 
-def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_id: str) -> None:
+def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester: User) -> None:
     """Apply UserPatchIn fields to user. Raises ValidationException on invalid input."""
+    requester_id = str(requester.pk)
     if payload.phone_number is not None:
         _patch_phone(user, user_id, payload.phone_number)
     resolve_name_fields(user, payload)
     if payload.email is not None:
         check_and_set_email(user, payload.email, exclude_pk=user_id)
-    _validate_pause_change(user, payload.is_paused, requester_id)
+    _validate_pause_change(user, payload.guidelines_paused, requester_id)
     _validate_pause_change(user, payload.attendance_paused, requester_id)
-    if payload.is_paused is not None:
-        user.is_paused = payload.is_paused
-    if payload.is_paused:
-        user.unpaused_at = None
+    stays_guidelines_paused = (
+        user.is_guidelines_paused
+        if payload.guidelines_paused is None
+        else payload.guidelines_paused
+    )
+    if payload.attendance_paused and stays_guidelines_paused:
+        raise_validation(Code.User.GUIDELINES_PAUSED, field="attendance_paused", status_code=400)
+    if (
+        payload.guidelines_paused is not None
+        and payload.guidelines_paused != user.is_guidelines_paused
+    ):
+        _toggle_guidelines_pause(user, payload.guidelines_paused, by=requester)
     if payload.has_joined_whatsapp is not None:
         user.has_joined_whatsapp = payload.has_joined_whatsapp
+
+
+def _toggle_guidelines_pause(user: User, paused: bool, *, by: User) -> None:
+    if paused:
+        user.apply_guidelines_pause(by=by)
+    else:
+        user.lift_guidelines_pause(by=by)
 
 
 @router.patch(

@@ -5,7 +5,12 @@ import uuid
 from django.conf import settings
 from django.db import models
 
-from community.models.choices import JoinFormQuestionType, JoinRequestStatus, RejectionReason
+from community.models.choices import (
+    OPEN_JOIN_REQUEST_STATUSES,
+    JoinFormQuestionType,
+    JoinRequestStatus,
+    RejectionReason,
+)
 
 
 class JoinFormQuestion(models.Model):
@@ -57,22 +62,6 @@ class JoinRequest(models.Model):
         on_delete=models.SET_NULL,
         related_name="status_changed_join_requests",
     )
-    tentative_at = models.DateTimeField(null=True, blank=True)
-    tentative_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="tentative_join_requests",
-    )
-    approved_at = models.DateTimeField(null=True, blank=True)
-    approved_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="approved_join_requests",
-    )
     # Set when a tentative applicant is auto-approved by checking in at this event.
     approved_via_event = models.ForeignKey(
         "community.Event",
@@ -80,14 +69,6 @@ class JoinRequest(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="+",
-    )
-    rejected_at = models.DateTimeField(null=True, blank=True)
-    rejected_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="rejected_join_requests",
     )
     rejection_reason = models.CharField(
         max_length=30, choices=RejectionReason.choices, blank=True, default=""
@@ -112,9 +93,7 @@ class JoinRequest(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["phone_number"],
-                condition=models.Q(
-                    status__in=[JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE]
-                ),
+                condition=models.Q(status__in=OPEN_JOIN_REQUEST_STATUSES),
                 name="unique_open_join_request_per_phone",
             ),
         ]
@@ -122,6 +101,12 @@ class JoinRequest(models.Model):
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
+
+    @classmethod
+    def latest_is_rejected(cls, phone_number: str) -> bool:
+        """Whether this phone's newest join request was rejected; they must re-apply."""
+        latest = cls.objects.filter(phone_number=phone_number).order_by("-submitted_at")
+        return latest.values_list("status", flat=True).first() == JoinRequestStatus.REJECTED
 
     def __str__(self):
         return f"{self.full_name} ({self.phone_number}) — {self.submitted_at:%Y-%m-%d}"

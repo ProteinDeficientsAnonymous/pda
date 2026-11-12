@@ -29,8 +29,8 @@ export type MembersMode = 'members' | 'non-members';
 
 export function MembersTab({ mode }: { mode: MembersMode }) {
   const isNonMembers = mode === 'non-members';
-  // The list endpoint returns members plus attendance-paused users by default and all
-  // users when opted in; the non-members tab keeps only the unmanaged non-members.
+  // The list endpoint returns members and tentative people by default and all users when
+  // opted in; the non-members tab keeps only the unmanaged non-members.
   const { data: fetched = [], isPending, isError } = useUsers(isNonMembers);
   const data = useMemo(
     () => (isNonMembers ? fetched.filter((m) => !isManagedMember(m)) : fetched),

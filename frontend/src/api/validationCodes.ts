@@ -264,8 +264,12 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "that phone number and password don't match — try again";
     case Code.Auth.AccountArchived:
       return 'this account is no longer active';
-    case Code.Auth.AccountPaused:
+    case Code.Auth.AccountGuidelinesPaused:
       return "your membership is paused — you can't log in right now";
+    case Code.Auth.AccountRejected:
+      return "your request to join wasn't approved — you can request to join again";
+    case Code.Auth.NotAMember:
+      return "this account isn't a member — request to join to sign in";
     case Code.Auth.MagicLinkInvalidOrExpired:
       return 'this login link is invalid or has expired';
     case Code.Auth.MagicLinkAlreadyUsed:
@@ -348,6 +352,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "you can't pause your own account";
     case Code.User.CannotPauseAdmin:
       return "admins can't be paused";
+    case Code.User.GuidelinesPaused:
+      return 'lift the guidelines pause before pausing for attendance';
     case Code.User.RoleIdsNotFound:
       return 'one or more role IDs not found';
     case Code.User.InvalidBirthday:
@@ -444,6 +450,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'join request not found';
     case Code.JoinRequest.AlreadyDecided:
       return 'this request has already been decided';
+    case Code.JoinRequest.TentativeCannotBeRejected:
+      return "tentative members can't be rejected — archive them from the members screen instead";
     case Code.JoinRequest.OnlyRejectedCanBeUnRejected:
       return 'only rejected requests can be un-rejected';
     case Code.JoinRequest.AlreadyMember:

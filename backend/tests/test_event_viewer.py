@@ -26,7 +26,6 @@ def public_rsvper(db):
         first_name="Non",
         last_name="Member",
         email="non@example.com",
-        is_member=False,
         membership_status=MembershipStatus.NONE,
     )
     user.set_unusable_password()

@@ -5,7 +5,7 @@ from django.utils import timezone
 from users.models import MembershipStatus, User
 from users.roles import Role
 
-from community.models import Event, EventRSVP, EventTag, JoinRequest, JoinRequestStatus
+from community.models import Event, EventRSVP, EventTag, JoinRequest
 from community.models.content import FAQ, CommunityGuidelines, HomePage
 from community.models.join_form import JoinFormQuestion
 
@@ -90,7 +90,6 @@ class Command(BaseCommand):
             "last_name": data.last_name,
             "email": data.email,
             "bio": data.bio,
-            "is_member": True,
             "membership_status": MembershipStatus.ACTIVE_MEMBER,
             "guidelines_consent_at": now,
             "sms_consent_at": now,
@@ -130,7 +129,6 @@ class Command(BaseCommand):
                     "first_name": data.first_name,
                     "last_name": data.last_name,
                     "email": data.email,
-                    "is_member": False,
                     "membership_status": MembershipStatus.NONE,
                 },
             )
@@ -208,13 +206,8 @@ class Command(BaseCommand):
                 "status": data.status,
             }
             if data.decided_days_ago is not None:
-                decided_at = now - timedelta(days=data.decided_days_ago)
-                if data.status == JoinRequestStatus.APPROVED:
-                    defaults["approved_at"] = decided_at
-                    defaults["approved_by"] = admin_user
-                elif data.status == JoinRequestStatus.REJECTED:
-                    defaults["rejected_at"] = decided_at
-                    defaults["rejected_by"] = admin_user
+                defaults["status_changed_at"] = now - timedelta(days=data.decided_days_ago)
+                defaults["status_changed_by"] = admin_user
             _, created = JoinRequest.objects.get_or_create(
                 first_name=data.first_name,
                 last_name=data.last_name,

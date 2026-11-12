@@ -10,7 +10,7 @@ from users.models import User
 
 
 def has_pause(user: User) -> bool:
-    return user.is_paused or user.attendance_paused_at is not None
+    return user.is_guidelines_paused or user.attendance_paused_at is not None
 
 
 def mark_unpaused(user: User) -> None:

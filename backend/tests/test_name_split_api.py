@@ -173,7 +173,6 @@ class TestApprovalCopiesNames:
         non_member = User.objects.create_user(
             phone_number="+12025551215",
             first_name="Prior",
-            is_member=False,
             membership_status=MembershipStatus.NONE,
         )
         non_member.first_name = ""

@@ -33,8 +33,6 @@ def paused(db):
     user.roles.clear()
     user.attendance_paused_at = timezone.now() - timedelta(days=10)
     user.attendance_grace_notified_at = timezone.now() - timedelta(days=20)
-    user.is_member = False
-    user.save(update_fields=["attendance_paused_at", "attendance_grace_notified_at", "is_member"])
     user.save(
         update_fields=[
             "attendance_paused_at",
@@ -115,6 +113,17 @@ class TestRestoreOnCheckIn:
         _attended(paused)
         _check_in(api_client, host, paused, for_plus_one=True)
         assert paused.attendance_paused_at is not None
+
+    def test_archived_user_is_never_restored_or_promoted(self, api_client, host, paused):
+        _attended(paused, event_type=EventType.CLUB)
+        jr = _tentative_request(paused)
+        User.objects.filter(pk=paused.pk).update(
+            archived_at=timezone.now(), membership_status=MembershipStatus.ARCHIVED
+        )
+        _check_in(api_client, host, paused)
+        jr.refresh_from_db()
+        assert paused.attendance_paused_at is not None
+        assert jr.status == JoinRequestStatus.TENTATIVE
 
     def test_host_marking_themselves_never_restores(self, api_client, paused):
         _attended(paused)

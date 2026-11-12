@@ -375,6 +375,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/users/{user_id}/guidelines-pause-preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Guidelines Pause Preview */
+        get: operations["users__attendance_pause_api_guidelines_pause_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/users/{user_id}/hard/": {
         parameters: {
             query?: never;
@@ -2698,11 +2715,6 @@ export interface components {
             /** Updated Count */
             updated_count: number;
         };
-        /** AttendancePausePreviewOut */
-        AttendancePausePreviewOut: {
-            /** Events */
-            events: components["schemas"]["PauseImpactEventOut"][];
-        };
         /** AttendanceReportOut */
         AttendanceReportOut: {
             /**
@@ -4616,10 +4628,6 @@ export interface components {
              * @default []
              */
             answers: components["schemas"]["JoinRequestAnswerOut"][];
-            /** Approved At */
-            approved_at?: string | null;
-            /** Approved By Name */
-            approved_by_name?: string | null;
             /** Approved Via Event Id */
             approved_via_event_id?: string | null;
             /** Approved Via Event Title */
@@ -4665,6 +4673,8 @@ export interface components {
             onboarded_at?: string | null;
             /** Phone Number */
             phone_number: string;
+            previous_archive?: components["schemas"]["PreviousArchiveOut"] | null;
+            previous_rejection?: components["schemas"]["PreviousRejectionOut"] | null;
             /**
              * Previously Archived
              * @default false
@@ -4675,10 +4685,6 @@ export interface components {
              * @default false
              */
             previously_rejected: boolean;
-            /** Rejected At */
-            rejected_at?: string | null;
-            /** Rejected By Name */
-            rejected_by_name?: string | null;
             /**
              * Rejection Note
              * @default
@@ -4696,15 +4702,15 @@ export interface components {
             rsvp_events: components["schemas"]["JoinRequestRsvpOut"][];
             /** Status */
             status: string;
+            /** Status Changed At */
+            status_changed_at?: string | null;
+            /** Status Changed By Name */
+            status_changed_by_name?: string | null;
             /**
              * Submitted At
              * Format: date-time
              */
             submitted_at: string;
-            /** Tentative At */
-            tentative_at?: string | null;
-            /** Tentative By Name */
-            tentative_by_name?: string | null;
             /**
              * Upcoming Club Count
              * @default 0
@@ -4859,13 +4865,15 @@ export interface components {
             didnt_go_count: number;
             /** Full Name */
             full_name: string;
+            /** Is Attendance Paused */
+            is_attendance_paused: boolean;
+            /** Is Guidelines Paused */
+            is_guidelines_paused: boolean;
             /**
              * Is Pause Candidate
              * @default false
              */
             is_pause_candidate: boolean;
-            /** Is Paused */
-            is_paused: boolean;
             /** Last Qualifying At */
             last_qualifying_at?: string | null;
             /** Months Since Last Qualifying */
@@ -5084,6 +5092,11 @@ export interface components {
          * @enum {string}
          */
         PauseOutcome: "kept" | "removed" | "drafted";
+        /** PausePreviewOut */
+        PausePreviewOut: {
+            /** Events */
+            events: components["schemas"]["PauseImpactEventOut"][];
+        };
         /**
          * PauseRole
          * @enum {string}
@@ -5135,6 +5148,31 @@ export interface components {
             voters: {
                 [key: string]: components["schemas"]["VoterOut"][];
             };
+        };
+        /** PreviousArchiveOut */
+        PreviousArchiveOut: {
+            /** Archived At */
+            archived_at?: string | null;
+            /** Archived By Name */
+            archived_by_name?: string | null;
+            paused_status?: components["schemas"]["MembershipStatus"] | null;
+        };
+        /** PreviousRejectionOut */
+        PreviousRejectionOut: {
+            /**
+             * Rejection Note
+             * @default
+             */
+            rejection_note: string;
+            /**
+             * Rejection Reason
+             * @default
+             */
+            rejection_reason: string;
+            /** Status Changed At */
+            status_changed_at?: string | null;
+            /** Status Changed By Name */
+            status_changed_by_name?: string | null;
         };
         /** PublicRsvpIn */
         PublicRsvpIn: {
@@ -6024,11 +6062,6 @@ export interface components {
              */
             is_member: boolean;
             /**
-             * Is Paused
-             * @default false
-             */
-            is_paused: boolean;
-            /**
              * Is Superuser
              * @default false
              */
@@ -6152,10 +6185,10 @@ export interface components {
             email?: string | null;
             /** First Name */
             first_name?: string | null;
+            /** Guidelines Paused */
+            guidelines_paused?: boolean | null;
             /** Has Joined Whatsapp */
             has_joined_whatsapp?: boolean | null;
-            /** Is Paused */
-            is_paused?: boolean | null;
             /** Last Name */
             last_name?: string | null;
             /** Phone Number */
@@ -7205,7 +7238,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AttendancePausePreviewOut"];
+                    "application/json": components["schemas"]["PausePreviewOut"];
                 };
             };
             /** @description Forbidden */
@@ -7246,6 +7279,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AttendedEventOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    users__attendance_pause_api_guidelines_pause_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PausePreviewOut"];
                 };
             };
             /** @description Forbidden */
@@ -12140,6 +12213,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

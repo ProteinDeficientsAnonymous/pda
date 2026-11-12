@@ -5,7 +5,7 @@ from users.models import MembershipStatus, User
 
 from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_official_event, post
-from tests._users import make_user
+from tests._users import make_attendance_paused, make_user
 
 pytestmark = pytest.mark.django_db
 
@@ -80,6 +80,36 @@ def test_public_rsvp_stamps_no_actor(api_client):
     rsvper = User.objects.get(membership_status=MembershipStatus.NONE)
     assert rsvper.membership_status_changed_at is not None
     assert rsvper.membership_status_changed_by is None
+
+
+def test_unchanged_status_keeps_the_stamp():
+    member = make_user()
+    member.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=member)
+    assert member.membership_status_changed_at is None
+
+
+@pytest.mark.parametrize(
+    ("make", "body"),
+    [
+        (make_user, {"attendance_paused": True}),
+        (make_user, {"guidelines_paused": True}),
+        (make_attendance_paused, {"attendance_paused": False}),
+    ],
+    ids=["attendance-pause", "guidelines-pause", "unpause"],
+)
+def test_pause_changes_record_the_admin(
+    api_client, manage_users_user, manage_users_headers, make, body
+):
+    member = make()
+    response = api_client.patch(
+        f"/api/auth/users/{member.pk}/",
+        body,
+        content_type="application/json",
+        **manage_users_headers,
+    )
+    assert response.status_code == 200
+    member.refresh_from_db()
+    assert member.membership_status_changed_by == manage_users_user
 
 
 def test_archive_records_the_admin(api_client, manage_users_user, manage_users_headers):

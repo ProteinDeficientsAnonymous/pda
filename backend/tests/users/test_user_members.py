@@ -11,14 +11,20 @@ from users.models import MembershipStatus, User
 
 @pytest.mark.django_db
 class TestMembersManager:
-    def test_is_member_field_defaults_to_false(self):
-        """The model default is False — accounts must be explicitly promoted.
-
-        (The conftest create_user monkeypatch forces is_member=True for the
-        general test population, so assert the raw field default directly.)
-        """
-        assert User._meta.get_field("is_member").default is False
-        assert User(phone_number="+12025550201").is_member is False
+    @pytest.mark.parametrize(
+        ("fields", "expected"),
+        [
+            ({"membership_status": MembershipStatus.ACTIVE_MEMBER}, True),
+            ({"membership_status": MembershipStatus.NONE}, False),
+            ({"membership_status": MembershipStatus.ARCHIVED}, False),
+            ({"membership_status": MembershipStatus.GUIDELINES_PAUSED}, True),
+            ({"membership_status": MembershipStatus.ATTENDANCE_PAUSED}, True),
+            ({"membership_status": MembershipStatus.TENTATIVE}, False),
+        ],
+    )
+    def test_is_member_follows_status(self, fields, expected):
+        user = User.objects.create(phone_number="+12025550201", **fields)
+        assert user.is_member is expected
 
     def test_members_returns_only_members(self, member, non_member):
         member_ids = set(User.objects.members().values_list("pk", flat=True))
@@ -48,8 +54,7 @@ class TestActiveMembersManager:
         assert non_member.pk not in self._active_member_ids()
 
     def test_excludes_paused_member(self, member):
-        member.is_paused = True
-        member.save(update_fields=["is_paused"])
+        member.save(update_fields=member.apply_guidelines_pause(by=None))
         assert member.pk not in self._active_member_ids()
 
     def test_excludes_archived_member(self, member):
@@ -143,7 +148,6 @@ class TestEmailPartialUniqueIndex:
             with transaction.atomic():
                 User.objects.create_user(
                     phone_number="+12025550216",
-                    is_member=False,
                     membership_status=MembershipStatus.NONE,
                     email="shared@example.com",
                 )

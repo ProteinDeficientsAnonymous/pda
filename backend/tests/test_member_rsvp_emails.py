@@ -1,6 +1,7 @@
 import pytest
 from community.models import Event, EventRSVP, EventType, RSVPStatus
 from django.test import Client
+from users.models import MembershipStatus
 
 from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import LIMITED_USER_FACTORIES, make_public_rsvper
@@ -196,6 +197,21 @@ class TestHostSetRsvpEmail:
         assert _subjects(fake_email_sender, "signed-in@e.com") == ["you're in for picnic"]
         text = fake_email_sender.send.call_args.kwargs["text"]
         assert ("/my-rsvps?token=" in text) is gets_manage_link
+
+    def test_host_seating_guidelines_paused_member_gets_member_email(
+        self, test_user, fake_email_sender
+    ):
+        event = _event(test_user)
+        paused = make_user(
+            email="paused@e.com",
+            membership_status=MembershipStatus.GUIDELINES_PAUSED,
+        )
+        EventRSVP.objects.create(event=event, user=paused, status=RSVPStatus.WAITLISTED)
+
+        _host_set(event, test_user, paused, RSVPStatus.ATTENDING)
+
+        assert _subjects(fake_email_sender, "paused@e.com") == ["you're in for picnic"]
+        assert "/my-rsvps?token=" not in fake_email_sender.send.call_args.kwargs["text"]
 
     def test_host_set_public_rsvper_gets_manage_link(self, test_user, fake_email_sender):
         event = _event(test_user)
