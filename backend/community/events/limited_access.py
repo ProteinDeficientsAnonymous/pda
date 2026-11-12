@@ -19,14 +19,14 @@ def is_limited(user) -> bool:
 _GUEST_STATUSES = (MembershipStatus.ACTIVE_MEMBER, *LIMITED_STATUSES)
 
 
-def _limited_out_of(user, event) -> bool:
-    """A limited user on an event they may only see as a visitor."""
+def _sees_as_visitor(user, event) -> bool:
+    """A limited user sees anything but official/club the way a logged-out visitor does."""
     return is_limited(user) and event.event_type not in LIMITED_ACCESS_EVENT_TYPES
 
 
 def can_be_guest(user, event) -> bool:
     """Whether a host may add or invite this user to the event."""
-    return user.membership_status in _GUEST_STATUSES and not _limited_out_of(user, event)
+    return user.membership_status in _GUEST_STATUSES and not _sees_as_visitor(user, event)
 
 
 def limited_access_event_q() -> Q:
@@ -41,12 +41,10 @@ def event_viewer_for(viewer, event):
     sees — so they're downgraded to anonymous rather than filtered out, and a
     public community event stays as visible as it was before they signed in.
     """
-    if _limited_out_of(viewer, event):
-        return None
-    return viewer
+    return None if _sees_as_visitor(viewer, event) else viewer
 
 
 def enforce_limited_write_access(user, event, action: str) -> None:
     """Block a limited user from acting on an event they may only read as a visitor."""
-    if _limited_out_of(user, event):
+    if _sees_as_visitor(user, event):
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action=action)
