@@ -13,14 +13,11 @@ from ._seed_shared import get_or_create_seed_user
 from ._seed_staging_data import PASSWORD
 
 STATUS_PHONE_PREFIX = "+170255507"
+ADMIN_ROLES = ("admin", "member")
 
 
 def status_phone(index: int) -> str:
     return f"{STATUS_PHONE_PREFIX}{index:02d}"
-
-
-def status_email(index: int) -> str:
-    return f"status{index:02d}@staging.example"
 
 
 @dataclass(frozen=True)
@@ -31,9 +28,7 @@ class StatusSpec:
 
     @property
     def label(self) -> str:
-        if self.archived_from is None:
-            return str(self.status)
-        return f"{self.status} (from {self.archived_from})"
+        return f"{self.status} (from {self.archived_from})" if self.archived_from else self.status
 
 
 # Index 0 is the admin; each spec's phone is status_phone(position + 1).
@@ -50,24 +45,30 @@ def reset_status_join_requests() -> None:
     JoinRequest.objects.filter(phone_number__startswith=STATUS_PHONE_PREFIX).delete()
 
 
-def _onboarded_defaults(first_name: str, index: int) -> dict:
+def _person_fields(first_name: str, index: int) -> dict:
     now = timezone.now()
     return {
         "first_name": first_name,
         "last_name": "Staging",
-        "email": status_email(index),
-        "membership_status": MembershipStatus.ACTIVE_MEMBER,
-        "needs_onboarding": False,
-        "onboarded_at": now,
+        "email": f"status{index:02d}@staging.example",
         "guidelines_consent_at": now,
         "sms_consent_at": now,
     }
 
 
+def _onboarded_defaults(first_name: str, index: int) -> dict:
+    return {
+        **_person_fields(first_name, index),
+        "membership_status": MembershipStatus.ACTIVE_MEMBER,
+        "needs_onboarding": False,
+        "onboarded_at": timezone.now(),
+    }
+
+
 def _seed_admin(stdout) -> User:
-    admin_role, _ = Role.objects.get_or_create(name="admin", defaults={"is_default": True})
-    member_role, _ = Role.objects.get_or_create(name="member", defaults={"is_default": True})
-    roles = [admin_role, member_role]
+    roles = [
+        Role.objects.get_or_create(name=n, defaults={"is_default": True})[0] for n in ADMIN_ROLES
+    ]
     user, created = get_or_create_seed_user(
         status_phone(0), PASSWORD, _onboarded_defaults("Admin", 0), roles
     )
@@ -81,14 +82,10 @@ def _seed_tentative(spec: StatusSpec, index: int, admin: User) -> tuple[User, bo
     join_request, created = JoinRequest.objects.get_or_create(
         phone_number=status_phone(index),
         defaults={
-            "first_name": spec.first_name,
-            "last_name": "Staging",
-            "email": status_email(index),
+            **_person_fields(spec.first_name, index),
             "status": JoinRequestStatus.TENTATIVE,
             "status_changed_at": now,
             "status_changed_by": admin,
-            "guidelines_consent_at": now,
-            "sms_consent_at": now,
         },
     )
     if not created and join_request.user is not None:
@@ -102,34 +99,29 @@ def _seed_tentative(spec: StatusSpec, index: int, admin: User) -> tuple[User, bo
     return user, True
 
 
-def _pause(user: User, pause: MembershipStatus, admin: User) -> None:
+def _apply_status(user: User, spec: StatusSpec, admin: User) -> None:
+    # Mirrors apply_attendance_pause / archive_user, which sit in private users modules.
+    pause = spec.archived_from or spec.status
+    fields: list[str] = []
     if pause == MembershipStatus.GUIDELINES_PAUSED:
-        user.save(update_fields=user.apply_guidelines_pause(by=admin))
+        fields = user.apply_guidelines_pause(by=admin)
     elif pause == MembershipStatus.ATTENDANCE_PAUSED:
         user.attendance_paused_at = timezone.now()
-        status_fields = user.set_membership_status(pause, by=admin)
-        user.save(update_fields=["attendance_paused_at", *status_fields])
-
-
-def _archive(user: User, admin: User) -> None:
-    user.archived_at = timezone.now()
-    user.status_before_archive = user.membership_status
-    user.calendar_token = ""
-    status_fields = user.set_membership_status(MembershipStatus.ARCHIVED, by=admin)
-    user.save(
-        update_fields=["archived_at", "status_before_archive", "calendar_token", *status_fields]
-    )
+        fields = ["attendance_paused_at", *user.set_membership_status(pause, by=admin)]
+    if spec.archived_from is not None:
+        user.archived_at = timezone.now()
+        user.status_before_archive = user.membership_status
+        fields += ["archived_at", "status_before_archive"]
+        fields += user.set_membership_status(MembershipStatus.ARCHIVED, by=admin)
+    user.save(update_fields=fields)
 
 
 def _seed_member_in_status(spec: StatusSpec, index: int, admin: User) -> tuple[User, bool]:
-    member_role = Role.objects.get(name="member")
-    user, created = get_or_create_seed_user(
-        status_phone(index), PASSWORD, _onboarded_defaults(spec.first_name, index), [member_role]
-    )
+    defaults = _onboarded_defaults(spec.first_name, index)
+    roles = [Role.objects.get(name="member")]
+    user, created = get_or_create_seed_user(status_phone(index), PASSWORD, defaults, roles)
     if created:
-        _pause(user, spec.archived_from or spec.status, admin)
-        if spec.archived_from is not None:
-            _archive(user, admin)
+        _apply_status(user, spec, admin)
     return user, created
 
 
