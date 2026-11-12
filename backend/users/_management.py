@@ -317,7 +317,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
         user.save()
         released = None
         if payload.is_paused and not old_is_paused:
-            released = release_held_events(request, user, keep_official=False)[1]
+            released = release_held_events(request, user, MembershipStatus.GUIDELINES_PAUSED)[1]
         _audit_user_update(request, user_id, payload, old_is_paused, released)
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)

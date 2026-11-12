@@ -7,10 +7,10 @@ from config.auth import gated_jwt
 from ninja.responses import Status
 from pydantic import BaseModel
 
-from users._attendance_pause import PauseImpact, attendance_pause_impact
+from users._attendance_pause import PauseImpact, pause_impact
 from users._management import require_manage_users
 from users._management import router as management_router
-from users.models import User
+from users.models import MembershipStatus, User
 from users.schemas import ErrorOut
 
 router = management_router
@@ -67,7 +67,7 @@ def _preview_events(impact: PauseImpact) -> list[PauseImpactEventOut]:
     auth=gated_jwt,
 )
 def attendance_pause_preview(request, user_id: UUID):
-    return _pause_preview(request, user_id, "attendance_pause_preview", keep_official=True)
+    return _pause_preview(request, user_id, MembershipStatus.ATTENDANCE_PAUSED)
 
 
 @router.get(
@@ -76,15 +76,15 @@ def attendance_pause_preview(request, user_id: UUID):
     auth=gated_jwt,
 )
 def guidelines_pause_preview(request, user_id: UUID):
-    return _pause_preview(request, user_id, "guidelines_pause_preview", keep_official=False)
+    return _pause_preview(request, user_id, MembershipStatus.GUIDELINES_PAUSED)
 
 
-def _pause_preview(request, user_id: UUID, endpoint: str, *, keep_official: bool):
-    require_manage_users(request, endpoint, str(user_id))
+def _pause_preview(request, user_id: UUID, pause: MembershipStatus):
+    require_manage_users(request, f"{pause}_preview", str(user_id))
     try:
         user = User.objects.members_or_archived().get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
-    impact = attendance_pause_impact(user, keep_official=keep_official)
+    impact = pause_impact(user, pause)
     return Status(200, PausePreviewOut(events=_preview_events(impact)))
