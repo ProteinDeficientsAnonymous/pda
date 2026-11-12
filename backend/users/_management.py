@@ -394,11 +394,17 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester:
         raise_validation(Code.User.GUIDELINES_PAUSED, field="attendance_paused", status_code=400)
     if payload.is_paused is not None:
         user.is_paused = payload.is_paused
-        user.set_guidelines_pause(payload.is_paused, by=requester)
-    if payload.is_paused:
-        user.unpaused_at = None
+    if payload.is_paused is not None and payload.is_paused != user.is_guidelines_paused:
+        _toggle_guidelines_pause(user, payload.is_paused, by=requester)
     if payload.has_joined_whatsapp is not None:
         user.has_joined_whatsapp = payload.has_joined_whatsapp
+
+
+def _toggle_guidelines_pause(user: User, paused: bool, *, by: User) -> None:
+    if paused:
+        user.apply_guidelines_pause(by=by)
+    else:
+        user.lift_guidelines_pause(by=by)
 
 
 @router.patch(
