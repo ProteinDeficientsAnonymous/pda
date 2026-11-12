@@ -86,7 +86,7 @@ FULL_MEMBER_STATUSES = (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.GUIDELI
 SIGN_IN_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
 MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
 # The admin members screen lists tentative people too, so they can be archived.
-MANAGED_STATUSES = (*MEMBER_OR_ARCHIVED, MembershipStatus.TENTATIVE)
+MANAGED_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
 
 
 class WeekStart:
@@ -117,7 +117,7 @@ class UserManager(BaseUserManager):
         return self.get_queryset().filter(membership_status__in=MEMBER_OR_ARCHIVED)
 
     def managed(self):
-        """Everyone on the admin members screen: members, archived members and tentative people."""
+        """Everyone on the admin members screen: members and tentative people."""
         return self.get_queryset().filter(membership_status__in=MANAGED_STATUSES)
 
     def active_members(self):
