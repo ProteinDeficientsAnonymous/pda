@@ -114,7 +114,7 @@ class Code:
     class Auth:
         INVALID_CREDENTIALS = "auth.invalid_credentials"
         ACCOUNT_ARCHIVED = "auth.account_archived"
-        ACCOUNT_PAUSED = "auth.account_paused"
+        ACCOUNT_GUIDELINES_PAUSED = "auth.account_guidelines_paused"
         ACCOUNT_REJECTED = "auth.account_rejected"
         NOT_A_MEMBER = "auth.not_a_member"
         MAGIC_LINK_INVALID_OR_EXPIRED = "auth.magic_link_invalid_or_expired"
