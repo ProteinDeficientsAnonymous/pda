@@ -49,9 +49,10 @@ from ._seed_staging_rsvps import (
     TOKEN_EXPIRED,
     TOKEN_NONE,
 )
+from ._seed_staging_statuses import reset_status_join_requests, seed_status_people
 
 # Block 04 holds users created by approving seeded join requests; reset must clear it too.
-SEEDED_PHONE_PREFIXES = tuple(f"+1702555{block:02d}" for block in range(1, 7))
+SEEDED_PHONE_PREFIXES = tuple(f"+1702555{block:02d}" for block in range(1, 8))
 
 
 class Command(BaseCommand):
@@ -78,6 +79,7 @@ class Command(BaseCommand):
                 self._reset()
             roles = self._seed_perm_roles()
             perm_users = self._seed_perm_users(roles)
+            status_people = seed_status_people(self.stdout)
             cond_users = self._seed_condition_users()
             self._seed_privacy_users()
             self._seed_reset_member()
@@ -99,6 +101,7 @@ class Command(BaseCommand):
                 "events": events,
                 "non_members": non_members,
                 "join_requests": join_requests,
+                "status_people": status_people,
             }
         )
 
@@ -114,6 +117,7 @@ class Command(BaseCommand):
         User.objects.filter(seeded).delete()
         Role.objects.filter(name__startswith="perm: ").delete()
         reset_join_requests()
+        reset_status_join_requests()
         self.stdout.write("  reset: removed staging-scoped rows")
 
     def _seed_perm_roles(self) -> dict[str, Role]:
@@ -133,6 +137,7 @@ class Command(BaseCommand):
 
     def _seed_perm_users(self, roles: dict[str, Role]) -> list[User]:
         users: list[User] = []
+        member_role = self._member_role()
         now = timezone.now()
         for index, key in enumerate(PermissionKey.values):
             defaults = {
@@ -147,6 +152,7 @@ class Command(BaseCommand):
             user, created = get_or_create_seed_user(
                 perm_phone(index), PASSWORD, defaults, [roles[key]]
             )
+            user.roles.add(member_role)
             users.append(user)
             self.stdout.write(f"  {'created' if created else 'exists'} user: {user.full_name}")
         return users
@@ -352,6 +358,9 @@ class Command(BaseCommand):
                 continue
             url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
             self.stdout.write(f"  {user.phone_number} -> {url}")
+        self.stdout.write("membership status users (phone -> status):")
+        for label, user in result["status_people"]:
+            self.stdout.write(f"  {user.phone_number} -> {label}")
 
     def _print_official_events(self, events: list[Event]) -> None:
         official = [e for e in events if e.event_type == EventType.OFFICIAL and e.rsvp_enabled]
