@@ -137,7 +137,7 @@ def logout(request, response: HttpResponse):
 @router.get("/me/", response={200: UserOut, 401: ErrorOut, 403: ErrorOut}, auth=gated_jwt)
 def me(request):
     user = request.auth
-    if user.is_paused:
+    if user.is_guidelines_paused:
         raise_validation(Code.Auth.ACCOUNT_GUIDELINES_PAUSED, status_code=403)
     return Status(200, UserOut.from_user(user))
 

@@ -29,7 +29,6 @@ def with_status(qs: QuerySet[User]) -> QuerySet[User]:
     """
     status = Case(
         When(archived_at__isnull=False, then=Value(MemberStatus.ARCHIVED)),
-        When(is_paused=True, then=Value(MemberStatus.PAUSED)),
         When(membership_status__in=PAUSED_STATUSES, then=Value(MemberStatus.PAUSED)),
         When(is_active=False, then=Value(None)),
         When(NOT_SET_UP, then=Value(MemberStatus.STILL_ONBOARDING)),

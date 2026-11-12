@@ -310,7 +310,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
-    was_guidelines_paused = user.is_paused
+    was_guidelines_paused = user.is_guidelines_paused
     was_paused = has_pause(user)
     _apply_user_patch(user, user_id, payload, requester=request.auth)
     user.save()

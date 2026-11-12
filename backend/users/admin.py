@@ -12,7 +12,6 @@ class UserAdmin(BaseUserAdmin):
         "is_staff",
         "is_superuser",
         "is_active",
-        "is_paused",
         "membership_status",
         "has_joined_whatsapp",
     )
@@ -26,7 +25,6 @@ class UserAdmin(BaseUserAdmin):
             {
                 "fields": (
                     "is_active",
-                    "is_paused",
                     "has_joined_whatsapp",
                     "is_staff",
                     "is_superuser",
