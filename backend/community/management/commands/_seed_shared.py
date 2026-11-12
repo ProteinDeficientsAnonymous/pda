@@ -58,6 +58,11 @@ def seed_events(stdout, events: list[SeedEvent], created_by: User | None) -> dic
     return result
 
 
+def default_role(name: str) -> Role:
+    role, _ = Role.objects.get_or_create(name=name, defaults={"is_default": True})
+    return role
+
+
 def get_or_create_seed_user(
     phone_number: str, password: str, defaults: dict, roles: list[Role]
 ) -> tuple[User, bool]:

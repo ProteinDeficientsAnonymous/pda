@@ -11,10 +11,6 @@ from ._seed_data import SEED_JOIN_FORM_QUESTIONS
 from ._seed_staging_data import JOIN_REQUEST_SPECS, JoinRequestSpec, joinreq_email, joinreq_phone
 
 
-def reset_join_requests() -> None:
-    JoinRequest.objects.filter(phone_number__startswith="+170255504").delete()
-
-
 def seed_join_form_questions(stdout) -> dict[str, JoinFormQuestion]:
     """Ensure default join form questions exist. Returns label→question mapping."""
     questions: dict[str, JoinFormQuestion] = {}
