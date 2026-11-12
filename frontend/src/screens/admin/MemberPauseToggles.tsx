@@ -75,7 +75,7 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
         }));
       if (ok) onChange({ ...base, [field]: true });
     } catch (err) {
-      toast.error(extractApiErrorOr(err, "couldn't load their upcoming events — try again"));
+      toast.error(extractApiErrorOr(err, "couldn't load the pause preview — try again"));
     } finally {
       setLoading(false);
     }

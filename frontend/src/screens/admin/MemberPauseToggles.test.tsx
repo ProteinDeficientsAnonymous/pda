@@ -56,7 +56,7 @@ describe('MemberPauseToggles event rqmt preview', () => {
     preview.mockRejectedValue(new Error('network down'));
     render(<Harness />);
     await userEvent.click(eventRqmtSwitch());
-    expect(toast.error).toHaveBeenCalledWith("couldn't load their upcoming events — try again");
+    expect(toast.error).toHaveBeenCalledWith("couldn't load the pause preview — try again");
     expect(eventRqmtSwitch()).toHaveAttribute('aria-checked', 'false');
   });
 
