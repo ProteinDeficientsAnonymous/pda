@@ -1,6 +1,6 @@
 import secrets
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
@@ -220,7 +220,7 @@ class User(AbstractUser):
     def set_membership_status(self, status: MembershipStatus, *, by: "User | None") -> list[str]:
         """param(by): who made the change, or None for the system.
         return(list[str]): the fields it changed, for update_fields."""
-        if self.archived_at is not None and status != MembershipStatus.ARCHIVED:
+        if self.is_archived and status != MembershipStatus.ARCHIVED:
             # Archived stays archived; the change waits here until reactivation restores it.
             self.status_before_archive = status
             return ["status_before_archive"]
@@ -232,17 +232,34 @@ class User(AbstractUser):
 
     def apply_guidelines_pause(self, *, by: "User | None") -> list[str]:
         """A guidelines pause replaces any attendance pause."""
-        self.attendance_paused_at = None
-        self.unpaused_at = None
-        self.has_joined_whatsapp = False
-        status_fields = self.set_membership_status(MembershipStatus.GUIDELINES_PAUSED, by=by)
-        return ["attendance_paused_at", "unpaused_at", "has_joined_whatsapp", *status_fields]
+        return self._set_pause(MembershipStatus.GUIDELINES_PAUSED, by, None, None)
 
     def lift_guidelines_pause(self, *, by: "User | None") -> list[str]:
         # Lifting leaves them limited until a compliant in-person check-in.
-        self.attendance_paused_at = timezone.now()
-        status_fields = self.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED, by=by)
-        return ["attendance_paused_at", *status_fields]
+        now = timezone.now()
+        return self._set_pause(MembershipStatus.ATTENDANCE_PAUSED, by, now, now)
+
+    def apply_attendance_pause(self, *, by: "User | None") -> list[str]:
+        return self._set_pause(MembershipStatus.ATTENDANCE_PAUSED, by, timezone.now(), None)
+
+    def _set_pause(
+        self,
+        status: MembershipStatus,
+        by: "User | None",
+        paused_at: datetime | None,
+        unpaused_at: datetime | None,
+    ) -> list[str]:
+        if self.is_archived:
+            # Only status_before_archive records it; unarchiving sets the pause stamps.
+            return self.set_membership_status(status, by=by)
+        self.attendance_paused_at, self.unpaused_at = paused_at, unpaused_at
+        self.has_joined_whatsapp = False
+        fields = ["attendance_paused_at", "unpaused_at", "has_joined_whatsapp"]
+        return [*fields, *self.set_membership_status(status, by=by)]
+
+    @property
+    def is_archived(self) -> bool:
+        return self.archived_at is not None
 
     @property
     def is_member(self) -> bool:
