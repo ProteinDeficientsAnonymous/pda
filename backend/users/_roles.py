@@ -9,12 +9,19 @@ from django.db.models import Count, Q
 from ninja import Router
 from ninja.responses import Status
 
-from users.models import FULL_MEMBER_STATUSES
+from users.models import MEMBER_STATUSES
 from users.permissions import PermissionKey
 from users.roles import PROTECTED_ROLE_NAMES, Role
 from users.schemas import ErrorOut, RoleIn, RoleOut, RolePatchIn
 
 router = Router()
+
+
+def _with_user_count():
+    """Roles annotated with how many members hold each one."""
+    return Role.objects.annotate(
+        user_count=Count("users", filter=Q(users__membership_status__in=MEMBER_STATUSES)),
+    )
 
 
 @router.get("/roles/", response={200: list[RoleOut], 403: ErrorOut}, auth=gated_jwt)
@@ -40,12 +47,7 @@ def list_roles(request):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_roles")
     # Django drops Meta.ordering on GROUP BY queries, so order explicitly.
-    roles = Role.objects.annotate(
-        user_count=Count(
-            "users",
-            filter=Q(users__membership_status__in=FULL_MEMBER_STATUSES),
-        ),
-    ).order_by("name")
+    roles = _with_user_count().order_by("name")
     return Status(
         200,
         [
@@ -200,13 +202,13 @@ def delete_role(request, role_id: str):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="delete_role")
     try:
-        role = Role.objects.get(pk=role_id)
+        role = _with_user_count().get(pk=role_id)
     except Role.DoesNotExist:
         raise_validation(Code.Role.NOT_FOUND, status_code=404)
     if role.name in PROTECTED_ROLE_NAMES:
         raise_validation(Code.Role.PROTECTED_CANNOT_DELETE, status_code=400, role_name=role.name)
     role_name = role.name
-    affected_user_count = role.users.filter(membership_status__in=FULL_MEMBER_STATUSES).count()
+    affected_user_count = role.user_count
     role.delete()
     audit_log(
         logging.WARNING,
