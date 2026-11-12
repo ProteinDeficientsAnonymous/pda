@@ -44,7 +44,7 @@ async def set_attendance_pause(
     user = await current_user()
     member = await _member(member_id)
     summary = {"id": str(member.pk), "name": member.full_name}
-    if paused == (member.attendance_paused_at is not None):
+    if paused == member.is_attendance_paused:
         state = "is already" if paused else "isn't"
         raise ToolError(f"{member.full_name} {state} attendance-paused; nothing to do")
 
