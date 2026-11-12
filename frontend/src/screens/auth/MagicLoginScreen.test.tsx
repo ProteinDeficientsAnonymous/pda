@@ -121,7 +121,7 @@ describe('MagicLoginScreen', () => {
   });
 
   it('should tell a paused user they cannot sign in', async () => {
-    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.AccountPaused));
+    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.AccountGuidelinesPaused));
     renderAt('tok-paused');
     expect(await screen.findByText("can't sign in")).toBeInTheDocument();
     expect(

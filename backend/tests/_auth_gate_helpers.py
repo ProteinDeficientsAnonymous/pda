@@ -1,7 +1,7 @@
 from django.utils import timezone
 
 BLOCK_CODES = {
-    "paused": "auth.account_paused",
+    "paused": "auth.account_guidelines_paused",
     "archived": "auth.account_archived",
     "needs_password_reset": "auth.password_reset_required",
     "needs_onboarding": "auth.onboarding_required",
