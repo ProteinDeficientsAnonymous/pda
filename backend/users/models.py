@@ -412,13 +412,8 @@ class PublicRsvpToken(models.Model):
 
     @classmethod
     def issue(cls, user: "User") -> "PublicRsvpToken":
-        """Create a fresh token for a non-member, valid for 90 days.
-
-        Rejects members — a converted/existing member must use the member flow,
-        not the scoped non-member RSVP link.
-        """
-        if user.membership_status in FULL_MEMBER_STATUSES:
-            raise ValidationError("Cannot issue a non-member RSVP token for a member.")
+        """Create a fresh token for a public rsvper, valid for 90 days."""
+        cls._require_public_rsvper(user)
         return cls.objects.create(
             user=user,
             token=secrets.token_urlsafe(32),
@@ -430,10 +425,9 @@ class PublicRsvpToken(models.Model):
         """Return a usable non-member RSVP token, reusing one when possible.
 
         Extends the newest valid token still within its absolute lifetime (so an
-        emailed link keeps resolving), else issues a fresh one. Rejects members.
+        emailed link keeps resolving), else issues a fresh one.
         """
-        if user.membership_status in FULL_MEMBER_STATUSES:
-            raise ValidationError("Cannot issue a non-member RSVP token for a member.")
+        cls._require_public_rsvper(user)
         existing = user.rsvp_tokens.first()
         max_age_cutoff = timezone.now() - timedelta(days=PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS)
         if existing is not None and existing.is_valid and existing.created_at > max_age_cutoff:
@@ -448,9 +442,19 @@ class PublicRsvpToken(models.Model):
         if not token:
             return None
         row = cls.objects.select_related("user").filter(token=token).first()
-        if row is None or not row.is_valid or row.user.membership_status != MembershipStatus.NONE:
+        if row is None or not row.is_valid or not cls.can_hold(row.user):
             return None
         return row.user
+
+    @staticmethod
+    def can_hold(user: "User") -> bool:
+        """Only public rsvpers; anyone who can sign in, or is archived, manages RSVPs elsewhere."""
+        return user.membership_status == MembershipStatus.NONE
+
+    @classmethod
+    def _require_public_rsvper(cls, user: "User") -> None:
+        if not cls.can_hold(user):
+            raise ValidationError("Only a public rsvper can hold an RSVP manage link.")
 
 
 @receiver(m2m_changed, sender=User.roles.through)

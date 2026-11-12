@@ -11,6 +11,17 @@ from users.models import (
     User,
 )
 
+NOT_PUBLIC_RSVPERS = pytest.mark.parametrize(
+    "status",
+    [
+        MembershipStatus.TENTATIVE,
+        MembershipStatus.ATTENDANCE_PAUSED,
+        MembershipStatus.ACTIVE_MEMBER,
+        MembershipStatus.GUIDELINES_PAUSED,
+        MembershipStatus.ARCHIVED,
+    ],
+)
+
 
 @pytest.fixture
 def public_rsvper(db):
@@ -47,14 +58,13 @@ class TestIssue:
         second = PublicRsvpToken.issue(public_rsvper)
         assert first.token != second.token
 
-    def test_issue_rejects_member(self, db):
-        member = User.objects.create_user(
-            phone_number="+12025559002",
-            first_name="Member",
-            membership_status=MembershipStatus.ACTIVE_MEMBER,
-        )
+    @NOT_PUBLIC_RSVPERS
+    @pytest.mark.parametrize("issue", [PublicRsvpToken.issue, PublicRsvpToken.issue_or_extend])
+    def test_only_a_public_rsvper_gets_a_token(self, public_rsvper, status, issue):
+        User.objects.filter(pk=public_rsvper.pk).update(membership_status=status)
+        public_rsvper.refresh_from_db()
         with pytest.raises(ValidationError):
-            PublicRsvpToken.issue(member)
+            issue(public_rsvper)
 
 
 @pytest.mark.django_db
@@ -151,16 +161,7 @@ class TestResolveUser:
         token.revoke()
         assert PublicRsvpToken.resolve_user(token.token) is None
 
-    @pytest.mark.parametrize(
-        "status",
-        [
-            MembershipStatus.TENTATIVE,
-            MembershipStatus.ATTENDANCE_PAUSED,
-            MembershipStatus.ACTIVE_MEMBER,
-            MembershipStatus.GUIDELINES_PAUSED,
-            MembershipStatus.ARCHIVED,
-        ],
-    )
+    @NOT_PUBLIC_RSVPERS
     def test_anyone_but_a_public_rsvper_returns_none(self, public_rsvper, status):
         token = PublicRsvpToken.issue(public_rsvper)
         User.objects.filter(pk=public_rsvper.pk).update(membership_status=status)
