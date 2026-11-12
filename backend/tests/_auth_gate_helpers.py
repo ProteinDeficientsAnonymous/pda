@@ -11,7 +11,7 @@ BLOCK_CODES = {
 
 def block_user(user, block: str) -> None:
     if block == "paused":
-        user.save(update_fields=user.set_guidelines_pause(True, by=None))
+        user.save(update_fields=user.apply_guidelines_pause(by=None))
         return
     if block == "archived":
         user.archived_at = timezone.now()
