@@ -1,3 +1,10 @@
+## [0.232.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.232.0...v0.232.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **rsvps:** 2392 - send attendance-paused members to login from public RSVP ([#2405](https://github.com/ProteinDeficientsAnonymous/pda/issues/2405)) ([41a508c](https://github.com/ProteinDeficientsAnonymous/pda/commit/41a508ce4d50132c9a4d2d9ee6d10fd4c49bf61f))
+
 # [0.232.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.231.3...v0.232.0) (2026-11-12)
 
 
