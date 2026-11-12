@@ -33,7 +33,7 @@ def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome
     # Nobody vouches for their own check-in.
     if user.pk == request.auth.pk or not is_official_or_club(event.event_type):
         return None
-    if user.attendance_paused_at is not None:
+    if user.membership_status == MembershipStatus.ATTENDANCE_PAUSED:
         return CheckInOutcome.RESTORED if _restore_attendance_paused(request, user) else None
     if maybe_promote_tentative(user, event, request.auth):
         return CheckInOutcome.PROMOTED
@@ -42,7 +42,8 @@ def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome
 
 def _restore_attendance_paused(request, user: User) -> bool:
     # Row lock: concurrent check-ins then see each other's marks and only one restores.
-    if User.objects.select_for_update().get(pk=user.pk).attendance_paused_at is None:
+    locked = User.objects.select_for_update().get(pk=user.pk)
+    if locked.membership_status != MembershipStatus.ATTENDANCE_PAUSED:
         return False
     rsvps = EventRSVP.objects.filter(user=user).select_related("event")
     if not is_compliant(compute_member_stats(rsvps)):

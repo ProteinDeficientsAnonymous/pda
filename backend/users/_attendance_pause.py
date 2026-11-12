@@ -186,7 +186,7 @@ def _audit_pause(request, user: User, impact: PauseImpact, removed_role_ids: lis
 
 def apply_attendance_pause_patch(request, user: User, attendance_paused: bool | None) -> bool:
     """Pause or silently unpause the user per the PATCH flag; returns True if anything changed."""
-    is_paused = user.attendance_paused_at is not None
+    is_paused = user.membership_status == MembershipStatus.ATTENDANCE_PAUSED
     if attendance_paused is None or attendance_paused == is_paused:
         return False
     if attendance_paused:
