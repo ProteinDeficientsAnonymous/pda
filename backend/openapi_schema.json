@@ -5207,13 +5207,17 @@
             "title": "Full Name",
             "type": "string"
           },
+          "is_attendance_paused": {
+            "title": "Is Attendance Paused",
+            "type": "boolean"
+          },
+          "is_guidelines_paused": {
+            "title": "Is Guidelines Paused",
+            "type": "boolean"
+          },
           "is_pause_candidate": {
             "default": false,
             "title": "Is Pause Candidate",
-            "type": "boolean"
-          },
-          "is_paused": {
-            "title": "Is Paused",
             "type": "boolean"
           },
           "last_qualifying_at": {
@@ -5257,7 +5261,8 @@
           "user_id",
           "full_name",
           "phone_number",
-          "is_paused"
+          "is_guidelines_paused",
+          "is_attendance_paused"
         ],
         "title": "MemberAttendanceRowOut",
         "type": "object"
@@ -8032,11 +8037,6 @@
             "title": "Is Member",
             "type": "boolean"
           },
-          "is_paused": {
-            "default": false,
-            "title": "Is Paused",
-            "type": "boolean"
-          },
           "is_superuser": {
             "default": false,
             "title": "Is Superuser",
@@ -8260,6 +8260,17 @@
             ],
             "title": "First Name"
           },
+          "guidelines_paused": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guidelines Paused"
+          },
           "has_joined_whatsapp": {
             "anyOf": [
               {
@@ -8270,17 +8281,6 @@
               }
             ],
             "title": "Has Joined Whatsapp"
-          },
-          "is_paused": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Paused"
           },
           "last_name": {
             "anyOf": [

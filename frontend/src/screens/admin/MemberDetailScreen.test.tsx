@@ -55,8 +55,6 @@ const member: Member = {
   isMember: true,
   membershipStatus: MembershipStatus.ActiveMember,
   isSuperuser: false,
-  isPaused: false,
-  attendancePausedAt: null,
   hasJoinedWhatsapp: false,
   needsOnboarding: false,
   loginLinkRequested: false,
@@ -175,7 +173,7 @@ describe('MemberDetailScreen edit form', () => {
   });
 
   it.each([
-    ['guidelines violation pause', { isPaused: true }],
+    ['guidelines violation pause', { guidelinesPaused: true }],
     ['event rqmt pause', { attendancePaused: true }],
   ])('saves the %s toggle as its own field', async (label, patch) => {
     renderScreen();
@@ -187,7 +185,7 @@ describe('MemberDetailScreen edit form', () => {
 
   it('unpauses an event rqmt pause, shows its badge, and hides roles', async () => {
     vi.mocked(useUsers).mockReturnValue({
-      data: [{ ...member, attendancePausedAt: new Date('2026-03-01') }],
+      data: [{ ...member, membershipStatus: MembershipStatus.AttendancePaused }],
       isPending: false,
       isError: false,
     } as unknown as ReturnType<typeof useUsers>);
