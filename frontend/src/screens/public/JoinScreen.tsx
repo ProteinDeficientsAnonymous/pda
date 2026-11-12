@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
-import type { JoinQuestion } from '@/api/join';
+import type { JoinAnswer, JoinQuestion } from '@/api/join';
 import {
   AlreadyHasAccountError,
   PendingJoinRequestError,
@@ -24,6 +24,10 @@ import { PendingJoinRequestPanel } from './PendingJoinRequestPanel';
 
 const MAX_NAME = 64;
 const MAX_ANSWER = 2000;
+
+function answerText(answer: JoinAnswer | undefined): string {
+  return Array.isArray(answer) ? answer.join('') : (answer ?? '').trim();
+}
 
 export default function JoinScreen() {
   const isAuthed = useAuthStore((s) => s.status === 'authed');
@@ -88,7 +92,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, JoinAnswer>>({});
   const [smsConsent, setSmsConsent] = useState(false);
   const [guidelinesConsent, setGuidelinesConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -116,7 +120,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
       next.guidelinesConsent =
         'please read and confirm you agree to the guidelines and community agreements';
     for (const q of questions) {
-      const val = (answers[q.id] ?? '').trim();
+      const val = answerText(answers[q.id]);
       if (q.required && !val) next[q.id] = 'required';
       else if (val.length > MAX_ANSWER) next[q.id] = `under ${String(MAX_ANSWER)} chars`;
     }
@@ -128,7 +132,9 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
     e.preventDefault();
     setServerError(null);
     if (!validate()) return;
-    const nonEmpty = Object.fromEntries(Object.entries(answers).filter(([, v]) => v.trim() !== ''));
+    const nonEmpty = Object.fromEntries(
+      Object.entries(answers).filter(([, v]) => answerText(v) !== ''),
+    );
     try {
       await submit.mutateAsync({
         firstName: firstName.trim(),
@@ -215,7 +221,10 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
             question={q}
             value={answers[q.id] ?? ''}
             onChange={(val) => {
-              setAnswers((a) => ({ ...a, [q.id]: typeof val === 'string' ? val : '' }));
+              setAnswers((a) => ({
+                ...a,
+                [q.id]: typeof val === 'string' || Array.isArray(val) ? val : '',
+              }));
             }}
             error={errors[q.id]}
           />
