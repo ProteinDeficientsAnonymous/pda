@@ -217,15 +217,17 @@ class User(AbstractUser):
             ),
         ]
 
-    def set_membership_status(self, status: MembershipStatus, *, by: "User | None") -> list[str]:
+    def set_membership_status(
+        self, new_status: MembershipStatus, *, by: "User | None"
+    ) -> list[str]:
         """param(by): who made the change, or None for the system.
         return(list[str]): the fields it changed, for update_fields."""
-        if self.is_archived and status != MembershipStatus.ARCHIVED:
-            # Archived stays archived; the change waits here until reactivation restores it.
-            self.status_before_archive = status
+        if self.is_archived and new_status != MembershipStatus.ARCHIVED:
+            # They stay archived; unarchiving restores this status.
+            self.status_before_archive = new_status
             return ["status_before_archive"]
-        if status != self.membership_status:
-            self.membership_status = status
+        if new_status != self.membership_status:
+            self.membership_status = new_status
             self.membership_status_changed_at = timezone.now()
             self.membership_status_changed_by = by
         return list(STATUS_CHANGE_FIELDS)
@@ -260,6 +262,7 @@ class User(AbstractUser):
 
     @property
     def is_archived(self) -> bool:
+        # Not membership_status: _unarchive clears archived_at first so the restore isn't parked.
         return self.archived_at is not None
 
     @property
