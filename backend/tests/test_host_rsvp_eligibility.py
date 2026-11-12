@@ -1,12 +1,12 @@
 import pytest
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import Event, EventRSVP, EventType, RSVPStatus
 from django.utils import timezone
 from users.models import MembershipStatus
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from tests._time import future_iso
-from tests._users import make_user
+from tests._users import make_attendance_paused, make_user
 
 
 @pytest.fixture
@@ -52,6 +52,17 @@ class TestHostRsvpEligibility:
         assert response.status_code == 400
         assert_error_code(response, "event.guest_not_eligible")
         assert not EventRSVP.objects.filter(event=event, user=target).exists()
+
+    @pytest.mark.parametrize(
+        "make_target",
+        [lambda: make_user(membership_status=MembershipStatus.TENTATIVE), make_attendance_paused],
+    )
+    def test_allows_limited_target_on_official_event(self, api_client, event, host, make_target):
+        event.event_type = EventType.OFFICIAL
+        event.save(update_fields=["event_type"])
+        target = make_target()
+        assert _set_rsvp(api_client, event, host, target).status_code == 200
+        assert EventRSVP.objects.filter(event=event, user=target).exists()
 
     def test_refused_target_keeps_existing_rsvp(self, api_client, event, host):
         target = make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED)
