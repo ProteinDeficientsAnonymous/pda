@@ -2715,11 +2715,6 @@ export interface components {
             /** Updated Count */
             updated_count: number;
         };
-        /** AttendancePausePreviewOut */
-        AttendancePausePreviewOut: {
-            /** Events */
-            events: components["schemas"]["PauseImpactEventOut"][];
-        };
         /** AttendanceReportOut */
         AttendanceReportOut: {
             /**
@@ -5093,6 +5088,11 @@ export interface components {
          * @enum {string}
          */
         PauseOutcome: "kept" | "removed" | "drafted";
+        /** PausePreviewOut */
+        PausePreviewOut: {
+            /** Events */
+            events: components["schemas"]["PauseImpactEventOut"][];
+        };
         /**
          * PauseRole
          * @enum {string}
@@ -7214,7 +7214,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AttendancePausePreviewOut"];
+                    "application/json": components["schemas"]["PausePreviewOut"];
                 };
             };
             /** @description Forbidden */
@@ -7294,7 +7294,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AttendancePausePreviewOut"];
+                    "application/json": components["schemas"]["PausePreviewOut"];
                 };
             };
             /** @description Forbidden */
