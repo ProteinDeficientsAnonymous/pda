@@ -5,7 +5,12 @@ import type { Member } from '@/api/users';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { attendedCountLabel } from './attendedCountLabel';
-import { isAttendancePaused, isManagedMember, isTentative } from './memberPause';
+import {
+  isAttendancePaused,
+  isGuidelinesPaused,
+  isManagedMember,
+  isTentative,
+} from './memberPause';
 import { PauseBadges } from './PauseBadges';
 
 export function MemberRow({ member }: { member: Member }) {
@@ -35,7 +40,7 @@ function MemberRowBody({ member, initials }: { member: Member; initials: string 
   const hasTags =
     !managed ||
     member.roles.length > 0 ||
-    member.isPaused ||
+    isGuidelinesPaused(member) ||
     isAttendancePaused(member) ||
     isTentative(member);
   return (

@@ -46,7 +46,6 @@ const attendancePaused = makeMember({
   fullName: 'Paused Member',
   isMember: false,
   membershipStatus: MembershipStatus.AttendancePaused,
-  attendancePausedAt: new Date('2026-03-01'),
 });
 
 function adminUser(permissions: string[] = [Permission.ManageUsers]): User {
@@ -330,7 +329,14 @@ describe('MembersScreen', () => {
 
   it('labels pause kinds and links attendance-paused members as members', () => {
     mockUsersResult({
-      data: [makeMember({ id: 'm1', fullName: 'Ada Member', isPaused: true }), attendancePaused],
+      data: [
+        makeMember({
+          id: 'm1',
+          fullName: 'Ada Member',
+          membershipStatus: MembershipStatus.GuidelinesPaused,
+        }),
+        attendancePaused,
+      ],
     });
 
     renderScreen();

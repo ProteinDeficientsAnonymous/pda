@@ -134,6 +134,7 @@ function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
   const currentUser = useAuthStore((s) => s.user);
   const canPause = hasPermission(currentUser, Permission.ManageUsers);
   const badge = complianceBadge(row);
+  const paused = row.isGuidelinesPaused || row.isAttendancePaused;
 
   return (
     <article className="border-border bg-surface rounded-lg border p-3">
@@ -145,7 +146,7 @@ function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
           <p className="text-foreground-tertiary text-xs">{formatPhone(row.phoneNumber)}</p>
         </div>
         <div className="flex flex-wrap items-center gap-1">
-          {row.isPaused ? <Badge tone="neutral">paused</Badge> : null}
+          {paused ? <Badge tone="neutral">paused</Badge> : null}
           <Badge tone={badge.tone}>{badge.label}</Badge>
         </div>
       </div>
@@ -159,7 +160,7 @@ function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
         <Stat label="cancels" value={row.cancelCount} />
       </div>
 
-      {canPause && !row.isPaused ? <PauseButton row={row} /> : null}
+      {canPause && !paused ? <PauseButton row={row} /> : null}
     </article>
   );
 }
@@ -177,7 +178,7 @@ function PauseButton({ row }: { row: MemberAttendanceRow }) {
     });
     if (!ok) return;
     try {
-      await update.mutateAsync({ isPaused: true });
+      await update.mutateAsync({ guidelinesPaused: true });
       toast.success('member paused ✓');
     } catch (err) {
       toast.error(extractApiErrorOr(err, "couldn't pause member — try again"));
