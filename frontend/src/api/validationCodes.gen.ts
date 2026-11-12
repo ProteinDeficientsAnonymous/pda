@@ -189,6 +189,7 @@ export const Code = {
   JoinRequest: {
     NotFound: 'join_request.not_found',
     AlreadyDecided: 'join_request.already_decided',
+    TentativeCannotBeRejected: 'join_request.tentative_cannot_be_rejected',
     OnlyRejectedCanBeUnRejected: 'join_request.only_rejected_can_be_un_rejected',
     AlreadyMember: 'join_request.already_member',
     PhoneAlreadyInvited: 'join_request.phone_already_invited',
@@ -465,6 +466,7 @@ export type ValidationCode =
   | 'survey.condition_source_in_use'
   | 'join_request.not_found'
   | 'join_request.already_decided'
+  | 'join_request.tentative_cannot_be_rejected'
   | 'join_request.only_rejected_can_be_un_rejected'
   | 'join_request.already_member'
   | 'join_request.phone_already_invited'
@@ -695,6 +697,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.condition_source_in_use': ['label'],
   'join_request.not_found': [],
   'join_request.already_decided': [],
+  'join_request.tentative_cannot_be_rejected': [],
   'join_request.only_rejected_can_be_un_rejected': [],
   'join_request.already_member': [],
   'join_request.phone_already_invited': [],

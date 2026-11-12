@@ -450,6 +450,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'join request not found';
     case Code.JoinRequest.AlreadyDecided:
       return 'this request has already been decided';
+    case Code.JoinRequest.TentativeCannotBeRejected:
+      return "tentative members can't be rejected — archive them from the members screen instead";
     case Code.JoinRequest.OnlyRejectedCanBeUnRejected:
       return 'only rejected requests can be un-rejected';
     case Code.JoinRequest.AlreadyMember:
