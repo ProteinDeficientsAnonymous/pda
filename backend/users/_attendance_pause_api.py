@@ -7,10 +7,10 @@ from config.auth import gated_jwt
 from ninja.responses import Status
 from pydantic import BaseModel
 
-from users._attendance_pause import PauseImpact, attendance_pause_impact
+from users._attendance_pause import PauseImpact, pause_impact
 from users._management import require_manage_users
 from users._management import router as management_router
-from users.models import User
+from users.models import MembershipStatus, User
 from users.schemas import ErrorOut
 
 router = management_router
@@ -73,5 +73,5 @@ def attendance_pause_preview(request, user_id: UUID):
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
-    events = _preview_events(attendance_pause_impact(user))
+    events = _preview_events(pause_impact(user, MembershipStatus.ATTENDANCE_PAUSED))
     return Status(200, AttendancePausePreviewOut(events=events))

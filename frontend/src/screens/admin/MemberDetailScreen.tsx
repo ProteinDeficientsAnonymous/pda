@@ -162,7 +162,9 @@ function MemberRolesSection({ member }: { member: Member }) {
   }
 
   if (isAttendancePaused(member)) {
-    return <p className="text-muted mb-4 text-sm">roles are cleared while event rqmt paused</p>;
+    return (
+      <p className="text-muted mb-4 text-sm">roles are locked to member while event rqmt paused</p>
+    );
   }
   if (isPending) {
     return <p className="text-muted mb-4 text-sm">loading roles…</p>;
