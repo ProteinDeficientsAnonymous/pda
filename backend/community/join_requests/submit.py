@@ -18,16 +18,15 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from users.models import PUBLIC_FORM_PHONE_REGION, User, can_sign_in_q, validate_phone
 
 from community._question_answers import (
-    assert_checkbox_members,
-    assert_single_choice_member,
-    checkbox_values,
+    AnswerCodes,
+    ChoiceAnswer,
     is_answer_empty,
+    normalize_answer,
 )
 from community.field_limits import FieldLimit
 from community.models import (
     OPEN_JOIN_REQUEST_STATUSES,
     JoinFormQuestion,
-    JoinFormQuestionType,
     JoinRequest,
     JoinRequestStatus,
 )
@@ -41,7 +40,10 @@ from community.validation import Code, ValidationException, raise_validation
 
 router = Router()
 
-JoinAnswerIn = str | list[str]
+_ANSWER_CODES = AnswerCodes(
+    invalid_option=Code.JoinRequest.ANSWER_INVALID_OPTION,
+    invalid_format=Code.JoinRequest.ANSWER_INVALID_FORMAT,
+)
 
 
 class JoinRequestIn(BaseModel):
@@ -49,7 +51,7 @@ class JoinRequestIn(BaseModel):
     last_name: str = Field(default="", max_length=FieldLimit.LAST_NAME)
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     email: EmailStr
-    answers: dict[str, JoinAnswerIn] = {}
+    answers: dict[str, ChoiceAnswer] = {}
     # Consent timestamps are recorded on the join request for TCPA/Twilio proof (see #501).
     sms_consent: bool = False
     guidelines_consent: bool = False
@@ -58,7 +60,7 @@ class JoinRequestIn(BaseModel):
 
     @field_validator("answers")
     @classmethod
-    def validate_answer_lengths(cls, v: dict[str, JoinAnswerIn]) -> dict[str, JoinAnswerIn]:
+    def validate_answer_lengths(cls, v: dict[str, ChoiceAnswer]) -> dict[str, ChoiceAnswer]:
         for key, answer in v.items():
             if len("".join(answer)) > FieldLimit.DESCRIPTION:
                 raise_validation(
@@ -105,29 +107,15 @@ class CheckPhoneIn(BaseModel):
     phone_number: str = Field(max_length=FieldLimit.PHONE)
 
 
-def _normalize_answer(q: JoinFormQuestion, answer: JoinAnswerIn, field: str) -> JoinAnswerIn:
-    if q.field_type == JoinFormQuestionType.CHECKBOX:
-        code = Code.JoinRequest.ANSWER_INVALID_OPTION
-        assert_checkbox_members(answer, q.options, code=code, field=field, label=q.label)
-        return list(dict.fromkeys(checkbox_values(answer)))
-    if isinstance(answer, list):
-        raise_validation(Code.JoinRequest.ANSWER_INVALID_FORMAT, field=field, label=q.label)
-    text = answer.strip()
-    if q.field_type == JoinFormQuestionType.SELECT and text:
-        code = Code.JoinRequest.ANSWER_INVALID_OPTION
-        assert_single_choice_member(text, q.options, code=code, field=field, label=q.label)
-    return text
-
-
 def _build_custom_answers(
-    answers: dict[str, JoinAnswerIn],
+    answers: dict[str, ChoiceAnswer],
     questions: dict[str, JoinFormQuestion],
 ) -> dict:
     """Validate answers and snapshot them with their labels. Raises ValidationException."""
     result = {}
     for q_id, q in questions.items():
         field = f"answers.{q_id}"
-        answer = _normalize_answer(q, answers.get(q_id, ""), field)
+        answer = normalize_answer(answers.get(q_id, ""), q, codes=_ANSWER_CODES, field=field)
         if is_answer_empty(answer):
             if q.required:
                 raise_validation(Code.JoinRequest.ANSWER_REQUIRED, field=field, label=q.label)
@@ -136,7 +124,7 @@ def _build_custom_answers(
     return result
 
 
-def _format_answer(answer: JoinAnswerIn) -> str:
+def _format_answer(answer: ChoiceAnswer) -> str:
     return ", ".join(answer) if isinstance(answer, list) else answer
 
 
