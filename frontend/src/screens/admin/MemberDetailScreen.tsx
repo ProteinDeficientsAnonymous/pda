@@ -26,7 +26,7 @@ import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/we
 
 import { attendedCountLabel } from './attendedCountLabel';
 import { MemberConnectedApps } from './MemberConnectedApps';
-import { isAttendancePaused } from './memberPause';
+import { isAttendancePaused, isGuidelinesPaused } from './memberPause';
 import { MemberPauseToggles } from './MemberPauseToggles';
 import { PauseBadges } from './PauseBadges';
 
@@ -369,7 +369,7 @@ function MemberEditForm({
   const [phoneNumber, setPhoneNumber] = useState(member.phoneNumber);
   const [email, setEmail] = useState(member.email);
   const [pause, setPause] = useState({
-    isPaused: member.isPaused,
+    guidelinesPaused: isGuidelinesPaused(member),
     attendancePaused: isAttendancePaused(member),
   });
   const [error, setError] = useState<string | null>(null);
@@ -388,7 +388,8 @@ function MemberEditForm({
     if (lastName.trim() !== member.lastName) patch.lastName = lastName.trim();
     if (phoneNumber !== member.phoneNumber) patch.phoneNumber = phoneNumber.trim();
     if (email !== member.email) patch.email = email.trim();
-    if (pause.isPaused !== member.isPaused) patch.isPaused = pause.isPaused;
+    if (pause.guidelinesPaused !== isGuidelinesPaused(member))
+      patch.guidelinesPaused = pause.guidelinesPaused;
     const wasAttendancePaused = isAttendancePaused(member);
     if (pause.attendancePaused !== wasAttendancePaused)
       patch.attendancePaused = pause.attendancePaused;

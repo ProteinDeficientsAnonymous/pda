@@ -37,7 +37,7 @@ def _sends(fake_email_sender) -> list[dict]:
 class TestManualUnpause:
     @pytest.mark.parametrize(
         ("pause", "payload"),
-        [(GUIDELINES, {"is_paused": False}), (ATTENDANCE, {"attendance_paused": False})],
+        [(GUIDELINES, {"guidelines_paused": False}), (ATTENDANCE, {"attendance_paused": False})],
         ids=["guidelines", "attendance"],
     )
     def test_lifting_the_last_pause_emails_and_stamps(
@@ -57,11 +57,11 @@ class TestManualUnpause:
     @pytest.mark.parametrize(
         ("pause", "payload"),
         [
-            ({}, {"is_paused": True}),
+            ({}, {"guidelines_paused": True}),
             ({}, {"first_name": "Sam"}),
             (GUIDELINES, {"first_name": "Sam"}),
-            (GUIDELINES, {"is_paused": False, "attendance_paused": True}),
-            ({**GUIDELINES, **ATTENDANCE}, {"is_paused": False}),
+            (GUIDELINES, {"guidelines_paused": False, "attendance_paused": True}),
+            ({**GUIDELINES, **ATTENDANCE}, {"guidelines_paused": False}),
             ({**GUIDELINES, **ATTENDANCE}, {"attendance_paused": False}),
         ],
         ids=[
@@ -83,7 +83,7 @@ class TestManualUnpause:
 
     @pytest.mark.parametrize(
         "payload",
-        [{"is_paused": True}, {"attendance_paused": True}],
+        [{"guidelines_paused": True}, {"attendance_paused": True}],
         ids=["guidelines", "attendance"],
     )
     def test_a_new_pause_clears_the_stamp(self, patch_user, fake_email_sender, payload):
@@ -98,12 +98,12 @@ class TestManualUnpause:
         self, patch_user, fake_email_sender, extra
     ):
         user = _member(**GUIDELINES, **extra)
-        patch_user(user, {"is_paused": False})
+        patch_user(user, {"guidelines_paused": False})
         assert user.unpaused_at is not None
         fake_email_sender.send.assert_not_called()
 
     def test_send_error_does_not_fail_the_unpause(self, patch_user, fake_email_sender):
         fake_email_sender.send.side_effect = RuntimeError("provider down")
         user = _member(**GUIDELINES)
-        assert patch_user(user, {"is_paused": False}).status_code == 200
+        assert patch_user(user, {"guidelines_paused": False}).status_code == 200
         assert not user.is_paused
