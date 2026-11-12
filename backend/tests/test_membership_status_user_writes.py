@@ -67,12 +67,13 @@ def _patch_guidelines_pause(api_client, headers, user, paused):
 
 
 def test_guidelines_pause_and_unpause(api_client, manage_users_headers):
-    member = make_user()
+    member = make_user(has_joined_whatsapp=True)
     assert (
         _patch_guidelines_pause(api_client, manage_users_headers, member, True)
         == MembershipStatus.GUIDELINES_PAUSED
     )
     assert member.is_member is True
+    assert member.has_joined_whatsapp is False
     assert (
         _patch_guidelines_pause(api_client, manage_users_headers, member, False)
         == MembershipStatus.ATTENDANCE_PAUSED
