@@ -13,8 +13,6 @@ import {
 import { useConfirm } from '@/components/ui/useConfirm';
 import { formatShortDateTime } from '@/utils/datetime';
 
-export type PauseKind = 'guidelinesPaused' | 'attendancePaused';
-
 const ROLE_LABEL: Record<PauseRole, string> = {
   rsvp: "rsvp'd",
   hosting: 'hosting',
@@ -34,6 +32,8 @@ const PAUSE_DIALOG = {
   },
   attendancePaused: { fetchPreview: fetchAttendancePausePreview, title: 'pause for event rqmt?' },
 };
+
+export type PauseKind = keyof typeof PAUSE_DIALOG;
 
 export function usePauseConfirm() {
   const [loading, setLoading] = useState(false);
