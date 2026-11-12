@@ -158,9 +158,10 @@ class TestResolveUser:
             MembershipStatus.ATTENDANCE_PAUSED,
             MembershipStatus.ACTIVE_MEMBER,
             MembershipStatus.GUIDELINES_PAUSED,
+            MembershipStatus.ARCHIVED,
         ],
     )
-    def test_user_who_can_sign_in_or_is_paused_returns_none(self, public_rsvper, status):
+    def test_anyone_but_a_public_rsvper_returns_none(self, public_rsvper, status):
         token = PublicRsvpToken.issue(public_rsvper)
         User.objects.filter(pk=public_rsvper.pk).update(membership_status=status)
         assert PublicRsvpToken.resolve_user(token.token) is None

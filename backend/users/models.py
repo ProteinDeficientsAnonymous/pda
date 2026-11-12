@@ -353,8 +353,7 @@ class PublicRsvpToken(models.Model):
     It grants scoped read/write to one non-member's RSVPs only. On a non-member's
     RSVP we EXTEND their existing valid token (see issue_or_extend) rather than
     minting a new one, so a link saved from a previous email keeps working; a
-    fresh token is only issued when there is no valid one. Revoked when the user
-    converts to a member.
+    fresh token is only issued when there is no valid one. Revoked once they can sign in.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -424,16 +423,13 @@ class PublicRsvpToken(models.Model):
 
     @classmethod
     def resolve_user(cls, token: str) -> "User | None":
-        """The token's user; None if the token is unusable or its user can sign in or is paused."""
+        """The token's user; None if the token is unusable or its user isn't a public rsvper."""
         if not token:
             return None
         row = cls.objects.select_related("user").filter(token=token).first()
-        if row is None or not row.is_valid:
+        if row is None or not row.is_valid or row.user.membership_status != MembershipStatus.NONE:
             return None
-        user = row.user
-        if user.is_guidelines_paused or user.membership_status in SIGN_IN_STATUSES:
-            return None
-        return user
+        return row.user
 
 
 @receiver(m2m_changed, sender=User.roles.through)
