@@ -20,6 +20,7 @@ from users.models import PUBLIC_FORM_PHONE_REGION, User, can_sign_in_q, validate
 from community._question_answers import assert_single_choice_member, is_answer_empty
 from community.field_limits import FieldLimit
 from community.models import (
+    OPEN_JOIN_REQUEST_STATUSES,
     JoinFormQuestion,
     JoinFormQuestionType,
     JoinRequest,
@@ -168,7 +169,7 @@ def _raise_if_open_request(validated_phone: str) -> None:
     live_statuses = set(
         JoinRequest.objects.filter(
             phone_number=validated_phone,
-            status__in=(JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE),
+            status__in=OPEN_JOIN_REQUEST_STATUSES,
         ).values_list("status", flat=True)
     )
     if JoinRequestStatus.PENDING in live_statuses:
