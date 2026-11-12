@@ -4673,6 +4673,7 @@ export interface components {
             onboarded_at?: string | null;
             /** Phone Number */
             phone_number: string;
+            previous_archive?: components["schemas"]["PreviousArchiveOut"] | null;
             previous_rejection?: components["schemas"]["PreviousRejectionOut"] | null;
             /**
              * Previously Archived
@@ -5147,6 +5148,14 @@ export interface components {
             voters: {
                 [key: string]: components["schemas"]["VoterOut"][];
             };
+        };
+        /** PreviousArchiveOut */
+        PreviousArchiveOut: {
+            /** Archived At */
+            archived_at?: string | null;
+            /** Archived By Name */
+            archived_by_name?: string | null;
+            paused_status?: components["schemas"]["MembershipStatus"] | null;
         };
         /** PreviousRejectionOut */
         PreviousRejectionOut: {
