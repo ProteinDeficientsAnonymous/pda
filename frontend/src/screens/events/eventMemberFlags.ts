@@ -26,7 +26,8 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
     (isHostOrEventManager || (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
   const showRsvp = event.rsvpEnabled;
   const membershipBlocksRsvp = isLimited(user) && !canLimitedRsvp(event);
-  const rsvpLocked = !isOpen;
+  // the backend refuses rsvps on a draft to anyone who can't edit it
+  const rsvpLocked = !isOpen || (event.status === EventStatus.Draft && !isHostOrEventManager);
   const showStandaloneInvited = !showRsvp && isHostOrEventManager && event.invitedCount > 0;
   return {
     isHostOrEventManager,

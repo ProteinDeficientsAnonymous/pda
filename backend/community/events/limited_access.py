@@ -1,6 +1,7 @@
 from django.db.models import Q
 from users.models import LIMITED_STATUSES, MembershipStatus
 
+from community.events._hosts import is_draft_host
 from community.models import EventType, PageVisibility
 from community.validation import Code, raise_validation
 
@@ -40,8 +41,11 @@ def event_viewer_for(viewer, event):
     Outside official/club, a limited user sees exactly what a logged-out visitor
     sees — so they're downgraded to anonymous rather than filtered out, and a
     public community event stays as visible as it was before they signed in.
+    The exception is a draft they host, or created and their pause left hostless.
     """
-    return None if _sees_as_visitor(viewer, event) else viewer
+    if not _sees_as_visitor(viewer, event):
+        return viewer
+    return viewer if event.is_draft and is_draft_host(event, viewer) else None
 
 
 def enforce_limited_write_access(user, event, action: str) -> None:
