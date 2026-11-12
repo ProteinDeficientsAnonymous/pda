@@ -58,7 +58,7 @@ class TestUpdateUser:
     def test_update_user_pause(self, api_client, manage_users_headers, other_user):
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"is_paused": True},
+            {"guidelines_paused": True},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -89,7 +89,7 @@ class TestUpdateUser:
             with caplog.at_level(logging.WARNING, logger="pda.audit"):
                 response = api_client.patch(
                     f"/api/auth/users/{other_user.pk}/",
-                    {"is_paused": True},
+                    {"guidelines_paused": True},
                     content_type="application/json",
                     **manage_users_headers,
                 )
@@ -112,7 +112,7 @@ class TestUpdateUser:
             with caplog.at_level(logging.WARNING, logger="pda.audit"):
                 response = api_client.patch(
                     f"/api/auth/users/{other_user.pk}/",
-                    {"is_paused": True},
+                    {"guidelines_paused": True},
                     content_type="application/json",
                     **manage_users_headers,
                 )
@@ -134,7 +134,7 @@ class TestUpdateUser:
         other_user.save(update_fields=["is_paused"])
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"is_paused": False},
+            {"guidelines_paused": False},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -161,7 +161,7 @@ class TestUpdateUser:
         )
         assert response.status_code == 403
 
-    @pytest.mark.parametrize("payload", [{"is_paused": True}, {"attendance_paused": True}])
+    @pytest.mark.parametrize("payload", [{"guidelines_paused": True}, {"attendance_paused": True}])
     def test_cannot_pause_own_account(
         self, api_client, manage_users_headers, manage_users_user, payload
     ):
@@ -173,7 +173,7 @@ class TestUpdateUser:
         )
         assert response.status_code == 400
 
-    @pytest.mark.parametrize("payload", [{"is_paused": True}, {"attendance_paused": True}])
+    @pytest.mark.parametrize("payload", [{"guidelines_paused": True}, {"attendance_paused": True}])
     def test_cannot_pause_admin(self, api_client, manage_users_headers, other_user, payload):
         admin_role = Role.objects.get(name="admin", is_default=True)
         other_user.roles.add(admin_role)

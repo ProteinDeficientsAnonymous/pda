@@ -29,7 +29,7 @@ def member(db):
         password="x",
         first_name="Member",
         last_name="One",
-        is_member=True,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
@@ -167,10 +167,16 @@ class TestMemberAttendanceAnalyticsEndpoint:
     def test_pause_candidates_sorted_first(self, api_client, host_user, events_admin):
 
         compliant = User.objects.create_user(
-            phone_number="+12025552000", password="x", first_name="Compliant", is_member=True
+            phone_number="+12025552000",
+            password="x",
+            first_name="Compliant",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         candidate = User.objects.create_user(
-            phone_number="+12025552001", password="x", first_name="Candidate", is_member=True
+            phone_number="+12025552001",
+            password="x",
+            first_name="Candidate",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         recent = _make_event(host_user, "Recent", days_ago=5)
         EventRSVP.objects.create(
@@ -184,18 +190,25 @@ class TestMemberAttendanceAnalyticsEndpoint:
         ids = [r["user_id"] for r in response.json()["members"]]
         assert ids.index(str(candidate.pk)) < ids.index(str(compliant.pk))
 
-    def test_paused_member_included_and_labeled(self, api_client, host_user, events_admin):
-
+    @pytest.mark.parametrize(
+        ("status", "flag"),
+        [
+            (MembershipStatus.GUIDELINES_PAUSED, "is_guidelines_paused"),
+            (MembershipStatus.ATTENDANCE_PAUSED, "is_attendance_paused"),
+        ],
+    )
+    def test_paused_member_included_and_labeled(
+        self, api_client, host_user, events_admin, status, flag
+    ):
         paused = User.objects.create_user(
             phone_number="+12025552002",
             password="x",
             first_name="Paused",
-            is_member=True,
-            is_paused=True,
+            membership_status=status,
         )
         response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(paused.pk))
-        assert row["is_paused"] is True
+        assert row[flag] is True
         assert row["is_pause_candidate"] is False
 
     def test_archived_member_excluded(self, api_client, events_admin):
@@ -204,7 +217,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
             phone_number="+12025552003",
             password="x",
             first_name="Archived",
-            is_member=True,
+            membership_status=MembershipStatus.ARCHIVED,
             archived_at=timezone.now(),
         )
         response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))

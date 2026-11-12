@@ -14,7 +14,7 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 const preview = vi.mocked(fetchAttendancePausePreview);
 
 function Harness({ attendancePaused = false }: { attendancePaused?: boolean }) {
-  const [value, setValue] = useState<PauseState>({ isPaused: false, attendancePaused });
+  const [value, setValue] = useState<PauseState>({ guidelinesPaused: false, attendancePaused });
   return (
     <MemberPauseToggles memberId="m1" value={value} onChange={setValue} targetIsAdmin={false} />
   );

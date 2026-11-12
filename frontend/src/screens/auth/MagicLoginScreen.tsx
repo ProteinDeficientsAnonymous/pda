@@ -49,7 +49,7 @@ export default function MagicLoginScreen() {
       })
       .catch((err: unknown) => {
         if (
-          hasErrorCode(err, Code.Auth.AccountPaused) ||
+          hasErrorCode(err, Code.Auth.AccountGuidelinesPaused) ||
           hasErrorCode(err, Code.Auth.AccountArchived)
         ) {
           setBlockedMessage(extractApiError(err) ?? '');

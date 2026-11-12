@@ -263,6 +263,20 @@ class User(AbstractUser):
             self.membership_status_changed_by = by
         return list(STATUS_CHANGE_FIELDS)
 
+    def apply_guidelines_pause(self, *, by: "User | None") -> list[str]:
+        """A guidelines pause replaces any attendance pause."""
+        self.attendance_paused_at = None
+        self.unpaused_at = None
+        self.has_joined_whatsapp = False
+        status_fields = self.set_membership_status(MembershipStatus.GUIDELINES_PAUSED, by=by)
+        return ["attendance_paused_at", "unpaused_at", "has_joined_whatsapp", *status_fields]
+
+    def lift_guidelines_pause(self, *, by: "User | None") -> list[str]:
+        # Lifting leaves them limited until a compliant in-person check-in.
+        self.attendance_paused_at = timezone.now()
+        status_fields = self.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED, by=by)
+        return ["attendance_paused_at", *status_fields]
+
     @property
     def is_guidelines_paused(self) -> bool:
         """True for an archived user archived while guidelines-paused too, so archiving can't shed it."""

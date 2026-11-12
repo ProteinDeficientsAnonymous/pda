@@ -108,7 +108,7 @@ class TestLogin:
             content_type="application/json",
         )
         assert response.status_code == 403
-        assert_error_code(response, Code.Auth.ACCOUNT_PAUSED)
+        assert_error_code(response, Code.Auth.ACCOUNT_GUIDELINES_PAUSED)
 
 
 # ---------------------------------------------------------------------------
@@ -195,7 +195,7 @@ class TestMe:
         headers = auth_headers_for(test_user)
         response = api_client.get("/api/auth/me/", **headers)
         assert response.status_code == 403
-        assert_error_code(response, Code.Auth.ACCOUNT_PAUSED)
+        assert_error_code(response, Code.Auth.ACCOUNT_GUIDELINES_PAUSED)
 
 
 # ---------------------------------------------------------------------------
