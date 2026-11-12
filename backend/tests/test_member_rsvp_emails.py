@@ -198,7 +198,7 @@ class TestHostSetRsvpEmail:
         text = fake_email_sender.send.call_args.kwargs["text"]
         assert ("/my-rsvps?token=" in text) is gets_manage_link
 
-    def test_host_set_guidelines_paused_member_gets_member_email(
+    def test_host_seating_guidelines_paused_member_gets_member_email(
         self, test_user, fake_email_sender
     ):
         event = _event(test_user)
