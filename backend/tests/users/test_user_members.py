@@ -48,7 +48,7 @@ class TestActiveMembersManager:
         assert non_member.pk not in self._active_member_ids()
 
     def test_excludes_paused_member(self, member):
-        member.save(update_fields=member.set_guidelines_pause(True, by=None))
+        member.save(update_fields=member.apply_guidelines_pause(by=None))
         assert member.pk not in self._active_member_ids()
 
     def test_excludes_archived_member(self, member):
