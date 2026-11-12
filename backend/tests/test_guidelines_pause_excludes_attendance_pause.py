@@ -77,6 +77,6 @@ def test_refused_attendance_pause_leaves_sign_in_and_public_rsvp_blocked(
         content_type="application/json",
     )
     assert login.status_code == 403
-    assert_error_code(login, Code.Auth.ACCOUNT_PAUSED)
+    assert_error_code(login, Code.Auth.ACCOUNT_GUIDELINES_PAUSED)
     post(api_client, make_official_event())
     assert not EventRSVP.objects.filter(user=member).exists()
