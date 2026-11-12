@@ -55,6 +55,10 @@ class JoinRequestStatus(models.TextChoices):
     CLOSED = "closed", "Closed"
 
 
+# Open requests can still change status; every other status is final.
+OPEN_JOIN_REQUEST_STATUSES = (JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE)
+
+
 class RejectionReason(models.TextChoices):
     VEGETARIAN = "vegetarian", "person is vegetarian"
     NOT_VEGAN = "not_vegan", "person is not vegan (not vegetarian)"

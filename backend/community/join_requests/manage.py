@@ -33,6 +33,7 @@ from community.join_requests.approval import (
 )
 from community.join_requests.grace import WHATSAPP_GRACE_DAYS
 from community.models import (
+    OPEN_JOIN_REQUEST_STATUSES,
     AttendanceStatus,
     EventRSVP,
     EventType,
@@ -303,12 +304,6 @@ def _stamp_decision(join_request: JoinRequest, status: str, actor, rejection: Re
     join_request.save()
 
 
-_DECIDED_STATUSES = (
-    JoinRequestStatus.APPROVED,
-    JoinRequestStatus.REJECTED,
-    JoinRequestStatus.CLOSED,
-)
-
 _DECISION_ACTIONS = {
     JoinRequestStatus.TENTATIVE: "join_request_tentative",
     JoinRequestStatus.APPROVED: "join_request_approved",
@@ -330,7 +325,7 @@ def _apply_status_transition(
         except JoinRequest.DoesNotExist:
             raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
 
-        if join_request.status in _DECIDED_STATUSES:
+        if join_request.status not in OPEN_JOIN_REQUEST_STATUSES:
             raise_validation(Code.JoinRequest.ALREADY_DECIDED, status_code=400)
         was_tentative = join_request.status == JoinRequestStatus.TENTATIVE
         # A tentative person who shouldn't stay is archived from the members screen instead.
