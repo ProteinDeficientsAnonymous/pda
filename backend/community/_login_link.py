@@ -13,14 +13,8 @@ from notifications.email_sender import get_email_sender
 from notifications.service import create_magic_link_request_notifications
 from pydantic import BaseModel, Field
 from users.helpers import create_magic_token, magic_login_url
-from users.models import (
-    PUBLIC_FORM_PHONE_REGION,
-    MagicLoginToken,
-    MagicLoginTokenSource,
-    User,
-    can_sign_in_q,
-    validate_phone,
-)
+from users.models import MagicLoginToken, MagicLoginTokenSource, User, can_sign_in_q
+from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community.field_limits import FieldLimit
 from community.shared import ErrorOut, logger  # noqa: F401

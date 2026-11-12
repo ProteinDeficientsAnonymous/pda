@@ -15,7 +15,8 @@ from ninja import Router
 from ninja.responses import Status
 from notifications.service import create_join_request_notifications
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from users.models import PUBLIC_FORM_PHONE_REGION, User, can_sign_in_q, validate_phone
+from users.models import User, can_sign_in_q
+from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community._question_answers import assert_single_choice_member, is_answer_empty
 from community.field_limits import FieldLimit
@@ -211,11 +212,7 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
         )
     matched = phone_user or email_user
 
-    if matched and (
-        matched.is_member
-        or matched.is_guidelines_paused
-        or matched.attendance_paused_at is not None
-    ):
+    if matched and matched.is_member:
         raise_validation(Code.JoinRequest.ALREADY_MEMBER, status_code=409)
     _raise_if_open_request(validated_phone)
 

@@ -33,7 +33,7 @@ from users._archive import (
     upcoming_events_q,
     upcoming_hosted_events,
 )
-from users.helpers import grant_membership, strip_elevated_roles
+from users.helpers import strip_elevated_roles
 from users.models import HAS_EMAIL, MembershipStatus, User
 
 logger = logging.getLogger(__name__)
@@ -194,30 +194,8 @@ def _notify_unpublished(event: Event, guest_ids: list[str]) -> None:
 
 
 def apply_attendance_pause_patch(request, user: User, attendance_paused: bool | None) -> bool:
-    """Pause or silently unpause the user per the PATCH flag; returns True if anything changed."""
-    is_paused = user.membership_status == MembershipStatus.ATTENDANCE_PAUSED
-    if attendance_paused is None or attendance_paused == is_paused:
+    """Attendance-pause the user when the PATCH asks; returns True if it did."""
+    if not attendance_paused or user.is_attendance_paused:
         return False
-    if attendance_paused:
-        apply_attendance_pause(request, user)
-    else:
-        _unpause(request, user)
+    apply_attendance_pause(request, user)
     return True
-
-
-def _unpause(request, user: User) -> None:
-    with transaction.atomic():
-        user.attendance_paused_at = None
-        user.save(
-            update_fields=[
-                "attendance_paused_at",
-                *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=request.auth),
-            ]
-        )
-        grant_membership(user)
-        audit_log(
-            logging.WARNING,
-            "user_attendance_unpaused",
-            request,
-            target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
-        )

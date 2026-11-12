@@ -155,6 +155,7 @@ class Code:
         CANNOT_PAUSE_SELF = "user.cannot_pause_self"
         CANNOT_PAUSE_ADMIN = "user.cannot_pause_admin"
         GUIDELINES_PAUSED = "user.guidelines_paused"
+        ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN = "user.attendance_pause_lifts_on_check_in"
         ROLE_IDS_NOT_FOUND = "user.role_ids_not_found"
         INVALID_BIRTHDAY = "user.invalid_birthday"
         INVALID_VEGANNIVERSARY = "user.invalid_veganniversary"

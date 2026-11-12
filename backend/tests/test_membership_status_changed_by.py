@@ -5,7 +5,7 @@ from users.models import MembershipStatus, User
 
 from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_official_event, post
-from tests._users import make_attendance_paused, make_user
+from tests._users import make_user
 
 pytestmark = pytest.mark.django_db
 
@@ -93,9 +93,12 @@ def test_unchanged_status_keeps_the_stamp():
     [
         (make_user, {"attendance_paused": True}),
         (make_user, {"guidelines_paused": True}),
-        (make_attendance_paused, {"attendance_paused": False}),
+        (
+            lambda: make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED),
+            {"guidelines_paused": False},
+        ),
     ],
-    ids=["attendance-pause", "guidelines-pause", "unpause"],
+    ids=["attendance-pause", "guidelines-pause", "guidelines-unpause"],
 )
 def test_pause_changes_record_the_admin(
     api_client, manage_users_user, manage_users_headers, make, body

@@ -2,8 +2,6 @@ import secrets
 import uuid
 from datetime import timedelta
 
-import phonenumbers
-from community.validation import Code, raise_validation
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -12,11 +10,8 @@ from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
+from users.phone import normalize_phone_number
 from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
-
-# Fallback for bare digits only — a number with an explicit country code is unaffected.
-ADMIN_ENTERED_PHONE_REGION = "US"
-PUBLIC_FORM_PHONE_REGION = None
 
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
 STATUS_CHANGE_FIELDS = (
@@ -39,29 +34,6 @@ def can_sign_in_q() -> Q:
 def limited_q() -> Q:
     """Signed-in non-members: tentatively approved or attendance-paused; never guidelines-paused."""
     return Q(membership_status__in=LIMITED_STATUSES)
-
-
-def _parse_phone(raw: str, default_region: str | None) -> str | None:
-    try:
-        parsed = phonenumbers.parse(raw, default_region)
-    except phonenumbers.phonenumberutil.NumberParseException:
-        return None
-    if not phonenumbers.is_valid_number(parsed):
-        return None
-    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
-
-
-def validate_phone(raw: str, default_region: str | None, field: str = "phone_number") -> str:
-    """Parse, validate, and return E.164. Raises ValidationException on invalid."""
-    canonical = _parse_phone(raw, default_region)
-    if canonical is None:
-        raise_validation(Code.Phone.INVALID, field=field)
-    return canonical
-
-
-def normalize_phone_number(raw: str) -> str:
-    """Best-effort canonicalize to E.164 for save() — never raises on bad legacy data."""
-    return _parse_phone(raw, ADMIN_ENTERED_PHONE_REGION) or raw
 
 
 class MembershipStatus(models.TextChoices):
@@ -279,9 +251,17 @@ class User(AbstractUser):
     @property
     def is_guidelines_paused(self) -> bool:
         """True for an archived user archived while guidelines-paused too, so archiving can't shed it."""
+        return self._pause_status() == MembershipStatus.GUIDELINES_PAUSED
+
+    @property
+    def is_attendance_paused(self) -> bool:
+        """True for an archived user archived while attendance-paused too."""
+        return self._pause_status() == MembershipStatus.ATTENDANCE_PAUSED
+
+    def _pause_status(self) -> str | None:
         if self.membership_status == MembershipStatus.ARCHIVED:
-            return self.status_before_archive == MembershipStatus.GUIDELINES_PAUSED
-        return self.membership_status == MembershipStatus.GUIDELINES_PAUSED
+            return self.status_before_archive
+        return self.membership_status
 
     @property
     def full_name(self) -> str:

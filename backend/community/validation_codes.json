@@ -665,6 +665,11 @@
         "params": []
       },
       {
+        "name": "ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN",
+        "value": "user.attendance_pause_lifts_on_check_in",
+        "params": []
+      },
+      {
         "name": "ROLE_IDS_NOT_FOUND",
         "value": "user.role_ids_not_found",
         "params": []

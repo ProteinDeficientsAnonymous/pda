@@ -14,15 +14,14 @@ from django.db.models import prefetch_related_objects
 from django.utils import timezone
 
 from users.models import (
-    ADMIN_ENTERED_PHONE_REGION,
     MagicLoginToken,
     MagicLoginTokenSource,
     MembershipStatus,
     PublicRsvpToken,
     User,
     status_change_stamp,
-    validate_phone,
 )
+from users.phone import ADMIN_ENTERED_PHONE_REGION, validate_phone
 from users.roles import Role
 
 
