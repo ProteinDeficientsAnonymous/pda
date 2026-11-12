@@ -35,7 +35,8 @@ const PAUSE_DIALOG = {
 
 export type PauseKind = keyof typeof PAUSE_DIALOG;
 
-export function usePauseConfirm() {
+/** confirmWhenEmpty(boolean): ask even when the preview lists no changes, for a pause applied on confirm */
+export function usePauseConfirm({ confirmWhenEmpty = false } = {}) {
   const [loading, setLoading] = useState(false);
   const { confirm, element } = useConfirm();
 
@@ -44,10 +45,13 @@ export function usePauseConfirm() {
     setLoading(true);
     try {
       const lines = describePreview(await fetchPreview(memberId));
-      if (lines.length === 0) return true;
+      if (lines.length === 0 && !confirmWhenEmpty) return true;
       return await confirm({
         title,
-        message: `here's what the pause changes once you save:\n\n${lines.join('\n')}`,
+        message:
+          lines.length === 0
+            ? 'nothing upcoming changes for them'
+            : `here's what the pause changes:\n\n${lines.join('\n')}`,
         confirmLabel: 'pause',
         destructive: true,
       });

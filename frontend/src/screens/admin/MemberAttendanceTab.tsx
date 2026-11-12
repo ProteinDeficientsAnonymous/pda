@@ -10,11 +10,12 @@ import {
 import { useUpdateUser } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { TextField } from '@/components/ui/TextField';
-import { useConfirm } from '@/components/ui/useConfirm';
 import { hasPermission, Permission } from '@/models/permissions';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
+
+import { usePauseConfirm } from './usePauseConfirm';
 
 type Filter = 'all' | 'at-risk';
 
@@ -167,19 +168,13 @@ function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
 
 function PauseButton({ row }: { row: MemberAttendanceRow }) {
   const update = useUpdateUser(row.userId);
-  const { confirm, element } = useConfirm();
+  const { confirmPause, loading, element } = usePauseConfirm({ confirmWhenEmpty: true });
 
   async function onPause() {
-    const ok = await confirm({
-      title: 'pause this member?',
-      message: `${row.fullName.toLowerCase()} won't be able to log in until unpaused — do this from the members screen.`,
-      confirmLabel: 'pause',
-      destructive: true,
-    });
-    if (!ok) return;
+    if (!(await confirmPause(row.userId, 'attendancePaused'))) return;
     try {
-      await update.mutateAsync({ guidelinesPaused: true });
-      toast.success('member paused ✓');
+      await update.mutateAsync({ attendancePaused: true });
+      toast.success('attendance pause added ✓');
     } catch (err) {
       toast.error(extractApiErrorOr(err, "couldn't pause member — try again"));
     }
@@ -190,10 +185,10 @@ function PauseButton({ row }: { row: MemberAttendanceRow }) {
       <button
         type="button"
         onClick={() => void onPause()}
-        disabled={update.isPending}
+        disabled={update.isPending || loading}
         className="text-warning mt-3 text-xs font-medium hover:underline disabled:opacity-50"
       >
-        pause member
+        add attendance pause
       </button>
       {element}
     </>

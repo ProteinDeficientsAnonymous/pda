@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { fetchAttendancePausePreview } from '@/api/attendancePausePreview';
 import {
   type MemberAttendanceRow,
   useMemberAttendanceAnalytics,
@@ -13,6 +14,11 @@ import { MemberAttendanceTab } from './MemberAttendanceTab';
 
 vi.mock('@/api/memberAttendanceAnalytics', () => ({
   useMemberAttendanceAnalytics: vi.fn(),
+}));
+
+vi.mock('@/api/attendancePausePreview', () => ({
+  fetchAttendancePausePreview: vi.fn(),
+  fetchGuidelinesPausePreview: vi.fn(),
 }));
 
 vi.mock('@/api/users', () => ({
@@ -69,6 +75,13 @@ beforeEach(() => {
     isPending: false,
   } as unknown as ReturnType<typeof useUpdateUser>);
   mockUser(false);
+  vi.mocked(fetchAttendancePausePreview).mockResolvedValue({
+    events: [
+      { id: 'e1', title: 'Potluck', startDatetime: null, role: 'hosting', outcome: 'drafted' },
+    ],
+    strippedRoles: [],
+    clearsWhatsapp: false,
+  });
 });
 
 function mockRows(rows: MemberAttendanceRow[]) {
@@ -125,19 +138,40 @@ describe('MemberAttendanceTab', () => {
     mockRows([makeMemberRow()]);
     mockUser(false);
     render(<MemberAttendanceTab />);
-    expect(screen.queryByRole('button', { name: 'pause member' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'add attendance pause' })).not.toBeInTheDocument();
   });
 
-  it('pauses a member when confirmed, with manage_users permission', async () => {
+  it('attendance-pauses a member after the preview, with manage_users permission', async () => {
     mockRows([makeMemberRow({ userId: 'u9' })]);
     mockUser(true);
     const user = userEvent.setup();
     render(<MemberAttendanceTab />);
 
-    await user.click(screen.getByRole('button', { name: 'pause member' }));
+    await user.click(screen.getByRole('button', { name: 'add attendance pause' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(fetchAttendancePausePreview).toHaveBeenCalledWith('u9');
+    expect(dialog).toHaveTextContent('potluck (date tbd) — hosting · moved to draft');
+    expect(dialog).not.toHaveTextContent('log in');
     await user.click(screen.getByRole('button', { name: 'pause' }));
 
-    expect(updateMutateAsync).toHaveBeenCalledWith({ guidelinesPaused: true });
+    expect(updateMutateAsync).toHaveBeenCalledWith({ attendancePaused: true });
+  });
+
+  it('still asks to confirm when the pause changes nothing upcoming', async () => {
+    vi.mocked(fetchAttendancePausePreview).mockResolvedValue({
+      events: [],
+      strippedRoles: [],
+      clearsWhatsapp: false,
+    });
+    mockRows([makeMemberRow()]);
+    mockUser(true);
+    const user = userEvent.setup();
+    render(<MemberAttendanceTab />);
+
+    await user.click(screen.getByRole('button', { name: 'add attendance pause' }));
+    await user.click(await screen.findByRole('button', { name: 'pause' }));
+
+    expect(updateMutateAsync).toHaveBeenCalledWith({ attendancePaused: true });
   });
 
   it('does not call the pause mutation when the confirmation is cancelled', async () => {
@@ -146,8 +180,8 @@ describe('MemberAttendanceTab', () => {
     const user = userEvent.setup();
     render(<MemberAttendanceTab />);
 
-    await user.click(screen.getByRole('button', { name: 'pause member' }));
-    await user.click(screen.getByRole('button', { name: 'cancel' }));
+    await user.click(screen.getByRole('button', { name: 'add attendance pause' }));
+    await user.click(await screen.findByRole('button', { name: 'cancel' }));
 
     expect(updateMutateAsync).not.toHaveBeenCalled();
   });
@@ -159,7 +193,9 @@ describe('MemberAttendanceTab', () => {
       mockUser(true);
       render(<MemberAttendanceTab />);
       expect(screen.getByText('paused')).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'pause member' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'add attendance pause' }),
+      ).not.toBeInTheDocument();
     },
   );
 
