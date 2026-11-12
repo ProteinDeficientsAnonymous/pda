@@ -1,18 +1,18 @@
 from users.permissions import PermissionKey
 
 from community.cohosts.invite_helpers import has_pending_cohost_invite
-from community.events._hosts import is_hosted_by
+from community.events._hosts import is_draft_host
 from community.events.helpers import can_see_invite_only
 from community.models import Event, PageVisibility
 from community.validation import Code, raise_validation
 
 
 def _can_see_draft(event: Event, auth_user) -> bool:
-    """Hosts and creators (as the drafts list shows them), managers, and pending cohost invitees."""
+    """Draft hosts (as the drafts list shows them), managers, and pending cohost invitees."""
     if not auth_user:
         return False
     return (
-        is_hosted_by(event, auth_user)
+        is_draft_host(event, auth_user)
         or auth_user.has_permission(PermissionKey.MANAGE_EVENTS)
         or has_pending_cohost_invite(event, auth_user)
     )

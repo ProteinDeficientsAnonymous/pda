@@ -3,15 +3,21 @@ from django.db.models import Exists, OuterRef, Q
 from community.models import Event
 
 
-def _viewer_is_cohost(user) -> Exists:
-    return Exists(Event.co_hosts.through.objects.filter(event_id=OuterRef("pk"), user_id=user.pk))
+def _cohost_rows(**filters) -> Exists:
+    return Exists(Event.co_hosts.through.objects.filter(event_id=OuterRef("pk"), **filters))
 
 
 def hosted_by_q(user):
-    """Rows the user created or co-hosts. A pause drops the host spot but keeps the creator."""
-    return Q(created_by=user) | _viewer_is_cohost(user)
+    """Rows the user created or co-hosts."""
+    return Q(created_by=user) | _cohost_rows(user_id=user.pk)
 
 
-def is_hosted_by(event: Event, user) -> bool:
-    """`hosted_by_q` for one loaded event; reads prefetched co_hosts when present."""
-    return event.created_by_id == user.pk or any(c.pk == user.pk for c in event.co_hosts.all())
+def draft_host_q(user):
+    """Drafts the user co-hosts, or created and a pause left hostless (removals keep one host)."""
+    return (Q(created_by=user) & ~_cohost_rows()) | _cohost_rows(user_id=user.pk)
+
+
+def is_draft_host(event: Event, user) -> bool:
+    """`draft_host_q` for one loaded event; reads prefetched co_hosts when present."""
+    co_host_ids = {c.pk for c in event.co_hosts.all()}
+    return user.pk in co_host_ids or (event.created_by_id == user.pk and not co_host_ids)

@@ -63,3 +63,17 @@ def test_other_member_neither_lists_nor_opens(api_client, drafted):
     assert str(drafted.id) not in _listed_draft_ids(api_client, other)
     response = api_client.get(f"{URL}{drafted.id}/", **auth_headers_for(other))
     assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_creator_removed_by_another_host_neither_lists_nor_opens(api_client, member):
+    host = make_user(phone_number="+12025550498")
+    event = make_event(title="Potluck", created_by=member)
+    event.co_hosts.add(host)
+    event.co_hosts.remove(member)
+    event.status = EventStatus.DRAFT
+    event.save(update_fields=["status"])
+
+    assert str(event.id) not in _listed_draft_ids(api_client, member)
+    response = api_client.get(f"{URL}{event.id}/", **auth_headers_for(member))
+    assert response.status_code == 403

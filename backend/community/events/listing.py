@@ -5,7 +5,7 @@ from django.utils import timezone
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
-from community.events._hosts import hosted_by_q
+from community.events._hosts import draft_host_q, hosted_by_q
 from community.events.helpers import (
     my_rsvp_fields,
     tags_out,
@@ -64,7 +64,9 @@ def _viewer_is_invited(auth_user) -> Exists:
 
 def _status_q(status: str, auth_user, is_authed) -> Q:
     """Status and visibility rules: cancelled and draft rows are the viewer's own."""
-    if status in (EventStatus.CANCELLED, EventStatus.DRAFT):
+    if status == EventStatus.DRAFT:
+        return Q(status=status) & draft_host_q(auth_user)
+    if status == EventStatus.CANCELLED:
         return Q(status=status) & hosted_by_q(auth_user)
     q = Q(status=EventStatus.ACTIVE)
     if not is_authed:
