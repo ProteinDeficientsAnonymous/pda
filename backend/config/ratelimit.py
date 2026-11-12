@@ -40,11 +40,18 @@ def _is_internal(hop: str) -> bool:
     return any(addr in net for net in _INTERNAL_NETWORKS)
 
 
+def _is_loopback(addr: str) -> bool:
+    try:
+        return ipaddress.ip_address(addr).is_loopback
+    except ValueError:
+        return False
+
+
 def client_ip(request) -> str:
     """Rightmost non-internal XFF hop (the address Railway's edge saw); left of it is spoofable."""
     remote_addr = request.META.get("REMOTE_ADDR", "anon")
-    # A direct, un-proxied caller writes the whole XFF header itself.
-    if not _is_internal(remote_addr):
+    # Only in-container nginx builds a trustworthy XFF; gunicorn also listens on the private network.
+    if not _is_loopback(remote_addr):
         return remote_addr
 
     forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")

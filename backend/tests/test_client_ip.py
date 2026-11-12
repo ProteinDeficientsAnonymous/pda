@@ -71,3 +71,11 @@ class TestClientIp:
         # A direct, un-proxied caller fully controls XFF; key on the socket peer.
         request = _request(xff="1.2.3.4", remote_addr="203.0.113.9")
         assert client_ip(request) == "203.0.113.9"
+
+    @pytest.mark.parametrize("peer", ["fd12::5", "10.0.0.8", "100.64.0.2"])
+    def test_xff_ignored_when_peer_is_private_network_not_nginx(self, peer):
+        # gunicorn binds 0.0.0.0, so a sibling Railway service could set XFF directly.
+        assert client_ip(_request(xff=f"1.2.3.4, {CLIENT}", remote_addr=peer)) == peer
+
+    def test_ipv6_loopback_peer_is_trusted(self):
+        assert client_ip(_request(xff=f"{CLIENT}, 100.64.0.3", remote_addr="::1")) == CLIENT
