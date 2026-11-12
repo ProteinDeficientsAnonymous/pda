@@ -22,7 +22,7 @@ from collections.abc import Callable
 from community.validation import Code, ValidationException
 from django.http import HttpRequest
 from ninja_jwt.authentication import JWTAuth
-from users.models import MembershipStatus, User
+from users.models import SIGN_IN_STATUSES, MembershipStatus, User
 
 # Full request paths (under the ``/api`` mount) a pending user may still reach:
 #   - GET /me/                 — frontend reads needs_password_reset/onboarding/
@@ -40,8 +40,14 @@ _PENDING_ALLOWLIST = frozenset(
     }
 )
 
-# Archive and guidelines pause still 403 on the pending allowlist; password and consent do not.
-HARD_ACCOUNT_BLOCKS = frozenset({Code.Auth.ACCOUNT_ARCHIVED, Code.Auth.ACCOUNT_GUIDELINES_PAUSED})
+# Archive, guidelines pause and no membership still 403 on the pending allowlist; password and consent do not.
+HARD_ACCOUNT_BLOCKS = frozenset(
+    {
+        Code.Auth.ACCOUNT_ARCHIVED,
+        Code.Auth.ACCOUNT_GUIDELINES_PAUSED,
+        Code.Auth.NOT_A_MEMBER,
+    }
+)
 
 
 _ACCOUNT_BLOCKS: tuple[tuple[Callable[[User], bool], str], ...] = (
@@ -50,6 +56,7 @@ _ACCOUNT_BLOCKS: tuple[tuple[Callable[[User], bool], str], ...] = (
         lambda u: u.membership_status == MembershipStatus.GUIDELINES_PAUSED,
         Code.Auth.ACCOUNT_GUIDELINES_PAUSED,
     ),
+    (lambda u: u.membership_status not in SIGN_IN_STATUSES, Code.Auth.NOT_A_MEMBER),
     (lambda u: u.needs_password_reset, Code.Auth.PASSWORD_RESET_REQUIRED),
     (lambda u: u.needs_onboarding, Code.Auth.ONBOARDING_REQUIRED),
     (lambda u: u.guidelines_consent_at is None, Code.Auth.GUIDELINES_CONSENT_REQUIRED),

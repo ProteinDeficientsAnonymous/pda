@@ -493,6 +493,11 @@
         "params": []
       },
       {
+        "name": "NOT_A_MEMBER",
+        "value": "auth.not_a_member",
+        "params": []
+      },
+      {
         "name": "MAGIC_LINK_INVALID_OR_EXPIRED",
         "value": "auth.magic_link_invalid_or_expired",
         "params": []
