@@ -1,3 +1,12 @@
+## [0.233.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.2...v0.233.3) (2026-11-12)
+
+
+### Bug Fixes
+
+* **admin:** 2396 - pause dialog lists invites, roles and whatsapp ([#2416](https://github.com/ProteinDeficientsAnonymous/pda/issues/2416)) ([e101648](https://github.com/ProteinDeficientsAnonymous/pda/commit/e1016483444d82ce464b7a61ba64966ede7b7460))
+* **rsvps:** 2397, 2399 - block ineligible guests and invitees ([#2407](https://github.com/ProteinDeficientsAnonymous/pda/issues/2407)) ([9d7951e](https://github.com/ProteinDeficientsAnonymous/pda/commit/9d7951e9772ca8d167fa27b90edd90469ddc040b)), closes [#2397](https://github.com/ProteinDeficientsAnonymous/pda/issues/2397) [#2399](https://github.com/ProteinDeficientsAnonymous/pda/issues/2399)
+* **users:** 2396 - pause preview lists invites, roles and whatsapp ([#2415](https://github.com/ProteinDeficientsAnonymous/pda/issues/2415)) ([8b848e2](https://github.com/ProteinDeficientsAnonymous/pda/commit/8b848e29d1efdc8707e0fef2e61ec6e0cfbdd4e2))
+
 ## [0.233.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.1...v0.233.2) (2026-11-12)
 
 
