@@ -1,3 +1,10 @@
+# [0.233.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.232.2...v0.233.0) (2026-11-12)
+
+
+### Features
+
+* **join-requests:** alert vetters when a check-in promotion fails ([#2419](https://github.com/ProteinDeficientsAnonymous/pda/issues/2419)) ([e2c1f6a](https://github.com/ProteinDeficientsAnonymous/pda/commit/e2c1f6a7185230fcb6933dae0e860edb9bc9f1a7))
+
 ## [0.232.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.232.1...v0.232.2) (2026-11-12)
 
 
