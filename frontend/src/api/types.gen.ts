@@ -4673,6 +4673,7 @@ export interface components {
             onboarded_at?: string | null;
             /** Phone Number */
             phone_number: string;
+            previous_rejection?: components["schemas"]["PreviousRejectionOut"] | null;
             /**
              * Previously Archived
              * @default false
@@ -5146,6 +5147,23 @@ export interface components {
             voters: {
                 [key: string]: components["schemas"]["VoterOut"][];
             };
+        };
+        /** PreviousRejectionOut */
+        PreviousRejectionOut: {
+            /**
+             * Rejection Note
+             * @default
+             */
+            rejection_note: string;
+            /**
+             * Rejection Reason
+             * @default
+             */
+            rejection_reason: string;
+            /** Status Changed At */
+            status_changed_at?: string | null;
+            /** Status Changed By Name */
+            status_changed_by_name?: string | null;
         };
         /** PublicRsvpIn */
         PublicRsvpIn: {

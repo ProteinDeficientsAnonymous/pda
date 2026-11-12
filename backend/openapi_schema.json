@@ -4643,6 +4643,16 @@
             "title": "Phone Number",
             "type": "string"
           },
+          "previous_rejection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreviousRejectionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "previously_archived": {
             "default": false,
             "title": "Previously Archived",
@@ -5835,6 +5845,45 @@
           "total_responses"
         ],
         "title": "PollResultsOut",
+        "type": "object"
+      },
+      "PreviousRejectionOut": {
+        "properties": {
+          "rejection_note": {
+            "default": "",
+            "title": "Rejection Note",
+            "type": "string"
+          },
+          "rejection_reason": {
+            "default": "",
+            "title": "Rejection Reason",
+            "type": "string"
+          },
+          "status_changed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Changed At"
+          },
+          "status_changed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Changed By Name"
+          }
+        },
+        "title": "PreviousRejectionOut",
         "type": "object"
       },
       "PublicRsvpIn": {

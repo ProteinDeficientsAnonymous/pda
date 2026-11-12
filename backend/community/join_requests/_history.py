@@ -10,6 +10,13 @@ from users.models import PAUSED_STATUSES, MembershipStatus, User
 from community.models import EventRSVP, JoinRequest, JoinRequestStatus
 
 
+class PreviousRejectionOut(BaseModel):
+    status_changed_at: datetime | None = None
+    status_changed_by_name: str | None = None
+    rejection_reason: str = ""
+    rejection_note: str = ""
+
+
 class PreviousArchiveOut(BaseModel):
     archived_at: datetime | None = None
     archived_by_name: str | None = None
@@ -68,4 +75,16 @@ def phone_history(jr: JoinRequest, lookups: PhoneLookups) -> PhoneHistory:
         phone_user=phone_user,
         previous_archive=previous_archive_out(phone_user),
         previous_rejection=next((r for r in rejections if r.submitted_at < jr.submitted_at), None),
+    )
+
+
+def previous_rejection_out(rejection: JoinRequest | None) -> PreviousRejectionOut | None:
+    if rejection is None:
+        return None
+    by = rejection.status_changed_by
+    return PreviousRejectionOut(
+        status_changed_at=rejection.status_changed_at,
+        status_changed_by_name=by.full_name if by else None,
+        rejection_reason=rejection.rejection_reason,
+        rejection_note=rejection.rejection_note,
     )
