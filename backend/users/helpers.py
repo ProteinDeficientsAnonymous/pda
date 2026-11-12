@@ -301,7 +301,11 @@ def grant_membership(user: User) -> None:
     member_role = Role.objects.filter(name="member", is_default=True).first()
     if member_role:
         user.roles.add(member_role)
+    revoke_public_rsvp_tokens(user)
 
+
+def revoke_public_rsvp_tokens(user: User) -> None:
+    """Kill the user's live /my-rsvps links once they can sign in instead."""
     PublicRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
         revoked_at=timezone.now()
     )

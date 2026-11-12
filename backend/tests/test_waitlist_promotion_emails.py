@@ -78,11 +78,8 @@ class TestWaitlistPromotionEmailsNonMember:
         assert _promoted_email_count(fake_email_sender, "member@e.com") == 1
 
     @LIMITED_USER_FACTORIES
-    @pytest.mark.parametrize(
-        ("event_type", "gets_manage_link"),
-        [(EventType.OFFICIAL, False), (EventType.COMMUNITY, True)],
-    )
-    def test_promoted_limited_user_gets_member_email_only_on_official(  # noqa: PLR0913
+    @pytest.mark.parametrize("event_type", [EventType.OFFICIAL, EventType.COMMUNITY])
+    def test_promoted_limited_user_never_gets_a_manage_link(  # noqa: PLR0913
         self,
         api_client,
         test_user,
@@ -90,9 +87,7 @@ class TestWaitlistPromotionEmailsNonMember:
         fake_email_sender,
         make_limited,
         event_type,
-        gets_manage_link,
     ):
-        """They can manage official/club rsvps in the app; elsewhere they need the manage link."""
         event = _one_spot_event(test_user, event_type=event_type)
         _rsvp(api_client, event, auth_headers)
         guest = make_limited("+14155559914", "signed-in@e.com")
@@ -102,4 +97,4 @@ class TestWaitlistPromotionEmailsNonMember:
 
         assert EventRSVP.objects.get(event=event, user=guest).status == RSVPStatus.ATTENDING
         assert _promoted_email_count(fake_email_sender, "signed-in@e.com") == 1
-        assert PublicRsvpToken.objects.filter(user=guest).exists() is gets_manage_link
+        assert not PublicRsvpToken.objects.filter(user=guest).exists()

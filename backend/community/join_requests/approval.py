@@ -5,7 +5,12 @@ from django.utils import timezone
 from notifications.email_helpers import send_join_approval_email
 from notifications.email_sender import get_email_sender
 from users.api import create_user_with_role
-from users.helpers import ConsentTimestamps, create_magic_token, grant_membership
+from users.helpers import (
+    ConsentTimestamps,
+    create_magic_token,
+    grant_membership,
+    revoke_public_rsvp_tokens,
+)
 from users.models import (
     MEMBER_OR_ARCHIVED,
     PAUSED_STATUSES,
@@ -204,6 +209,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
         changed.append("sms_consent_at")
     if changed:
         user.save(update_fields=changed)
+    revoke_public_rsvp_tokens(user)
 
     return user, create_magic_token(user)
 
