@@ -13,8 +13,6 @@ import {
 import { useConfirm } from '@/components/ui/useConfirm';
 import { formatShortDateTime } from '@/utils/datetime';
 
-export type PauseKind = 'guidelinesPaused' | 'attendancePaused';
-
 const ROLE_LABEL: Record<PauseRole, string> = {
   rsvp: "rsvp'd",
   hosting: 'hosting',
@@ -34,6 +32,8 @@ const PAUSE_DIALOG = {
   },
   attendancePaused: { fetchPreview: fetchAttendancePausePreview, title: 'pause for event rqmt?' },
 };
+
+export type PauseKind = keyof typeof PAUSE_DIALOG;
 
 /** confirmWhenEmpty(boolean): ask even when the preview lists no changes, for a pause applied on confirm */
 export function usePauseConfirm({ confirmWhenEmpty = false } = {}) {
@@ -56,7 +56,7 @@ export function usePauseConfirm({ confirmWhenEmpty = false } = {}) {
         destructive: true,
       });
     } catch (err) {
-      toast.error(extractApiErrorOr(err, "couldn't load their upcoming events — try again"));
+      toast.error(extractApiErrorOr(err, "couldn't load the pause preview — try again"));
       return false;
     } finally {
       setLoading(false);
