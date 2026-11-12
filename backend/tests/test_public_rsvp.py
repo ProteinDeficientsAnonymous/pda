@@ -34,6 +34,7 @@ from tests._public_rsvp_helpers import (
     post,
 )
 from tests._time import future_iso, past_iso
+from tests._users import make_user
 
 
 @pytest.fixture
@@ -180,13 +181,19 @@ class TestPublicRsvpDedup:
 
 @pytest.mark.django_db
 class TestPublicRsvpMemberCollision:
-    def test_phone_belongs_to_member(self, api_client, official_event, fake_email_sender):
-        User.objects.create_user(
-            phone_number="+14155550123",
-            first_name="A",
-            last_name="Member",
-            membership_status=MembershipStatus.ACTIVE_MEMBER,
-        )
+    @pytest.mark.parametrize(
+        "status",
+        [
+            MembershipStatus.ACTIVE_MEMBER,
+            MembershipStatus.GUIDELINES_PAUSED,
+            MembershipStatus.ATTENDANCE_PAUSED,
+            MembershipStatus.TENTATIVE,
+        ],
+    )
+    def test_phone_that_can_sign_in_must_sign_in(
+        self, api_client, official_event, fake_email_sender, status
+    ):
+        make_user(phone_number="+14155550123", membership_status=status)
 
         response = post(api_client, official_event)
 

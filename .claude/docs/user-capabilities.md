@@ -3,11 +3,11 @@
 What each user type can do, as the backend enforces it. For how people move between types, see [user-states.md](user-states.md).
 
 - **visitor** — not signed in.
-- **public rsvper** — `membership_status=none`; RSVP'd through the public form, uses a `/my-rsvps` token link, never signs in.
+- **public rsvper** — `membership_status=none`; RSVP'd through the public form, uses a `/my-rsvps` token link, never signs in. A token link resolves only while its user is `none` (`PublicRsvpToken.resolve_user`); RSVP emails to anyone who can sign in carry no link.
 - **limited** — signed in without full access: tentative or attendance-paused. Both get the same access, though attendance-paused users still hold membership (`is_member`) and the member role.
 - **member** — `membership_status=active_member`. Elevated roles add the permissions further down.
 
-Guidelines-paused, archived and `none` users can't sign in. They can still browse as a visitor. A guidelines-paused number is sent to login from the public RSVP form and told "already a member" by the join form; login only says they're paused after the right password, so nobody learns it from a phone number alone.
+Guidelines-paused, archived and `none` users can't sign in. They can still browse as a visitor. A member, limited or guidelines-paused number is sent to login from the public RSVP form and gets no `/my-rsvps` manage link; a guidelines-paused number is told "already a member" by the join form; login only says they're paused after the right password, so nobody learns it from a phone number alone.
 
 A rejected applicant can't sign in or public-RSVP (the form and `/my-rsvps` both refuse with the generic `rsvp_could_not_be_created`) until they submit a new join request. From `/my-rsvps` they can still mark can't go or cancel. An archived user, including a tentative person an admin archived, can submit the join form again; marking that request tentative or approving it restores the account.
 

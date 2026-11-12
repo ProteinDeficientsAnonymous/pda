@@ -3,7 +3,7 @@ from datetime import timedelta
 import pytest
 from community.models import Event, EventStatus, JoinRequestStatus
 from django.utils import timezone
-from users.models import MembershipStatus
+from users.models import MembershipStatus, User
 
 from tests._users import make_user
 
@@ -26,19 +26,20 @@ def _archive(api_client, headers, user):
     return user
 
 
-@pytest.mark.parametrize(
-    ("make", "body", "before"),
-    [
-        (make_user, {"attendance_paused": True}, MembershipStatus.ATTENDANCE_PAUSED),
-        (make_user, {"guidelines_paused": True}, MembershipStatus.GUIDELINES_PAUSED),
-        (
-            lambda **f: make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED, **f),
-            {"guidelines_paused": False},
-            MembershipStatus.ATTENDANCE_PAUSED,
-        ),
-    ],
-    ids=["attendance-pause", "guidelines-pause", "guidelines-unpause"],
-)
+_PAUSE_WRITES = [
+    (make_user, {"attendance_paused": True}, MembershipStatus.ATTENDANCE_PAUSED),
+    (make_user, {"guidelines_paused": True}, MembershipStatus.GUIDELINES_PAUSED),
+    (
+        lambda **f: make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED, **f),
+        {"guidelines_paused": False},
+        MembershipStatus.ATTENDANCE_PAUSED,
+    ),
+]
+_PAUSE_WRITE_IDS = ["attendance-pause", "guidelines-pause", "guidelines-unpause"]
+_LONG_AGO = timezone.now() - timedelta(days=30)
+
+
+@pytest.mark.parametrize(("make", "body", "before"), _PAUSE_WRITES, ids=_PAUSE_WRITE_IDS)
 def test_pause_writers_leave_an_archived_user_archived(
     api_client, manage_users_headers, make, body, before
 ):
@@ -49,6 +50,31 @@ def test_pause_writers_leave_an_archived_user_archived(
     assert user.status_before_archive == before
     assert user.is_guidelines_paused is (before == MembershipStatus.GUIDELINES_PAUSED)
     assert user.membership_status_changed_at == archived_at
+
+
+@pytest.fixture
+def patch_stamped_archived(api_client, manage_users_headers, django_capture_on_commit_callbacks):
+    def patch(user, body):
+        user = _archive(api_client, manage_users_headers, user)
+        User.objects.filter(pk=user.pk).update(
+            attendance_paused_at=_LONG_AGO, unpaused_at=_LONG_AGO, has_joined_whatsapp=True
+        )
+        with django_capture_on_commit_callbacks(execute=True):
+            return _patch(api_client, manage_users_headers, user, body)
+
+    return patch
+
+
+@pytest.mark.parametrize(
+    ("make", "body"), [case[:2] for case in _PAUSE_WRITES], ids=_PAUSE_WRITE_IDS
+)
+def test_pause_writers_only_record_the_pause_on_an_archived_user(
+    patch_stamped_archived, fake_email_sender, make, body
+):
+    user = patch_stamped_archived(make(last_login=timezone.now()), body)
+    assert (user.attendance_paused_at, user.unpaused_at) == (_LONG_AGO, _LONG_AGO)
+    assert user.has_joined_whatsapp is True
+    fake_email_sender.send.assert_not_called()
 
 
 @pytest.mark.parametrize("body", [{"attendance_paused": True}, {"guidelines_paused": True}])

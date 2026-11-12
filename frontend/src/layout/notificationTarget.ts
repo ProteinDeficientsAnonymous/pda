@@ -27,6 +27,7 @@ export function notificationTarget(n: AppNotification): string | null {
       return '/admin/flagged-events';
     case NotificationType.JoinRequest:
     case NotificationType.MemberRestored:
+    case NotificationType.CheckInPromotionFailed:
       return '/join-requests';
     case NotificationType.MagicLinkRequest:
       return n.relatedUserId ? `/admin/members/${n.relatedUserId}` : '/admin/members';
