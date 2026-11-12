@@ -124,7 +124,7 @@ def logout(request, response: HttpResponse):
 def me(request):
     user = request.auth
     if user.is_guidelines_paused:
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+        raise_validation(Code.Auth.ACCOUNT_GUIDELINES_PAUSED, status_code=403)
     return Status(200, UserOut.from_user(user))
 
 
