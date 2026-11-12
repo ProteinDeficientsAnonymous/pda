@@ -5,7 +5,12 @@ import uuid
 from django.conf import settings
 from django.db import models
 
-from community.models.choices import JoinFormQuestionType, JoinRequestStatus, RejectionReason
+from community.models.choices import (
+    OPEN_JOIN_REQUEST_STATUSES,
+    JoinFormQuestionType,
+    JoinRequestStatus,
+    RejectionReason,
+)
 
 
 class JoinFormQuestion(models.Model):
@@ -88,9 +93,7 @@ class JoinRequest(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["phone_number"],
-                condition=models.Q(
-                    status__in=[JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE]
-                ),
+                condition=models.Q(status__in=OPEN_JOIN_REQUEST_STATUSES),
                 name="unique_open_join_request_per_phone",
             ),
         ]
