@@ -9,8 +9,7 @@ import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
 import { isLimited } from '@/models/event';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
-import { consentRedirect, passwordSetupRedirect } from '@/models/user';
-import { isAttendancePaused } from '@/screens/admin/memberPause';
+import { consentRedirect, isAttendancePaused, passwordSetupRedirect } from '@/models/user';
 
 import { attemptDevAutoLogin, devAutoLoginConfigured } from './devLogin';
 import { useAuthStore } from './store';
