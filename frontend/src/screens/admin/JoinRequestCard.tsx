@@ -260,6 +260,13 @@ function DecisionAttribution({ request }: { request: JoinRequestSummary }) {
       </>
     );
   }
+  if (request.status === JoinRequestStatus.CLOSED) {
+    return (
+      <p className="text-muted mt-3 text-xs">
+        closed when {changedBy(request)} archived them on {stampText(at)}
+      </p>
+    );
+  }
   return null;
 }
 
@@ -287,4 +294,5 @@ const STATUS_TONES: Record<JoinRequestStatus, string> = {
   [JoinRequestStatus.TENTATIVE]: 'bg-highlight-subtle text-highlight',
   [JoinRequestStatus.APPROVED]: 'bg-success-subtle text-success',
   [JoinRequestStatus.REJECTED]: 'bg-surface-raised text-foreground-secondary',
+  [JoinRequestStatus.CLOSED]: 'bg-surface-raised text-foreground-secondary',
 };

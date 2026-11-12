@@ -132,6 +132,21 @@ describe('MemberDetailScreen edit form', () => {
     expect(screen.getByTestId('member-connected-apps')).toHaveTextContent('member-1');
   });
 
+  it('lets a tentative person be archived but not edited', async () => {
+    vi.mocked(useUsers).mockReturnValue({
+      data: [{ ...member, isMember: false, membershipStatus: MembershipStatus.Tentative }],
+      isPending: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useUsers>);
+    renderScreen();
+
+    expect(screen.getByText('tentative')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: /joined whatsapp/i })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'archive' }));
+    expect(screen.getByText(/closes their tentative join request/)).toBeInTheDocument();
+  });
+
   it('shows separate first/last name fields prefilled from the member', async () => {
     renderScreen();
     await userEvent.click(screen.getByRole('button', { name: /^edit$/i }));

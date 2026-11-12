@@ -217,7 +217,12 @@ describe('MembersScreen', () => {
     mockUsersResult({
       data: [
         makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true }),
-        makeMember({ id: 'm2', fullName: 'Guest Rsvp', isMember: false }),
+        makeMember({
+          id: 'm2',
+          fullName: 'Guest Rsvp',
+          isMember: false,
+          membershipStatus: MembershipStatus.None,
+        }),
         attendancePaused,
       ],
     });
@@ -304,7 +309,12 @@ describe('MembersScreen', () => {
     mockUsersResult({
       data: [
         makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true }),
-        makeMember({ id: 'm2', fullName: 'Guest Rsvp', isMember: false }),
+        makeMember({
+          id: 'm2',
+          fullName: 'Guest Rsvp',
+          isMember: false,
+          membershipStatus: MembershipStatus.None,
+        }),
       ],
     });
 

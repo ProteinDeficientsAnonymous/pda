@@ -1,5 +1,10 @@
 import type { Member } from '@/api/users';
-import { MembershipStatus } from '@/models/user';
+import { MEMBER_STATUSES, MembershipStatus, type MembershipStatusValue } from '@/models/user';
+
+const MANAGED_STATUSES: readonly MembershipStatusValue[] = [
+  ...MEMBER_STATUSES,
+  MembershipStatus.Tentative,
+];
 
 export function isGuidelinesPaused(member: Pick<Member, 'membershipStatus'>): boolean {
   return member.membershipStatus === MembershipStatus.GuidelinesPaused;
@@ -9,7 +14,10 @@ export function isAttendancePaused(member: Pick<Member, 'membershipStatus'>): bo
   return member.membershipStatus === MembershipStatus.AttendancePaused;
 }
 
-// Attendance pause clears is_member, but admins still manage them as members.
-export function isManagedMember(member: Pick<Member, 'isMember' | 'membershipStatus'>): boolean {
-  return member.isMember || isAttendancePaused(member);
+export function isTentative(member: Pick<Member, 'membershipStatus'>): boolean {
+  return member.membershipStatus === MembershipStatus.Tentative;
+}
+
+export function isManagedMember(member: Pick<Member, 'membershipStatus'>): boolean {
+  return MANAGED_STATUSES.includes(member.membershipStatus);
 }
