@@ -7,17 +7,23 @@ import {
   fetchGuidelinesPausePreview,
   type PauseImpactEvent,
   type PauseOutcome,
+  type PausePreview,
   type PauseRole,
 } from '@/api/attendancePausePreview';
 import { Toggle } from '@/components/ui/Toggle';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { formatShortDateTime } from '@/utils/datetime';
 
-const ROLE_LABEL: Record<PauseRole, string> = { rsvp: "rsvp'd", hosting: 'hosting' };
+const ROLE_LABEL: Record<PauseRole, string> = {
+  rsvp: "rsvp'd",
+  hosting: 'hosting',
+  cohost_invite: 'co-host invite',
+};
 const OUTCOME_LABEL: Record<PauseOutcome, string> = {
   kept: 'kept',
   removed: 'removed',
   drafted: 'moved to draft',
+  rescinded: 'rescinded',
 };
 
 const PAUSE_DIALOG = {
@@ -58,12 +64,12 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
     const { fetchPreview, title } = PAUSE_DIALOG[field];
     setLoading(true);
     try {
-      const events = await fetchPreview(memberId);
+      const lines = describePreview(await fetchPreview(memberId));
       const ok =
-        events.length === 0 ||
+        lines.length === 0 ||
         (await confirm({
           title,
-          message: `here's what happens to their upcoming events once you save:\n\n${events.map(describeImpact).join('\n')}`,
+          message: `here's what the pause changes once you save:\n\n${lines.join('\n')}`,
           confirmLabel: 'pause',
           destructive: true,
         }));
@@ -103,6 +109,15 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
       {confirmElement}
     </>
   );
+}
+
+function describePreview(preview: PausePreview): string[] {
+  const lines = preview.events.map(describeImpact);
+  if (preview.strippedRoles.length > 0) {
+    lines.push(`• roles removed: ${preview.strippedRoles.join(', ').toLowerCase()}`);
+  }
+  if (preview.clearsWhatsapp) lines.push('• marked as not in the whatsapp group');
+  return lines;
 }
 
 function describeImpact(e: PauseImpactEvent): string {
