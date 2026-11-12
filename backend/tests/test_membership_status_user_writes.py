@@ -1,7 +1,9 @@
 import pytest
+from community.validation import Code
 from users.models import MEMBER_STATUSES, MembershipStatus, User
 from users.permissions import PermissionKey
 
+from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from tests._users import make_attendance_paused, make_user
 
@@ -80,6 +82,19 @@ def test_guidelines_pause_and_unpause(api_client, manage_users_headers):
     )
     assert member.attendance_paused_at is not None
     assert member.unpaused_at is None
+
+
+def test_attendance_pause_refused_while_guidelines_paused(api_client, manage_users_headers):
+    member = make_user()
+    _patch_guidelines_pause(api_client, manage_users_headers, member, True)
+    response = api_client.patch(
+        f"/api/auth/users/{member.pk}/",
+        {"attendance_paused": True},
+        content_type="application/json",
+        **manage_users_headers,
+    )
+    assert response.status_code == 400
+    assert_error_code(response, Code.User.GUIDELINES_PAUSED)
 
 
 def test_guidelines_pause_replaces_attendance_pause(api_client, manage_users_headers):

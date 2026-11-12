@@ -152,6 +152,7 @@ export const Code = {
     CannotHardDeleteLoggedIn: 'user.cannot_hard_delete_logged_in',
     CannotPauseSelf: 'user.cannot_pause_self',
     CannotPauseAdmin: 'user.cannot_pause_admin',
+    GuidelinesPaused: 'user.guidelines_paused',
     RoleIdsNotFound: 'user.role_ids_not_found',
     InvalidBirthday: 'user.invalid_birthday',
     InvalidVeganniversary: 'user.invalid_veganniversary',
@@ -429,6 +430,7 @@ export type ValidationCode =
   | 'user.cannot_hard_delete_logged_in'
   | 'user.cannot_pause_self'
   | 'user.cannot_pause_admin'
+  | 'user.guidelines_paused'
   | 'user.role_ids_not_found'
   | 'user.invalid_birthday'
   | 'user.invalid_veganniversary'
@@ -656,6 +658,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'user.cannot_hard_delete_logged_in': [],
   'user.cannot_pause_self': [],
   'user.cannot_pause_admin': [],
+  'user.guidelines_paused': [],
   'user.role_ids_not_found': [],
   'user.invalid_birthday': [],
   'user.invalid_veganniversary': [],

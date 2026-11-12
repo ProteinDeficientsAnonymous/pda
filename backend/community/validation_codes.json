@@ -650,6 +650,11 @@
         "params": []
       },
       {
+        "name": "GUIDELINES_PAUSED",
+        "value": "user.guidelines_paused",
+        "params": []
+      },
+      {
         "name": "ROLE_IDS_NOT_FOUND",
         "value": "user.role_ids_not_found",
         "params": []
