@@ -1,3 +1,10 @@
+## [0.232.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.232.1...v0.232.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* **users:** 2395 - don't email or re-stamp archived users on pause ([#2414](https://github.com/ProteinDeficientsAnonymous/pda/issues/2414)) ([56f5be3](https://github.com/ProteinDeficientsAnonymous/pda/commit/56f5be3ea26146a57e90bb642f930e61fbf23d16))
+
 ## [0.232.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.232.0...v0.232.1) (2026-11-12)
 
 
