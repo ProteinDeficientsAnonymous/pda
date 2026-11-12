@@ -43,7 +43,7 @@ class PauseImpactEventOut(BaseModel):
     outcome: PauseOutcome
 
 
-class AttendancePausePreviewOut(BaseModel):
+class PausePreviewOut(BaseModel):
     events: list[PauseImpactEventOut]
 
 
@@ -63,7 +63,7 @@ def _preview_events(impact: PauseImpact) -> list[PauseImpactEventOut]:
 
 @router.get(
     "/users/{user_id}/attendance-pause-preview/",
-    response={200: AttendancePausePreviewOut, 403: ErrorOut, 404: ErrorOut},
+    response={200: PausePreviewOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def attendance_pause_preview(request, user_id: UUID):
@@ -72,7 +72,7 @@ def attendance_pause_preview(request, user_id: UUID):
 
 @router.get(
     "/users/{user_id}/guidelines-pause-preview/",
-    response={200: AttendancePausePreviewOut, 403: ErrorOut, 404: ErrorOut},
+    response={200: PausePreviewOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def guidelines_pause_preview(request, user_id: UUID):
@@ -87,4 +87,4 @@ def _pause_preview(request, user_id: UUID, endpoint: str, *, keep_official: bool
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
     impact = attendance_pause_impact(user, keep_official=keep_official)
-    return Status(200, AttendancePausePreviewOut(events=_preview_events(impact)))
+    return Status(200, PausePreviewOut(events=_preview_events(impact)))
