@@ -109,7 +109,7 @@ class TestResendMagicLink:
             **vettor_headers,
         )
         assert response.status_code == 403
-        assert_error_code(response, Code.Auth.ACCOUNT_PAUSED)
+        assert_error_code(response, Code.Auth.ACCOUNT_GUIDELINES_PAUSED)
 
     def test_not_found(self, api_client, vettor_headers):
         response = api_client.post(
