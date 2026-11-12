@@ -325,22 +325,6 @@
         "title": "AttendanceMarkOut",
         "type": "object"
       },
-      "AttendancePausePreviewOut": {
-        "properties": {
-          "events": {
-            "items": {
-              "$ref": "#/components/schemas/PauseImpactEventOut"
-            },
-            "title": "Events",
-            "type": "array"
-          }
-        },
-        "required": [
-          "events"
-        ],
-        "title": "AttendancePausePreviewOut",
-        "type": "object"
-      },
       "AttendanceReportOut": {
         "properties": {
           "club_no_show_count": {
@@ -5741,6 +5725,22 @@
         "title": "PauseOutcome",
         "type": "string"
       },
+      "PausePreviewOut": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/PauseImpactEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "PausePreviewOut",
+        "type": "object"
+      },
       "PauseRole": {
         "enum": [
           "rsvp",
@@ -9840,7 +9840,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AttendancePausePreviewOut"
+                  "$ref": "#/components/schemas/PausePreviewOut"
                 }
               }
             },
@@ -9934,6 +9934,64 @@
           }
         ],
         "summary": "List Member Attended Events",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/users/{user_id}/guidelines-pause-preview/": {
+      "get": {
+        "operationId": "users__attendance_pause_api_guidelines_pause_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PausePreviewOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Guidelines Pause Preview",
         "tags": [
           "auth"
         ]

@@ -12,10 +12,16 @@ export interface PauseImpactEvent {
   outcome: PauseOutcome;
 }
 
-export async function fetchAttendancePausePreview(userId: string): Promise<PauseImpactEvent[]> {
-  const { data } = await apiClient.get<components['schemas']['AttendancePausePreviewOut']>(
-    `/api/auth/users/${userId}/attendance-pause-preview/`,
-  );
+export function fetchAttendancePausePreview(userId: string): Promise<PauseImpactEvent[]> {
+  return fetchPausePreview(`/api/auth/users/${userId}/attendance-pause-preview/`);
+}
+
+export function fetchGuidelinesPausePreview(userId: string): Promise<PauseImpactEvent[]> {
+  return fetchPausePreview(`/api/auth/users/${userId}/guidelines-pause-preview/`);
+}
+
+async function fetchPausePreview(path: string): Promise<PauseImpactEvent[]> {
+  const { data } = await apiClient.get<components['schemas']['PausePreviewOut']>(path);
   return data.events.map((e) => ({
     id: e.id,
     title: e.title,
