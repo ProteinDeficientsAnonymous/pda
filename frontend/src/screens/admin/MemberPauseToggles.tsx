@@ -20,7 +20,7 @@ const OUTCOME_LABEL: Record<PauseOutcome, string> = {
 };
 
 export interface PauseState {
-  isPaused: boolean;
+  guidelinesPaused: boolean;
   attendancePaused: boolean;
 }
 
@@ -68,9 +68,9 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
     <>
       <Toggle
         label="guidelines violation pause"
-        checked={value.isPaused}
-        onChange={(isPaused) => {
-          onChange({ ...value, isPaused });
+        checked={value.guidelinesPaused}
+        onChange={(guidelinesPaused) => {
+          onChange({ ...value, guidelinesPaused });
         }}
         disabled={targetIsAdmin || loading}
       />
