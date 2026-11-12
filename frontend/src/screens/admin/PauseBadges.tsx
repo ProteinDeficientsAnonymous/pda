@@ -1,15 +1,11 @@
 import type { Member } from '@/api/users';
 
-import { isAttendancePaused } from './memberPause';
+import { isAttendancePaused, isGuidelinesPaused } from './memberPause';
 
-export function PauseBadges({
-  member,
-}: {
-  member: Pick<Member, 'isPaused' | 'attendancePausedAt'>;
-}) {
+export function PauseBadges({ member }: { member: Pick<Member, 'membershipStatus'> }) {
   return (
     <>
-      {member.isPaused ? <PauseBadge label="paused · guidelines" /> : null}
+      {isGuidelinesPaused(member) ? <PauseBadge label="paused · guidelines" /> : null}
       {isAttendancePaused(member) ? <PauseBadge label="paused · event rqmt" /> : null}
     </>
   );

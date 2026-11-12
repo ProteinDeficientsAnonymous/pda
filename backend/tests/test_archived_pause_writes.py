@@ -31,10 +31,10 @@ def _archive(api_client, headers, user):
     [
         (make_user, {"attendance_paused": True}, MembershipStatus.ATTENDANCE_PAUSED),
         (make_attendance_paused, {"attendance_paused": False}, MembershipStatus.ACTIVE_MEMBER),
-        (make_user, {"is_paused": True}, MembershipStatus.GUIDELINES_PAUSED),
+        (make_user, {"guidelines_paused": True}, MembershipStatus.GUIDELINES_PAUSED),
         (
             lambda **f: make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED, **f),
-            {"is_paused": False},
+            {"guidelines_paused": False},
             MembershipStatus.ATTENDANCE_PAUSED,
         ),
     ],
@@ -52,7 +52,7 @@ def test_pause_writers_leave_an_archived_user_archived(
     assert user.membership_status_changed_at == archived_at
 
 
-@pytest.mark.parametrize("body", [{"attendance_paused": True}, {"is_paused": True}])
+@pytest.mark.parametrize("body", [{"attendance_paused": True}, {"guidelines_paused": True}])
 def test_pausing_an_archived_host_keeps_their_events(api_client, manage_users_headers, body):
     host = make_user(last_login=timezone.now())
     event = Event.objects.create(
@@ -69,7 +69,7 @@ def test_guidelines_paused_while_archived_comes_back_paused(
 ):
     member = make_user(phone_number=sample_join_request.phone_number, last_login=timezone.now())
     member = _archive(api_client, manage_users_headers, member)
-    _patch(api_client, manage_users_headers, member, {"is_paused": True})
+    _patch(api_client, manage_users_headers, member, {"guidelines_paused": True})
     response = api_client.patch(
         f"/api/community/join-requests/{sample_join_request.id}/",
         {"status": JoinRequestStatus.APPROVED},
