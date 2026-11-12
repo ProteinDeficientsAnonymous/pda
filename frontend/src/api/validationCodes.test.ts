@@ -110,6 +110,19 @@ describe('messageForCode', () => {
     expect(out).toContain('5 mb');
   });
 
+  it('names the question for an invalid join answer format', () => {
+    expect(
+      messageForCode({
+        code: Code.JoinRequest.AnswerInvalidFormat,
+        field: 'answers',
+        params: { label: 'how did you hear' },
+      }),
+    ).toBe('invalid answer format for "how did you hear"');
+    expect(messageForCode({ code: Code.JoinRequest.AnswerInvalidFormat, field: 'answers' })).toBe(
+      'invalid answer format',
+    );
+  });
+
   it('names the question for an invalid rsvp answer format', () => {
     expect(
       messageForCode({

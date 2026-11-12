@@ -132,3 +132,15 @@ describe('JoinRequestCard previous rejection', () => {
     expect(screen.queryByText(/previously rejected by/)).not.toBeInTheDocument();
   });
 });
+
+describe('JoinRequestCard answers', () => {
+  it('lists each ticked checkbox option on its own line', () => {
+    renderCard(
+      makeRequest({
+        answers: [{ questionId: 'q1', label: 'how did you hear', answer: ['friend', 'instagram'] }],
+      }),
+    );
+
+    expect(screen.getByText('how did you hear').nextSibling?.textContent).toBe('friend\ninstagram');
+  });
+});

@@ -139,6 +139,50 @@ describe('JoinScreen', () => {
     expect(arg.guidelinesConsent).toBe(true);
   });
 
+  it('requires a ticked option for a required checkbox question, then submits the list', async () => {
+    mockUseJoinQuestions.mockReturnValue({
+      ...emptyQuestionsResult,
+      data: [
+        {
+          id: 'q1',
+          label: 'how did you hear',
+          fieldType: 'checkbox',
+          options: ['friend', 'instagram'],
+          required: true,
+          displayOrder: 0,
+        },
+      ],
+    } as unknown as ReturnType<typeof useJoinQuestions>);
+    const mutateAsync = vi.fn().mockResolvedValueOnce(undefined);
+    mockUseSubmitJoinRequest.mockReturnValue({
+      ...defaultSubmitResult,
+      mutateAsync,
+    } as unknown as ReturnType<typeof useSubmitJoinRequest>);
+
+    const user = userEvent.setup();
+    renderWithRoutes();
+
+    await user.type(screen.getByLabelText(/first name/i), 'Jane');
+    await user.type(screen.getByLabelText(/last name/i), 'Smith');
+    fillPhone();
+    await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
+    await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
+    await user.click(screen.getByRole('button', { name: /submit request/i }));
+
+    expect(await screen.findByText('required')).toBeInTheDocument();
+    expect(mutateAsync).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('checkbox', { name: 'friend' }));
+    await user.click(screen.getByRole('button', { name: /submit request/i }));
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalled();
+    });
+    const arg = mutateAsync.mock.calls[0]?.[0] as { answers: Record<string, unknown> };
+    expect(arg.answers).toEqual({ q1: ['friend'] });
+  });
+
   it('blocks submit when sms consent is checked but guidelines consent is not', async () => {
     const mutateAsync = vi.fn();
     mockUseSubmitJoinRequest.mockReturnValue({

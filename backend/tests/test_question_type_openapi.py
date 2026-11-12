@@ -18,7 +18,12 @@ def _field_type_schema(model_name: str) -> dict:
 def test_join_form_question_out_uses_named_enum():
     field = _field_type_schema("JoinFormQuestionOut")
     assert field == {"$ref": "#/components/schemas/JoinFormQuestionType"}
-    assert _schemas()["JoinFormQuestionType"]["enum"] == ["text", "textarea", "select"]
+    assert _schemas()["JoinFormQuestionType"]["enum"] == [
+        "text",
+        "textarea",
+        "select",
+        "checkbox",
+    ]
 
 
 @pytest.mark.unit
