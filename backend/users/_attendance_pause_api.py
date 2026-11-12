@@ -19,12 +19,14 @@ router = management_router
 class PauseRole(StrEnum):
     RSVP = "rsvp"
     HOSTING = "hosting"
+    COHOST_INVITE = "cohost_invite"
 
 
 class PauseOutcome(StrEnum):
     KEPT = "kept"
     REMOVED = "removed"
     DRAFTED = "drafted"
+    RESCINDED = "rescinded"
 
 
 _BUCKETS = {
@@ -32,6 +34,7 @@ _BUCKETS = {
     "removed_rsvps": (PauseRole.RSVP, PauseOutcome.REMOVED),
     "removed_hosting": (PauseRole.HOSTING, PauseOutcome.REMOVED),
     "drafted_events": (PauseRole.HOSTING, PauseOutcome.DRAFTED),
+    "rescinded_invites": (PauseRole.COHOST_INVITE, PauseOutcome.RESCINDED),
 }
 
 
@@ -45,6 +48,8 @@ class PauseImpactEventOut(BaseModel):
 
 class PausePreviewOut(BaseModel):
     events: list[PauseImpactEventOut]
+    stripped_roles: list[str]
+    clears_whatsapp: bool
 
 
 def _preview_events(impact: PauseImpact) -> list[PauseImpactEventOut]:
@@ -87,4 +92,11 @@ def _pause_preview(request, user_id: UUID, pause: MembershipStatus):
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
     impact = pause_impact(user, pause)
-    return Status(200, PausePreviewOut(events=_preview_events(impact)))
+    return Status(
+        200,
+        PausePreviewOut(
+            events=_preview_events(impact),
+            stripped_roles=impact.stripped_roles,
+            clears_whatsapp=impact.clears_whatsapp,
+        ),
+    )

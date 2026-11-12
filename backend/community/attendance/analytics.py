@@ -9,7 +9,7 @@ from django.db.models import Prefetch, Q
 from django.utils import timezone
 from pydantic import BaseModel
 
-from community.models import AttendanceStatus, EventRSVP, EventType
+from community.models import AttendanceStatus, CancelReason, EventRSVP, EventType
 from community.rsvps.counts import (
     NON_REPORTABLE_EVENT_STATUSES,
     attendance_q,
@@ -77,7 +77,7 @@ def compute_member_stats(
         if is_attended(rsvp) and rsvp.event.event_type == EventType.COMMUNITY
     )
     didnt_go_count = sum(1 for rsvp in reportable_rsvps if is_didnt_go(rsvp))
-    cancel_count = sum(1 for rsvp in rsvps if rsvp.cancelled_at is not None)
+    cancel_count = sum(1 for rsvp in rsvps if rsvp.cancel_reason == CancelReason.SELF)
 
     return MemberAttendanceStats(
         last_qualifying_at=last_qualifying_at,

@@ -5740,23 +5740,37 @@
         "enum": [
           "kept",
           "removed",
-          "drafted"
+          "drafted",
+          "rescinded"
         ],
         "title": "PauseOutcome",
         "type": "string"
       },
       "PausePreviewOut": {
         "properties": {
+          "clears_whatsapp": {
+            "title": "Clears Whatsapp",
+            "type": "boolean"
+          },
           "events": {
             "items": {
               "$ref": "#/components/schemas/PauseImpactEventOut"
             },
             "title": "Events",
             "type": "array"
+          },
+          "stripped_roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stripped Roles",
+            "type": "array"
           }
         },
         "required": [
-          "events"
+          "events",
+          "stripped_roles",
+          "clears_whatsapp"
         ],
         "title": "PausePreviewOut",
         "type": "object"
@@ -5764,7 +5778,8 @@
       "PauseRole": {
         "enum": [
           "rsvp",
-          "hosting"
+          "hosting",
+          "cohost_invite"
         ],
         "title": "PauseRole",
         "type": "string"

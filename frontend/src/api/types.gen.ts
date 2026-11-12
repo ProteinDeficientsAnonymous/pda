@@ -5091,17 +5091,21 @@ export interface components {
          * PauseOutcome
          * @enum {string}
          */
-        PauseOutcome: "kept" | "removed" | "drafted";
+        PauseOutcome: "kept" | "removed" | "drafted" | "rescinded";
         /** PausePreviewOut */
         PausePreviewOut: {
+            /** Clears Whatsapp */
+            clears_whatsapp: boolean;
             /** Events */
             events: components["schemas"]["PauseImpactEventOut"][];
+            /** Stripped Roles */
+            stripped_roles: string[];
         };
         /**
          * PauseRole
          * @enum {string}
          */
-        PauseRole: "rsvp" | "hosting";
+        PauseRole: "rsvp" | "hosting" | "cohost_invite";
         /** PendingCoHostInviteOut */
         PendingCoHostInviteOut: {
             /** Id */
