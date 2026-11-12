@@ -345,9 +345,7 @@ function confirmPropsForDecision(status: ConfirmedDecision, name: string) {
 }
 
 function sortKey(request: JoinRequestSummary): number {
-  const stamp =
-    request.approvedAt ?? request.rejectedAt ?? request.tentativeAt ?? request.submittedAt;
-  return new Date(stamp).getTime();
+  return new Date(request.statusChangedAt ?? request.submittedAt).getTime();
 }
 
 function matchesQuery(request: JoinRequestSummary, q: string): boolean {
