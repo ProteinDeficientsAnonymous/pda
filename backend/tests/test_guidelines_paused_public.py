@@ -1,11 +1,11 @@
 import pytest
-from audit.models import AuditLogEntry
 from community.events.viewer import resolve_event_viewer
 from community.models import EventRSVP, JoinFormQuestion, JoinRequest, RSVPStatus
 from community.validation import Code
-from users.models import PublicRsvpToken
+from users.models import MembershipStatus, PublicRsvpToken
 
 from tests._public_rsvp_helpers import first_code, make_official_event, make_public_rsvper, post
+from tests._users import make_user
 
 PHONE = "+14155550123"
 EMAIL = "sam@example.com"
@@ -14,8 +14,7 @@ EMAIL = "sam@example.com"
 @pytest.fixture
 def paused(db):
     user = make_public_rsvper(PHONE, EMAIL)
-    user.is_paused = True
-    user.save(update_fields=["is_paused"])
+    user.save(update_fields=user.apply_guidelines_pause(by=None))
     return user
 
 
@@ -40,22 +39,15 @@ class TestPausedPublicRsvp:
         fake_email_sender.send.assert_not_called()
         assert not PublicRsvpToken.objects.filter(user=paused).exists()
 
-    def test_submit_gets_generic_rejection(
-        self,
-        api_client,
-        official_event,
-        paused,
-        fake_email_sender,
-        django_capture_on_commit_callbacks,
-    ):
-        with django_capture_on_commit_callbacks(execute=True):
-            response = post(api_client, official_event)
+    def test_submit_from_paused_member_is_told_to_sign_in(self, api_client, official_event):
+        make_user(
+            phone_number=PHONE, email=EMAIL, membership_status=MembershipStatus.GUIDELINES_PAUSED
+        )
+
+        response = post(api_client, official_event)
 
         assert response.status_code == 409
-        assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
-        assert AuditLogEntry.objects.filter(action="public_rsvp_paused_user_blocked").exists()
-        assert not EventRSVP.objects.filter(user=paused).exists()
-        fake_email_sender.send.assert_not_called()
+        assert first_code(response) == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
 
     def test_resend_sends_nothing(self, api_client, paused, fake_email_sender):
         response = api_client.post(
@@ -71,8 +63,12 @@ class TestPausedPublicRsvp:
 @pytest.mark.django_db
 class TestPausedRsvpToken:
     @pytest.fixture
-    def token(self, paused):
-        return PublicRsvpToken.issue_or_extend(paused).token
+    def token(self, db):
+        # Issued before the pause: a member can't be issued one.
+        user = make_public_rsvper(PHONE, EMAIL)
+        token = PublicRsvpToken.issue_or_extend(user).token
+        user.save(update_fields=user.apply_guidelines_pause(by=None))
+        return token
 
     def test_viewer_falls_back_to_anonymous(self, rf, official_event, token):
         request = rf.get(f"/api/community/events/x/?token={token}")
@@ -85,7 +81,7 @@ class TestPausedRsvpToken:
 
         assert response.status_code == 404
 
-    def test_manage_update_404s(self, api_client, official_event, paused, token):
+    def test_manage_update_404s(self, api_client, official_event, token):
         response = api_client.post(
             f"/api/community/public/my-rsvps/{official_event.id}/?token={token}",
             {"status": RSVPStatus.ATTENDING},
@@ -93,7 +89,7 @@ class TestPausedRsvpToken:
         )
 
         assert response.status_code == 404
-        assert not EventRSVP.objects.filter(user=paused).exists()
+        assert not EventRSVP.objects.filter(user__phone_number=PHONE).exists()
 
 
 @pytest.mark.django_db

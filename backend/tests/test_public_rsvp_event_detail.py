@@ -3,7 +3,7 @@ on any public-RSVP-eligible event for a valid token holder (issue #873)."""
 
 import pytest
 from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 
 from tests._time import future_iso
 
@@ -40,7 +40,7 @@ def public_rsvper(db):
         first_name="Non",
         last_name="Member",
         email="rsvp@example.com",
-        is_member=False,
+        membership_status=MembershipStatus.NONE,
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])

@@ -13,6 +13,7 @@ from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
 from users.models import (
+    FULL_MEMBER_STATUSES,
     PUBLIC_FORM_PHONE_REGION,
     PublicRsvpToken,
     User,
@@ -96,22 +97,6 @@ def _reject_email_collision(request, email: str) -> NoReturn:
     raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
 
 
-def _reject_if_paused_non_member(request, phone: str) -> None:
-    """Generic rejection that hides the pause; runs before the RSVP transaction so the audit row persists."""
-    user = User.objects.filter(
-        phone_number=phone, is_paused=True, is_member=False, archived_at__isnull=True
-    ).first()
-    if user is None:
-        return
-    audit_log(
-        logging.WARNING,
-        "public_rsvp_paused_user_blocked",
-        request,
-        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
-    )
-    raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
-
-
 def _create_public_rsvper(
     request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
@@ -144,7 +129,7 @@ def _resolve_public_rsvper(
     phone_match = User.objects.filter(phone_number=phone).first()
     email_match = User.objects.filter(email__iexact=email).first() if email else None
 
-    if phone_match and phone_match.is_member:
+    if phone_match and phone_match.membership_status in FULL_MEMBER_STATUSES:
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
     if phone_match and phone_match.archived_at:
@@ -246,7 +231,7 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     if user is None:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
     # Paused goes to login like a member; login only reveals the pause after the right password.
-    if user.is_member or user.is_paused:
+    if user.membership_status in FULL_MEMBER_STATUSES:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
     if user.email:
         _send_recognized_login_link(request, user)
@@ -288,7 +273,6 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     normalized_email = payload.email.strip().lower()
     validate_rsvp_status(payload.status)
-    _reject_if_paused_non_member(request, validated_phone)
 
     with transaction.atomic():
         user, created = _resolve_public_rsvper(
