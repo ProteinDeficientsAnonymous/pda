@@ -67,7 +67,7 @@ def test_mcp_paused_user_gets_401(test_user):
         async with mcp_client() as client:
             token = await connect(client, test_user)
             before = await rpc(client, token, "tools/list")
-            await test_user.asave(update_fields=test_user.set_guidelines_pause(True, by=None))
+            await test_user.asave(update_fields=test_user.apply_guidelines_pause(by=None))
             return before, await rpc(client, token, "tools/list")
 
     before, after = asyncio.run(flow())
