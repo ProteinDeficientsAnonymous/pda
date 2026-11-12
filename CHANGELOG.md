@@ -1,3 +1,25 @@
+## [0.231.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.231.2...v0.231.3) (2026-11-12)
+
+
+### Bug Fixes
+
+* 2394 - give attendance-paused members their own notice copy ([#2404](https://github.com/ProteinDeficientsAnonymous/pda/issues/2404)) ([242d32b](https://github.com/ProteinDeficientsAnonymous/pda/commit/242d32b04454f1d9cd9fbaa568809968a3ffaa17))
+
+## [0.231.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.231.1...v0.231.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* 2400 - tentative promotion uses the join-form name ([#2409](https://github.com/ProteinDeficientsAnonymous/pda/issues/2409)) ([790cfd6](https://github.com/ProteinDeficientsAnonymous/pda/commit/790cfd618fe3c1493a86fec2d3b580045c40cea3))
+
+## [0.231.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.231.0...v0.231.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **users:** 2403 - count attendance-paused members in role user counts ([#2412](https://github.com/ProteinDeficientsAnonymous/pda/issues/2412)) ([e4cc6bd](https://github.com/ProteinDeficientsAnonymous/pda/commit/e4cc6bdbea319be95192eee54f5d56fdeb937107))
+* **users:** count attendance-paused members in role user counts ([9123ec0](https://github.com/ProteinDeficientsAnonymous/pda/commit/9123ec063fadce2314e104ac1fbf6c21af205aa1)), closes [#2403](https://github.com/ProteinDeficientsAnonymous/pda/issues/2403)
+
 # [0.231.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.230.0...v0.231.0) (2026-11-12)
 
 

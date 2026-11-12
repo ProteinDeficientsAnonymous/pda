@@ -1,4 +1,5 @@
 import pytest
+from audit.models import AuditLogEntry
 from community.validation import Code
 from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
@@ -6,6 +7,7 @@ from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
+from tests._users import make_attendance_paused
 
 
 @pytest.fixture
@@ -274,3 +276,17 @@ class TestNonMemberCannotHoldRole:
         response = api_client.get("/api/auth/roles/", **manage_users_headers)
         counted = next(r for r in response.json() if r["name"] == "counted")
         assert counted["user_count"] == 1
+
+    def test_attendance_paused_holder_counted_in_list_and_delete(
+        self, api_client, manage_users_headers, django_capture_on_commit_callbacks
+    ):
+        role = Role.objects.create(name="counted", permissions=[])
+        make_attendance_paused().roles.add(role)
+        response = api_client.get("/api/auth/roles/", **manage_users_headers)
+        counted = next(r for r in response.json() if r["name"] == "counted")
+        assert counted["user_count"] == 1
+
+        with django_capture_on_commit_callbacks(execute=True):
+            api_client.delete(f"/api/auth/roles/{role.id}/", **manage_users_headers)
+        entry = AuditLogEntry.objects.get(action="role_deleted")
+        assert entry.details["affected_user_count"] == 1
