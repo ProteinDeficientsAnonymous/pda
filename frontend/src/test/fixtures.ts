@@ -182,8 +182,6 @@ export function makeMember(overrides: Partial<Member> = {}): Member {
     isMember: true,
     membershipStatus: MembershipStatus.ActiveMember,
     isSuperuser: false,
-    isPaused: false,
-    attendancePausedAt: null,
     hasJoinedWhatsapp: false,
     needsOnboarding: false,
     loginLinkRequested: false,

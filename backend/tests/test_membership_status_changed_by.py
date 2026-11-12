@@ -92,7 +92,7 @@ def test_unchanged_status_keeps_the_stamp():
     ("make", "body"),
     [
         (make_user, {"attendance_paused": True}),
-        (make_user, {"is_paused": True}),
+        (make_user, {"guidelines_paused": True}),
         (make_attendance_paused, {"attendance_paused": False}),
     ],
     ids=["attendance-pause", "guidelines-pause", "unpause"],
