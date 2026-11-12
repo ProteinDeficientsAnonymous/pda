@@ -1,8 +1,10 @@
 import pytest
 from audit.models import AuditLogEntry
 from community.join_requests import check_in_promotion
-from community.models import AttendanceStatus, EventRSVP, JoinRequestStatus
+from community.models import AttendanceStatus, EventRSVP, JoinRequestStatus, RSVPStatus
+from django.core import mail
 from django.utils import timezone
+from notifications.models import Notification, NotificationType
 from users.models import MembershipStatus, User
 
 from tests._tentative_helpers import (
@@ -102,3 +104,63 @@ def test_failed_promotion_keeps_the_check_in(
         action="check_in_promotion_failed", target_id=str(stale_tentative.pk)
     ).exists()
     fake_email_sender.send.assert_not_called()
+
+
+def vetter_alerts():
+    return Notification.objects.filter(notification_type=NotificationType.CHECK_IN_PROMOTION_FAILED)
+
+
+@pytest.fixture
+def committed_check_in(api_client, open_official_event, django_capture_on_commit_callbacks):
+    def run(user):
+        with django_capture_on_commit_callbacks(execute=True):
+            return check_in(api_client, open_official_event, user)
+
+    return run
+
+
+@pytest.mark.usefixtures("failing_promotion", "fake_email_sender")
+def test_failed_promotion_alerts_vetters(
+    committed_check_in, stale_tentative, vettor_user, settings
+):
+    settings.VETTING_EMAIL = "vetting@pda.org"
+    committed_check_in(stale_tentative)
+    alert = vetter_alerts().get()
+    assert (alert.recipient, alert.related_user) == (vettor_user, stale_tentative)
+    assert alert.message == (
+        f"manually approve {STALE_NAME}'s join request — their check-in at"
+        " official meetup didn't promote them"
+    )
+    assert [m.to for m in mail.outbox] == [["vetting@pda.org"]]
+
+
+@pytest.mark.usefixtures("failing_promotion", "fake_email_sender")
+def test_failed_alert_never_breaks_the_check_in(
+    committed_check_in, stale_tentative, monkeypatch, settings
+):
+    def fail(*_args):
+        raise RuntimeError("notify failed")
+
+    settings.VETTING_EMAIL = "vetting@pda.org"
+    monkeypatch.setattr(check_in_promotion, "create_check_in_promotion_failed_notifications", fail)
+    assert committed_check_in(stale_tentative).status_code == 200
+    assert len(mail.outbox) == 1
+
+
+@pytest.mark.usefixtures("fake_email_sender")
+def test_no_vetter_alert_when_promoted(
+    committed_check_in, sample_join_request, vettor_user, open_official_event
+):
+    user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+    committed_check_in(user)
+    user.refresh_from_db()
+    assert user.is_member is True
+    assert not vetter_alerts().exists()
+
+
+@pytest.mark.usefixtures("failing_promotion", "fake_email_sender", "vettor_user")
+def test_no_vetter_alert_when_not_tentative(committed_check_in, open_official_event):
+    user = make_user(phone_number=PHONE, membership_status=MembershipStatus.NONE)
+    EventRSVP.objects.create(event=open_official_event, user=user, status=RSVPStatus.ATTENDING)
+    committed_check_in(user)
+    assert not vetter_alerts().exists()

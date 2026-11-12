@@ -7,11 +7,15 @@ from django.db import transaction
 from django.utils import timezone
 from notifications.email_helpers import send_member_restored_email
 from notifications.email_sender import SendResult, get_email_sender, send_best_effort
-from notifications.service import create_member_restored_notifications
+from notifications.service import (
+    create_check_in_promotion_failed_notifications,
+    create_member_restored_notifications,
+)
 from users.helpers import grant_membership
 from users.models import MembershipStatus, User
 
 from community.attendance.analytics import compute_member_stats, is_compliant
+from community.join_requests._vetting_email import send_vetting_email
 from community.join_requests.approval import maybe_promote_tentative
 from community.models import (
     EventRSVP,
@@ -31,6 +35,7 @@ class CheckInOutcome(StrEnum):
 
 def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome | None:
     """Promote or restore on check-in; a failure rolls back alone and the check-in stays."""
+    was_tentative = user.membership_status == MembershipStatus.TENTATIVE
     try:
         with transaction.atomic():
             return _promote_or_restore(request, user, event)
@@ -46,6 +51,8 @@ def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome
                 details={"event_id": str(event.pk), "error": type(exc).__name__},
             ),
         )
+        if was_tentative:
+            transaction.on_commit(lambda: notify_vetters_promotion_failed(user, event))
         return None
 
 
@@ -120,3 +127,20 @@ def notify_member_restored(user: User) -> None:
         create_member_restored_notifications(user)
     except Exception:  # noqa: BLE001 — the restore has committed
         logger.warning("member_restored_notifications_failed", exc_info=True)
+
+
+def notify_vetters_promotion_failed(user: User, event) -> None:
+    """Best-effort vetter alert to approve by hand. A failure must not touch the check-in."""
+    name = (user.full_name or user.phone_number).lower()
+    message = (
+        f"manually approve {name}'s join request — their check-in at"
+        f" {event.title.lower()} didn't promote them"
+    )
+    try:
+        create_check_in_promotion_failed_notifications(user, event, message[:255])
+    except Exception:  # noqa: BLE001 — the check-in has committed
+        logger.warning("check_in_promotion_failed_notifications_failed", exc_info=True)
+    send_vetting_email(
+        f"check-in promotion failed: {name}",
+        f"{message}\n\n{settings.FRONTEND_BASE_URL}/join-requests",
+    )
