@@ -40,11 +40,11 @@ _PENDING_ALLOWLIST = frozenset(
     }
 )
 
-# Archive, pause and no membership still 403 on the pending allowlist; password and consent do not.
+# Archive, guidelines pause and no membership still 403 on the pending allowlist; password and consent do not.
 HARD_ACCOUNT_BLOCKS = frozenset(
     {
         Code.Auth.ACCOUNT_ARCHIVED,
-        Code.Auth.ACCOUNT_PAUSED,
+        Code.Auth.ACCOUNT_GUIDELINES_PAUSED,
         Code.Auth.NOT_A_MEMBER,
     }
 )
@@ -52,7 +52,10 @@ HARD_ACCOUNT_BLOCKS = frozenset(
 
 _ACCOUNT_BLOCKS: tuple[tuple[Callable[[User], bool], str], ...] = (
     (lambda u: u.archived_at is not None, Code.Auth.ACCOUNT_ARCHIVED),
-    (lambda u: u.membership_status == MembershipStatus.GUIDELINES_PAUSED, Code.Auth.ACCOUNT_PAUSED),
+    (
+        lambda u: u.membership_status == MembershipStatus.GUIDELINES_PAUSED,
+        Code.Auth.ACCOUNT_GUIDELINES_PAUSED,
+    ),
     (lambda u: u.membership_status not in SIGN_IN_STATUSES, Code.Auth.NOT_A_MEMBER),
     (lambda u: u.needs_password_reset, Code.Auth.PASSWORD_RESET_REQUIRED),
     (lambda u: u.needs_onboarding, Code.Auth.ONBOARDING_REQUIRED),

@@ -8,7 +8,7 @@ from users.models import User
 
 _AUDIT_SUFFIX = {
     Code.Auth.ACCOUNT_ARCHIVED: "archived",
-    Code.Auth.ACCOUNT_PAUSED: "paused",
+    Code.Auth.ACCOUNT_GUIDELINES_PAUSED: "paused",
     Code.Auth.NOT_A_MEMBER: "not_a_member",
 }
 
