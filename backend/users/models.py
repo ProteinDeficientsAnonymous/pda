@@ -232,22 +232,23 @@ class User(AbstractUser):
 
     def apply_guidelines_pause(self, *, by: "User | None") -> list[str]:
         """A guidelines pause replaces any attendance pause."""
-        return self._set_pause(MembershipStatus.GUIDELINES_PAUSED, by, None, None)
+        return self._set_pause(MembershipStatus.GUIDELINES_PAUSED, by)
 
     def lift_guidelines_pause(self, *, by: "User | None") -> list[str]:
         # Lifting leaves them limited until a compliant in-person check-in.
-        now = timezone.now()
-        return self._set_pause(MembershipStatus.ATTENDANCE_PAUSED, by, now, now)
+        at = timezone.now()
+        return self._set_pause(MembershipStatus.ATTENDANCE_PAUSED, by, paused_at=at, unpaused_at=at)
 
     def apply_attendance_pause(self, *, by: "User | None") -> list[str]:
-        return self._set_pause(MembershipStatus.ATTENDANCE_PAUSED, by, timezone.now(), None)
+        return self._set_pause(MembershipStatus.ATTENDANCE_PAUSED, by, paused_at=timezone.now())
 
     def _set_pause(
         self,
         status: MembershipStatus,
         by: "User | None",
-        paused_at: datetime | None,
-        unpaused_at: datetime | None,
+        *,
+        paused_at: datetime | None = None,
+        unpaused_at: datetime | None = None,
     ) -> list[str]:
         if self.is_archived:
             # Only status_before_archive records it; unarchiving sets the pause stamps.
