@@ -296,19 +296,10 @@ def list_join_requests(request):
 
 
 def _stamp_decision(join_request: JoinRequest, status: str, actor, rejection: Rejection) -> None:
-    now = timezone.now()
     join_request.status = status
     join_request.status_changed_at = timezone.now()
     join_request.status_changed_by = actor
-    if status == JoinRequestStatus.TENTATIVE:
-        join_request.tentative_at = now
-        join_request.tentative_by = actor
-    elif status == JoinRequestStatus.APPROVED:
-        join_request.approved_at = now
-        join_request.approved_by = actor
-    elif status == JoinRequestStatus.REJECTED:
-        join_request.rejected_at = now
-        join_request.rejected_by = actor
+    if status == JoinRequestStatus.REJECTED:
         join_request.rejection_reason, join_request.rejection_note = rejection
     join_request.save()
 

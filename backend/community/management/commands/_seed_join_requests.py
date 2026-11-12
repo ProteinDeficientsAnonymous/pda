@@ -45,10 +45,11 @@ def _custom_answers(spec: JoinRequestSpec, questions_by_label: dict[str, JoinFor
 
 
 def _reviewer_fields(spec, reviewer: User | None, submitted_at) -> dict:
-    if spec.status == JoinRequestStatus.APPROVED:
-        return {"approved_at": submitted_at + timedelta(days=1), "approved_by": reviewer}
-    if spec.status == JoinRequestStatus.REJECTED:
-        return {"rejected_at": submitted_at + timedelta(days=1), "rejected_by": reviewer}
+    if spec.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED):
+        return {
+            "status_changed_at": submitted_at + timedelta(days=1),
+            "status_changed_by": reviewer,
+        }
     return {}
 
 

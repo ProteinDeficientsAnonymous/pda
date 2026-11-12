@@ -62,22 +62,6 @@ class JoinRequest(models.Model):
         on_delete=models.SET_NULL,
         related_name="status_changed_join_requests",
     )
-    tentative_at = models.DateTimeField(null=True, blank=True)
-    tentative_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="tentative_join_requests",
-    )
-    approved_at = models.DateTimeField(null=True, blank=True)
-    approved_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="approved_join_requests",
-    )
     # Set when a tentative applicant is auto-approved by checking in at this event.
     approved_via_event = models.ForeignKey(
         "community.Event",
@@ -85,14 +69,6 @@ class JoinRequest(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="+",
-    )
-    rejected_at = models.DateTimeField(null=True, blank=True)
-    rejected_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="rejected_join_requests",
     )
     rejection_reason = models.CharField(
         max_length=30, choices=RejectionReason.choices, blank=True, default=""
