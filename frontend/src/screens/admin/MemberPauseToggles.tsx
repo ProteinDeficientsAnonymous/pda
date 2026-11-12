@@ -87,9 +87,14 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
         label="event rqmt pause"
         checked={value.attendancePaused}
         onChange={(next) => void onToggle('attendancePaused', next)}
-        disabled={targetIsAdmin || loading || value.guidelinesPaused}
+        disabled={targetIsAdmin || loading || value.guidelinesPaused || initial.attendancePaused}
       />
       {targetIsAdmin ? <p className="text-muted text-xs">admins can't be paused</p> : null}
+      {initial.attendancePaused ? (
+        <p className="text-muted text-xs">
+          lifts when they check in at an official or club event and meet the event rqmt
+        </p>
+      ) : null}
       {initial.guidelinesPaused && !value.guidelinesPaused ? (
         <p className="text-muted text-xs">
           lifting this leaves an event rqmt pause until they check in and meet the event rqmt

@@ -16,7 +16,7 @@ from ninja import Router
 from ninja.responses import Status
 
 from users._attendance_pause import apply_attendance_pause_patch, release_held_events
-from users._unpause import has_pause, mark_unpaused
+from users._unpause import mark_unpaused
 from users.helpers import (
     check_and_set_email,
     create_magic_token,
@@ -303,7 +303,6 @@ def update_user(request, user_id: str, payload: UserPatchIn):
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
     was_guidelines_paused = user.is_guidelines_paused
-    was_paused = has_pause(user)
     _apply_user_patch(user, user_id, payload, requester=request.auth)
     with transaction.atomic():
         user.save()
@@ -313,7 +312,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
         _audit_user_update(request, user_id, payload, was_guidelines_paused, released)
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
-    if was_paused and not has_pause(user):
+    if was_guidelines_paused and not user.is_guidelines_paused:
         mark_unpaused(user)
     return Status(200, UserOut.from_user(user))
 
@@ -388,6 +387,11 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester:
     )
     if payload.attendance_paused and stays_guidelines_paused:
         raise_validation(Code.User.GUIDELINES_PAUSED, field="attendance_paused", status_code=400)
+    # Only a compliant in-person check-in lifts an attendance pause.
+    if payload.attendance_paused is False and user.is_attendance_paused:
+        raise_validation(
+            Code.User.ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN, field="attendance_paused", status_code=400
+        )
     if (
         payload.guidelines_paused is not None
         and payload.guidelines_paused != user.is_guidelines_paused

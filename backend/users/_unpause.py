@@ -9,10 +9,6 @@ from notifications.unpaused_email import send_unpaused_email
 from users.models import User
 
 
-def has_pause(user: User) -> bool:
-    return user.is_guidelines_paused or user.attendance_paused_at is not None
-
-
 def mark_unpaused(user: User) -> None:
     """Stamp the unpause, mark them out of the WhatsApp until they attend, and email after commit."""
     user.unpaused_at = timezone.now()

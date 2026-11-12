@@ -52,12 +52,11 @@ describe('MemberPauseToggles event rqmt preview', () => {
     expect(eventRqmtSwitch()).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('skips the preview when re-enabling an existing pause', async () => {
+  it('locks an existing event rqmt pause until they check in', () => {
     render(<Harness attendancePaused />);
-    await userEvent.click(eventRqmtSwitch());
-    await userEvent.click(eventRqmtSwitch());
-    expect(preview).not.toHaveBeenCalled();
+    expect(eventRqmtSwitch()).toBeDisabled();
     expect(eventRqmtSwitch()).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByText(/lifts when they check in/)).toBeInTheDocument();
   });
 
   it('lists affected events and turns on after confirming', async () => {

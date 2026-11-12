@@ -199,7 +199,7 @@ describe('MemberDetailScreen edit form', () => {
     expect(updateMutateAsync).toHaveBeenCalledWith(patch);
   });
 
-  it('unpauses an event rqmt pause, shows its badge, and hides roles', async () => {
+  it('shows an event rqmt pause badge, hides roles, and locks the pause', async () => {
     vi.mocked(useUsers).mockReturnValue({
       data: [{ ...member, membershipStatus: MembershipStatus.AttendancePaused }],
       isPending: false,
@@ -212,9 +212,7 @@ describe('MemberDetailScreen edit form', () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'save roles' })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /^edit$/i }));
-    await userEvent.click(screen.getByRole('switch', { name: 'event rqmt pause' }));
-    await userEvent.click(screen.getByRole('button', { name: /^save$/i }));
-    expect(updateMutateAsync).toHaveBeenCalledWith({ attendancePaused: false });
+    expect(screen.getByRole('switch', { name: 'event rqmt pause' })).toBeDisabled();
   });
 
   it('disables both pause toggles for an admin', async () => {
