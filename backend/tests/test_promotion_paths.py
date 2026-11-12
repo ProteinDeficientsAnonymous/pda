@@ -144,9 +144,7 @@ class TestPromoteTentativeMember:
         user.refresh_from_db()
         assert user.check_password("theirownpass123")
 
-    def test_a_nameless_tentative_user_is_rejected(self, sample_join_request):
-        """Issue 733 — no approval path may produce a member with no first name."""
-
+    def test_a_nameless_tentative_user_takes_the_join_form_name(self, sample_join_request):
         user = User.objects.create_user(
             phone_number="+12025551901",
             first_name="Temp",
@@ -154,6 +152,14 @@ class TestPromoteTentativeMember:
         )
         user.first_name = ""
         user.save(update_fields=["first_name"])
+        promote_tentative_member(user, sample_join_request, None)
+        assert user.first_name == "Sprout"
+
+    def test_nameless_on_both_sides_is_rejected(self, sample_join_request):
+        """Issue 733 — no approval path may produce a member with no first name."""
+        user = User.objects.create_user(phone_number="+12025551901", first_name="Temp")
+        user.first_name = ""
+        sample_join_request.first_name = ""
         with pytest.raises(ValidationException):
             promote_tentative_member(user, sample_join_request, None)
 

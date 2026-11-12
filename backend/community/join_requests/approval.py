@@ -21,6 +21,7 @@ from community.models import (
     is_official_or_club,
 )
 from community.shared import render_template_placeholders, validate_display_name
+from community.validation import ValidationException
 
 
 def _resolve_names(join_request) -> tuple[str, str]:
@@ -101,14 +102,22 @@ def _promote_public_rsvper(user, join_request, by: User) -> str:
     return create_magic_token(user)
 
 
+def _onboarded_name_or_join_form(user, join_request) -> tuple[str, str]:
+    """A valid name they chose wins; a stale invalid one falls back to the join form's."""
+    try:
+        validate_display_name(user.first_name, field="first_name")
+    except ValidationException:
+        return _resolve_names(join_request)
+    return user.first_name, user.last_name
+
+
 def promote_tentative_member(user, join_request, by: User) -> None:
     """Promote a tentatively-approved applicant in place; they onboarded already.
 
     Only membership changes: no token to mint, no needs_onboarding re-flag
-    (that would lock them out of every endpoint), no name to overwrite.
+    (that would lock them out of every endpoint).
     """
-    # Their own name, not the application's — this path copies none (Issue 733).
-    validate_display_name(user.first_name, field="first_name")
+    user.first_name, user.last_name = _onboarded_name_or_join_form(user, join_request)
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
         user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None and user.sms_consent_at is None:
@@ -116,6 +125,8 @@ def promote_tentative_member(user, join_request, by: User) -> None:
     user.save(
         update_fields=[
             *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=by),
+            "first_name",
+            "last_name",
             "guidelines_consent_at",
             "sms_consent_at",
         ]
@@ -148,17 +159,22 @@ def send_join_approval(*, to: str, display_name: str, first_name: str) -> None:
         logging.getLogger(__name__).warning("join approval email failed", exc_info=True)
 
 
-def _make_tentative(user, by: User) -> list[str]:
-    """Move a non-member or archived account to tentative; return the changed fields."""
+def _make_tentative(user, join_request, by: User) -> list[str]:
+    """Move a non-member or archived account to tentative under the join form's name.
+
+    return(list[str]): the fields it changed, for update_fields.
+    """
     if user.membership_status == MembershipStatus.NONE:
-        return user.set_membership_status(MembershipStatus.TENTATIVE, by=by)
-    if user.archived_at is None:
+        fields = user.set_membership_status(MembershipStatus.TENTATIVE, by=by)
+    elif user.archived_at is None:
         return []
-    fields = _unarchive(user, MembershipStatus.TENTATIVE, by)
-    if user.membership_status == MembershipStatus.TENTATIVE:
-        # Archiving keeps every role, and a non-member may hold none.
-        user.roles.clear()
-    return fields
+    else:
+        fields = _unarchive(user, MembershipStatus.TENTATIVE, by)
+        if user.membership_status == MembershipStatus.TENTATIVE:
+            # Archiving keeps every role, and a non-member may hold none.
+            user.roles.clear()
+    user.first_name, user.last_name = _resolve_names(join_request)
+    return [*fields, "first_name", "last_name"]
 
 
 def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
@@ -191,7 +207,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     # Carry the form's consents forward, same as _promote_non_member — they
     # consented when they applied, so the consent gate must not ask again.
     changed = ["needs_onboarding"] if not user.needs_onboarding else []
-    changed += _make_tentative(user, requesting_user)
+    changed += _make_tentative(user, join_request, requesting_user)
     user.needs_onboarding = True
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
         user.guidelines_consent_at = join_request.guidelines_consent_at

@@ -159,9 +159,8 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
     if payload.for_plus_one and not rsvp.has_plus_one:
         raise_validation(Code.Event.NO_PLUS_ONE_TO_CHECK_IN, status_code=400)
 
-    # The mark and any promotion or restore it triggers commit as a unit, so a
-    # mid-promotion failure can't leave a member flagged without their request
-    # stamped approved.
+    # A promotion or restore commits in its own savepoint: a failure rolls it
+    # back whole but keeps the attendance mark.
     with transaction.atomic():
         outcome = _apply_attendance_mark(request, rsvp, payload)
 
