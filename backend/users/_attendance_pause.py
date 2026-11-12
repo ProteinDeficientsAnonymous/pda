@@ -34,7 +34,7 @@ from users._archive import (
     upcoming_events_q,
     upcoming_hosted_events,
 )
-from users.helpers import strip_elevated_roles
+from users.helpers import elevated_roles, strip_elevated_roles
 from users.models import HAS_EMAIL, MembershipStatus, User
 
 logger = logging.getLogger(__name__)
@@ -55,6 +55,9 @@ class PauseImpact:
     removed_rsvps: list[Event] = field(default_factory=list)
     removed_hosting: list[Event] = field(default_factory=list)
     drafted_events: list[Event] = field(default_factory=list)
+    rescinded_invites: list[Event] = field(default_factory=list)
+    stripped_roles: list[str] = field(default_factory=list)
+    clears_whatsapp: bool = False
 
 
 def _keeps_official_rsvps(pause: MembershipStatus) -> bool:
@@ -66,9 +69,18 @@ def pause_impact(user: User, pause: MembershipStatus) -> PauseImpact:
 
     param(user): the member who would be paused
     param(pause): ATTENDANCE_PAUSED keeps official/club RSVPs; GUIDELINES_PAUSED releases them too
-    return(PauseImpact): events per bucket, soonest first
+    return(PauseImpact): events per bucket, soonest first; empty for an archived user
     """
     impact = PauseImpact()
+    if user.is_archived:
+        return impact
+    impact.stripped_roles = list(elevated_roles(user).values_list("name", flat=True))
+    impact.clears_whatsapp = user.has_joined_whatsapp
+    impact.rescinded_invites = list(
+        Event.objects.filter(cohost_invites__in=_pending_cohost_invites(user)).order_by(
+            "start_datetime"
+        )
+    )
     for event in upcoming_hosted_events(user).order_by("start_datetime"):
         if event.host_count > 1:
             impact.removed_hosting.append(event)
@@ -132,9 +144,9 @@ def release_held_events(request, user: User, pause: MembershipStatus) -> tuple[P
         release_q &= ~KEPT_RSVP_EVENT_Q
     release_upcoming_rsvps(request, user, CancelReason.PAUSE, release_q)
     step_down_as_cohost(user, impact.removed_hosting)
-    EventCoHostInvite.objects.filter(
-        upcoming_events_q("event__"), user=user, status=CoHostInviteStatus.PENDING
-    ).update(status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now())
+    _pending_cohost_invites(user).update(
+        status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now()
+    )
     details = {
         "removed_role_ids": strip_elevated_roles(user),
         "removed_rsvp_event_ids": [str(e.pk) for e in impact.removed_rsvps],
@@ -142,6 +154,12 @@ def release_held_events(request, user: User, pause: MembershipStatus) -> tuple[P
         "drafted_event_ids": [str(e.pk) for e in impact.drafted_events],
     }
     return impact, details
+
+
+def _pending_cohost_invites(user: User):
+    return EventCoHostInvite.objects.filter(
+        upcoming_events_q("event__"), user=user, status=CoHostInviteStatus.PENDING
+    )
 
 
 def _move_to_draft(event: Event, user: User) -> None:

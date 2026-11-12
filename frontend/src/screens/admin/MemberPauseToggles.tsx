@@ -13,11 +13,16 @@ import { Toggle } from '@/components/ui/Toggle';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { formatShortDateTime } from '@/utils/datetime';
 
-const ROLE_LABEL: Record<PauseRole, string> = { rsvp: "rsvp'd", hosting: 'hosting' };
+const ROLE_LABEL: Record<PauseRole, string> = {
+  rsvp: "rsvp'd",
+  hosting: 'hosting',
+  cohost_invite: 'co-host invite',
+};
 const OUTCOME_LABEL: Record<PauseOutcome, string> = {
   kept: 'kept',
   removed: 'removed',
   drafted: 'moved to draft',
+  rescinded: 'rescinded',
 };
 
 const PAUSE_DIALOG = {
