@@ -53,11 +53,11 @@ class TestManualUnpause:
     @pytest.mark.parametrize(
         ("pause", "payload"),
         [
-            ({}, {"is_paused": True}),
+            ({}, {"guidelines_paused": True}),
             ({}, {"first_name": "Sam"}),
             (GUIDELINES, {"first_name": "Sam"}),
-            (GUIDELINES, {"is_paused": False, "attendance_paused": True}),
-            (GUIDELINES, {"is_paused": False}),
+            (GUIDELINES, {"guidelines_paused": False, "attendance_paused": True}),
+            (GUIDELINES, {"guidelines_paused": False}),
         ],
         ids=[
             "pausing",
@@ -77,7 +77,7 @@ class TestManualUnpause:
 
     @pytest.mark.parametrize(
         "payload",
-        [{"is_paused": True}, {"attendance_paused": True}],
+        [{"guidelines_paused": True}, {"attendance_paused": True}],
         ids=["guidelines", "attendance"],
     )
     def test_a_new_pause_clears_the_stamp(self, patch_user, fake_email_sender, payload):

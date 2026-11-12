@@ -6,7 +6,7 @@ import { useRoles } from '@/api/roles';
 import { useUsers } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
-import type { User } from '@/models/user';
+import { MembershipStatus, type User } from '@/models/user';
 import { setAuthed } from '@/test/auth';
 import { makeMember, makeUser, makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
@@ -45,7 +45,7 @@ const attendancePaused = makeMember({
   id: 'm3',
   fullName: 'Paused Member',
   isMember: false,
-  attendancePausedAt: new Date('2026-03-01'),
+  membershipStatus: MembershipStatus.AttendancePaused,
 });
 
 function adminUser(permissions: string[] = [Permission.ManageUsers]): User {
@@ -319,7 +319,14 @@ describe('MembersScreen', () => {
 
   it('labels pause kinds and links attendance-paused members as members', () => {
     mockUsersResult({
-      data: [makeMember({ id: 'm1', fullName: 'Ada Member', isPaused: true }), attendancePaused],
+      data: [
+        makeMember({
+          id: 'm1',
+          fullName: 'Ada Member',
+          membershipStatus: MembershipStatus.GuidelinesPaused,
+        }),
+        attendancePaused,
+      ],
     });
 
     renderScreen();
