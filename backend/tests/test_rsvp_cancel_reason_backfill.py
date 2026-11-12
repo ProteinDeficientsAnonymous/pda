@@ -19,12 +19,12 @@ def _cancelled(user, cancelled_at):
     return make_rsvp(make_event(), user, RSVPStatus.CANT_GO, cancelled_at=cancelled_at)
 
 
-def _audit(action, user, details=None):
+def _audit(action, user, details=None, target_type=AuditTargetType.USER, target_id=None):
     return AuditLogEntry.objects.create(
         action=action,
         actor_label="admin",
-        target_type=AuditTargetType.USER,
-        target_id=str(user.pk),
+        target_type=target_type,
+        target_id=target_id or str(user.pk),
         details=details or {},
         level=logging.WARNING,
     )
@@ -63,6 +63,17 @@ def test_marks_rsvps_an_archive_released(test_user, action):
     backfill.backfill_cancel_reason(apps, None)
 
     assert _reasons(released, earlier) == [CancelReason.ARCHIVE, CancelReason.SELF]
+
+
+def test_marks_rsvps_a_host_cancelled(test_user):
+    by_host, own = _cancelled(test_user, timezone.now()), _cancelled(test_user, timezone.now())
+    for rsvp, status in ((by_host, RSVPStatus.CANT_GO), (own, RSVPStatus.ATTENDING)):
+        details = {"user_id": str(test_user.pk), "status": status}
+        _audit("guest_rsvp_changed", test_user, details, AuditTargetType.EVENT, str(rsvp.event_id))
+
+    backfill.backfill_cancel_reason(apps, None)
+
+    assert _reasons(by_host, own) == [CancelReason.HOST, CancelReason.SELF]
 
 
 def test_leaves_set_reasons_and_uncancelled_rows(test_user):
