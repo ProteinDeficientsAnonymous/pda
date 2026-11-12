@@ -189,7 +189,7 @@ class TestMe:
         assert response.json()["needs_onboarding"] is True
 
     def test_me_paused_user_returns_403(self, api_client, test_user):
-        test_user.save(update_fields=test_user.set_guidelines_pause(True, by=None))
+        test_user.save(update_fields=test_user.apply_guidelines_pause(by=None))
         headers = auth_headers_for(test_user)
         response = api_client.get("/api/auth/me/", **headers)
         assert response.status_code == 403

@@ -3,7 +3,7 @@ from community.join_requests.approval import maybe_promote_tentative
 from community.models import JoinRequestStatus
 from django.utils import timezone
 from users._archive import archive_user
-from users.models import MEMBER_STATUSES, MembershipStatus
+from users.models import MEMBER_STATUSES, MembershipStatus, User
 
 from tests._public_rsvp_helpers import make_public_rsvper
 from tests._tentative_helpers import open_official_event, tentative_user_with_rsvp
@@ -153,14 +153,19 @@ def test_archiving_remembers_the_pause(rf, status):
 
 
 @pytest.mark.parametrize(
-    ("paused", "before"),
-    [(True, MembershipStatus.GUIDELINES_PAUSED), (False, MembershipStatus.ATTENDANCE_PAUSED)],
+    ("restored", "change", "after"),
+    [
+        (None, User.apply_guidelines_pause, MembershipStatus.GUIDELINES_PAUSED),
+        (
+            MembershipStatus.GUIDELINES_PAUSED,
+            User.lift_guidelines_pause,
+            MembershipStatus.ATTENDANCE_PAUSED,
+        ),
+    ],
+    ids=["apply", "lift"],
 )
-def test_guidelines_pause_on_an_archived_user_sets_the_restored_pause(paused, before):
-    archived = make_user(
-        archived_at=timezone.now(),
-        status_before_archive=None if paused else MembershipStatus.GUIDELINES_PAUSED,
-    )
-    archived.set_guidelines_pause(paused, by=None)
+def test_guidelines_pause_on_an_archived_user_sets_the_restored_pause(restored, change, after):
+    archived = make_user(archived_at=timezone.now(), status_before_archive=restored)
+    change(archived, by=None)
     assert archived.membership_status == MembershipStatus.ARCHIVED
-    assert archived.status_before_archive == before
+    assert archived.status_before_archive == after
