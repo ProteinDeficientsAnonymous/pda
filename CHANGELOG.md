@@ -1,3 +1,10 @@
+## [0.233.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.5...v0.233.6) (2026-11-12)
+
+
+### Bug Fixes
+
+* 2393 - let a paused host still view the event their pause drafted ([#2410](https://github.com/ProteinDeficientsAnonymous/pda/issues/2410)) ([1920038](https://github.com/ProteinDeficientsAnonymous/pda/commit/19200383d76b7f0d967458e5451b89ecf3d32196))
+
 ## [0.233.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.4...v0.233.5) (2026-11-12)
 
 
