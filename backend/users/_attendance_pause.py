@@ -100,19 +100,7 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
     """
     with transaction.atomic():
         impact, details = release_held_events(request, user, MembershipStatus.ATTENDANCE_PAUSED)
-        user.attendance_paused_at = timezone.now()
-        user.has_joined_whatsapp = False
-        user.unpaused_at = None
-        user.save(
-            update_fields=[
-                *user.set_membership_status(
-                    MembershipStatus.ATTENDANCE_PAUSED, by=getattr(request, "auth", None)
-                ),
-                "attendance_paused_at",
-                "has_joined_whatsapp",
-                "unpaused_at",
-            ]
-        )
+        user.save(update_fields=user.apply_attendance_pause(by=getattr(request, "auth", None)))
         audit_log(
             logging.WARNING,
             "user_attendance_paused",
@@ -131,7 +119,7 @@ def release_held_events(request, user: User, pause: MembershipStatus) -> tuple[P
     param(pause): the pause being applied, which decides whether official/club RSVPs stay
     return(tuple[PauseImpact, dict]): the impact and its audit details
     """
-    if user.archived_at is not None:
+    if user.is_archived:
         # Archiving already released them; a pause now must not draft their solo-hosted events.
         return PauseImpact(), {}
     impact = pause_impact(user, pause)

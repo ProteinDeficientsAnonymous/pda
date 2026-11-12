@@ -16,7 +16,7 @@ from ninja import Router
 from ninja.responses import Status
 
 from users._attendance_pause import apply_attendance_pause_patch, release_held_events
-from users._unpause import mark_unpaused
+from users._unpause import email_unpaused
 from users.helpers import (
     check_and_set_email,
     create_magic_token,
@@ -313,7 +313,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
     if was_guidelines_paused and not user.is_guidelines_paused:
-        mark_unpaused(user)
+        email_unpaused(user)
     return Status(200, UserOut.from_user(user))
 
 
