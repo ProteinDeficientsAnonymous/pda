@@ -1,3 +1,10 @@
+## [0.233.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.4...v0.233.5) (2026-11-12)
+
+
+### Bug Fixes
+
+* **admin:** 2401 - attendance report button adds an attendance pause ([#2418](https://github.com/ProteinDeficientsAnonymous/pda/issues/2418)) ([460ab41](https://github.com/ProteinDeficientsAnonymous/pda/commit/460ab41d0559e37b69ea45289114f392bb8535a5))
+
 ## [0.233.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.3...v0.233.4) (2026-11-12)
 
 
