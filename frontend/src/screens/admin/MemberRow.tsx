@@ -5,7 +5,7 @@ import type { Member } from '@/api/users';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { attendedCountLabel } from './attendedCountLabel';
-import { isAttendancePaused, isManagedMember } from './memberPause';
+import { isAttendancePaused, isGuidelinesPaused, isManagedMember } from './memberPause';
 import { PauseBadges } from './PauseBadges';
 
 export function MemberRow({ member }: { member: Member }) {
@@ -33,7 +33,7 @@ export function MemberRow({ member }: { member: Member }) {
 function MemberRowBody({ member, initials }: { member: Member; initials: string }) {
   const managed = isManagedMember(member);
   const hasTags =
-    !managed || member.roles.length > 0 || member.isPaused || isAttendancePaused(member);
+    !managed || member.roles.length > 0 || isGuidelinesPaused(member) || isAttendancePaused(member);
   return (
     <>
       <div className="flex items-center gap-3">
