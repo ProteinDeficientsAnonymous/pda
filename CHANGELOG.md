@@ -1,3 +1,11 @@
+# [0.231.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.230.0...v0.231.0) (2026-11-12)
+
+
+### Features
+
+* **users:** only a check-in lifts an attendance pause; a guidelines lift emails ([#2387](https://github.com/ProteinDeficientsAnonymous/pda/issues/2387)) ([fe26a16](https://github.com/ProteinDeficientsAnonymous/pda/commit/fe26a168682f35299656ce5bfab56da4a530b152))
+* **users:** only a check-in lifts an attendance pause; lifting a guidelines pause stamps unpaused_at and emails ([77c7e4a](https://github.com/ProteinDeficientsAnonymous/pda/commit/77c7e4a39db549c5b795682828d1d79c667cccf2))
+
 # [0.230.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.229.0...v0.230.0) (2026-11-12)
 
 
