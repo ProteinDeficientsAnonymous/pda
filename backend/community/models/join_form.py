@@ -123,5 +123,11 @@ class JoinRequest(models.Model):
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
 
+    @classmethod
+    def latest_is_rejected(cls, phone_number: str) -> bool:
+        """Whether this phone's newest join request was rejected; they must re-apply."""
+        latest = cls.objects.filter(phone_number=phone_number).order_by("-submitted_at")
+        return latest.values_list("status", flat=True).first() == JoinRequestStatus.REJECTED
+
     def __str__(self):
         return f"{self.full_name} ({self.phone_number}) — {self.submitted_at:%Y-%m-%d}"

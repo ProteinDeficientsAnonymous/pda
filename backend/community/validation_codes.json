@@ -493,6 +493,11 @@
         "params": []
       },
       {
+        "name": "ACCOUNT_REJECTED",
+        "value": "auth.account_rejected",
+        "params": []
+      },
+      {
         "name": "NOT_A_MEMBER",
         "value": "auth.not_a_member",
         "params": []
