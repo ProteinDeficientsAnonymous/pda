@@ -1,3 +1,11 @@
+## [0.231.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.231.0...v0.231.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **users:** 2403 - count attendance-paused members in role user counts ([#2412](https://github.com/ProteinDeficientsAnonymous/pda/issues/2412)) ([e4cc6bd](https://github.com/ProteinDeficientsAnonymous/pda/commit/e4cc6bdbea319be95192eee54f5d56fdeb937107))
+* **users:** count attendance-paused members in role user counts ([9123ec0](https://github.com/ProteinDeficientsAnonymous/pda/commit/9123ec063fadce2314e104ac1fbf6c21af205aa1)), closes [#2403](https://github.com/ProteinDeficientsAnonymous/pda/issues/2403)
+
 # [0.231.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.230.0...v0.231.0) (2026-11-12)
 
 
