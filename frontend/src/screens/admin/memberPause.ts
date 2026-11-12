@@ -1,6 +1,8 @@
 import type { Member } from '@/api/users';
 import { MEMBER_STATUSES, MembershipStatus, type MembershipStatusValue } from '@/models/user';
 
+export { isAttendancePaused } from '@/models/user';
+
 const MANAGED_STATUSES: readonly MembershipStatusValue[] = [
   ...MEMBER_STATUSES,
   MembershipStatus.Tentative,
@@ -8,10 +10,6 @@ const MANAGED_STATUSES: readonly MembershipStatusValue[] = [
 
 export function isGuidelinesPaused(member: Pick<Member, 'membershipStatus'>): boolean {
   return member.membershipStatus === MembershipStatus.GuidelinesPaused;
-}
-
-export function isAttendancePaused(member: Pick<Member, 'membershipStatus'>): boolean {
-  return member.membershipStatus === MembershipStatus.AttendancePaused;
 }
 
 export function isTentative(member: Pick<Member, 'membershipStatus'>): boolean {
