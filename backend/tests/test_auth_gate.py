@@ -94,7 +94,7 @@ class TestGatedJWTAuth:
 
         resp = api_client.get("/api/notifications/", **headers)
         assert resp.status_code == 403
-        assert resp.json()["detail"][0]["code"] == "auth.account_paused"
+        assert resp.json()["detail"][0]["code"] == "auth.account_guidelines_paused"
 
     def test_archived_user_blocked_on_protected_endpoint_after_token_issued(self, api_client):
         user = User.objects.create_user(
