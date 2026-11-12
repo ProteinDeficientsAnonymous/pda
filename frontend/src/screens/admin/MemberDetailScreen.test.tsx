@@ -39,6 +39,7 @@ vi.mock('@/api/roles', () => ({
 
 vi.mock('@/api/attendancePausePreview', () => ({
   fetchAttendancePausePreview: vi.fn().mockResolvedValue([]),
+  fetchGuidelinesPausePreview: vi.fn().mockResolvedValue([]),
 }));
 
 const member: Member = {
