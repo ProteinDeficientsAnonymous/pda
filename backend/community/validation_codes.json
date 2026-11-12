@@ -488,8 +488,8 @@
         "params": []
       },
       {
-        "name": "ACCOUNT_PAUSED",
-        "value": "auth.account_paused",
+        "name": "ACCOUNT_GUIDELINES_PAUSED",
+        "value": "auth.account_guidelines_paused",
         "params": []
       },
       {
