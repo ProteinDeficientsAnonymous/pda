@@ -21,12 +21,15 @@ const OUTCOME_LABEL: Record<PauseOutcome, string> = {
 };
 
 const PAUSE_DIALOG = {
-  isPaused: { fetchPreview: fetchGuidelinesPausePreview, title: 'pause for guidelines violation?' },
+  guidelinesPaused: {
+    fetchPreview: fetchGuidelinesPausePreview,
+    title: 'pause for guidelines violation?',
+  },
   attendancePaused: { fetchPreview: fetchAttendancePausePreview, title: 'pause for event rqmt?' },
 };
 
 export interface PauseState {
-  isPaused: boolean;
+  guidelinesPaused: boolean;
   attendancePaused: boolean;
 }
 
@@ -45,7 +48,9 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
   async function onToggle(field: keyof PauseState, next: boolean) {
     // A guidelines pause replaces an event rqmt pause, so drop any pending event rqmt change.
     const base =
-      field === 'isPaused' ? { ...value, attendancePaused: initial.attendancePaused } : value;
+      field === 'guidelinesPaused'
+        ? { ...value, attendancePaused: initial.attendancePaused }
+        : value;
     if (!next || initial[field]) {
       onChange({ ...base, [field]: next });
       return;
@@ -74,18 +79,18 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
     <>
       <Toggle
         label="guidelines violation pause"
-        checked={value.isPaused}
-        onChange={(next) => void onToggle('isPaused', next)}
+        checked={value.guidelinesPaused}
+        onChange={(next) => void onToggle('guidelinesPaused', next)}
         disabled={targetIsAdmin || loading}
       />
       <Toggle
         label="event rqmt pause"
         checked={value.attendancePaused}
         onChange={(next) => void onToggle('attendancePaused', next)}
-        disabled={targetIsAdmin || loading || value.isPaused}
+        disabled={targetIsAdmin || loading || value.guidelinesPaused}
       />
       {targetIsAdmin ? <p className="text-muted text-xs">admins can't be paused</p> : null}
-      {initial.isPaused && !value.isPaused ? (
+      {initial.guidelinesPaused && !value.guidelinesPaused ? (
         <p className="text-muted text-xs">
           lifting this leaves an event rqmt pause until they check in and meet the event rqmt
         </p>

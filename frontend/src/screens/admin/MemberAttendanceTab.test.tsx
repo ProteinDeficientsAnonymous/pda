@@ -32,7 +32,8 @@ function makeMemberRow(overrides: Partial<MemberAttendanceRow> = {}): MemberAtte
     userId: 'u1',
     fullName: 'Ada Lovelace',
     phoneNumber: '+12025550101',
-    isPaused: false,
+    isGuidelinesPaused: false,
+    isAttendancePaused: false,
     lastQualifyingAt: new Date('2026-01-01T00:00:00Z'),
     qualifyingCount12mo: 3,
     compliant: true,
@@ -136,7 +137,7 @@ describe('MemberAttendanceTab', () => {
     await user.click(screen.getByRole('button', { name: 'pause member' }));
     await user.click(screen.getByRole('button', { name: 'pause' }));
 
-    expect(updateMutateAsync).toHaveBeenCalledWith({ isPaused: true });
+    expect(updateMutateAsync).toHaveBeenCalledWith({ guidelinesPaused: true });
   });
 
   it('does not call the pause mutation when the confirmation is cancelled', async () => {
@@ -151,13 +152,16 @@ describe('MemberAttendanceTab', () => {
     expect(updateMutateAsync).not.toHaveBeenCalled();
   });
 
-  it('shows a paused badge and hides the pause button for already-paused members', () => {
-    mockRows([makeMemberRow({ isPaused: true })]);
-    mockUser(true);
-    render(<MemberAttendanceTab />);
-    expect(screen.getByText('paused')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'pause member' })).not.toBeInTheDocument();
-  });
+  it.each(['isGuidelinesPaused', 'isAttendancePaused'] as const)(
+    'shows a paused badge and hides the pause button when %s',
+    (flag) => {
+      mockRows([makeMemberRow({ [flag]: true })]);
+      mockUser(true);
+      render(<MemberAttendanceTab />);
+      expect(screen.getByText('paused')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'pause member' })).not.toBeInTheDocument();
+    },
+  );
 
   it('displays the member count', () => {
     mockRows([makeMemberRow(), makeMemberRow({ userId: 'u2', fullName: 'Bob Smith' })]);
