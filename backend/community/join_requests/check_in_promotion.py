@@ -3,6 +3,7 @@ from enum import StrEnum
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from notifications.email_helpers import send_member_restored_email
 from notifications.email_sender import SendResult, get_email_sender, send_best_effort
@@ -29,7 +30,26 @@ class CheckInOutcome(StrEnum):
 
 
 def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome | None:
-    """Promote a tentative applicant or restore an attendance-paused member on their check-in."""
+    """Promote or restore on check-in; a failure rolls back alone and the check-in stays."""
+    try:
+        with transaction.atomic():
+            return _promote_or_restore(request, user, event)
+    except Exception as exc:  # noqa: BLE001 — the attendance mark must survive
+        logger.warning("check_in_promotion_failed", exc_info=True)
+        audit_log(
+            logging.WARNING,
+            "check_in_promotion_failed",
+            request,
+            target=AuditTarget(
+                type=AuditTargetType.USER,
+                id=str(user.pk),
+                details={"event_id": str(event.pk), "error": type(exc).__name__},
+            ),
+        )
+        return None
+
+
+def _promote_or_restore(request, user: User, event) -> CheckInOutcome | None:
     # Nobody vouches for their own check-in; an archived user comes back only through a vetter.
     if user.pk == request.auth.pk or user.archived_at is not None:
         return None

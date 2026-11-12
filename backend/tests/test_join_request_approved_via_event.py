@@ -1,21 +1,11 @@
 import pytest
-from community.models import AttendanceStatus, JoinRequestStatus
+from community.models import JoinRequestStatus
 
-from tests._auth import auth_headers_for
-from tests._tentative_helpers import open_official_event, tentative_user_with_rsvp
+from tests._tentative_helpers import check_in, open_official_event, tentative_user_with_rsvp
 
 __all__ = ["open_official_event"]
 
 pytestmark = pytest.mark.django_db
-
-
-def _check_in(api_client, event, user):
-    return api_client.post(
-        f"/api/community/events/{event.id}/rsvps/{user.pk}/attendance/",
-        {"attendance": AttendanceStatus.ATTENDED},
-        content_type="application/json",
-        **auth_headers_for(event.created_by),
-    )
 
 
 @pytest.fixture
@@ -23,7 +13,7 @@ def checked_in_tentative(
     api_client, sample_join_request, vettor_user, open_official_event, fake_email_sender
 ):
     user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
-    _check_in(api_client, open_official_event, user)
+    check_in(api_client, open_official_event, user)
     sample_join_request.refresh_from_db()
     return sample_join_request, open_official_event
 

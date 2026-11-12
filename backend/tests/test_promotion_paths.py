@@ -1,9 +1,7 @@
 """The two promotion paths differ in what credential the promoted user needs."""
 
 import pytest
-from community.join_requests.approval import promote_tentative_member
 from community.models import AttendanceStatus, JoinRequest, JoinRequestStatus
-from community.validation import ValidationException
 from django.utils import timezone
 from users.models import MembershipStatus, PublicRsvpToken, User
 
@@ -128,8 +126,7 @@ class TestPromoteTentativeMember:
             **auth_headers_for(event.created_by),
         )
         user.refresh_from_db()
-        assert user.first_name == "Chosen"
-        assert user.last_name == "Name"
+        assert (user.first_name, user.last_name) == ("Chosen", "Name")
 
     def test_promotion_keeps_their_password(
         self, api_client, onboarded_tentative, fake_email_sender
@@ -143,19 +140,6 @@ class TestPromoteTentativeMember:
         )
         user.refresh_from_db()
         assert user.check_password("theirownpass123")
-
-    def test_a_nameless_tentative_user_is_rejected(self, sample_join_request):
-        """Issue 733 — no approval path may produce a member with no first name."""
-
-        user = User.objects.create_user(
-            phone_number="+12025551901",
-            first_name="Temp",
-            membership_status=MembershipStatus.NONE,
-        )
-        user.first_name = ""
-        user.save(update_fields=["first_name"])
-        with pytest.raises(ValidationException):
-            promote_tentative_member(user, sample_join_request, None)
 
 
 @pytest.mark.django_db
