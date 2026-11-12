@@ -3,7 +3,6 @@ import { MEMBER_STATUSES, MembershipStatus, type MembershipStatusValue } from '@
 
 const MANAGED_STATUSES: readonly MembershipStatusValue[] = [
   ...MEMBER_STATUSES,
-  MembershipStatus.Archived,
   MembershipStatus.Tentative,
 ];
 
