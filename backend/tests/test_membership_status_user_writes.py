@@ -59,7 +59,7 @@ def test_admin_created_user_is_member(api_client, path, payload, permission):
 def _patch_guidelines_pause(api_client, headers, user, paused):
     response = api_client.patch(
         f"/api/auth/users/{user.pk}/",
-        {"is_paused": paused},
+        {"guidelines_paused": paused},
         content_type="application/json",
         **headers,
     )
