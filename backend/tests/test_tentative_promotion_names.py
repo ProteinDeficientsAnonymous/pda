@@ -135,12 +135,16 @@ def test_failed_promotion_alerts_vetters(
 
 
 @pytest.mark.usefixtures("failing_promotion", "fake_email_sender")
-def test_failed_alert_never_breaks_the_check_in(committed_check_in, stale_tentative, monkeypatch):
+def test_failed_alert_never_breaks_the_check_in(
+    committed_check_in, stale_tentative, monkeypatch, settings
+):
     def fail(*_args):
         raise RuntimeError("notify failed")
 
+    settings.VETTING_EMAIL = "vetting@pda.org"
     monkeypatch.setattr(check_in_promotion, "create_check_in_promotion_failed_notifications", fail)
     assert committed_check_in(stale_tentative).status_code == 200
+    assert len(mail.outbox) == 1
 
 
 @pytest.mark.usefixtures("fake_email_sender")

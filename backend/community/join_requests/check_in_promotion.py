@@ -3,7 +3,6 @@ from enum import StrEnum
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
-from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
 from notifications.email_helpers import send_member_restored_email
@@ -16,6 +15,7 @@ from users.helpers import grant_membership
 from users.models import MembershipStatus, User
 
 from community.attendance.analytics import compute_member_stats, is_compliant
+from community.join_requests._vetting_email import send_vetting_email
 from community.join_requests.approval import maybe_promote_tentative
 from community.models import (
     EventRSVP,
@@ -23,7 +23,7 @@ from community.models import (
     WhatsAppLinkConfig,
     is_official_or_club,
 )
-from community.shared import flatten_to_single_line, render_template_placeholders
+from community.shared import render_template_placeholders
 
 logger = logging.getLogger(__name__)
 
@@ -140,14 +140,7 @@ def notify_vetters_promotion_failed(user: User, event) -> None:
         create_check_in_promotion_failed_notifications(user, event, message[:255])
     except Exception:  # noqa: BLE001 — the check-in has committed
         logger.warning("check_in_promotion_failed_notifications_failed", exc_info=True)
-    if not settings.VETTING_EMAIL:
-        return
-    try:
-        send_mail(
-            subject=flatten_to_single_line(f"check-in promotion failed: {name}"),
-            message=f"{message}\n\n{settings.FRONTEND_BASE_URL}/join-requests",
-            from_email=settings.DEFAULT_FROM_EMAIL or "noreply@pda.org",
-            recipient_list=[settings.VETTING_EMAIL],
-        )
-    except Exception:  # noqa: BLE001 — the check-in has committed
-        logger.warning("check_in_promotion_failed_email_failed", exc_info=True)
+    send_vetting_email(
+        f"check-in promotion failed: {name}",
+        f"{message}\n\n{settings.FRONTEND_BASE_URL}/join-requests",
+    )
