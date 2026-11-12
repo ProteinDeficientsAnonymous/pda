@@ -108,6 +108,7 @@ class JoinFormQuestionType(models.TextChoices):
     TEXT = QuestionType.TEXT.value, QuestionType.TEXT.label
     TEXTAREA = QuestionType.TEXTAREA.value, QuestionType.TEXTAREA.label
     SELECT = QuestionType.SELECT.value, QuestionType.SELECT.label
+    CHECKBOX = QuestionType.CHECKBOX.value, QuestionType.CHECKBOX.label
 
 
 class RsvpQuestionType(models.TextChoices):

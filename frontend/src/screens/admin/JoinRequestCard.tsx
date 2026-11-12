@@ -87,7 +87,9 @@ export function JoinRequestCard({
           {request.answers.map((a) => (
             <div key={a.questionId}>
               <dt className="text-muted text-xs font-medium">{a.label}</dt>
-              <dd className="text-foreground text-sm whitespace-pre-wrap">{a.answer}</dd>
+              <dd className="text-foreground text-sm whitespace-pre-wrap">
+                {Array.isArray(a.answer) ? a.answer.join('\n') : a.answer}
+              </dd>
             </div>
           ))}
         </dl>

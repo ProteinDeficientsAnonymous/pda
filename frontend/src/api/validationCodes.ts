@@ -480,6 +480,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `invalid option for "${label}"` : 'invalid option';
     }
+    case Code.JoinRequest.AnswerInvalidFormat: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label ? `invalid answer format for "${label}"` : 'invalid answer format';
+    }
     case Code.JoinRequest.InvalidStatus:
       return 'invalid status for this action';
     case Code.JoinRequest.NotApproved:

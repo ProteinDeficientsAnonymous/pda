@@ -908,6 +908,13 @@
         ]
       },
       {
+        "name": "ANSWER_INVALID_FORMAT",
+        "value": "join_request.answer_invalid_format",
+        "params": [
+          "label"
+        ]
+      },
+      {
         "name": "INVALID_STATUS",
         "value": "join_request.invalid_status",
         "params": [
