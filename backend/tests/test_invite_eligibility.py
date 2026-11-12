@@ -47,6 +47,22 @@ def test_limited_user_cannot_be_invited_to_community_event(api_client):
     assert not Notification.objects.exists()
 
 
+def test_one_ineligible_invitee_refuses_the_whole_batch(api_client):
+    host, event = _hosted_event()
+    member, limited = make_user(), make_attendance_paused()
+    with patch("community.events._invite_email.send_event_invite_email") as send:
+        response = api_client.post(
+            f"/api/community/events/{event.id}/invitations/",
+            {"user_ids": [str(member.pk), str(limited.pk)]},
+            content_type="application/json",
+            **auth_headers_for(host),
+        )
+    assert response.status_code == 400
+    send.assert_not_called()
+    assert not event.invited_users.exists()
+    assert not Notification.objects.exists()
+
+
 @pytest.mark.parametrize(
     "fields",
     [

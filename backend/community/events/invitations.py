@@ -62,7 +62,7 @@ def closed_to_invites(event: Event) -> str | None:
     return None
 
 
-def _eligible_invitees(event: Event, user_ids: set[UUID]) -> list:
+def _eligible_invitees(event: Event, user_ids: set[UUID]) -> list[UserModel]:
     """All-or-nothing: one invitee who can't see the event refuses the whole batch."""
     users = list(UserModel.objects.filter(pk__in=user_ids))
     if not all(can_be_guest(user, event) for user in users):
