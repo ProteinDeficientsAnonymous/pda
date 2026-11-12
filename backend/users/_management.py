@@ -11,10 +11,11 @@ from community.validation import Code, ValidationException, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
+from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
 
-from users._attendance_pause import apply_attendance_pause_patch
+from users._attendance_pause import apply_attendance_pause_patch, release_held_events
 from users._unpause import has_pause, mark_unpaused
 from users.helpers import (
     check_and_set_email,
@@ -22,7 +23,6 @@ from users.helpers import (
     create_user_with_role,
     is_admin,
     resolve_name_fields,
-    strip_elevated_roles,
     validate_admin_role_change,
     validate_member_role_required,
     visible_name,
@@ -313,9 +313,12 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     was_guidelines_paused = user.is_guidelines_paused
     was_paused = has_pause(user)
     _apply_user_patch(user, user_id, payload, requester=request.auth)
-    user.save()
-
-    _audit_user_update(request, user, user_id, payload, was_guidelines_paused)
+    with transaction.atomic():
+        user.save()
+        released = None
+        if payload.guidelines_paused and not was_guidelines_paused:
+            released = release_held_events(request, user, MembershipStatus.GUIDELINES_PAUSED)[1]
+        _audit_user_update(request, user_id, payload, was_guidelines_paused, released)
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
     if was_paused and not has_pause(user):
@@ -324,26 +327,23 @@ def update_user(request, user_id: str, payload: UserPatchIn):
 
 
 def _audit_user_update(
-    request, user: User, user_id: str, payload: UserPatchIn, was_guidelines_paused: bool
+    request, user_id: str, payload: UserPatchIn, was_guidelines_paused: bool, released: dict | None
 ) -> None:
     """Emit the audit entry for an update_user PATCH.
 
-    A pause transition takes priority — pausing also strips non-member roles and
-    records the removed ids. Otherwise a plain field change logs user_updated.
+    A pause transition takes priority, recording what the pause released. Otherwise a
+    plain field change logs user_updated.
     """
     is_pause_transition = (
         payload.guidelines_paused is not None and payload.guidelines_paused != was_guidelines_paused
     )
     if is_pause_transition:
         action = "user_paused" if payload.guidelines_paused else "user_unpaused"
-        details = (
-            {"removed_role_ids": strip_elevated_roles(user)} if payload.guidelines_paused else None
-        )
         audit_log(
             logging.WARNING,
             action,
             request,
-            target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=details),
+            target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=released),
         )
         return
 
