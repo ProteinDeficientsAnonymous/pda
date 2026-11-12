@@ -18,7 +18,7 @@ from mcp_gateway.server import pda_tool
 _EVENT_FIELDS = ("title", "slug", "event_type", "status", "start_datetime")
 _RSVP_FIELDS = (
     *("status", "attendance", "checked_in_at", "has_plus_one", "plus_one_attendance"),
-    *("cancelled_at", "created_at", "status_changed_at"),
+    *("cancelled_at", "cancel_reason", "created_at", "status_changed_at"),
 )
 
 
@@ -70,7 +70,8 @@ def member_rsvps_page(
         "list one member's rsvps, latest event first, with the attendance a host marked "
         "(unknown until marked). get the id from find_members by name. every rsvp is listed, "
         "including cancelled, draft and deleted events. qualifying = counts toward qualifying "
-        "attendance in find_members and the analytics screen. paged: fetch more with "
+        "attendance in find_members and the analytics screen. cancel_reason: self, host, pause or "
+        "archive; only self counts as the member's own cancel. paged: fetch more with "
         "offset=next_offset, keeping the same member and since_days."
     ),
 )
