@@ -52,7 +52,7 @@ export function usePauseConfirm() {
         destructive: true,
       });
     } catch (err) {
-      toast.error(extractApiErrorOr(err, "couldn't load their upcoming events — try again"));
+      toast.error(extractApiErrorOr(err, "couldn't load the pause preview — try again"));
       return false;
     } finally {
       setLoading(false);

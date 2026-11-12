@@ -30,9 +30,10 @@ async def _member(member_id: UUID) -> User:
         "they keep tentative access and can still rsvp to official and club events. pausing "
         "drops their rsvps to other upcoming events, takes them off as co-host of any upcoming "
         "event (official and club too) where others host, moves events they host alone back "
-        "to draft (guests are told), and strips their roles. the first call "
-        "changes nothing and returns the member, the events affected (each with a role and "
-        "outcome: rsvp kept or removed, hosting removed or drafted) and a confirm_token: show "
+        "to draft (guests are told), rescinds their pending co-host invites, and strips their "
+        "roles. the first call changes nothing and returns the member, the events affected "
+        "(each with a role and outcome: rsvp kept or removed, hosting removed or drafted, "
+        "cohost_invite rescinded) and a confirm_token: show "
         "that, get an explicit yes, then call again with the same arguments and the token."
     ),
 )
