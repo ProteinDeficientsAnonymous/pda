@@ -264,7 +264,7 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "that phone number and password don't match — try again";
     case Code.Auth.AccountArchived:
       return 'this account is no longer active';
-    case Code.Auth.AccountPaused:
+    case Code.Auth.AccountGuidelinesPaused:
       return "your membership is paused — you can't log in right now";
     case Code.Auth.AccountRejected:
       return "your request to join wasn't approved — you can request to join again";
