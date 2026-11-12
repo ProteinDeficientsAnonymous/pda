@@ -138,7 +138,7 @@ def test_switching_from_guidelines_to_attendance_pause(api_client, manage_users_
     _patch_guidelines_pause(api_client, manage_users_headers, member, True)
     response = api_client.patch(
         f"/api/auth/users/{member.pk}/",
-        {"is_paused": False, "attendance_paused": True},
+        {"guidelines_paused": False, "attendance_paused": True},
         content_type="application/json",
         **manage_users_headers,
     )
