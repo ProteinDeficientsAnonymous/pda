@@ -50,8 +50,7 @@ class TestMagicLogin:
         assert response.status_code == 400
 
     def test_magic_login_paused_user_returns_403(self, api_client, test_user):
-        test_user.is_paused = True
-        test_user.save(update_fields=["is_paused"])
+        test_user.save(update_fields=test_user.apply_guidelines_pause(by=None))
         magic = MagicLoginToken.create_for_user(test_user)
         response = api_client.get(f"/api/auth/magic-login/{magic.token}/")
         assert response.status_code == 403

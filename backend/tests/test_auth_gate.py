@@ -85,13 +85,12 @@ class TestGatedJWTAuth:
         assert resp.json()["detail"][0]["code"] == "auth.onboarding_required"
 
     def test_paused_user_blocked_on_protected_endpoint_after_token_issued(self, api_client):
-        """is_paused set AFTER a token was issued must still revoke access per-request."""
+        """A guidelines pause set AFTER a token was issued must still revoke access per-request."""
         user = User.objects.create_user(
             phone_number="+12025550305", password="pass", first_name="Paused", last_name=""
         )
         headers = auth_headers_for(user)  # token minted while active
-        user.is_paused = True
-        user.save(update_fields=["is_paused"])
+        user.save(update_fields=user.apply_guidelines_pause(by=None))
 
         resp = api_client.get("/api/notifications/", **headers)
         assert resp.status_code == 403

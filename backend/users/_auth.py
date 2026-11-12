@@ -18,6 +18,7 @@ from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
 from users._consents import ConsentType, stamp_consents
+from users._login_blocks import reject_blocked_login
 from users._password_validation import validate_password
 from users.helpers import (
     check_and_set_email,
@@ -76,22 +77,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
         )
         raise_validation(Code.Auth.INVALID_CREDENTIALS, status_code=401)
     user = User.objects.get(pk=auth_user.pk)
-    if user.archived_at is not None:
-        audit_log(
-            logging.WARNING,
-            "login_archived",
-            request,
-            target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
-        )
-        raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
-    if user.is_paused:
-        audit_log(
-            logging.WARNING,
-            "login_paused",
-            request,
-            target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
-        )
-        raise_validation(Code.Auth.ACCOUNT_GUIDELINES_PAUSED, status_code=403)
+    reject_blocked_login(request, user, "login")
     user.last_login = timezone.now()
     user.save(update_fields=["last_login"])
     refresh = RefreshToken.for_user(user)
