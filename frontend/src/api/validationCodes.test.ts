@@ -59,6 +59,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says an attendance pause lifts on check-in', () => {
+    expect(
+      messageForCode({ code: Code.User.AttendancePauseLiftsOnCheckIn, field: 'attendance_paused' }),
+    ).toBe('an event rqmt pause lifts when they check in at an official or club event');
+  });
+
   it('explains an empty cash app csv', () => {
     expect(messageForCode({ code: Code.CashAppImport.CsvEmpty, field: null })).toMatch(
       /doesn't have any rows/,
