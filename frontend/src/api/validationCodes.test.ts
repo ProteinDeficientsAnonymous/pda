@@ -53,6 +53,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says a host-set guest who cannot sign in cannot be added', () => {
+    expect(messageForCode({ code: Code.Event.GuestNotEligible, field: null })).toBe(
+      "they can't be added to this event",
+    );
+  });
+
   it('says to lift a guidelines pause before an attendance pause', () => {
     expect(messageForCode({ code: Code.User.GuidelinesPaused, field: 'attendance_paused' })).toBe(
       'lift the guidelines pause before pausing for attendance',
