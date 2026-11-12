@@ -325,22 +325,6 @@
         "title": "AttendanceMarkOut",
         "type": "object"
       },
-      "AttendancePausePreviewOut": {
-        "properties": {
-          "events": {
-            "items": {
-              "$ref": "#/components/schemas/PauseImpactEventOut"
-            },
-            "title": "Events",
-            "type": "array"
-          }
-        },
-        "required": [
-          "events"
-        ],
-        "title": "AttendancePausePreviewOut",
-        "type": "object"
-      },
       "AttendanceReportOut": {
         "properties": {
           "club_no_show_count": {
@@ -5746,6 +5730,22 @@
         "title": "PauseOutcome",
         "type": "string"
       },
+      "PausePreviewOut": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/PauseImpactEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "PausePreviewOut",
+        "type": "object"
+      },
       "PauseRole": {
         "enum": [
           "rsvp",
@@ -9889,7 +9889,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AttendancePausePreviewOut"
+                  "$ref": "#/components/schemas/PausePreviewOut"
                 }
               }
             },
@@ -10008,7 +10008,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AttendancePausePreviewOut"
+                  "$ref": "#/components/schemas/PausePreviewOut"
                 }
               }
             },
