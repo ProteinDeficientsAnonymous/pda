@@ -5,6 +5,7 @@ from datetime import timedelta
 import pytest
 from community.models import (
     AttendanceStatus,
+    CancelReason,
     Event,
     EventRSVP,
     EventStatus,
@@ -12,6 +13,7 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
+from users._attendance_pause import apply_attendance_pause
 from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
@@ -136,12 +138,42 @@ class TestMemberAttendanceAnalyticsEndpoint:
             user=member,
             status=RSVPStatus.CANT_GO,
             cancelled_at=timezone.now(),
+            cancel_reason=CancelReason.SELF,
         )
 
         response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["didnt_go_count"] == 1
         assert row["cancel_count"] == 1
+
+    @pytest.mark.parametrize(
+        "reason", [CancelReason.HOST, CancelReason.PAUSE, CancelReason.ARCHIVE]
+    )
+    def test_cancel_count_skips_cancels_the_member_did_not_make(
+        self, api_client, host_user, member, events_admin, reason
+    ):
+        EventRSVP.objects.create(
+            event=_make_event(host_user, "Released Event", days_ago=3),
+            user=member,
+            status=RSVPStatus.CANT_GO,
+            cancelled_at=timezone.now(),
+            cancel_reason=reason,
+        )
+
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
+        row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
+        assert row["cancel_count"] == 0
+
+    def test_pause_leaves_cancel_count_alone(self, rf, api_client, host_user, member, events_admin):
+        upcoming = _make_event(host_user, "Upcoming", days_ago=-3, event_type=EventType.COMMUNITY)
+        EventRSVP.objects.create(event=upcoming, user=member, status=RSVPStatus.ATTENDING)
+
+        apply_attendance_pause(rf.get("/"), member)
+
+        assert EventRSVP.objects.get(event=upcoming, user=member).cancelled_at is not None
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
+        row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
+        assert row["cancel_count"] == 0
 
     def test_didnt_go_count_regardless_of_later_status_change(
         self, api_client, host_user, member, events_admin

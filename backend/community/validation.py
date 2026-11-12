@@ -38,6 +38,7 @@ class Code:
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         NO_PLUS_ONE_TO_CHECK_IN = "event.no_plus_one_to_check_in"
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }
+        GUEST_NOT_ELIGIBLE = "event.guest_not_eligible"
         BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"
         BLAST_NO_RECIPIENTS = "event.blast_no_recipients"
         WOULD_REMOVE_NON_MEMBERS = "event.would_remove_non_members"  # params: { count: int }

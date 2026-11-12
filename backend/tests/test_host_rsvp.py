@@ -3,7 +3,7 @@
 from unittest.mock import patch
 
 import pytest
-from community.models import Event, EventRSVP, EventStatus, RSVPStatus
+from community.models import CancelReason, Event, EventRSVP, EventStatus, RSVPStatus
 from django.utils import timezone
 from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
@@ -242,6 +242,7 @@ class TestSetGuestRsvp:
         rsvp = EventRSVP.objects.get(event=host_rsvp_event, user=guest)
         assert rsvp.cancelled_at is not None
         assert rsvp.cancelled_at >= before
+        assert rsvp.cancel_reason == CancelReason.HOST
 
     def test_stamps_pre_cancel_status_on_transition_to_cant_go(
         self, api_client, host_rsvp_event, host_user, guest

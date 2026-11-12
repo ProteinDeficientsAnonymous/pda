@@ -3,6 +3,7 @@ from collections.abc import Iterable
 from community.events.helpers import broadcast_capacity_change
 from community.join_requests.closing import close_tentative_requests
 from community.models import (
+    CancelReason,
     CoHostInviteStatus,
     Event,
     EventCoHostInvite,
@@ -51,12 +52,14 @@ def archive_user(request, user: User) -> list[str]:
         )
         close_tentative_requests(request, user)
         removed_role_ids = strip_elevated_roles(user)
-        release_upcoming_rsvps(request, user)
+        release_upcoming_rsvps(request, user, CancelReason.ARCHIVE)
         step_down_as_cohost(user)
     return removed_role_ids
 
 
-def release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -> None:
+def release_upcoming_rsvps(
+    request, user: User, reason: CancelReason, event_filter: Q | None = None
+) -> None:
     event_ids = EventRSVP.objects.filter(
         upcoming_events_q("event__"), user=user, status__in=HELD_RSVP_STATUSES
     ).values_list("event_id", flat=True)
@@ -66,7 +69,8 @@ def release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.status = RSVPStatus.CANT_GO
         rsvp.cancelled_at = timezone.now()
-        rsvp.save(update_fields=["status", "cancelled_at", "updated_at"])
+        rsvp.cancel_reason = reason
+        rsvp.save(update_fields=["status", "cancelled_at", "cancel_reason", "updated_at"])
         if not was_attending:
             continue
         promoted_user_ids = promote_from_waitlist(event)
