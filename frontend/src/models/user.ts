@@ -23,6 +23,13 @@ export const MEMBER_STATUSES: readonly MembershipStatusValue[] = [
   MembershipStatus.AttendancePaused,
 ];
 
+export function isAttendancePaused(user: { membershipStatus: MembershipStatusValue }): boolean {
+  return user.membershipStatus === MembershipStatus.AttendancePaused;
+}
+
+// Mirrors backend COMPLIANCE_MIN_COUNT and QUALIFYING_WINDOW_DAYS (365).
+export const ATTENDANCE_RULE = { minEvents: 2, windowMonths: 12 } as const;
+
 export interface Role {
   id: string;
   name: string;

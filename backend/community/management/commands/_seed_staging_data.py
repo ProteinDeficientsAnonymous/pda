@@ -1,6 +1,9 @@
 """Static data + pure helpers for the `seed_staging` command."""
 
 from dataclasses import dataclass
+from datetime import datetime
+
+from users.models import MembershipStatus
 
 from community.models.choices import EventType, JoinRequestStatus, PageVisibility
 
@@ -52,6 +55,26 @@ def joinreq_phone(index: int) -> str:
 
 def joinreq_email(index: int) -> str:
     return f"joinreq{index:02d}@staging.example"
+
+
+def status_phone(index: int) -> str:
+    return f"+170255507{index:02d}"
+
+
+def status_email(index: int) -> str:
+    return f"status{index:02d}@staging.example"
+
+
+def onboarded_member_defaults(first_name: str, email: str, now: datetime) -> dict:
+    return {
+        "first_name": first_name,
+        "email": email,
+        "membership_status": MembershipStatus.ACTIVE_MEMBER,
+        "needs_onboarding": False,
+        "onboarded_at": now,
+        "guidelines_consent_at": now,
+        "sms_consent_at": now,
+    }
 
 
 NON_MEMBER_EVENT_TITLE = "[staging] official public rsvp demo"
