@@ -393,8 +393,6 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester:
     )
     if payload.attendance_paused and stays_guidelines_paused:
         raise_validation(Code.User.GUIDELINES_PAUSED, field="attendance_paused", status_code=400)
-    if payload.guidelines_paused is not None:
-        user.is_paused = payload.guidelines_paused
     if (
         payload.guidelines_paused is not None
         and payload.guidelines_paused != user.is_guidelines_paused
