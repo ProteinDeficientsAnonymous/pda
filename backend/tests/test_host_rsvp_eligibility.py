@@ -64,6 +64,18 @@ class TestHostRsvpEligibility:
         assert _set_rsvp(api_client, event, host, target).status_code == 200
         assert EventRSVP.objects.filter(event=event, user=target).exists()
 
+    @pytest.mark.parametrize(
+        ("event_type", "status_code"),
+        [(EventType.COMMUNITY, 400), (EventType.OFFICIAL, 200), (EventType.CLUB, 200)],
+    )
+    def test_limited_target_only_on_official_or_club(
+        self, api_client, event, host, event_type, status_code
+    ):
+        event.event_type = event_type
+        event.save(update_fields=["event_type"])
+        target = make_attendance_paused()
+        assert _set_rsvp(api_client, event, host, target).status_code == status_code
+
     def test_refused_target_keeps_existing_rsvp(self, api_client, event, host):
         target = make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED)
         EventRSVP.objects.create(event=event, user=target, status=RSVPStatus.MAYBE)
