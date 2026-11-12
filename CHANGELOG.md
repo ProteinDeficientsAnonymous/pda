@@ -1,3 +1,10 @@
+## [0.233.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.1...v0.233.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* 2398 - count only a member's own rsvp cancels ([#2413](https://github.com/ProteinDeficientsAnonymous/pda/issues/2413)) ([fb8af13](https://github.com/ProteinDeficientsAnonymous/pda/commit/fb8af139524151a4ecc11c386556747bd533e353))
+
 ## [0.233.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.0...v0.233.1) (2026-11-12)
 
 
