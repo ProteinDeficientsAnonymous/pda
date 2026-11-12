@@ -166,6 +166,23 @@ def create_member_restored_notifications(user: User) -> None:
     notify_users(str(recipient.pk) for recipient in recipients)
 
 
+def create_check_in_promotion_failed_notifications(user: User, event: Event, message: str) -> None:
+    recipients = list(User.objects.with_permission(PermissionKey.APPROVE_JOIN_REQUESTS))
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient=recipient,
+                notification_type=NotificationType.CHECK_IN_PROMOTION_FAILED,
+                event=event,
+                related_user=user,
+                message=message,
+            )
+            for recipient in recipients
+        ]
+    )
+    notify_users(str(recipient.pk) for recipient in recipients)
+
+
 def create_event_flag_notifications(event: Event, flagger: User) -> None:
     flagger_name = flagger.full_name or flagger.phone_number
     recipients = User.objects.with_permission(PermissionKey.MANAGE_EVENTS)

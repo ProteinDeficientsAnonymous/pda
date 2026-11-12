@@ -43,4 +43,9 @@ describe('notificationTarget', () => {
     const n = notification({ notificationType: NotificationType.MemberRestored });
     expect(notificationTarget(n)).toBe('/join-requests');
   });
+
+  it('sends a failed check-in promotion to join requests to approve by hand', () => {
+    const n = notification({ notificationType: NotificationType.CheckInPromotionFailed });
+    expect(notificationTarget(n)).toBe('/join-requests');
+  });
 });
