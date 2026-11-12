@@ -21,7 +21,6 @@ from community.models import (
     is_official_or_club,
 )
 from community.shared import render_template_placeholders, validate_display_name
-from community.validation import ValidationException
 
 
 def _resolve_names(join_request) -> tuple[str, str]:
@@ -102,22 +101,13 @@ def _promote_public_rsvper(user, join_request, by: User) -> str:
     return create_magic_token(user)
 
 
-def _onboarded_name_or_join_form(user, join_request) -> tuple[str, str]:
-    """A valid name they chose wins; a stale invalid one falls back to the join form's."""
-    try:
-        validate_display_name(user.first_name, field="first_name")
-    except ValidationException:
-        return _resolve_names(join_request)
-    return user.first_name, user.last_name
-
-
 def promote_tentative_member(user, join_request, by: User) -> None:
     """Promote a tentatively-approved applicant in place; they onboarded already.
 
     Only membership changes: no token to mint, no needs_onboarding re-flag
     (that would lock them out of every endpoint).
     """
-    user.first_name, user.last_name = _onboarded_name_or_join_form(user, join_request)
+    user.first_name, user.last_name = _resolve_names(join_request)
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
         user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None and user.sms_consent_at is None:

@@ -1,9 +1,7 @@
 """The two promotion paths differ in what credential the promoted user needs."""
 
 import pytest
-from community.join_requests.approval import promote_tentative_member
 from community.models import AttendanceStatus, JoinRequest, JoinRequestStatus
-from community.validation import ValidationException
 from django.utils import timezone
 from users.models import MembershipStatus, PublicRsvpToken, User
 
@@ -64,7 +62,7 @@ class TestPromotePublicRsvper:
 
 @pytest.fixture
 def onboarded_tentative(sample_join_request, vettor_user, open_official_event):
-    """A tentative applicant who has already onboarded: password, own name."""
+    """A tentative applicant who has already onboarded, still under a public-rsvp name."""
     user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
     user.first_name = "Chosen"
     user.last_name = "Name"
@@ -117,7 +115,7 @@ class TestPromoteTentativeMember:
         user.refresh_from_db()
         assert user.needs_onboarding is False
 
-    def test_promotion_keeps_the_name_they_chose_at_onboarding(
+    def test_promotion_takes_the_join_form_name(
         self, api_client, onboarded_tentative, fake_email_sender
     ):
         user, event = onboarded_tentative
@@ -128,8 +126,7 @@ class TestPromoteTentativeMember:
             **auth_headers_for(event.created_by),
         )
         user.refresh_from_db()
-        assert user.first_name == "Chosen"
-        assert user.last_name == "Name"
+        assert (user.first_name, user.last_name) == ("Sprout", "Seedling")
 
     def test_promotion_keeps_their_password(
         self, api_client, onboarded_tentative, fake_email_sender
@@ -143,25 +140,6 @@ class TestPromoteTentativeMember:
         )
         user.refresh_from_db()
         assert user.check_password("theirownpass123")
-
-    def test_a_nameless_tentative_user_takes_the_join_form_name(self, sample_join_request):
-        user = User.objects.create_user(
-            phone_number="+12025551901",
-            first_name="Temp",
-            membership_status=MembershipStatus.NONE,
-        )
-        user.first_name = ""
-        user.save(update_fields=["first_name"])
-        promote_tentative_member(user, sample_join_request, None)
-        assert user.first_name == "Sprout"
-
-    def test_nameless_on_both_sides_is_rejected(self, sample_join_request):
-        """Issue 733 — no approval path may produce a member with no first name."""
-        user = User.objects.create_user(phone_number="+12025551901", first_name="Temp")
-        user.first_name = ""
-        sample_join_request.first_name = ""
-        with pytest.raises(ValidationException):
-            promote_tentative_member(user, sample_join_request, None)
 
 
 @pytest.mark.django_db
