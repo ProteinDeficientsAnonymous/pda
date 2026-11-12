@@ -6,7 +6,7 @@ from community.validation import Code
 from users.models import MembershipStatus
 
 from tests._asserts import assert_error_code
-from tests._tentative_helpers import open_official_event, tentative_user_with_rsvp
+from tests._tentative_helpers import decide, open_official_event, tentative_user_with_rsvp
 
 __all__ = ["open_official_event"]
 
@@ -30,15 +30,6 @@ def archived(api_client, manage_users_headers, tentative, django_capture_on_comm
         assert _archive(api_client, manage_users_headers, tentative).status_code == 204
     tentative.refresh_from_db()
     return tentative
-
-
-def _decide(api_client, headers, join_request, status):
-    return api_client.patch(
-        f"/api/community/join-requests/{join_request.id}/",
-        {"status": status},
-        content_type="application/json",
-        **headers,
-    )
 
 
 def test_members_list_includes_tentative(api_client, manage_users_headers, tentative):
@@ -84,7 +75,7 @@ def test_check_in_does_not_promote_archived_tentative(
 def test_closed_request_is_terminal(
     api_client, vettor_headers, archived, sample_join_request, status
 ):
-    response = _decide(api_client, vettor_headers, sample_join_request, status)
+    response = decide(api_client, vettor_headers, sample_join_request, status)
 
     assert response.status_code == 400
     assert_error_code(response, Code.JoinRequest.ALREADY_DECIDED)
@@ -118,7 +109,7 @@ def test_archived_tentative_can_reapply_with_history(
 
     new_request = JoinRequest.objects.get(id=new_id)
     assert (
-        _decide(api_client, vettor_headers, new_request, JoinRequestStatus.TENTATIVE).status_code
+        decide(api_client, vettor_headers, new_request, JoinRequestStatus.TENTATIVE).status_code
         == 200
     )
     archived.refresh_from_db()

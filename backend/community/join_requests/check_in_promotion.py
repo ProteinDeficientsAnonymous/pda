@@ -30,10 +30,7 @@ class CheckInOutcome(StrEnum):
 
 
 def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome | None:
-    """Promote a tentative applicant or restore an attendance-paused member on their check-in.
-
-    A failure rolls back only the promotion or restore and is audited; the check-in stays.
-    """
+    """Promote or restore on check-in; a failure rolls back alone and the check-in stays."""
     try:
         with transaction.atomic():
             return _promote_or_restore(request, user, event)
