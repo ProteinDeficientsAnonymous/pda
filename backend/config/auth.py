@@ -39,7 +39,7 @@ _PENDING_ALLOWLIST = frozenset(
 )
 
 # Archive and pause still 403 on the pending allowlist; password and consent do not.
-HARD_ACCOUNT_BLOCKS = frozenset({Code.Auth.ACCOUNT_ARCHIVED, Code.Auth.ACCOUNT_PAUSED})
+HARD_ACCOUNT_BLOCKS = frozenset({Code.Auth.ACCOUNT_ARCHIVED, Code.Auth.ACCOUNT_GUIDELINES_PAUSED})
 
 
 def account_block_code(user: User) -> str | None:
@@ -47,7 +47,7 @@ def account_block_code(user: User) -> str | None:
     if user.archived_at is not None:
         return Code.Auth.ACCOUNT_ARCHIVED
     if user.is_paused:
-        return Code.Auth.ACCOUNT_PAUSED
+        return Code.Auth.ACCOUNT_GUIDELINES_PAUSED
     if user.needs_password_reset:
         return Code.Auth.PASSWORD_RESET_REQUIRED
     if user.needs_onboarding:

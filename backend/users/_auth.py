@@ -91,7 +91,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
             request,
             target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
         )
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+        raise_validation(Code.Auth.ACCOUNT_GUIDELINES_PAUSED, status_code=403)
     user.last_login = timezone.now()
     user.save(update_fields=["last_login"])
     refresh = RefreshToken.for_user(user)
@@ -138,7 +138,7 @@ def logout(request, response: HttpResponse):
 def me(request):
     user = request.auth
     if user.is_paused:
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+        raise_validation(Code.Auth.ACCOUNT_GUIDELINES_PAUSED, status_code=403)
     return Status(200, UserOut.from_user(user))
 
 

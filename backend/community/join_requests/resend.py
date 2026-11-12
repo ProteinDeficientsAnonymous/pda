@@ -68,7 +68,7 @@ def resend_magic_link(request, id: UUID):
     if user.archived_at is not None:
         raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
     if user.is_paused:
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+        raise_validation(Code.Auth.ACCOUNT_GUIDELINES_PAUSED, status_code=403)
     if not user.needs_onboarding:
         raise_validation(Code.JoinRequest.ALREADY_LOGGED_IN, status_code=400)
 
