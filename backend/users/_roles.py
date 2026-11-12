@@ -18,7 +18,6 @@ router = Router()
 
 
 def _with_user_count():
-    """Roles annotated with how many members hold each one."""
     return Role.objects.annotate(
         user_count=Count("users", filter=Q(users__membership_status__in=MEMBER_STATUSES)),
     )
