@@ -22,7 +22,7 @@ def _patch(api_client, headers, user, body):
 
 def _guidelines_paused(api_client, headers):
     member = make_user(phone_number=PHONE, email="sam@example.com", password=PASSWORD)
-    assert _patch(api_client, headers, member, {"is_paused": True}).status_code == 200
+    assert _patch(api_client, headers, member, {"guidelines_paused": True}).status_code == 200
     return member
 
 
@@ -38,7 +38,7 @@ def test_both_pauses_in_one_patch_are_refused(api_client, manage_users_headers):
         api_client,
         manage_users_headers,
         member,
-        {"is_paused": True, "attendance_paused": True},
+        {"guidelines_paused": True, "attendance_paused": True},
     )
     assert response.status_code == 400
     assert_error_code(response, Code.User.GUIDELINES_PAUSED)
