@@ -7,6 +7,7 @@ from community.events.limited_access import (
 from community.events.unpublish import clear_unpublished_side_effects
 from community.models import (
     AttendanceStatus,
+    CancelReason,
     CoHostInviteStatus,
     Event,
     EventCoHostInvite,
@@ -141,7 +142,7 @@ def release_held_events(request, user: User, pause: MembershipStatus) -> tuple[P
     release_q = ~Q(pk__in=drafted_ids)
     if _keeps_official_rsvps(pause):
         release_q &= ~KEPT_RSVP_EVENT_Q
-    release_upcoming_rsvps(request, user, release_q)
+    release_upcoming_rsvps(request, user, CancelReason.PAUSE, release_q)
     step_down_as_cohost(user, impact.removed_hosting)
     _pending_cohost_invites(user).update(
         status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now()

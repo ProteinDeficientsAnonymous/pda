@@ -12,7 +12,7 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
-from users.models import FULL_MEMBER_STATUSES, PublicRsvpToken, User, status_change_stamp
+from users.models import SIGN_IN_STATUSES, PublicRsvpToken, User, status_change_stamp
 from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community.events.helpers import broadcast_capacity_change, event_out
@@ -124,7 +124,7 @@ def _resolve_public_rsvper(
     phone_match = User.objects.filter(phone_number=phone).first()
     email_match = User.objects.filter(email__iexact=email).first() if email else None
 
-    if phone_match and phone_match.membership_status in FULL_MEMBER_STATUSES:
+    if phone_match and phone_match.membership_status in SIGN_IN_STATUSES:
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
     if phone_match and phone_match.archived_at:
@@ -225,8 +225,8 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     user = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
     if user is None:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
-    # Paused goes to login like a member; login only reveals the pause after the right password.
-    if user.membership_status in FULL_MEMBER_STATUSES:
+    # Anyone who can sign in goes to login; login only reveals a guidelines pause after the right password.
+    if user.membership_status in SIGN_IN_STATUSES:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
     if user.email:
         _send_recognized_login_link(request, user)

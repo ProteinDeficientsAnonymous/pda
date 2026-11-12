@@ -1,5 +1,5 @@
 from django.db.models import Q
-from users.models import MembershipStatus
+from users.models import LIMITED_STATUSES, MembershipStatus
 
 from community.models import EventType, PageVisibility
 from community.validation import Code, raise_validation
@@ -15,6 +15,20 @@ def is_limited(user) -> bool:
     return user is not None and user.membership_status != MembershipStatus.ACTIVE_MEMBER
 
 
+# Guidelines-paused, archived and `none` users can't sign in, so they can't be a guest.
+_GUEST_STATUSES = (MembershipStatus.ACTIVE_MEMBER, *LIMITED_STATUSES)
+
+
+def _sees_as_visitor(user, event) -> bool:
+    """A limited user sees anything but official/club the way a logged-out visitor does."""
+    return is_limited(user) and event.event_type not in LIMITED_ACCESS_EVENT_TYPES
+
+
+def can_be_guest(user, event) -> bool:
+    """Whether a host may add or invite this user to the event."""
+    return user.membership_status in _GUEST_STATUSES and not _sees_as_visitor(user, event)
+
+
 def limited_access_event_q() -> Q:
     """Rows a limited user may list: anything public, plus official/club."""
     return Q(visibility=PageVisibility.PUBLIC) | Q(event_type__in=LIMITED_ACCESS_EVENT_TYPES)
@@ -27,12 +41,10 @@ def event_viewer_for(viewer, event):
     sees — so they're downgraded to anonymous rather than filtered out, and a
     public community event stays as visible as it was before they signed in.
     """
-    if is_limited(viewer) and event.event_type not in LIMITED_ACCESS_EVENT_TYPES:
-        return None
-    return viewer
+    return None if _sees_as_visitor(viewer, event) else viewer
 
 
 def enforce_limited_write_access(user, event, action: str) -> None:
     """Block a limited user from acting on an event they may only read as a visitor."""
-    if is_limited(user) and event.event_type not in LIMITED_ACCESS_EVENT_TYPES:
+    if _sees_as_visitor(user, event):
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action=action)

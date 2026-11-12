@@ -9,7 +9,11 @@ import pytest
 from community.models import EventRSVP, RSVPStatus
 from users.models import PublicRsvpToken
 
-from tests._public_rsvp_helpers import make_official_event, make_public_rsvper
+from tests._public_rsvp_helpers import (
+    LIMITED_USER_FACTORIES,
+    make_official_event,
+    make_public_rsvper,
+)
 from tests._time import future_iso
 
 URL_TEMPLATE = "/api/community/public/events/{event_id}/rsvp-phone-check/"
@@ -47,6 +51,18 @@ class TestPublicRsvpPhoneCheck:
         body = response.json()
         assert body["status"] == "member"
         assert "rsvp_token" not in body
+
+    @LIMITED_USER_FACTORIES
+    def test_limited_user_phone_returns_member_without_manage_link(
+        self, api_client, official_event, fake_email_sender, make_limited
+    ):
+        limited = make_limited("+14155550199", "limited@example.com")
+
+        response = post(api_client, official_event, phone_number=limited.phone_number)
+
+        assert response.json()["status"] == "member"
+        fake_email_sender.send.assert_not_called()
+        assert not PublicRsvpToken.objects.filter(user=limited).exists()
 
     def test_non_member_without_rsvp_returns_non_member(self, api_client, official_event):
         make_public_rsvper("+14155550199", "guest@example.com")
