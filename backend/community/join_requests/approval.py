@@ -105,9 +105,8 @@ def promote_tentative_member(user, join_request, by: User) -> None:
     """Promote a tentatively-approved applicant in place; they onboarded already.
 
     Only membership changes: no token to mint, no needs_onboarding re-flag
-    (that would lock them out of every endpoint).
+    (that would lock them out of every endpoint), and their name stays theirs.
     """
-    user.first_name, user.last_name = _resolve_names(join_request)
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
         user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None and user.sms_consent_at is None:
@@ -115,8 +114,6 @@ def promote_tentative_member(user, join_request, by: User) -> None:
     user.save(
         update_fields=[
             *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=by),
-            "first_name",
-            "last_name",
             "guidelines_consent_at",
             "sms_consent_at",
         ]

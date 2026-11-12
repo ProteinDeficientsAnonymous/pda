@@ -1,6 +1,7 @@
 import pytest
 from audit.models import AuditLogEntry
-from community.models import AttendanceStatus, EventRSVP, JoinRequest, JoinRequestStatus
+from community.join_requests import check_in_promotion
+from community.models import AttendanceStatus, EventRSVP, JoinRequestStatus
 from django.utils import timezone
 from users.models import MembershipStatus, User
 
@@ -22,7 +23,7 @@ STALE_NAME = "rsvp guest 2"
 
 @pytest.fixture
 def stale_tentative(sample_join_request, vettor_user, open_official_event):
-    """Tentative before #2400: still under an old public-rsvp name that fails validation."""
+    """Tentative under an old public-rsvp name that fails display-name validation."""
     user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
     User.objects.filter(pk=user.pk).update(first_name=STALE_NAME, last_name="")
     return user
@@ -50,27 +51,36 @@ def test_tentative_takes_the_join_form_name(
     assert (existing.first_name, existing.last_name) == ("Sprout", "Seedling")
 
 
-def test_check_in_promotes_a_stale_name_to_the_join_form_name(
+def test_check_in_promotes_without_touching_the_name(
     api_client, stale_tentative, open_official_event, fake_email_sender
 ):
     resp = check_in(api_client, open_official_event, stale_tentative)
     assert resp.status_code == 200
     stale_tentative.refresh_from_db()
     assert stale_tentative.is_member is True
-    assert (stale_tentative.first_name, stale_tentative.last_name) == ("Sprout", "Seedling")
+    assert stale_tentative.first_name == STALE_NAME
 
 
-def test_manual_approve_promotes_a_stale_name(
+def test_manual_approve_promotes_without_touching_the_name(
     api_client, vettor_headers, stale_tentative, sample_join_request, fake_email_sender
 ):
     resp = decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
     assert resp.status_code == 200
     stale_tentative.refresh_from_db()
     assert stale_tentative.is_member is True
-    assert stale_tentative.first_name == "Sprout"
+    assert stale_tentative.first_name == STALE_NAME
 
 
-def test_failed_promotion_keeps_thecheck_in(
+@pytest.fixture
+def failing_promotion(monkeypatch):
+    def fail(*_args, **_kwargs):
+        raise RuntimeError("promotion failed")
+
+    monkeypatch.setattr(check_in_promotion, "maybe_promote_tentative", fail)
+
+
+@pytest.mark.usefixtures("failing_promotion")
+def test_failed_promotion_keeps_the_check_in(
     api_client,
     stale_tentative,
     open_official_event,
@@ -78,7 +88,6 @@ def test_failed_promotion_keeps_thecheck_in(
     django_capture_on_commit_callbacks,
 ):
     join_request = stale_tentative.join_requests.get()
-    JoinRequest.objects.filter(pk=join_request.pk).update(first_name="")
     with django_capture_on_commit_callbacks(execute=True):
         resp = check_in(api_client, open_official_event, stale_tentative)
     assert resp.status_code == 200

@@ -62,7 +62,7 @@ class TestPromotePublicRsvper:
 
 @pytest.fixture
 def onboarded_tentative(sample_join_request, vettor_user, open_official_event):
-    """A tentative applicant who has already onboarded, still under a public-rsvp name."""
+    """A tentative applicant who has already onboarded: password, own name."""
     user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
     user.first_name = "Chosen"
     user.last_name = "Name"
@@ -115,7 +115,7 @@ class TestPromoteTentativeMember:
         user.refresh_from_db()
         assert user.needs_onboarding is False
 
-    def test_promotion_takes_the_join_form_name(
+    def test_promotion_keeps_the_name_they_chose_at_onboarding(
         self, api_client, onboarded_tentative, fake_email_sender
     ):
         user, event = onboarded_tentative
@@ -126,7 +126,7 @@ class TestPromoteTentativeMember:
             **auth_headers_for(event.created_by),
         )
         user.refresh_from_db()
-        assert (user.first_name, user.last_name) == ("Sprout", "Seedling")
+        assert (user.first_name, user.last_name) == ("Chosen", "Name")
 
     def test_promotion_keeps_their_password(
         self, api_client, onboarded_tentative, fake_email_sender
