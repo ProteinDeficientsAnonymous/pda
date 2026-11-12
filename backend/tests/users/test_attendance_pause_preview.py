@@ -39,9 +39,7 @@ class TestAttendancePausePreview:
             removed_hosting=[make_event(title="removed hosting")],
             drafted_events=[make_event(title="drafted")],
         )
-        monkeypatch.setattr(
-            _attendance_pause_api, "attendance_pause_impact", lambda *_, **__: impact
-        )
+        monkeypatch.setattr(_attendance_pause_api, "pause_impact", lambda *_: impact)
 
         response = _preview(api_client, member, manage_users_headers)
 
