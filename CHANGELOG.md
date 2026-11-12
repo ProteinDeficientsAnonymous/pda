@@ -1,3 +1,10 @@
+## [0.233.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.3...v0.233.4) (2026-11-12)
+
+
+### Bug Fixes
+
+* only public rsvpers can be issued an rsvp manage link ([#2421](https://github.com/ProteinDeficientsAnonymous/pda/issues/2421)) ([35ced51](https://github.com/ProteinDeficientsAnonymous/pda/commit/35ced513c1b71e5d117010c05dce60232018c5ce))
+
 ## [0.233.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.2...v0.233.3) (2026-11-12)
 
 
