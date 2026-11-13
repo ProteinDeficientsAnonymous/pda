@@ -5,6 +5,7 @@ import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui/useConfirm';
 import {
   type Event,
   isRsvpInputStatus,
@@ -15,7 +16,7 @@ import {
 } from '@/models/event';
 
 import { RsvpBox } from './RsvpBox';
-import { MaybeDeadlineDialog, RsvpDeadlineNote } from './RsvpDeadline';
+import { RsvpDeadlineNote } from './RsvpDeadline';
 import type { RsvpAnswerValue } from './rsvpQuestions';
 
 interface Props {
@@ -60,7 +61,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
   const myUserId = token ? event.viewerUserId : authUserId;
   const [error, setError] = useState<string | null>(null);
   const [box, setBox] = useState<BoxState | null>(null);
-  const [maybeDeadline, setMaybeDeadline] = useState<Date | null>(null);
+  const { confirm, element: confirmElement } = useConfirm();
 
   const myRsvp = event.myRsvp;
   const onWaitlist = myRsvp === RsvpServerStatus.Waitlisted;
@@ -105,12 +106,20 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
         });
       }
       setBox(null);
-      if (args.status === RsvpStatus.Maybe && myRsvp !== RsvpStatus.Maybe) {
-        setMaybeDeadline(event.rsvpDeadline);
-      }
     } catch (err) {
       setError(extractError(err));
     }
+  }
+
+  async function cantGoAnymore() {
+    const ok = await confirm({
+      title: "can't go anymore?",
+      message: "rsvps are closed — you won't be able to switch back to going",
+      confirmLabel: "i can't go",
+      destructive: true,
+    });
+    if (!ok) return;
+    await confirmRsvp({ status: RsvpStatus.CantGo, hasPlusOne: false, questionnaireResponses: {} });
   }
 
   async function leaveWaitlist() {
@@ -185,13 +194,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
           variant="ghost"
           className="self-center"
           disabled={busy}
-          onClick={() =>
-            void confirmRsvp({
-              status: RsvpStatus.CantGo,
-              hasPlusOne: false,
-              questionnaireResponses: {},
-            })
-          }
+          onClick={() => void cantGoAnymore()}
         >
           i can't go anymore
         </Button>
@@ -231,14 +234,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
           }}
         />
       ) : null}
-      {maybeDeadline ? (
-        <MaybeDeadlineDialog
-          deadline={maybeDeadline}
-          onClose={() => {
-            setMaybeDeadline(null);
-          }}
-        />
-      ) : null}
+      {confirmElement}
     </section>
   );
 }

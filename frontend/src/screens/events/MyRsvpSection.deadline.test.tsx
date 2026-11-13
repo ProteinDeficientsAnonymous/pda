@@ -1,9 +1,9 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type Event, RsvpServerStatus, RsvpStatus } from '@/models/event';
 import { setAuthed } from '@/test/auth';
-import { makeEvent as makeBaseEvent, makeUser } from '@/test/fixtures';
+import { makeEvent, makeUser } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { MyRsvpSection } from './MyRsvpSection';
@@ -19,10 +19,6 @@ vi.mock('@/api/publicRsvp', () => ({
 }));
 
 const HOUR = 60 * 60 * 1000;
-
-function makeEvent(overrides: Partial<Event> = {}): Event {
-  return makeBaseEvent({ createdById: 'user-host', guests: [], ...overrides });
-}
 
 function renderSection(event: Event, deadlineClosed = false) {
   return renderWithProviders(<MyRsvpSection event={event} deadlineClosed={deadlineClosed} />);
@@ -41,32 +37,6 @@ describe('MyRsvpSection — open rsvp deadline', () => {
     renderSection(makeEvent({ myRsvp: null, rsvpDeadline: deadline }));
     expect(screen.getByText(/^rsvp by /)).toBeInTheDocument();
   });
-
-  it('pops up the confirm-by date after rsvping maybe', async () => {
-    renderSection(makeEvent({ myRsvp: null, rsvpDeadline: deadline }));
-
-    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
-    fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
-    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
-
-    expect(await screen.findByRole('dialog', { name: /^confirm by / })).toBeInTheDocument();
-    expect(setRsvpMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ status: RsvpStatus.Maybe }),
-    );
-  });
-
-  it('skips the pop-up when there is no deadline', async () => {
-    renderSection(makeEvent({ myRsvp: null }));
-
-    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
-    fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
-    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
-
-    await vi.waitFor(() => {
-      expect(setRsvpMutate).toHaveBeenCalled();
-    });
-    expect(screen.queryByRole('dialog', { name: /^confirm by / })).not.toBeInTheDocument();
-  });
 });
 
 describe('MyRsvpSection — past the rsvp deadline', () => {
@@ -84,20 +54,35 @@ describe('MyRsvpSection — past the rsvp deadline', () => {
     expect(screen.getByText(/rsvps can't be changed anymore/)).toBeInTheDocument();
   });
 
-  it("lets someone going switch to can't go", () => {
+  it("lets someone going switch to can't go after confirming", async () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending, rsvpDeadline: deadline }), true);
 
     expect(screen.queryByRole('button', { name: /edit rsvp/i })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: "i can't go anymore" }));
+    const dialog = screen.getByRole('dialog', { name: "can't go anymore?" });
+    expect(setRsvpMutate).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: "i can't go" }));
 
-    expect(setRsvpMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ status: RsvpStatus.CantGo }),
-    );
+    await vi.waitFor(() => {
+      expect(setRsvpMutate).toHaveBeenCalledWith(
+        expect.objectContaining({ status: RsvpStatus.CantGo }),
+      );
+    });
   });
 
   it('drops the waitlist edit button but keeps leave', () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted, rsvpDeadline: deadline }), true);
     expect(screen.queryByRole('button', { name: 'edit' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'leave waitlist' })).toBeInTheDocument();
+    expect(screen.getByText(/you can still leave the waitlist/)).toBeInTheDocument();
+  });
+});
+
+describe('MyRsvpSection — host past the rsvp deadline', () => {
+  const deadline = new Date(Date.now() - HOUR);
+
+  it('drops the rsvp-by note', () => {
+    renderSection(makeEvent({ myRsvp: null, rsvpDeadline: deadline }));
+    expect(screen.queryByText(/rsvp by /)).not.toBeInTheDocument();
   });
 });

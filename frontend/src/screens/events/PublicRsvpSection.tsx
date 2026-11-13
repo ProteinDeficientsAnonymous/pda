@@ -1,11 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 
 import { setStoredRsvpToken } from '@/api/rsvpTokenStorage';
-import { type Event, isRsvpDeadlinePassed } from '@/models/event';
+import type { Event } from '@/models/event';
 
 import { CostSection } from './EventMemberSection';
 import { PublicRsvpForm } from './PublicRsvpForm';
-import { RsvpDeadlineNote } from './RsvpDeadline';
 
 interface Props {
   event: Event;
@@ -20,15 +19,6 @@ export function PublicRsvpSection({ event }: Props) {
     void navigate(0);
   }
 
-  if (isRsvpDeadlinePassed(event)) {
-    return (
-      <div className="mt-8 flex flex-col gap-6">
-        <CostSection event={event} />
-        <RsvpDeadlineNote event={event} closed />
-      </div>
-    );
-  }
-
   return (
     <div className="mt-8 flex flex-col gap-6">
       <CostSection event={event} />
@@ -38,7 +28,6 @@ export function PublicRsvpSection({ event }: Props) {
           unlockWithToken(result.rsvp_token);
         }}
       />
-      <RsvpDeadlineNote event={event} closed={false} />
     </div>
   );
 }
