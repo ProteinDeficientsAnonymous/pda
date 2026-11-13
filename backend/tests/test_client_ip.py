@@ -1,16 +1,20 @@
 """Unit tests for config.ratelimit.client_ip XFF-spoofing resistance.
 
-The login/magic-login rate limit keys on client_ip. A naive
-``XFF.split(",")[0]`` trusts the attacker-controlled leftmost value, letting a
-brute-forcer rotate spoofed headers into unlimited rate-limit buckets. These
-tests pin the rightmost-untrusted-hop behaviour that defends against that.
+On Railway a request reaches Django as client → Railway edge → Railway internal
+proxy (100.64.0.0/10) → in-container nginx (127.0.0.1) → gunicorn, and nginx
+appends the internal proxy to X-Forwarded-For. client_ip must skip those
+internal hops and never trust the attacker-controlled left side of the chain.
 """
 
+import pytest
 from config.ratelimit import client_ip
 from django.test import RequestFactory
 
+NGINX = "127.0.0.1"
+CLIENT = "198.51.100.7"
 
-def _request(*, xff=None, remote_addr="10.0.0.1"):
+
+def _request(*, xff=None, remote_addr=NGINX):
     factory = RequestFactory()
     request = factory.get("/api/auth/login/")
     request.META["REMOTE_ADDR"] = remote_addr
@@ -25,60 +29,53 @@ class TestClientIp:
     def test_no_xff_falls_back_to_remote_addr(self):
         assert client_ip(_request(remote_addr="203.0.113.9")) == "203.0.113.9"
 
-    def test_single_trusted_proxy_returns_real_client(self, settings):
-        # Railway: one proxy appends the IP it saw (the real client) to XFF.
-        settings.TRUSTED_PROXY_COUNT = 1
-        request = _request(xff="198.51.100.7")
-        assert client_ip(request) == "198.51.100.7"
+    def test_railway_chain_skips_internal_proxy_hop(self):
+        # Observed on staging: nginx's peer is a rotating 100.64.0.x Railway proxy.
+        assert client_ip(_request(xff=f"{CLIENT}, 100.64.0.15")) == CLIENT
 
-    def test_spoofed_leftmost_xff_is_ignored(self, settings):
-        # Attacker prepends a forged value; the proxy appends the real client.
-        # Rightmost-untrusted-hop logic must return the real client, not the spoof.
-        settings.TRUSTED_PROXY_COUNT = 1
-        request = _request(xff="1.2.3.4, 198.51.100.7")
-        assert client_ip(request) == "198.51.100.7"
+    def test_rotating_internal_proxies_share_one_bucket(self):
+        ips = {client_ip(_request(xff=f"{CLIENT}, 100.64.0.{n}")) for n in range(1, 17)}
+        assert ips == {CLIENT}
 
-    def test_rotating_spoofed_xff_lands_in_same_bucket(self, settings):
-        # The core of the brute-force defense: the attacker varies the spoofed
-        # prefix on every request but always reaches us through one real proxy.
-        # All variants must resolve to the SAME ip so they share one bucket.
-        settings.TRUSTED_PROXY_COUNT = 1
-        ips = {
-            client_ip(_request(xff=f"{spoof}, 198.51.100.7"))
-            for spoof in ("1.1.1.1", "2.2.2.2", "9.9.9.9, 8.8.8.8")
-        }
-        assert ips == {"198.51.100.7"}
+    def test_distinct_clients_behind_same_proxy_get_distinct_buckets(self):
+        a = client_ip(_request(xff="198.51.100.7, 100.64.0.2"))
+        b = client_ip(_request(xff="203.0.113.50, 100.64.0.2"))
+        assert a != b
 
-    def test_two_trusted_proxies(self, settings):
-        # Two chained proxies each append the IP of the connection they
-        # received: outer proxy appends the client, inner proxy appends the
-        # outer proxy. XFF = "<client>, <outer-proxy>"; the real client is at
-        # index len - trusted.
-        settings.TRUSTED_PROXY_COUNT = 2
-        request = _request(xff="198.51.100.7, 172.16.0.1")
-        assert client_ip(request) == "198.51.100.7"
+    def test_extra_internal_hops_are_skipped(self):
+        xff = f"{CLIENT}, 10.1.2.3, 100.64.0.4, 172.16.0.9, 192.168.1.1"
+        assert client_ip(_request(xff=xff)) == CLIENT
 
-    def test_two_trusted_proxies_ignores_spoofed_prefix(self, settings):
-        settings.TRUSTED_PROXY_COUNT = 2
-        request = _request(xff="1.2.3.4, 198.51.100.7, 172.16.0.1")
-        assert client_ip(request) == "198.51.100.7"
+    @pytest.mark.parametrize("spoof", ["1.1.1.1", "2.2.2.2", "9.9.9.9, 8.8.8.8", "10.0.0.1"])
+    def test_spoofed_left_hops_are_ignored(self, spoof):
+        # The edge appends the real client after whatever the attacker sent.
+        assert client_ip(_request(xff=f"{spoof}, {CLIENT}, 100.64.0.7")) == CLIENT
 
-    def test_xff_shorter_than_trusted_count_falls_back(self, settings):
-        # XFF has fewer hops than the configured trusted-proxy count (a request
-        # that bypassed a proxy, or a misconfig). We must NOT let an
-        # attacker-supplied value through; fall back to REMOTE_ADDR.
-        settings.TRUSTED_PROXY_COUNT = 2
-        request = _request(xff="1.2.3.4", remote_addr="10.9.9.9")
-        assert client_ip(request) == "10.9.9.9"
+    def test_spoofed_internal_looking_hop_does_not_hide_client(self):
+        # An attacker can't push a private address to the right of the edge's hop.
+        assert client_ip(_request(xff=f"100.64.0.1, {CLIENT}, 100.64.0.7")) == CLIENT
 
-    def test_handles_extra_whitespace_and_empty_entries(self, settings):
-        settings.TRUSTED_PROXY_COUNT = 1
-        request = _request(xff=" 1.2.3.4 ,  198.51.100.7 ")
-        assert client_ip(request) == "198.51.100.7"
+    def test_ipv6_client(self):
+        assert client_ip(_request(xff="2001:db8::1, 100.64.0.3")) == "2001:db8::1"
 
-    def test_zero_trusted_proxies_falls_back_without_crashing(self, settings):
-        # TRUSTED_PROXY_COUNT=0 means "trust no hop" — idx lands at len(hops),
-        # which must fall back to REMOTE_ADDR, not raise IndexError.
-        settings.TRUSTED_PROXY_COUNT = 0
-        request = _request(xff="1.2.3.4, 198.51.100.7", remote_addr="10.9.9.9")
-        assert client_ip(request) == "10.9.9.9"
+    def test_ipv6_internal_hops_are_skipped(self):
+        assert client_ip(_request(xff=f"{CLIENT}, fd12::1, ::1")) == CLIENT
+
+    def test_handles_extra_whitespace_and_empty_entries(self):
+        assert client_ip(_request(xff=f" 1.2.3.4 ,, {CLIENT} ,100.64.0.1 ")) == CLIENT
+
+    def test_all_internal_hops_falls_back_to_remote_addr(self):
+        assert client_ip(_request(xff="100.64.0.1, 10.0.0.2")) == NGINX
+
+    def test_xff_ignored_when_peer_is_public(self):
+        # A direct, un-proxied caller fully controls XFF; key on the socket peer.
+        request = _request(xff="1.2.3.4", remote_addr="203.0.113.9")
+        assert client_ip(request) == "203.0.113.9"
+
+    @pytest.mark.parametrize("peer", ["fd12::5", "10.0.0.8", "100.64.0.2"])
+    def test_xff_ignored_when_peer_is_private_network_not_nginx(self, peer):
+        # gunicorn binds 0.0.0.0, so a sibling Railway service could set XFF directly.
+        assert client_ip(_request(xff=f"1.2.3.4, {CLIENT}", remote_addr=peer)) == peer
+
+    def test_ipv6_loopback_peer_is_trusted(self):
+        assert client_ip(_request(xff=f"{CLIENT}, 100.64.0.3", remote_addr="::1")) == CLIENT

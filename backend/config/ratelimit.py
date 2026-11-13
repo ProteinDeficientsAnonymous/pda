@@ -1,8 +1,8 @@
 import inspect
+import ipaddress
 from functools import wraps
 
 from community.validation import Code, raise_validation
-from django.conf import settings
 from django.core.cache import caches
 
 _PERIOD_MAP = {"s": 1, "m": 60, "h": 3600, "d": 86400}
@@ -16,31 +16,50 @@ def _parse_rate(rate: str) -> tuple[int, int]:
     return int(count_str), _PERIOD_MAP[unit]
 
 
-def client_ip(request) -> str:
-    """Client IP for rate-limiting, resistant to X-Forwarded-For spoofing.
+# Hops our infra appends: Railway's internal proxies (100.64/10), nginx (loopback), private nets.
+_INTERNAL_NETWORKS = tuple(
+    ipaddress.ip_network(n)
+    for n in (
+        "100.64.0.0/10",
+        "10.0.0.0/8",
+        "172.16.0.0/12",
+        "192.168.0.0/16",
+        "127.0.0.0/8",
+        "::1/128",
+        "fc00::/7",
+        "fe80::/10",
+    )
+)
 
-    Trusting XFF's leftmost value lets an attacker rotate spoofed headers into
-    fresh rate-limit buckets. Instead we count back from the right: the hop at
-    ``len - TRUSTED_PROXY_COUNT`` is the one the innermost trusted proxy
-    observed and can't be forged. Only sound when the app is unreachable except
-    via the trusted proxy chain, so TRUSTED_PROXY_COUNT must match deployment.
-    """
-    trusted = getattr(settings, "TRUSTED_PROXY_COUNT", 1)
+
+def _is_internal(hop: str) -> bool:
+    try:
+        addr = ipaddress.ip_address(hop)
+    except ValueError:
+        return False
+    return any(addr in net for net in _INTERNAL_NETWORKS)
+
+
+def _is_loopback(addr: str) -> bool:
+    try:
+        return ipaddress.ip_address(addr).is_loopback
+    except ValueError:
+        return False
+
+
+def client_ip(request) -> str:
+    """Rightmost non-internal XFF hop (the address Railway's edge saw); left of it is spoofable."""
     remote_addr = request.META.get("REMOTE_ADDR", "anon")
+    # Only in-container nginx builds a trustworthy XFF; gunicorn also listens on the private network.
+    if not _is_loopback(remote_addr):
+        return remote_addr
 
     forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    if not forwarded:
-        return remote_addr
-
     hops = [h.strip() for h in forwarded.split(",") if h.strip()]
-    # The innermost trusted proxy appended the IP it observed at this index;
-    # everything to its left is attacker-controlled and ignored.
-    idx = len(hops) - trusted
-    if idx < 0 or idx >= len(hops):
-        # XFF shorter than expected, or trusted <= 0 → can't trust a hop; use
-        # REMOTE_ADDR rather than crashing or trusting attacker input.
-        return remote_addr
-    return hops[idx]
+    for hop in reversed(hops):
+        if not _is_internal(hop):
+            return hop
+    return remote_addr
 
 
 def auth_or_ip_key(request) -> str:

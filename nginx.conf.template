@@ -4,7 +4,8 @@ map $http_user_agent $event_unfurl_bot {
 }
 
 # Railway's edge appends the address it saw, so only the right-most X-Forwarded-For hop
-# can't be spoofed (same rule as TRUSTED_PROXY_COUNT=1 in backend/config/ratelimit.py).
+# can't be spoofed. This is the header as Railway sent it; Django sees it after nginx appends
+# its own 100.64.x peer, which client_ip() in backend/config/ratelimit.py skips.
 map $http_x_forwarded_for $mcp_client_ip {
     default $remote_addr;
     "~([^, ]+) *$" $1;
