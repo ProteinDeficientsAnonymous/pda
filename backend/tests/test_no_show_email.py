@@ -3,7 +3,7 @@ from io import StringIO
 
 import pytest
 from community.attendance.no_show_email import send_no_show_emails
-from community.models import AttendanceStatus, EventRSVP, EventStatus, EventType
+from community.models import AttendanceStatus, EventRSVP, EventStatus, EventType, RSVPStatus
 from django.core.management import call_command
 from django.utils import timezone
 from notifications.email_sender import SendResult
@@ -34,6 +34,14 @@ class TestSendNoShowEmails:
         make_rsvp(make_ended_event(), make_user(), attendance)
         assert send_no_show_emails(NOW) == (0, 0)
         fake_email_sender.send.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "status", [RSVPStatus.MAYBE, RSVPStatus.CANT_GO, RSVPStatus.WAITLISTED]
+    )
+    def test_not_going_rsvp_gets_nothing(self, fake_email_sender, status):
+        rsvp = _no_show()
+        EventRSVP.objects.filter(pk=rsvp.pk).update(status=status)
+        assert send_no_show_emails(NOW) == (0, 0)
 
     @pytest.mark.parametrize("event_type", [EventType.OFFICIAL, EventType.CLUB])
     def test_official_and_club_events_send(self, fake_email_sender, event_type):

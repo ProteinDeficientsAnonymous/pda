@@ -9,7 +9,7 @@ from notifications.email_sender import get_email_sender
 from notifications.no_show_email import send_no_show_email
 
 from community.event_feedback.send import event_date_label, feedback_cutoff
-from community.models import AttendanceStatus, EventRSVP, EventStatus, EventType
+from community.models import AttendanceStatus, EventRSVP, EventStatus, EventType, RSVPStatus
 from community.models.event import is_past_q
 
 if TYPE_CHECKING:
@@ -28,6 +28,7 @@ def due_no_show_rsvps(now: datetime) -> QuerySet[EventRSVP]:
         ~is_past_q(cutoff - NO_SHOW_LOOKBACK, prefix="event__"),
         event__status=EventStatus.ACTIVE,
         event__event_type__in=(EventType.OFFICIAL, EventType.CLUB),
+        status=RSVPStatus.ATTENDING,
         attendance=AttendanceStatus.DIDNT_GO,
         no_show_emailed_at__isnull=True,
         user__is_active=True,

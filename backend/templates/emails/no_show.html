@@ -3,8 +3,14 @@
 <body style="margin: 0; padding: 24px; background: #f5f5f3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #222;">
   <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 32px;">
     <p style="margin: 0 0 16px;">hi{% if display_name %} {{ display_name|lower }}{% endif %} —</p>
-    <p style="margin: 0 0 16px;">we missed you at <strong>{{ event_title|lower }}</strong>{% if event_date %} ({{ event_date }}){% endif %}. you were rsvp'd as going but marked as not there.</p>
-    <p style="margin: 0 0 24px;">if your plans change, please update your rsvp so someone else can take your spot.</p>
+    <p style="margin: 0 0 16px;">we missed you at <strong>{{ event_title|lower }}</strong>{% if event_date %} ({{ event_date }}){% endif %}. your host marked you as not making it.</p>
+    <p style="margin: 0 0 8px;">hosts plan around rsvps, so when someone doesn't show:</p>
+    <ul style="margin: 0 0 16px; padding-left: 20px;">
+      <li>we wait to start movies or games for people who aren't coming</li>
+      <li>food we ordered for them goes to waste</li>
+      <li>reservations end up with the wrong headcount</li>
+    </ul>
+    <p style="margin: 0 0 24px;">if your plans change next time, please update or cancel your rsvp so someone else can take your spot.</p>
     <p style="margin: 0;">
       <a href="{{ calendar_url }}" style="display: inline-block; background: #3c6939; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500;">see upcoming events</a>
     </p>
