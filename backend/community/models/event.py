@@ -197,6 +197,10 @@ class Event(models.Model):
         return self.start_datetime + DEFAULT_EVENT_DURATION < timezone.now()
 
     @property
+    def rsvp_deadline_passed(self) -> bool:
+        return self.rsvp_deadline is not None and self.rsvp_deadline < timezone.now()
+
+    @property
     def is_draft(self) -> bool:
         return self.status == EventStatus.DRAFT
 
