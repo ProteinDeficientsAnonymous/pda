@@ -1,12 +1,15 @@
 import pytest
 from community.models import (
+    AssignmentStatus,
     EventStatus,
     PlanningSlotKind,
     PlanningYear,
+    SlotAssignment,
 )
 from django.db import IntegrityError
 
 from tests._events import make_event
+from tests._users import make_user
 
 MONTHS = [
     "january", "february", "march", "april", "may", "june",
@@ -44,3 +47,38 @@ class TestPlanningSlot:
 
     def test_month_start(self, year):
         assert str(year.slots.get(label="march").month_start()) == "2027-03-01"
+
+
+@pytest.mark.django_db
+class TestSlotAssignment:
+    def test_repropose_resets_counters(self, year):
+        coordinator, planner = make_user(), make_user()
+        slot = year.slots.first()
+        assert slot is not None
+        assignment = SlotAssignment(slot=slot, user=planner)
+        assignment.propose(coordinator)
+        assignment.decline()
+        assignment.reminder_count = 3
+        assignment.save()
+        assignment.propose(coordinator)
+        assignment.refresh_from_db()
+        assert assignment.status == AssignmentStatus.PROPOSED
+        assert assignment.reminder_count == 0
+        assert assignment.responded_at is None
+        assert assignment.last_reminded_at is None
+
+    def test_commit_stamps_response(self, year):
+        slot = year.slots.first()
+        assert slot is not None
+        assignment = SlotAssignment(slot=slot, user=make_user())
+        assignment.propose(make_user())
+        assignment.commit()
+        assignment.refresh_from_db()
+        assert assignment.status == AssignmentStatus.COMMITTED
+        assert assignment.responded_at is not None
+
+    def test_one_assignment_per_slot_and_user(self, year):
+        slot, user = year.slots.first(), make_user()
+        SlotAssignment.objects.create(slot=slot, user=user)
+        with pytest.raises(IntegrityError):
+            SlotAssignment.objects.create(slot=slot, user=user)

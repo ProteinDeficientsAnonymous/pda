@@ -5,7 +5,9 @@ from community.models.choices import (
     OPEN_JOIN_REQUEST_STATUSES,
     RSVP_CHOICE_TYPES,
     RSVP_QUESTION_TYPE_CHOICES,
+    AssignmentStatus,
     AttendanceStatus,
+    BiannualInterest,
     CancelReason,
     CoHostInviteStatus,
     EventFlagStatus,
@@ -62,8 +64,10 @@ from community.models.event_slug import (
 from community.models.join_form import JoinFormQuestion, JoinRequest
 from community.models.login_reminder import LoginReminder
 from community.models.planning import (
+    PlanningAvailability,
     PlanningSlot,
     PlanningYear,
+    SlotAssignment,
 )
 from community.models.poll import EventPoll, PollOption, PollVote
 from community.models.speech import EventSpeech, SpeechTemplate
@@ -81,7 +85,9 @@ __all__ = [
     "AttendanceMilestone",
     "CONDITION_SOURCE_TYPES",
     "AttendanceReminder",
+    "AssignmentStatus",
     "AttendanceStatus",
+    "BiannualInterest",
     "CoHostInviteStatus",
     "EventFeedbackRequest",
     "EventFlagStatus",
@@ -94,6 +100,7 @@ __all__ = [
     "OPEN_JOIN_REQUEST_STATUSES",
     "EventFormat",
     "PageVisibility",
+    "PlanningAvailability",
     "PlanningSlot",
     "PlanningSlotKind",
     "PlanningYear",
@@ -142,6 +149,7 @@ __all__ = [
     "ReactionEmoji",
     "EventPoll",
     "PollOption",
+    "SlotAssignment",
     "PollVote",
     "EventSpeech",
     "SpeechTemplate",
