@@ -1707,7 +1707,8 @@
               {
                 "enum": [
                   "login_required",
-                  "rsvp_required"
+                  "rsvp_required",
+                  "members_only"
                 ],
                 "type": "string"
               },

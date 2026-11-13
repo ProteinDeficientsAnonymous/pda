@@ -15,9 +15,11 @@ from notifications.service import (
     notify_event_comment,
 )
 from users.helpers import visible_display_name
+from users.models import LIMITED_STATUSES
 from users.permissions import PermissionKey
 
 from community.events._comment_schemas import (
+    CannotPostReason,
     CommentBodyIn,
     CommentReactionSummaryOut,
     EventCommentListOut,
@@ -152,19 +154,27 @@ def _comment_out(
     )
 
 
-def _build_list_out(event: Event, viewer) -> EventCommentListOut:
+def _cannot_post_reason(event: Event, viewer, user) -> CannotPostReason:
+    # event_viewer_for downgraded a signed-in limited user to anonymous; they're already logged in.
+    if viewer is None and user is not None and user.membership_status in LIMITED_STATUSES:
+        return "members_only"
+    # A signed-out visitor can still rsvp themselves onto a public event, so
+    # prompt for that rather than for a login they don't need.
+    if viewer is not None or event.is_public_rsvp_eligible:
+        return "rsvp_required"
+    return "login_required"
+
+
+def _build_list_out(event: Event, viewer, user) -> EventCommentListOut:
     co_host_pks = _co_host_pks(event)
     can_post = _can_post_comments(event, viewer, co_host_pks=co_host_pks)
     # Reading requires the same standing as posting — no peeking without an active rsvp.
     if not can_post:
-        # A signed-out visitor can still rsvp themselves onto a public event, so
-        # prompt for that rather than for a login they don't need.
-        reason = (
-            "rsvp_required"
-            if viewer is not None or event.is_public_rsvp_eligible
-            else "login_required"
+        return EventCommentListOut(
+            items=[],
+            can_post=False,
+            cannot_post_reason=_cannot_post_reason(event, viewer, user),
         )
-        return EventCommentListOut(items=[], can_post=False, cannot_post_reason=reason)
     comments = (
         EventComment.objects.filter(event=event, parent__isnull=True)
         .select_related("author")
@@ -201,9 +211,10 @@ def list_comments(request, event_id: UUID):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    viewer = event_viewer_for(resolve_event_viewer(request, event_id), event)
+    user = resolve_event_viewer(request, event_id)
+    viewer = event_viewer_for(user, event)
     enforce_event_read_visibility(event, viewer)
-    return Status(200, _build_list_out(event, viewer))
+    return Status(200, _build_list_out(event, viewer, user))
 
 
 @router.post(
