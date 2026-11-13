@@ -13,16 +13,8 @@ import { renderWithProviders } from '@/test/render';
 
 import MembersScreen from './MembersScreen';
 
-// Mock the users API module so we can drive loading / error / data states
-// without hitting the network. useCreateUser is only pulled in transitively
-// by MemberCreateDialog if it opens, but the default here is closed.
 vi.mock('@/api/users', () => ({
   useUsers: vi.fn(),
-  useCreateUser: vi.fn(() => ({
-    mutateAsync: vi.fn(),
-    isPending: false,
-    reset: vi.fn(),
-  })),
 }));
 
 vi.mock('@/api/roles', () => ({
@@ -153,26 +145,13 @@ describe('MembersScreen', () => {
     expect(screen.getByText('loading…')).toBeInTheDocument();
   });
 
-  it('renders the add-member button for an admin viewer', () => {
+  it('does not render add-member or bulk-add controls', () => {
     mockUsersResult({ data: [] });
 
     renderScreen();
 
-    expect(screen.getByRole('button', { name: /add member/i })).toBeInTheDocument();
-  });
-
-  // TODO(tier3-mismatch): Flutter gated the add-member button on the
-  // `manage_users` permission inside the screen. React's MembersScreen always
-  // renders the button — permission gating is enforced at the route/admin-hub
-  // level (see AdminHubScreen). Locking the current React behavior: the
-  // button is always present when the screen renders.
-  it('renders the add-member button even without manage_users permission (react gates at route level)', () => {
-    setAuthed(adminUser([]));
-    mockUsersResult({ data: [] });
-
-    renderScreen();
-
-    expect(screen.getByRole('button', { name: /add member/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add member/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /bulk add/i })).not.toBeInTheDocument();
   });
 
   it('renders the members/non-members/roles tab switcher for users with manage_roles', () => {
@@ -234,8 +213,6 @@ describe('MembersScreen', () => {
     expect(screen.getByText('Guest Rsvp')).toBeInTheDocument();
     expect(screen.queryByText('Ada Member')).not.toBeInTheDocument();
     expect(screen.queryByText('Paused Member')).not.toBeInTheDocument();
-    // The non-members tab has no add-member controls.
-    expect(screen.queryByRole('button', { name: /add member/i })).not.toBeInTheDocument();
   });
 
   it('shows the non-members empty state when there are no non-members', async () => {

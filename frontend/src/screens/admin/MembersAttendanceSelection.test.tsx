@@ -16,7 +16,6 @@ import MembersScreen from './MembersScreen';
 
 vi.mock('@/api/users', () => ({
   useUsers: vi.fn(),
-  useCreateUser: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false, reset: vi.fn() })),
 }));
 
 vi.mock('@/api/roles', () => ({ useRoles: vi.fn() }));
