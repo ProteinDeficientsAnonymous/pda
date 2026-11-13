@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
-from django.conf import settings
 from notifications.email_helpers import (
     MemberRsvpEmailDetails,
     RsvpEmailDetails,
@@ -18,6 +17,7 @@ from community.models import Event, RSVPStatus
 from community.rsvps.public_shared import (
     collect_event_links,
     email_details,
+    event_page_url,
     log_email_failure,
     unpaid_user_ids,
 )
@@ -38,7 +38,7 @@ def _member_email_details(event: Event, user: User) -> MemberRsvpEmailDetails:
         event_when=format_event_when(event),
         event_location=event.location,
         event_links=collect_event_links(event),
-        event_url=f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.id}",
+        event_url=event_page_url(event),
     )
 
 

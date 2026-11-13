@@ -1,8 +1,10 @@
 import logging
 import re
+from datetime import date, datetime, time
 from urllib.parse import urlparse
 
 from config.auth import HARD_ACCOUNT_BLOCKS, account_block_code
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest, HttpResponse
 from ninja.security import HttpBearer
@@ -101,6 +103,10 @@ def validate_display_name(name: str, field: str = "display_name") -> None:
         raise_validation(Code.DisplayName.INVALID_CHARS, field=field)
     if all(c in " '-." for c in stripped):
         raise_validation(Code.DisplayName.NEEDS_A_LETTER, field=field)
+
+
+def local_midnight(day: date) -> datetime:
+    return datetime.combine(day, time.min, tzinfo=settings.COMMUNITY_TZ)
 
 
 def csv_safe(value: str) -> str:
