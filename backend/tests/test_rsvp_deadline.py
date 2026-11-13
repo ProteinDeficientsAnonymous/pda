@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community.models import Event
+from community.models import Event, EventPoll, PollOption
 from community.validation import Code
 from django.utils import timezone
 
@@ -95,3 +95,41 @@ class TestSetDeadline:
             {"datetime_tbd": True, "start_datetime": None, "rsvp_deadline": future_iso(30)},
         )
         assert response.status_code == 200
+
+    def test_patch_rejects_leaving_tbd_with_start_before_deadline(
+        self, api_client, test_user, host_headers
+    ):
+        event = _event(test_user, timedelta(days=10))
+        event.datetime_tbd = True
+        event.save(update_fields=["datetime_tbd"])
+        response = _patch(api_client, event, host_headers, {"datetime_tbd": False})
+        assert response.status_code == 422
+        assert_error_code(response, Code.Event.RSVP_DEADLINE_AFTER_START)
+
+
+@pytest.mark.django_db
+class TestPollFinalize:
+    @pytest.mark.parametrize(("deadline_days", "kept"), [(10, False), (3, True)])
+    def test_drops_deadline_after_chosen_start(
+        self, api_client, test_user, host_headers, deadline_days, kept
+    ):
+        event = Event.objects.create(
+            title="Poll Event",
+            datetime_tbd=True,
+            rsvp_enabled=True,
+            rsvp_deadline=future_iso(deadline_days),
+            created_by=test_user,
+        )
+        poll = EventPoll.objects.create(event=event, created_by=test_user)
+        option = PollOption.objects.create(poll=poll, datetime=future_iso(7), display_order=0)
+
+        response = api_client.post(
+            f"{EVENTS_URL}{event.id}/poll/finalize/",
+            {"winning_option_id": str(option.id)},
+            content_type="application/json",
+            **host_headers,
+        )
+
+        assert response.status_code == 200
+        event.refresh_from_db()
+        assert (event.rsvp_deadline is not None) is kept
