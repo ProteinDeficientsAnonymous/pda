@@ -1,3 +1,10 @@
+## [0.233.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.6...v0.233.7) (2026-11-13)
+
+
+### Bug Fixes
+
+* 2423 - don't show limited users "log in to comment" ([#2427](https://github.com/ProteinDeficientsAnonymous/pda/issues/2427)) ([6423c87](https://github.com/ProteinDeficientsAnonymous/pda/commit/6423c87409ce5b228ea1bd6e001c164f3d33aada))
+
 ## [0.233.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.5...v0.233.6) (2026-11-12)
 
 
