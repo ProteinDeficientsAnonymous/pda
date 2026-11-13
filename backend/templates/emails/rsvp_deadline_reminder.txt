@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+you're still a maybe for {{ event_title|lower }}. rsvps close on {{ deadline|lower }}.
+
+please switch to going or can't go before then — after the deadline your rsvp can't be changed:
+
+{{ rsvp_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}
