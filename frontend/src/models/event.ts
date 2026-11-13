@@ -172,6 +172,7 @@ export interface Event {
   rsvpEnabled: boolean;
   allowPlusOnes: boolean;
   maxAttendees: number | null;
+  rsvpDeadline: Date | null;
   attendingCount: number;
   waitlistedCount: number;
   invitedCount: number;
