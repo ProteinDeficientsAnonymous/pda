@@ -76,6 +76,7 @@ from community.rsvps.answers import can_see_guest_questionnaire_responses
 from community.rsvps.host_auto import auto_rsvp_host, auto_rsvp_hosts
 from community.rsvps.serialize import with_guest_photos
 from community.rsvps.status_emails import email_promoted_users
+from community.scheduled.rsvp_deadline_reminder import rearm_deadline_reminders
 from community.shared import ErrorOut, authenticated_user, optional_jwt
 from community.validation import Code, raise_validation
 
@@ -336,6 +337,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     # Checked before status transitions, which have their own attendee notifications.
     was_eligible = event.is_public_rsvp_eligible
     old_max_attendees = event.max_attendees
+    old_rsvp_deadline = event.rsvp_deadline
     was_official_or_club = is_official_or_club(event.event_type)
     was_official = event.event_type == EventType.OFFICIAL
     removed_user_ids: list[str] = []
@@ -344,6 +346,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     # Field edits before the transition so publish validates the corrected date.
     with transaction.atomic():
         apply_field_updates(request, event, event_id, updates)
+        rearm_deadline_reminders(event, old_rsvp_deadline)
         apply_official_defaults(event, was_official=was_official)
 
         if was_eligible and not event.is_public_rsvp_eligible:

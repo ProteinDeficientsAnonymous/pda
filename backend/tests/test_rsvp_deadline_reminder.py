@@ -1,14 +1,17 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from community.models import Event, EventRSVP, EventStatus, RSVPStatus
+from community.models import EventRSVP, EventStatus, RSVPStatus
 from community.scheduled.rsvp_deadline_reminder import (
     due_deadline_reminders,
     send_due_deadline_reminders,
 )
 from django.core.management import call_command
 from django.utils import timezone
+from users.models import MembershipStatus
 
+from tests._auth import auth_headers_for
+from tests._events import make_event, make_rsvp
 from tests._public_rsvp_helpers import make_public_rsvper
 from tests._users import make_user
 
@@ -17,17 +20,18 @@ SENT_AT = datetime(2026, 1, 1, tzinfo=UTC)
 
 
 def _maybe(deadline_in=12 * H, *, user=None, event_kwargs=None, **rsvp_kwargs) -> EventRSVP:
-    event = Event.objects.create(
+    deadline = None if deadline_in is None else timezone.now() + deadline_in
+    event = make_event(
         **{
             "title": "Potluck",
             "start_datetime": timezone.now() + timedelta(days=3),
             "rsvp_enabled": True,
-            "rsvp_deadline": None if deadline_in is None else timezone.now() + deadline_in,
+            "rsvp_deadline": deadline,
             **(event_kwargs or {}),
         }
     )
-    rsvp_kwargs.setdefault("status", RSVPStatus.MAYBE)
-    return EventRSVP.objects.create(event=event, user=user or make_user(), **rsvp_kwargs)
+    status = rsvp_kwargs.pop("status", RSVPStatus.MAYBE)
+    return make_rsvp(event, user or make_user(), status, **rsvp_kwargs)
 
 
 def _due() -> list[EventRSVP]:
@@ -58,8 +62,16 @@ class TestDueDeadlineReminders:
         _maybe(**kwargs)
         assert _due() == []
 
-    def test_excludes_users_without_email(self):
-        _maybe(user=make_user(email=""))
+    @pytest.mark.parametrize(
+        "user_fields",
+        [
+            pytest.param({"email": ""}, id="no-email"),
+            pytest.param({"archived_at": SENT_AT}, id="archived"),
+            pytest.param({"membership_status": MembershipStatus.GUIDELINES_PAUSED}, id="paused"),
+        ],
+    )
+    def test_excludes_unreachable_users(self, user_fields):
+        _maybe(user=make_user(**user_fields))
         assert _due() == []
 
 
@@ -84,12 +96,25 @@ class TestSendDeadlineReminders:
         send_due_deadline_reminders(fake_email_sender)
         assert "/my-rsvps?token=" in fake_email_sender.send.call_args.kwargs["text"]
 
-    def test_failed_send_still_claims(self, fake_email_sender):
+    def test_failed_send_still_claims_but_isnt_counted(self, fake_email_sender):
         fake_email_sender.send.side_effect = RuntimeError("boom")
         rsvp = _maybe()
-        assert send_due_deadline_reminders(fake_email_sender) == 1
+        assert send_due_deadline_reminders(fake_email_sender) == 0
         rsvp.refresh_from_db()
         assert rsvp.rsvp_deadline_reminder_sent_at is not None
+
+    def test_moving_the_deadline_rearms(self, api_client, test_user):
+        rsvp = _maybe(
+            event_kwargs={"created_by": test_user}, rsvp_deadline_reminder_sent_at=SENT_AT
+        )
+        response = api_client.patch(
+            f"/api/community/events/{rsvp.event.id}/",
+            {"rsvp_deadline": (timezone.now() + 20 * H).isoformat()},
+            content_type="application/json",
+            **auth_headers_for(test_user),
+        )
+        assert response.status_code == 200
+        assert _due() == [rsvp]
 
     def test_command(self, fake_email_sender, capsys):
         _maybe()
