@@ -53,9 +53,10 @@ export function EventFormMoney({ values, onChange }: Props) {
         onChange={(e) => {
           onChange({ price: e.target.value });
         }}
-        placeholder="$20 sliding scale"
-        maxLength={300}
-        hint="only for covering costs (food, supplies, etc)"
+        placeholder="20"
+        inputMode="decimal"
+        maxLength={12}
+        hint="dollar amount per person — only for covering costs (food, supplies, etc)"
       />
       <TextField
         label="venmo"

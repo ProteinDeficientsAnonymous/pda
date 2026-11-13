@@ -24,6 +24,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('asks for a dollar amount when the event price is invalid', () => {
+    expect(messageForCode({ code: Code.Event.PriceInvalid, field: 'price' })).toBe(
+      'price must be a dollar amount, like 10 or 12.50 — leave blank if free',
+    );
+  });
+
   it('uses the field name for generic fallback codes', () => {
     expect(messageForCode({ code: Code.Generic.FieldRequired, field: 'title' })).toContain('title');
     expect(messageForCode({ code: Code.Generic.FieldInvalid, field: 'max_attendees' })).toContain(
