@@ -1,0 +1,14 @@
+{% autoescape off %}hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+we missed you at {{ event_title|lower }}{% if event_date %} ({{ event_date }}){% endif %}. you were rsvp'd as going but marked as not there.
+
+if your plans change, please update your rsvp so someone else can take your spot.
+
+see upcoming events:
+
+{{ calendar_url }}
+
+— pda
+{% endautoescape %}
+
+{% include "emails/_no_reply_footer.txt" %}
