@@ -158,6 +158,8 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
         raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
     if payload.for_plus_one and not rsvp.has_plus_one:
         raise_validation(Code.Event.NO_PLUS_ONE_TO_CHECK_IN, status_code=400)
+    if payload.attendance == AttendanceStatus.DIDNT_GO and rsvp.status != RSVPStatus.ATTENDING:
+        raise_validation(Code.Event.DIDNT_GO_REQUIRES_GOING, status_code=400)
 
     # A failed promotion or restore rolls back in its own savepoint; the mark stays.
     with transaction.atomic():

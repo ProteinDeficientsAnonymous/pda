@@ -164,6 +164,11 @@
         "params": []
       },
       {
+        "name": "DIDNT_GO_REQUIRES_GOING",
+        "value": "event.didnt_go_requires_going",
+        "params": []
+      },
+      {
         "name": "PERM_DENIED",
         "value": "event.perm_denied",
         "params": [

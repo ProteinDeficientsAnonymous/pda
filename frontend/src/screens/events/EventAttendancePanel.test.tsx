@@ -177,6 +177,16 @@ describe('EventAttendancePanel', () => {
     expect(screen.getByText('cassie')).toBeInTheDocument();
   });
 
+  it("offers didn't attend only for guests who rsvp'd going", () => {
+    mockStats(BASE_STATS);
+    renderPanel(MIXED_RSVP_EVENT);
+
+    expect(screen.getAllByRole('button', { name: /^attended$/i })).toHaveLength(3);
+    const [didntAttend, ...rest] = screen.getAllByRole('button', { name: /^didn't attend$/i });
+    expect(rest).toHaveLength(0);
+    expect(didntAttend?.closest('li')).toHaveTextContent('alice');
+  });
+
   it('narrows the list to one rsvp status when a filter chip is picked', () => {
     mockStats(BASE_STATS);
     renderPanel(MIXED_RSVP_EVENT);
