@@ -17,6 +17,7 @@ from community.models.choices import (
     JoinFormQuestionType,
     JoinRequestStatus,
     PageVisibility,
+    PlanningSlotKind,
     PollAvailability,
     QuestionType,
     RejectionReason,
@@ -60,6 +61,10 @@ from community.models.event_slug import (
 )
 from community.models.join_form import JoinFormQuestion, JoinRequest
 from community.models.login_reminder import LoginReminder
+from community.models.planning import (
+    PlanningSlot,
+    PlanningYear,
+)
 from community.models.poll import EventPoll, PollOption, PollVote
 from community.models.speech import EventSpeech, SpeechTemplate
 from community.models.survey import (
@@ -89,6 +94,9 @@ __all__ = [
     "OPEN_JOIN_REQUEST_STATUSES",
     "EventFormat",
     "PageVisibility",
+    "PlanningSlot",
+    "PlanningSlotKind",
+    "PlanningYear",
     "PollAvailability",
     "QuestionType",
     "RejectionReason",

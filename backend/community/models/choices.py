@@ -31,6 +31,11 @@ class EventStatus(models.TextChoices):
     DELETED = "deleted", "Deleted"
 
 
+class PlanningSlotKind(models.TextChoices):
+    MONTHLY = "monthly", "Monthly"
+    BIANNUAL = "biannual", "Biannual"
+
+
 class EventFlagStatus(models.TextChoices):
     PENDING = "pending", "Pending"
     DISMISSED = "dismissed", "Dismissed"
