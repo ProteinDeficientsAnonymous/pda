@@ -182,7 +182,7 @@ def check_and_set_email(
 def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
     """Block assigning the built-in admin role unless the requester is an admin.
 
-    Prevents privilege escalation when a user holds CREATE_USER but is not
+    Prevents privilege escalation when a user holds APPROVE_JOIN_REQUESTS but is not
     themselves an admin. No-op for any non-admin role (or no role).
     """
     if not role_id:
@@ -206,7 +206,7 @@ def create_user_with_role(  # noqa: PLR0913
 
     Raises ValidationException on validation failure (bad phone, duplicate, bad role).
     Assigning the built-in admin role is only permitted when ``requesting_user``
-    is themselves an admin (prevents escalation under CREATE_USER alone).
+    is themselves an admin (prevents escalation under APPROVE_JOIN_REQUESTS alone).
 
     Pass ``consent`` when the user was created from a join request that already
     captured consent — otherwise it defaults to None (e.g. admin-created users

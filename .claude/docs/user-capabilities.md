@@ -59,7 +59,6 @@ Granted through roles; only members can hold roles. The admin role has every per
 
 | Permission | Unlocks |
 |---|---|
-| `create_user` | create member accounts directly |
 | `manage_users` | edit, pause, attendance-pause, archive and hard-delete members; archive tentative people, which closes their join request; assign roles |
 | `manage_roles` | create, edit and delete roles |
 | `approve_join_requests` | vet join requests: tentative, approve, reject, un-reject |
