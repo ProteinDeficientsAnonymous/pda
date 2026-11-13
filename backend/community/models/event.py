@@ -241,6 +241,7 @@ class EventRSVP(models.Model):
         default=AttendanceStatus.UNKNOWN,
     )
     plus_one_checked_in_at = models.DateTimeField(null=True, blank=True)
+    no_show_emailed_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     cancel_reason = models.CharField(
         max_length=20, choices=CancelReason.choices, null=True, blank=True

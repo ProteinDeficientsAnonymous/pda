@@ -61,7 +61,7 @@ def due_feedback_events(now: datetime) -> QuerySet[Event]:
     )
 
 
-def _event_date_label(event: Event) -> str | None:
+def event_date_label(event: Event) -> str | None:
     if event.start_datetime is None:
         return None
     local = timezone.localtime(event.start_datetime, settings.COMMUNITY_TZ)
@@ -78,7 +78,7 @@ def _send(
             to=user.email or "",
             display_name=user.first_name or "",
             event_title=request.event.title,
-            event_date=_event_date_label(request.event),
+            event_date=event_date_label(request.event),
             url=feedback_url(request.token),
             reminder=reminder,
         )
