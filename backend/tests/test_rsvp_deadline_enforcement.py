@@ -4,11 +4,11 @@ import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 from community.validation import Code
 from django.utils import timezone
-from users.models import PublicRsvpToken
+from users.models import PublicRsvpToken, User
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
-from tests._public_rsvp_helpers import make_official_event, make_public_rsvper
+from tests._public_rsvp_helpers import make_official_event, make_public_rsvper, payload, post
 from tests._time import future_iso
 from tests._users import make_user
 
@@ -116,6 +116,12 @@ class TestPublicDeadline:
     def _manage_url(self, event, rsvper) -> str:
         token = PublicRsvpToken.issue_or_extend(rsvper)
         return f"/api/community/public/my-rsvps/{event.id}/?token={token.token}"
+
+    def test_new_public_rsvp_rejected(self, api_client, event):
+        response = post(api_client, event, status=RSVPStatus.MAYBE)
+        assert response.status_code == 400
+        assert_error_code(response, Code.Event.RSVPS_CLOSED_DEADLINE)
+        assert not User.objects.filter(phone_number=payload()["phone_number"]).exists()
 
     def test_maybe_cannot_confirm(self, api_client, event, rsvper):
         EventRSVP.objects.create(event=event, user=rsvper, status=RSVPStatus.MAYBE)

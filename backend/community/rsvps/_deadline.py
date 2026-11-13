@@ -7,7 +7,7 @@ _STEP_DOWN_FROM = frozenset({RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED, RSVPSt
 
 
 def enforce_rsvp_deadline(user, event: Event, existing: EventRSVP | None, status: str) -> None:
-    """After the deadline, only going -> can't go is allowed; hosts are exempt."""
+    """After the deadline, only going/waitlisted -> can't go is allowed; hosts are exempt."""
     if not event.rsvp_deadline_passed or can_edit_event(user, event):
         return
     stepping_down = (
