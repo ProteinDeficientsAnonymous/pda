@@ -9,6 +9,8 @@ export const Permission = {
   EditJoinQuestions: 'edit_join_questions',
   EditSpeechTemplate: 'edit_speech_template',
   ManageSurveys: 'manage_surveys',
+  ManageEventPlanning: 'manage_event_planning',
+  ViewEventPlanning: 'view_event_planning',
   TagOfficialEvent: 'tag_official_event',
   TagClubEvent: 'tag_club_event',
   ManageDocuments: 'manage_documents',
@@ -53,6 +55,13 @@ export function isAdmin(user: UserLike | null): boolean {
 export function hasPermission(user: UserLike | null, key: PermissionKey): boolean {
   if (!user) return false;
   return isAdmin(user) || user.roles.some((r) => normalizePermissions(r.permissions).includes(key));
+}
+
+export function canViewPlanning(user: UserLike | null): boolean {
+  return (
+    hasPermission(user, Permission.ViewEventPlanning) ||
+    hasPermission(user, Permission.ManageEventPlanning)
+  );
 }
 
 export function hasAnyAdminPermission(user: UserLike | null): boolean {
