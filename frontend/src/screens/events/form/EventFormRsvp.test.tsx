@@ -111,6 +111,16 @@ describe('rsvp deadline field', () => {
     expect(onChange).toHaveBeenCalledWith({ rsvpDeadline: null });
   });
 
+  it('clears the deadline when rsvp is turned off', () => {
+    const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const { onChange } = renderRsvp({ rsvpDeadline: deadline });
+
+    fireEvent.click(screen.getByRole('switch', { name: 'enable rsvp' }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ rsvpEnabled: false, rsvpDeadline: null }),
+    );
+  });
+
   it('has no clear button without a deadline', () => {
     renderRsvp();
     expect(screen.queryByRole('button', { name: 'clear deadline' })).not.toBeInTheDocument();

@@ -32,6 +32,7 @@ export function EventFormRsvp({ values, onChange, errors }: Props) {
             onChange({
               rsvpEnabled: false,
               allowPlusOnes: false,
+              rsvpDeadline: null,
               invitePermission: 'co_hosts_only',
             });
           } else {
@@ -111,8 +112,8 @@ function RsvpDeadlineField({
         defaultDate={start ? subDays(start, 1) : null}
       />
       <p className="text-foreground-secondary text-xs">
-        after this, guests can't rsvp or change their rsvp — except going to can't go. maybes get a
-        reminder email a day before.
+        after this, guests can't rsvp or change their rsvp — but going guests can still switch to
+        can't go. maybes get a reminder email a day before.
       </p>
       {values.rsvpDeadline ? (
         <Button
