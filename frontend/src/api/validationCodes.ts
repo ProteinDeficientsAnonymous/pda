@@ -102,6 +102,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'rsvps are closed for cancelled events';
     case Code.Event.RsvpsClosedPast:
       return 'rsvps are closed for past events';
+    case Code.Event.RsvpsClosedDeadline:
+      return "the rsvp deadline has passed — you can only switch from going to can't go";
     case Code.Event.RsvpDeadlineAfterStart:
       return 'the rsvp deadline must be before the event starts';
     case Code.Event.NoPlusOneSpots:

@@ -30,6 +30,7 @@ export const Code = {
     RsvpsNotEnabled: 'event.rsvps_not_enabled',
     RsvpsClosedCancelled: 'event.rsvps_closed_cancelled',
     RsvpsClosedPast: 'event.rsvps_closed_past',
+    RsvpsClosedDeadline: 'event.rsvps_closed_deadline',
     RsvpDeadlineAfterStart: 'event.rsvp_deadline_after_start',
     RsvpInvalidStatus: 'event.rsvp_invalid_status',
     NoPlusOneSpots: 'event.no_plus_one_spots',
@@ -341,6 +342,7 @@ export type ValidationCode =
   | 'event.rsvps_not_enabled'
   | 'event.rsvps_closed_cancelled'
   | 'event.rsvps_closed_past'
+  | 'event.rsvps_closed_deadline'
   | 'event.rsvp_deadline_after_start'
   | 'event.rsvp_invalid_status'
   | 'event.no_plus_one_spots'
@@ -576,6 +578,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvps_not_enabled': [],
   'event.rsvps_closed_cancelled': [],
   'event.rsvps_closed_past': [],
+  'event.rsvps_closed_deadline': [],
   'event.rsvp_deadline_after_start': [],
   'event.rsvp_invalid_status': [],
   'event.no_plus_one_spots': [],
