@@ -1,3 +1,10 @@
+## [0.236.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.236.0...v0.236.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* only allow didn't-go marks on going rsvps ([#2439](https://github.com/ProteinDeficientsAnonymous/pda/issues/2439)) ([c2c0945](https://github.com/ProteinDeficientsAnonymous/pda/commit/c2c09458808dbd459c3c55107d49c6b5899397fd))
+
 # [0.236.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.235.0...v0.236.0) (2026-11-13)
 
 
