@@ -126,7 +126,7 @@ def _feed_user(token: str):
     if user is None or not user.calendar_token:
         return None
     # The feed carries member-only data, so it must stop when site access does.
-    if user.archived_at is not None or user.is_paused:
+    if user.archived_at is not None or user.is_guidelines_paused:
         return None
     return user
 

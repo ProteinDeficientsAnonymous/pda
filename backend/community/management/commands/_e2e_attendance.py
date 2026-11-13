@@ -7,7 +7,7 @@ from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
-from community.models import AttendanceStatus, Event, EventRSVP, EventType, RSVPStatus
+from community.models import AttendanceStatus, CancelReason, Event, EventRSVP, EventType, RSVPStatus
 
 from ._e2e_common import member_user, non_member_user, random_event, random_phone
 
@@ -68,6 +68,7 @@ def seed_attendance_report() -> dict:
         user=canceled,
         status=RSVPStatus.CANT_GO,
         cancelled_at=timezone.now() - timedelta(days=3),
+        cancel_reason=CancelReason.SELF,
     )
 
     return {

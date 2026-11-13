@@ -3,7 +3,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0132_member_restored_email_template"),
+        ("community", "0137_backfill_rsvp_cancel_reason"),
     ]
 
     operations = [

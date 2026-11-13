@@ -9,7 +9,7 @@ from django.db.models import Prefetch, Q
 from django.utils import timezone
 from pydantic import BaseModel
 
-from community.models import AttendanceStatus, EventRSVP, EventType
+from community.models import AttendanceStatus, CancelReason, EventRSVP, EventType
 from community.rsvps.counts import (
     NON_REPORTABLE_EVENT_STATUSES,
     attendance_q,
@@ -31,16 +31,26 @@ def _is_qualifying_attended(rsvp: EventRSVP) -> bool:
     return is_attended(rsvp) and rsvp.event.event_type in QUALIFYING_EVENT_TYPES
 
 
+def qualifying_event_q(prefix: str = "event") -> Q:
+    """Event filter for qualifying events: reportable, official or club, known start.
+
+    prefix(str): relation lookup prefix from the queried model to Event.
+    return(Q): filter on the event's status, type and start
+    """
+    return reportable_events_q(prefix) & Q(
+        **{
+            f"{prefix}__event_type__in": QUALIFYING_EVENT_TYPES,
+            f"{prefix}__start_datetime__isnull": False,
+        }
+    )
+
+
 def qualifying_attendance_q() -> Q:
     """EventRSVP filter matching the rsvps compute_member_stats counts as qualifying.
 
     return(Q): reportable, attended, qualifying type, known start
     """
-    return (
-        attendance_q(AttendanceStatus.ATTENDED, prefix="")
-        & reportable_events_q()
-        & Q(event__event_type__in=QUALIFYING_EVENT_TYPES, event__start_datetime__isnull=False)
-    )
+    return attendance_q(AttendanceStatus.ATTENDED, prefix="") & qualifying_event_q()
 
 
 class MemberAttendanceStats(NamedTuple):
@@ -77,7 +87,7 @@ def compute_member_stats(
         if is_attended(rsvp) and rsvp.event.event_type == EventType.COMMUNITY
     )
     didnt_go_count = sum(1 for rsvp in reportable_rsvps if is_didnt_go(rsvp))
-    cancel_count = sum(1 for rsvp in rsvps if rsvp.cancelled_at is not None)
+    cancel_count = sum(1 for rsvp in rsvps if rsvp.cancel_reason == CancelReason.SELF)
 
     return MemberAttendanceStats(
         last_qualifying_at=last_qualifying_at,

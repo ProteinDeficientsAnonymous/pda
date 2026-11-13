@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { setStoredRsvpToken } from '@/api/rsvpTokenStorage';
+import { MembershipStatus } from '@/models/user';
 import { setAuthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
 
@@ -40,7 +41,7 @@ describe('RequireMember', () => {
   });
 
   it('explains the gate to a tentatively-approved user instead of redirecting', () => {
-    setAuthed(makeUser({ isMember: false }));
+    setAuthed(makeUser({ isMember: false, membershipStatus: MembershipStatus.Tentative }));
     renderGuard();
 
     expect(screen.queryByText('directory contents')).toBeNull();
@@ -49,6 +50,21 @@ describe('RequireMember', () => {
       screen.getByText(/come in person before we make you a full member/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/see the member list/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /see what.s coming up/i })).toBeInTheDocument();
+    expect(screen.queryByText(/your membership is paused/i)).toBeNull();
+  });
+
+  it('explains the attendance rule to an attendance-paused member', () => {
+    setAuthed(makeUser({ membershipStatus: MembershipStatus.AttendancePaused }));
+    renderGuard();
+
+    expect(screen.queryByText('directory contents')).toBeNull();
+    expect(
+      screen.getByText(
+        /your membership is paused .* 2 official or club events in the last 12 months, .* see the member list/i,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/come in person before we make you a full member/i)).toBeNull();
     expect(screen.getByRole('link', { name: /see what.s coming up/i })).toBeInTheDocument();
   });
 

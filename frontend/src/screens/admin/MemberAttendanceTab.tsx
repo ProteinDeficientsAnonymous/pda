@@ -10,11 +10,12 @@ import {
 import { useUpdateUser } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { TextField } from '@/components/ui/TextField';
-import { useConfirm } from '@/components/ui/useConfirm';
 import { hasPermission, Permission } from '@/models/permissions';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
+
+import { usePauseConfirm } from './usePauseConfirm';
 
 type Filter = 'all' | 'at-risk';
 
@@ -134,6 +135,7 @@ function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
   const currentUser = useAuthStore((s) => s.user);
   const canPause = hasPermission(currentUser, Permission.ManageUsers);
   const badge = complianceBadge(row);
+  const paused = row.isGuidelinesPaused || row.isAttendancePaused;
 
   return (
     <article className="border-border bg-surface rounded-lg border p-3">
@@ -145,7 +147,7 @@ function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
           <p className="text-foreground-tertiary text-xs">{formatPhone(row.phoneNumber)}</p>
         </div>
         <div className="flex flex-wrap items-center gap-1">
-          {row.isPaused ? <Badge tone="neutral">paused</Badge> : null}
+          {paused ? <Badge tone="neutral">paused</Badge> : null}
           <Badge tone={badge.tone}>{badge.label}</Badge>
         </div>
       </div>
@@ -159,26 +161,20 @@ function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
         <Stat label="cancels" value={row.cancelCount} />
       </div>
 
-      {canPause && !row.isPaused ? <PauseButton row={row} /> : null}
+      {canPause && !paused ? <PauseButton row={row} /> : null}
     </article>
   );
 }
 
 function PauseButton({ row }: { row: MemberAttendanceRow }) {
   const update = useUpdateUser(row.userId);
-  const { confirm, element } = useConfirm();
+  const { confirmPause, loading, element } = usePauseConfirm({ confirmWhenEmpty: true });
 
   async function onPause() {
-    const ok = await confirm({
-      title: 'pause this member?',
-      message: `${row.fullName.toLowerCase()} won't be able to log in until unpaused — do this from the members screen.`,
-      confirmLabel: 'pause',
-      destructive: true,
-    });
-    if (!ok) return;
+    if (!(await confirmPause(row.userId, 'attendancePaused'))) return;
     try {
-      await update.mutateAsync({ isPaused: true });
-      toast.success('member paused ✓');
+      await update.mutateAsync({ attendancePaused: true });
+      toast.success('attendance pause added ✓');
     } catch (err) {
       toast.error(extractApiErrorOr(err, "couldn't pause member — try again"));
     }
@@ -189,10 +185,10 @@ function PauseButton({ row }: { row: MemberAttendanceRow }) {
       <button
         type="button"
         onClick={() => void onPause()}
-        disabled={update.isPending}
+        disabled={update.isPending || loading}
         className="text-warning mt-3 text-xs font-medium hover:underline disabled:opacity-50"
       >
-        pause member
+        add attendance pause
       </button>
       {element}
     </>

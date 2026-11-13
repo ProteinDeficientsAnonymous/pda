@@ -41,7 +41,7 @@ from community.models import (
 from django.contrib.auth.hashers import check_password
 from django.core.management import call_command
 from django.utils import timezone
-from users.models import PublicRsvpToken, User
+from users.models import MEMBER_STATUSES, MembershipStatus, PublicRsvpToken, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -118,7 +118,7 @@ def test_seed_staging_creates_one_role_per_permission():
 
 
 @pytest.mark.django_db
-def test_seed_staging_perm_users_hold_only_their_role_and_are_onboarded():
+def test_seed_staging_perm_users_hold_their_role_and_member_and_are_onboarded():
     call_command("seed_staging")
     for index, key in enumerate(PermissionKey.values):
         user = User.objects.get(phone_number=perm_phone(index))
@@ -127,7 +127,7 @@ def test_seed_staging_perm_users_hold_only_their_role_and_are_onboarded():
         assert user.onboarded_at is not None
         assert check_password(PASSWORD, user.password)
         role_names = set(user.roles.values_list("name", flat=True))
-        assert role_names == {f"perm: {key}"}
+        assert role_names == {f"perm: {key}", "member"}
         assert user.email == perm_email(key)
         assert user.guidelines_consent_at is not None
         assert user.sms_consent_at is not None
@@ -199,7 +199,10 @@ def test_seed_staging_is_idempotent():
 @pytest.mark.django_db
 def test_seed_staging_reset_removes_only_scoped_rows():
     User.objects.create_user(
-        phone_number="+17025559999", first_name="real", last_name="person", is_member=True
+        phone_number="+17025559999",
+        first_name="real",
+        last_name="person",
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
     call_command("seed_staging")
     call_command("seed_staging", "--reset")
@@ -265,7 +268,9 @@ def test_seed_staging_reset_removes_approval_created_join_request_users():
     # approving a join request creates a member user at the request's phone, which
     # then collides with the reseeded pending request and suppresses the welcome
     # modal (no token minted). --reset must clear the join-request band's users too.
-    orphan = User.objects.create(phone_number=joinreq_phone(0), is_member=True)
+    orphan = User.objects.create(
+        phone_number=joinreq_phone(0), membership_status=MembershipStatus.ACTIVE_MEMBER
+    )
     call_command("seed_staging", "--reset")
     assert not User.objects.filter(phone_number=joinreq_phone(0)).exists()
     assert orphan.pk not in User.objects.values_list("pk", flat=True)
@@ -335,8 +340,8 @@ def test_seed_staging_past_official_has_member_and_non_member_attendance_marks()
         status=RSVPStatus.ATTENDING,
         attendance__in=[AttendanceStatus.ATTENDED, AttendanceStatus.DIDNT_GO],
     )
-    assert marked.filter(user__is_member=True).exists()
-    assert marked.filter(user__is_member=False).exists()
+    assert marked.filter(user__membership_status__in=MEMBER_STATUSES).exists()
+    assert marked.filter(user__membership_status=MembershipStatus.NONE).exists()
 
 
 @pytest.mark.django_db
@@ -371,17 +376,9 @@ def test_seed_staging_creates_join_requests_matching_specs():
         assert bool(jr.email) is spec.has_email
         assert jr.sms_consent_at is not None
         assert jr.guidelines_consent_at is not None
-        if spec.status == JoinRequestStatus.APPROVED:
-            assert jr.approved_at is not None
-            assert jr.approved_by is not None
-            assert jr.rejected_at is None
-        elif spec.status == JoinRequestStatus.REJECTED:
-            assert jr.rejected_at is not None
-            assert jr.rejected_by is not None
-            assert jr.approved_at is None
-        else:
-            assert jr.approved_at is None
-            assert jr.rejected_at is None
+        decided = spec.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED)
+        assert (jr.status_changed_at is not None) is decided
+        assert (jr.status_changed_by is not None) is decided
 
 
 @pytest.mark.django_db

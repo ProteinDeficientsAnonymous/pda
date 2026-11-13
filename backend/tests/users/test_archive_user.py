@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import CancelReason, Event, EventRSVP, RSVPStatus
 from django.utils import timezone
 from users._archive import archive_user
 from users.models import User
@@ -44,6 +44,7 @@ class TestArchiveUser:
         rsvp = EventRSVP.objects.get(event=event, user=member)
         assert rsvp.status == RSVPStatus.CANT_GO
         assert rsvp.cancelled_at is not None
+        assert rsvp.cancel_reason == CancelReason.ARCHIVE
         waiting.refresh_from_db()
         assert waiting.status == RSVPStatus.ATTENDING
 

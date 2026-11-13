@@ -9,7 +9,7 @@ from django.test import Client
 from django.utils import timezone
 from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
-from users.models import User, UserManager
+from users.models import MembershipStatus, User, UserManager
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -33,6 +33,15 @@ def pytest_runtest_teardown(item, nextitem):
                 contents = getattr(conn, "_test_serialized_contents", None)
                 if contents:
                     conn.creation.deserialize_db_from_string(contents)
+
+
+def _default_status(fields: dict) -> MembershipStatus:
+    """A member, unless the test's own pause or archive fields say otherwise."""
+    if fields.get("archived_at") is not None:
+        return MembershipStatus.ARCHIVED
+    if fields.get("attendance_paused_at") is not None:
+        return MembershipStatus.ATTENDANCE_PAUSED
+    return MembershipStatus.ACTIVE_MEMBER
 
 
 @pytest.fixture(autouse=True)
@@ -91,7 +100,7 @@ def _default_test_users_consented(monkeypatch):
 
     def create_user(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("guidelines_consent_at", timezone.now())
-        extra_fields.setdefault("is_member", True)
+        extra_fields.setdefault("membership_status", _default_status(extra_fields))
         return original(self, phone_number, password=password, **extra_fields)
 
     monkeypatch.setattr(UserManager, "create_user", create_user)
@@ -162,7 +171,7 @@ def manage_users_user(db):
     )
     role = Role.objects.create(
         name="admin_mgr",
-        permissions=[PermissionKey.MANAGE_USERS, PermissionKey.CREATE_USER],
+        permissions=[PermissionKey.MANAGE_USERS],
     )
     user.roles.add(role)
     return user

@@ -8,7 +8,7 @@ from config.media_proxy import media_path
 from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator, model_validator
 
 from users._consents import ConsentType
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
 
@@ -145,6 +145,7 @@ class UserOut(BaseModel):
     birthday: BirthdayOut | None = None
     veganniversary: VeganniversaryOut | None = None
     is_member: bool = True
+    membership_status: MembershipStatus = MembershipStatus.ACTIVE_MEMBER
     is_superuser: bool = False
     needs_onboarding: bool = False
     needs_password_reset: bool = False
@@ -165,7 +166,6 @@ class UserOut(BaseModel):
     whatsapp_reminder_opt_out: bool = False
     attendance_nudge_opt_out: bool = False
     host_digest_opt_out: bool = False
-    is_paused: bool = False
     attendance_paused_at: datetime | None = None
     restored_at: datetime | None = None
     unpaused_at: datetime | None = None
@@ -198,6 +198,7 @@ class UserOut(BaseModel):
             birthday=BirthdayOut.from_user(user),
             veganniversary=VeganniversaryOut.from_user(user),
             is_member=user.is_member,
+            membership_status=MembershipStatus(user.membership_status),
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
             needs_password_reset=user.needs_password_reset,
@@ -218,7 +219,6 @@ class UserOut(BaseModel):
             whatsapp_reminder_opt_out=user.whatsapp_reminder_opt_out,
             attendance_nudge_opt_out=user.attendance_nudge_opt_out,
             host_digest_opt_out=user.host_digest_opt_out,
-            is_paused=user.is_paused,
             attendance_paused_at=user.attendance_paused_at,
             restored_at=user.restored_at,
             unpaused_at=user.unpaused_at,
@@ -273,47 +273,12 @@ class MemberDirectoryOut(BaseModel):
     profile_photo_url: str = ""
 
 
-class UserCreateIn(BaseModel):
-    phone_number: str = Field(max_length=FieldLimit.PHONE)
-    first_name: str = Field(default="", max_length=FieldLimit.FIRST_NAME)
-    last_name: str = Field(default="", max_length=FieldLimit.LAST_NAME)
-    email: EmailStr
-    role_id: str | None = None
-
-
-class UserCreateOut(BaseModel):
-    id: str
-    phone_number: str
-    first_name: str = ""
-    last_name: str = ""
-    full_name: str = ""
-    magic_link_token: str
-
-
-class BulkUserCreateIn(BaseModel):
-    phone_numbers: list[str]
-
-
-class BulkUserResult(BaseModel):
-    row: int
-    phone_number: str
-    success: bool
-    error: str | None = None
-    magic_link_token: str | None = None
-
-
-class BulkUserCreateOut(BaseModel):
-    results: list[BulkUserResult]
-    created: int
-    failed: int
-
-
 class UserPatchIn(BaseModel):
     phone_number: str | None = Field(default=None, max_length=FieldLimit.PHONE)
     first_name: str | None = Field(default=None, max_length=FieldLimit.FIRST_NAME)
     last_name: str | None = Field(default=None, max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
-    is_paused: bool | None = None
+    guidelines_paused: bool | None = None
     attendance_paused: bool | None = None
     has_joined_whatsapp: bool | None = None
 

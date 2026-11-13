@@ -37,6 +37,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: Filter.TENTATIVE, label: 'tentative' },
   { value: Filter.APPROVED, label: 'approved' },
   { value: Filter.REJECTED, label: 'rejected' },
+  { value: Filter.CLOSED, label: 'closed' },
   { value: Filter.RESTORED, label: 'restored' },
 ];
 
@@ -345,9 +346,7 @@ function confirmPropsForDecision(status: ConfirmedDecision, name: string) {
 }
 
 function sortKey(request: JoinRequestSummary): number {
-  const stamp =
-    request.approvedAt ?? request.rejectedAt ?? request.tentativeAt ?? request.submittedAt;
-  return new Date(stamp).getTime();
+  return new Date(request.statusChangedAt ?? request.submittedAt).getTime();
 }
 
 function matchesQuery(request: JoinRequestSummary, q: string): boolean {

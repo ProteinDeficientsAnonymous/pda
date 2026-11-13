@@ -74,7 +74,7 @@ def send_rsvp_reminders_for_event(sender: EmailSender, event: Event, now: dateti
             user__email__gt="",
         ).select_related("user")
     )
-    member_ids = member_email_ids(event, [str(rsvp.user_id) for rsvp in rsvps])
+    member_ids = member_email_ids([str(rsvp.user_id) for rsvp in rsvps])
     return sum(_send(sender, event, rsvp, member_ids) for rsvp in rsvps)
 
 

@@ -26,7 +26,7 @@ import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/we
 
 import { attendedCountLabel } from './attendedCountLabel';
 import { MemberConnectedApps } from './MemberConnectedApps';
-import { isAttendancePaused } from './memberPause';
+import { isAttendancePaused, isGuidelinesPaused, isTentative } from './memberPause';
 import { MemberPauseToggles } from './MemberPauseToggles';
 import { PauseBadges } from './PauseBadges';
 
@@ -48,11 +48,15 @@ function MemberDetailView({ member }: { member: Member }) {
   const navigate = useNavigate();
   const archive = useArchiveUser();
   const { confirm, element: confirmElement } = useConfirm();
+  const tentative = isTentative(member);
 
   async function onArchive() {
+    const name = member.fullName || formatPhone(member.phoneNumber);
     const confirmed = await confirm({
       title: 'archive member',
-      message: `archive ${member.fullName || formatPhone(member.phoneNumber)}? they'll lose access immediately — you can restore them later by approving a new join request.`,
+      message: tentative
+        ? `archive ${name}? this closes their tentative join request, so checking in won't approve them. they can apply to join again later.`
+        : `archive ${name}? they'll lose access immediately — you can restore them later by approving a new join request.`,
       confirmLabel: 'archive',
       destructive: true,
     });
@@ -88,15 +92,22 @@ function MemberDetailView({ member }: { member: Member }) {
         </div>
       </header>
 
-      <MemberRolesSection
-        key={`${member.id}:${member.roles
-          .map((r) => r.id)
-          .sort()
-          .join(',')}`}
-        member={member}
-      />
-
-      <MemberWhatsappSection member={member} />
+      {tentative ? (
+        <p className="text-muted mb-4 text-sm">
+          tentative: approve them from join requests, or archive them here
+        </p>
+      ) : (
+        <>
+          <MemberRolesSection
+            key={`${member.id}:${member.roles
+              .map((r) => r.id)
+              .sort()
+              .join(',')}`}
+            member={member}
+          />
+          <MemberWhatsappSection member={member} />
+        </>
+      )}
 
       <MemberMagicLinkSection member={member} />
 
@@ -127,13 +138,15 @@ function MemberDetailView({ member }: { member: Member }) {
           <Button variant="secondary" onClick={() => void onArchive()} disabled={archive.isPending}>
             {archive.isPending ? 'archiving…' : 'archive'}
           </Button>
-          <Button
-            onClick={() => {
-              setEditing(true);
-            }}
-          >
-            edit
-          </Button>
+          {tentative ? null : (
+            <Button
+              onClick={() => {
+                setEditing(true);
+              }}
+            >
+              edit
+            </Button>
+          )}
         </div>
       )}
 
@@ -162,7 +175,9 @@ function MemberRolesSection({ member }: { member: Member }) {
   }
 
   if (isAttendancePaused(member)) {
-    return <p className="text-muted mb-4 text-sm">roles are cleared while event rqmt paused</p>;
+    return (
+      <p className="text-muted mb-4 text-sm">roles are locked to member while event rqmt paused</p>
+    );
   }
   if (isPending) {
     return <p className="text-muted mb-4 text-sm">loading roles…</p>;
@@ -369,7 +384,7 @@ function MemberEditForm({
   const [phoneNumber, setPhoneNumber] = useState(member.phoneNumber);
   const [email, setEmail] = useState(member.email);
   const [pause, setPause] = useState({
-    isPaused: member.isPaused,
+    guidelinesPaused: isGuidelinesPaused(member),
     attendancePaused: isAttendancePaused(member),
   });
   const [error, setError] = useState<string | null>(null);
@@ -388,7 +403,8 @@ function MemberEditForm({
     if (lastName.trim() !== member.lastName) patch.lastName = lastName.trim();
     if (phoneNumber !== member.phoneNumber) patch.phoneNumber = phoneNumber.trim();
     if (email !== member.email) patch.email = email.trim();
-    if (pause.isPaused !== member.isPaused) patch.isPaused = pause.isPaused;
+    if (pause.guidelinesPaused !== isGuidelinesPaused(member))
+      patch.guidelinesPaused = pause.guidelinesPaused;
     const wasAttendancePaused = isAttendancePaused(member);
     if (pause.attendancePaused !== wasAttendancePaused)
       patch.attendancePaused = pause.attendancePaused;

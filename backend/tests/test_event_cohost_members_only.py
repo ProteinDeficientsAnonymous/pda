@@ -4,7 +4,8 @@ import pytest
 from community.models import Event, EventCoHostInvite, EventStatus
 from community.models.choices import CoHostInviteStatus
 from community.validation import Code
-from users.models import User
+from django.utils import timezone
+from users.models import MembershipStatus, User
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
@@ -24,7 +25,9 @@ def member(db) -> User:
 @pytest.fixture
 def tentative(db) -> User:
     return User.objects.create_user(
-        phone_number="+12025550603", first_name="Tentative", is_member=False
+        phone_number="+12025550603",
+        first_name="Tentative",
+        membership_status=MembershipStatus.TENTATIVE,
     )
 
 
@@ -63,6 +66,22 @@ class TestCohostsMustBeMembers:
         assert response.status_code == 400
         assert_error_code(response, Code.CoHostInvite.NOT_MEMBER)
         assert not EventCoHostInvite.objects.filter(event=event, user=tentative).exists()
+
+    def test_add_cohosts_rejects_archived_member(self, api_client, event, creator):
+        archived = User.objects.create_user(
+            phone_number="+12025550604",
+            first_name="Archived",
+            membership_status=MembershipStatus.ARCHIVED,
+            archived_at=timezone.now(),
+        )
+        response = api_client.post(
+            f"/api/community/events/{event.id}/cohost-invites/",
+            data=json.dumps({"user_ids": [str(archived.pk)]}),
+            content_type="application/json",
+            **auth_headers_for(creator),
+        )
+        assert response.status_code == 400
+        assert_error_code(response, Code.CoHostInvite.NOT_MEMBER)
 
     def test_patch_rejects_tentative_member(self, api_client, event, creator, member, tentative):
         response = api_client.patch(

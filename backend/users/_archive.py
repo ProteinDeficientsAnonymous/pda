@@ -1,7 +1,9 @@
 from collections.abc import Iterable
 
 from community.events.helpers import broadcast_capacity_change
+from community.join_requests.closing import close_tentative_requests
 from community.models import (
+    CancelReason,
     CoHostInviteStatus,
     Event,
     EventCoHostInvite,
@@ -18,7 +20,7 @@ from django.utils import timezone
 from notifications.service import broadcast_cohost_change
 
 from users.helpers import strip_elevated_roles
-from users.models import User
+from users.models import MembershipStatus, User
 
 HELD_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.WAITLISTED)
 _LIVE_EVENT_STATUSES = (EventStatus.DRAFT, EventStatus.ACTIVE)
@@ -36,16 +38,28 @@ def archive_user(request, user: User) -> list[str]:
     return(list[str]): ids of the elevated roles that were stripped
     """
     with transaction.atomic():
+        actor = getattr(request, "auth", None)
         user.archived_at = timezone.now()
+        user.status_before_archive = user.membership_status
         user.calendar_token = ""
-        user.save(update_fields=["archived_at", "calendar_token"])
+        user.save(
+            update_fields=[
+                "archived_at",
+                "status_before_archive",
+                "calendar_token",
+                *user.set_membership_status(MembershipStatus.ARCHIVED, by=actor),
+            ]
+        )
+        close_tentative_requests(request, user)
         removed_role_ids = strip_elevated_roles(user)
-        release_upcoming_rsvps(request, user)
+        release_upcoming_rsvps(request, user, CancelReason.ARCHIVE)
         step_down_as_cohost(user)
     return removed_role_ids
 
 
-def release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -> None:
+def release_upcoming_rsvps(
+    request, user: User, reason: CancelReason, event_filter: Q | None = None
+) -> None:
     event_ids = EventRSVP.objects.filter(
         upcoming_events_q("event__"), user=user, status__in=HELD_RSVP_STATUSES
     ).values_list("event_id", flat=True)
@@ -55,7 +69,8 @@ def release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.status = RSVPStatus.CANT_GO
         rsvp.cancelled_at = timezone.now()
-        rsvp.save(update_fields=["status", "cancelled_at", "updated_at"])
+        rsvp.cancel_reason = reason
+        rsvp.save(update_fields=["status", "cancelled_at", "cancel_reason", "updated_at"])
         if not was_attending:
             continue
         promoted_user_ids = promote_from_waitlist(event)

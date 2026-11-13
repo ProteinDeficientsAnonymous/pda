@@ -1,7 +1,9 @@
 import { AxiosError } from 'axios';
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
+import { extractApiError, hasErrorCode } from '@/api/apiErrors';
+import { Code } from '@/api/validationCodes.gen';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { postAuthRedirect } from '@/models/user';
@@ -10,7 +12,7 @@ import { AuthLayout } from './AuthLayout';
 import { safeRedirect } from './redirect';
 import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
 
-type State = 'pending' | 'expired' | 'cross_user';
+type State = 'pending' | 'expired' | 'cross_user' | 'blocked' | 'rejected';
 
 export default function MagicLoginScreen() {
   const { token } = useParams();
@@ -18,6 +20,7 @@ export default function MagicLoginScreen() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [state, setState] = useState<State>('pending');
+  const [blockedMessage, setBlockedMessage] = useState('');
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   // Magic-login tokens are single-use. Guard against StrictMode double-fire
   // and any re-mount from upstream (e.g. AuthBoot) so we only spend the
@@ -45,6 +48,19 @@ export default function MagicLoginScreen() {
         void navigate(safeRedirect(params.get('redirect')), { replace: true });
       })
       .catch((err: unknown) => {
+        if (hasErrorCode(err, Code.Auth.AccountRejected)) {
+          setState('rejected');
+          return;
+        }
+        if (
+          hasErrorCode(err, Code.Auth.AccountGuidelinesPaused) ||
+          hasErrorCode(err, Code.Auth.AccountArchived) ||
+          hasErrorCode(err, Code.Auth.NotAMember)
+        ) {
+          setBlockedMessage(extractApiError(err) ?? '');
+          setState('blocked');
+          return;
+        }
         // 403 means the caller is already signed in as a different user. The
         // store preserves that session, so surface a distinct message instead
         // of the generic "link expired" and a "request new link" CTA that
@@ -58,6 +74,35 @@ export default function MagicLoginScreen() {
   }, [token, magicLogin, navigate, params]);
 
   if (!token) return <Navigate to="/login" replace />;
+
+  if (state === 'rejected') {
+    return (
+      <AuthLayout title="not approved" subtitle="your request to join wasn't approved">
+        <p className="text-foreground-tertiary text-sm">
+          you're welcome to{' '}
+          <Link to="/join" className="text-brand-700 hover:text-brand-900">
+            request to join again
+          </Link>
+        </p>
+      </AuthLayout>
+    );
+  }
+
+  if (state === 'blocked') {
+    return (
+      <AuthLayout title="can't sign in" subtitle={blockedMessage}>
+        <Button
+          fullWidth
+          className="mt-4"
+          onClick={() => {
+            void navigate('/calendar', { replace: true });
+          }}
+        >
+          back to calendar
+        </Button>
+      </AuthLayout>
+    );
+  }
 
   if (state === 'cross_user') {
     return (

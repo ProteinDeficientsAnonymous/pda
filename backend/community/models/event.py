@@ -11,6 +11,7 @@ from django.utils import timezone
 from community.models.choices import (
     RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
+    CancelReason,
     EventFlagStatus,
     EventFormat,
     EventStatus,
@@ -242,6 +243,9 @@ class EventRSVP(models.Model):
     )
     plus_one_checked_in_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancel_reason = models.CharField(
+        max_length=20, choices=CancelReason.choices, null=True, blank=True
+    )
     pre_cancel_status = models.CharField(
         max_length=20, choices=RSVPStatus.choices, null=True, blank=True
     )

@@ -6,8 +6,20 @@ from django.utils import timezone
 from users.models import (
     PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS,
     PUBLIC_RSVP_TOKEN_TTL_DAYS,
+    MembershipStatus,
     PublicRsvpToken,
     User,
+)
+
+NOT_PUBLIC_RSVPERS = pytest.mark.parametrize(
+    "status",
+    [
+        MembershipStatus.TENTATIVE,
+        MembershipStatus.ATTENDANCE_PAUSED,
+        MembershipStatus.ACTIVE_MEMBER,
+        MembershipStatus.GUIDELINES_PAUSED,
+        MembershipStatus.ARCHIVED,
+    ],
 )
 
 
@@ -18,7 +30,7 @@ def public_rsvper(db):
         first_name="Non",
         last_name="Member",
         email="nonmember@example.com",
-        is_member=False,
+        membership_status=MembershipStatus.NONE,
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])
@@ -46,14 +58,13 @@ class TestIssue:
         second = PublicRsvpToken.issue(public_rsvper)
         assert first.token != second.token
 
-    def test_issue_rejects_member(self, db):
-        member = User.objects.create_user(
-            phone_number="+12025559002",
-            first_name="Member",
-            is_member=True,
-        )
+    @NOT_PUBLIC_RSVPERS
+    @pytest.mark.parametrize("issue", [PublicRsvpToken.issue, PublicRsvpToken.issue_or_extend])
+    def test_only_a_public_rsvper_gets_a_token(self, public_rsvper, status, issue):
+        User.objects.filter(pk=public_rsvper.pk).update(membership_status=status)
+        public_rsvper.refresh_from_db()
         with pytest.raises(ValidationError):
-            PublicRsvpToken.issue(member)
+            issue(public_rsvper)
 
 
 @pytest.mark.django_db
@@ -121,7 +132,7 @@ class TestIssueOrExtend:
         member = User.objects.create_user(
             phone_number="+12025559003",
             first_name="Member",
-            is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         with pytest.raises(ValidationError):
             PublicRsvpToken.issue_or_extend(member)
@@ -148,6 +159,12 @@ class TestResolveUser:
     def test_revoked_token_returns_none(self, public_rsvper):
         token = PublicRsvpToken.issue(public_rsvper)
         token.revoke()
+        assert PublicRsvpToken.resolve_user(token.token) is None
+
+    @NOT_PUBLIC_RSVPERS
+    def test_anyone_but_a_public_rsvper_returns_none(self, public_rsvper, status):
+        token = PublicRsvpToken.issue(public_rsvper)
+        User.objects.filter(pk=public_rsvper.pk).update(membership_status=status)
         assert PublicRsvpToken.resolve_user(token.token) is None
 
 

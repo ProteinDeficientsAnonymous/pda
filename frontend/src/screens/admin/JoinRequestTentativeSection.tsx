@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 import type { JoinRequestRsvpEvent, JoinRequestSummary } from '@/api/join';
 import { Button } from '@/components/ui/Button';
@@ -19,6 +20,17 @@ export function TentativeActions({
         <Button onClick={onApprove} disabled={busy}>
           manually approve
         </Button>
+        <p className="text-muted mt-2 text-xs">
+          tentative members can&rsquo;t be rejected — archive them from the{' '}
+          {request.userId ? (
+            <Link to={`/admin/members/${request.userId}`} className="underline">
+              members screen
+            </Link>
+          ) : (
+            'members screen'
+          )}{' '}
+          instead
+        </p>
       </div>
     </div>
   );

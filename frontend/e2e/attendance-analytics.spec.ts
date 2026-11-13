@@ -32,18 +32,21 @@ test('members tab ranks pause candidates first and the at-risk filter hides comp
   await expect(cards.first()).toContainText(data.at_risk_name);
 });
 
-test('admin with manage_users can pause an at-risk member', async ({ context, page }) => {
+test('admin with manage_users can attendance-pause an at-risk member', async ({
+  context,
+  page,
+}) => {
   const data = seed('attendance-analytics');
   await signInWithToken(context, data.refresh_token);
   await openMembersTab(page, data.search);
 
   const card = page.getByRole('article').filter({ hasText: data.at_risk_name });
-  await card.getByRole('button', { name: 'pause member' }).click();
+  await card.getByRole('button', { name: 'add attendance pause' }).click();
   await page
-    .getByRole('dialog', { name: 'pause this member?' })
+    .getByRole('dialog', { name: 'pause for event rqmt?' })
     .getByRole('button', { name: 'pause' })
     .click();
 
   await expect(card.getByText('paused', { exact: true })).toBeVisible();
-  await expect(card.getByRole('button', { name: 'pause member' })).toHaveCount(0);
+  await expect(card.getByRole('button', { name: 'add attendance pause' })).toHaveCount(0);
 });

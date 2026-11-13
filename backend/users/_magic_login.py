@@ -5,6 +5,7 @@ import logging
 from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
@@ -13,6 +14,7 @@ from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.tokens import RefreshToken
 
+from users._login_blocks import reject_blocked_login
 from users.models import MagicLoginToken, User
 from users.refresh_cookie import set_refresh_cookie
 from users.schemas import ErrorOut, TokenOut
@@ -54,22 +56,7 @@ def _validate_magic_user(request, magic: MagicLoginToken) -> None:
             ),
         )
         raise_validation(Code.Auth.ALREADY_SIGNED_IN_AS_DIFFERENT_USER, status_code=403)
-    if magic.user.archived_at is not None:
-        audit_log(
-            logging.WARNING,
-            "magic_login_archived",
-            request,
-            target=AuditTarget(type=AuditTargetType.USER, id=str(magic.user.pk)),
-        )
-        raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
-    if magic.user.is_paused:
-        audit_log(
-            logging.WARNING,
-            "magic_login_paused",
-            request,
-            target=AuditTarget(type=AuditTargetType.USER, id=str(magic.user.pk)),
-        )
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+    reject_blocked_login(request, magic.user, "magic_login")
 
 
 def _consume_magic_token(request, token: str) -> MagicLoginToken:
@@ -83,7 +70,7 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
             magic = (
                 MagicLoginToken.objects.select_for_update().select_related("user").get(token=token)
             )
-        except MagicLoginToken.DoesNotExist:
+        except (MagicLoginToken.DoesNotExist, ValidationError):
             audit_log(
                 logging.WARNING,
                 "magic_login_failed",

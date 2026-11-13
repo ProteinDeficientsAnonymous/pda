@@ -21,6 +21,7 @@ export const NotificationType = {
   SurveyResponse: 'survey_response',
   EventUnpublished: 'event_unpublished',
   MemberRestored: 'member_restored',
+  CheckInPromotionFailed: 'check_in_promotion_failed',
   AccountDeleted: 'account_deleted',
 } as const;
 
