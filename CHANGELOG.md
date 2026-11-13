@@ -1,3 +1,13 @@
+# [0.236.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.235.0...v0.236.0) (2026-11-13)
+
+
+### Features
+
+* day-before rsvp reminder email template ([e2fa559](https://github.com/ProteinDeficientsAnonymous/pda/commit/e2fa5595e35f9841053a0ccebb926c8ac3a984a2))
+* day-before rsvp reminder email template ([#2134](https://github.com/ProteinDeficientsAnonymous/pda/issues/2134)) ([b34d2ae](https://github.com/ProteinDeficientsAnonymous/pda/commit/b34d2ae2f4f602f6d22de86151c1c83c3b9b04ea))
+* day-before rsvp reminder emails via daily cron ([#2135](https://github.com/ProteinDeficientsAnonymous/pda/issues/2135)) ([d0417a9](https://github.com/ProteinDeficientsAnonymous/pda/commit/d0417a94a8e20b2f3d2d9b735b9a4433704c49de))
+* email guests the day before an event to remind them of their rsvp ([db4894e](https://github.com/ProteinDeficientsAnonymous/pda/commit/db4894e4fd80573575aefe2cbd93add17b86082a))
+
 # [0.235.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.234.0...v0.235.0) (2026-11-13)
 
 
