@@ -1,3 +1,10 @@
+## [0.233.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.7...v0.233.8) (2026-11-13)
+
+
+### Bug Fixes
+
+* 2424 - return 400 for a malformed magic-login token ([#2428](https://github.com/ProteinDeficientsAnonymous/pda/issues/2428)) ([a40f143](https://github.com/ProteinDeficientsAnonymous/pda/commit/a40f143aba1956b4af28a8dd1dd649c0a2894efd))
+
 ## [0.233.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.6...v0.233.7) (2026-11-13)
 
 
