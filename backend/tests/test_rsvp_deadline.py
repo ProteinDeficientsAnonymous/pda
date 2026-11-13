@@ -1,12 +1,10 @@
-from datetime import timedelta
-
 import pytest
 from community.models import Event, EventPoll, PollOption
 from community.validation import Code
-from django.utils import timezone
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
+from tests._events import make_event
 from tests._time import future_iso
 
 EVENTS_URL = "/api/community/events/"
@@ -15,16 +13,6 @@ EVENTS_URL = "/api/community/events/"
 @pytest.fixture
 def host_headers(test_user):
     return auth_headers_for(test_user)
-
-
-def _event(host, deadline_in: timedelta | None) -> Event:
-    return Event.objects.create(
-        title="Deadline Event",
-        start_datetime=future_iso(days=7),
-        rsvp_enabled=True,
-        rsvp_deadline=None if deadline_in is None else timezone.now() + deadline_in,
-        created_by=host,
-    )
 
 
 def _patch(api_client, event, headers, body):
@@ -67,7 +55,7 @@ class TestSetDeadline:
         assert_error_code(response, Code.Event.RSVP_DEADLINE_AFTER_START, "rsvp_deadline")
 
     def test_patch_sets_and_clears_deadline(self, api_client, test_user, host_headers):
-        event = _event(test_user, None)
+        event = make_event(created_by=test_user)
 
         set_resp = _patch(api_client, event, host_headers, {"rsvp_deadline": future_iso(5)})
         assert set_resp.status_code == 200
@@ -81,13 +69,13 @@ class TestSetDeadline:
         assert event.rsvp_deadline is None
 
     def test_patch_rejects_start_moved_before_deadline(self, api_client, test_user, host_headers):
-        event = _event(test_user, timedelta(days=5))
+        event = make_event(created_by=test_user, rsvp_deadline=future_iso(5))
         response = _patch(api_client, event, host_headers, {"start_datetime": future_iso(3)})
         assert response.status_code == 422
         assert_error_code(response, Code.Event.RSVP_DEADLINE_AFTER_START)
 
     def test_patch_allows_deadline_on_tbd_event(self, api_client, test_user, host_headers):
-        event = _event(test_user, None)
+        event = make_event(created_by=test_user)
         response = _patch(
             api_client,
             event,
@@ -99,9 +87,12 @@ class TestSetDeadline:
     def test_patch_rejects_leaving_tbd_with_start_before_deadline(
         self, api_client, test_user, host_headers
     ):
-        event = _event(test_user, timedelta(days=10))
-        event.datetime_tbd = True
-        event.save(update_fields=["datetime_tbd"])
+        event = make_event(
+            created_by=test_user,
+            start_datetime=future_iso(7),
+            rsvp_deadline=future_iso(10),
+            datetime_tbd=True,
+        )
         response = _patch(api_client, event, host_headers, {"datetime_tbd": False})
         assert response.status_code == 422
         assert_error_code(response, Code.Event.RSVP_DEADLINE_AFTER_START)
@@ -113,12 +104,11 @@ class TestPollFinalize:
     def test_drops_deadline_after_chosen_start(
         self, api_client, test_user, host_headers, deadline_days, kept
     ):
-        event = Event.objects.create(
-            title="Poll Event",
-            datetime_tbd=True,
-            rsvp_enabled=True,
-            rsvp_deadline=future_iso(deadline_days),
+        event = make_event(
             created_by=test_user,
+            start_datetime=None,
+            datetime_tbd=True,
+            rsvp_deadline=future_iso(deadline_days),
         )
         poll = EventPoll.objects.create(event=event, created_by=test_user)
         option = PollOption.objects.create(poll=poll, datetime=future_iso(7), display_order=0)
