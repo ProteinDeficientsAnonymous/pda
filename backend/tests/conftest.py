@@ -171,7 +171,7 @@ def manage_users_user(db):
     )
     role = Role.objects.create(
         name="admin_mgr",
-        permissions=[PermissionKey.MANAGE_USERS, PermissionKey.CREATE_USER],
+        permissions=[PermissionKey.MANAGE_USERS],
     )
     user.roles.add(role)
     return user

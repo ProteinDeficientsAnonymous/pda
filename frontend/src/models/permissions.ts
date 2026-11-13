@@ -1,5 +1,4 @@
 export const Permission = {
-  CreateUser: 'create_user',
   ManageUsers: 'manage_users',
   ManageRoles: 'manage_roles',
   ApproveJoinRequests: 'approve_join_requests',

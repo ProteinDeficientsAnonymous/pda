@@ -93,7 +93,7 @@ def test_whoami_reports_name_roles_and_permissions(manage_users_user, as_user):
     assert result.structured_content == {  # type: ignore[union-attr]
         "name": "Admin User",
         "roles": ["admin_mgr"],
-        "permissions": sorted([PermissionKey.CREATE_USER, PermissionKey.MANAGE_USERS]),
+        "permissions": [PermissionKey.MANAGE_USERS],
     }
 
 
