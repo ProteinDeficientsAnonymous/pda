@@ -39,6 +39,7 @@ export interface EventFormValues {
   rsvpEnabled: boolean;
   allowPlusOnes: boolean;
   maxAttendees: number | null;
+  rsvpDeadline: string | null;
   whatsappLink: string;
   partifulLink: string;
   otherLink: string;
@@ -86,6 +87,7 @@ const FIELD_TO_WIRE: WireFieldMap = {
   rsvpEnabled: ['rsvp_enabled', (v) => v],
   allowPlusOnes: ['allow_plus_ones', (v) => v],
   maxAttendees: ['max_attendees', (v) => v],
+  rsvpDeadline: ['rsvp_deadline', (v) => v],
   whatsappLink: ['whatsapp_link', (v) => v],
   partifulLink: ['partiful_link', (v) => v],
   otherLink: ['other_link', (v) => v],
@@ -323,6 +325,7 @@ export function emptyEventFormValues(): EventFormValues {
     rsvpEnabled: true,
     allowPlusOnes: true,
     maxAttendees: null,
+    rsvpDeadline: null,
     whatsappLink: '',
     partifulLink: '',
     otherLink: '',
@@ -388,6 +391,7 @@ export function eventToFormValues(e: Event): EventFormValues {
     rsvpEnabled: e.rsvpEnabled,
     allowPlusOnes: e.allowPlusOnes,
     maxAttendees: e.maxAttendees,
+    rsvpDeadline: e.rsvpDeadline ? e.rsvpDeadline.toISOString() : null,
     whatsappLink: e.whatsappLink,
     partifulLink: e.partifulLink,
     otherLink: e.otherLink,

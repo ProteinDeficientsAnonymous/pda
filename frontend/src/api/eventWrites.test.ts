@@ -90,6 +90,10 @@ describe('toPartialWireBody', () => {
     expect(body).toEqual({ rsvp_enabled: false, price: '', max_attendees: null });
   });
 
+  it('sends a cleared rsvp deadline as null', () => {
+    expect(toPartialWireBody({ rsvpDeadline: null })).toEqual({ rsvp_deadline: null });
+  });
+
   it('drops explicitly-undefined keys', () => {
     const body = toPartialWireBody({ title: 'x', description: undefined });
     expect(body).toEqual({ title: 'x' });

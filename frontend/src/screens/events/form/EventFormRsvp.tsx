@@ -1,6 +1,9 @@
+import { subDays } from 'date-fns';
 import { useId } from 'react';
 
 import type { EventFormValues } from '@/api/eventWrites';
+import { Button } from '@/components/ui/Button';
+import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
 import { isOfficialOrClub } from '@/models/event';
@@ -77,7 +80,50 @@ export function EventFormRsvp({ values, onChange, errors }: Props) {
             }}
             error={errors.maxAttendees}
           />
+          <RsvpDeadlineField values={values} onChange={onChange} error={errors.rsvpDeadline} />
         </>
+      ) : null}
+    </div>
+  );
+}
+
+function RsvpDeadlineField({
+  values,
+  onChange,
+  error,
+}: {
+  values: EventFormValues;
+  onChange: (patch: Partial<EventFormValues>) => void;
+  error: string | undefined;
+}) {
+  const start = values.startDatetime && !values.datetimeTbd ? new Date(values.startDatetime) : null;
+  return (
+    <div className="flex flex-col gap-1">
+      <DateTimePicker
+        label="rsvp deadline"
+        value={values.rsvpDeadline}
+        onChange={(iso) => {
+          onChange({ rsvpDeadline: iso });
+        }}
+        error={error}
+        optional
+        disablePast
+        defaultDate={start ? subDays(start, 1) : null}
+      />
+      <p className="text-foreground-secondary text-xs">
+        after this, guests can't rsvp or change their rsvp — except going to can't go. maybes get a
+        reminder email a day before.
+      </p>
+      {values.rsvpDeadline ? (
+        <Button
+          variant="ghost"
+          className="self-start"
+          onClick={() => {
+            onChange({ rsvpDeadline: null });
+          }}
+        >
+          clear deadline
+        </Button>
       ) : null}
     </div>
   );

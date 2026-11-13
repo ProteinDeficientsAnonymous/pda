@@ -42,6 +42,15 @@ export function validateEventForm(
     }
   }
 
+  if (
+    values.rsvpDeadline &&
+    values.startDatetime &&
+    !values.datetimeTbd &&
+    new Date(values.rsvpDeadline) > new Date(values.startDatetime)
+  ) {
+    errors.rsvpDeadline = 'must be before the event starts';
+  }
+
   // null = unlimited (leave the field blank). Otherwise must be a positive
   // integer — 0 would let someone create an event nobody can rsvp to.
   if (
