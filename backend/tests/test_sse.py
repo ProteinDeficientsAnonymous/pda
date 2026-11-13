@@ -6,39 +6,121 @@ from unittest.mock import MagicMock
 
 import psycopg
 import pytest
+from asgiref.sync import async_to_sync
+from community.models import Event, EventType, PageVisibility
 from django.conf import settings
 from django.db import DatabaseError
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from notifications import sse
 from notifications.models import SseTicket
-from notifications.sse import format_notify_for_user
+from notifications.sse import (
+    MAX_ANONYMOUS_CONNECTIONS,
+    StreamScope,
+    consume_ticket,
+    format_notify_for_user,
+    release_anonymous_slot,
+    sse_generator,
+    try_acquire_anonymous_slot,
+)
 
 from tests._auth import auth_headers_for
+from tests._time import future_iso
+
+_MEMBER = StreamScope(user_id="user-2", event_id=None)
+_ANON_EVENT_1 = StreamScope(user_id=None, event_id="event-1")
 
 
 @pytest.mark.django_db
 class TestFormatNotifyForUser:
     def test_event_update_matches_target_user(self):
-        frame = format_notify_for_user("event_updates", "user-1:event-1", "user-1")
+        frame = format_notify_for_user("event_updates", "user-2:event-1", _MEMBER)
         assert frame is not None
         assert "event: event_updated" in frame
 
     def test_event_update_skips_other_user(self):
-        assert format_notify_for_user("event_updates", "user-1:event-1", "user-2") is None
+        assert format_notify_for_user("event_updates", "user-1:event-1", _MEMBER) is None
 
     def test_event_update_wildcard_matches_any_user(self):
-        frame = format_notify_for_user("event_updates", "*:event-1", "user-2")
+        frame = format_notify_for_user("event_updates", "*:event-1", _MEMBER)
         assert frame is not None
         assert "event: event_updated" in frame
 
+    def test_anonymous_gets_wildcard_for_its_event(self):
+        frame = format_notify_for_user("event_updates", "*:event-1", _ANON_EVENT_1)
+        assert frame is not None
+        assert '"event_id": "event-1"' in frame
+
+    def test_anonymous_skips_wildcard_for_other_event(self):
+        assert format_notify_for_user("event_updates", "*:event-2", _ANON_EVENT_1) is None
+
+    def test_anonymous_skips_targeted_ping_for_its_event(self):
+        assert format_notify_for_user("event_updates", "user-1:event-1", _ANON_EVENT_1) is None
+
+    def test_personal_notification_never_matches_anonymous(self):
+        assert format_notify_for_user("notifications", "user-1", _ANON_EVENT_1) is None
+
+    def test_unscoped_anonymous_gets_nothing(self):
+        scope = StreamScope(user_id=None, event_id=None)
+        assert format_notify_for_user("event_updates", "*:event-1", scope) is None
+
     def test_read_ping_matches_target_user(self):
-        frame = format_notify_for_user("notifications", "read:user-1", "user-1")
+        scope = StreamScope(user_id="user-1", event_id=None)
+        frame = format_notify_for_user("notifications", "read:user-1", scope)
         assert frame is not None
         assert "event: notifications_read" in frame
 
     def test_read_ping_skips_other_user(self):
-        assert format_notify_for_user("notifications", "read:user-1", "user-2") is None
+        assert format_notify_for_user("notifications", "read:user-1", _MEMBER) is None
+
+    def test_read_ping_never_matches_anonymous(self):
+        assert format_notify_for_user("notifications", "read:user-1", _ANON_EVENT_1) is None
+
+
+@pytest.mark.django_db
+class TestAnonymousConnectionCap:
+    @pytest.fixture(autouse=True)
+    def _reset_counter(self, monkeypatch):
+        monkeypatch.setattr(sse, "_anonymous_connections", 0)
+
+    def test_acquire_fails_once_at_capacity(self):
+        for _ in range(MAX_ANONYMOUS_CONNECTIONS):
+            assert try_acquire_anonymous_slot() is True
+        assert try_acquire_anonymous_slot() is False
+
+    def test_release_frees_a_slot_for_reuse(self):
+        for _ in range(MAX_ANONYMOUS_CONNECTIONS):
+            assert try_acquire_anonymous_slot() is True
+        release_anonymous_slot()
+        assert try_acquire_anonymous_slot() is True
+
+    def test_release_never_goes_negative(self):
+        release_anonymous_slot()
+        release_anonymous_slot()
+        for _ in range(MAX_ANONYMOUS_CONNECTIONS):
+            assert try_acquire_anonymous_slot() is True
+        assert try_acquire_anonymous_slot() is False
+
+    def test_generator_yields_nothing_when_full(self, monkeypatch):
+        monkeypatch.setattr(sse, "_anonymous_connections", MAX_ANONYMOUS_CONNECTIONS)
+
+        async def drain():
+            return [frame async for frame in sse_generator(_ANON_EVENT_1)]
+
+        assert async_to_sync(drain)() == []
+        assert sse._anonymous_connections == MAX_ANONYMOUS_CONNECTIONS
+
+    def test_generator_releases_slot_after_stream_error(self, monkeypatch):
+        def broken_dsn():
+            raise RuntimeError("no db")
+
+        monkeypatch.setattr(sse, "_build_async_dsn", broken_dsn)
+
+        async def drain():
+            return [frame async for frame in sse_generator(_ANON_EVENT_1)]
+
+        assert async_to_sync(drain)() == []
+        assert sse._anonymous_connections == 0
 
 
 class TestNotifyReadStateChanged:
@@ -83,6 +165,36 @@ class TestSseTicketMint:
         ticket = SseTicket.objects.get(token=token)
         assert ticket.user_id == test_user.pk
         assert ticket.used is False
+
+
+@pytest.fixture
+def public_event(db, test_user):
+    return Event.objects.create(
+        title="Public Event",
+        start_datetime=future_iso(days=30),
+        event_type=EventType.OFFICIAL,
+        visibility=PageVisibility.PUBLIC,
+        rsvp_enabled=True,
+        created_by=test_user,
+    )
+
+
+@pytest.mark.django_db
+class TestConsumeTicket:
+    def test_user_ticket_scope(self, test_user):
+        ticket = SseTicket.mint_for_user(test_user)
+        scope = async_to_sync(consume_ticket)(ticket.token)
+        assert scope == StreamScope(user_id=str(test_user.pk), event_id=None)
+
+    def test_event_ticket_scope(self, public_event):
+        ticket = SseTicket.mint_for_event(public_event)
+        scope = async_to_sync(consume_ticket)(ticket.token)
+        assert scope == StreamScope(user_id=None, event_id=str(public_event.pk))
+
+    def test_second_consume_is_rejected(self, public_event):
+        ticket = SseTicket.mint_for_event(public_event)
+        assert async_to_sync(consume_ticket)(ticket.token) is not None
+        assert async_to_sync(consume_ticket)(ticket.token) is None
 
 
 @pytest.mark.django_db
@@ -145,7 +257,7 @@ class TestSseStreamLoop:
         monkeypatch.setattr(sse, "_HEARTBEAT_INTERVAL", 0.2)
 
         async def run() -> list[str]:
-            stream = sse._sse_generator("user-1")
+            stream = sse.sse_generator(StreamScope(user_id="user-1", event_id=None))
             try:
                 frames = [
                     await asyncio.wait_for(anext(stream), timeout=5),
