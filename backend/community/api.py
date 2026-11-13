@@ -57,6 +57,7 @@ from community.message_templates.tentative_approval import (
 )
 from community.message_templates.welcome import router as welcome_template_router
 from community.message_templates.whatsapp_link import router as whatsapp_link_router
+from community.planning.availability import router as planning_availability_router
 from community.planning.years import router as planning_years_router
 from community.polls.crud import router as polls_router
 from community.polls.options import router as poll_options_router
@@ -131,6 +132,7 @@ router.add_router("", surveys_responses_router)
 router.add_router("", docs_router)
 router.add_router("", docs_documents_router)
 router.add_router("", planning_years_router)
+router.add_router("", planning_availability_router)
 router.add_router("", geocode_router)
 router.add_router("", giphy_router)
 router.add_router("", version_router)
