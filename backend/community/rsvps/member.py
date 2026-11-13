@@ -30,6 +30,7 @@ from community.events.limited_access import (
 from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import EventOut, RSVPIn
 from community.models import CancelReason, Event, EventComment, EventRSVP, RSVPStatus
+from community.rsvps._deadline import enforce_rsvp_deadline
 from community.rsvps.answers import (
     AnswersIn,
     answers_required_for_status,
@@ -314,6 +315,8 @@ def apply_rsvp_in_transaction(event_id, user, rsvp: RsvpApply) -> tuple[str, lis
 
     existing = EventRSVP.objects.filter(event=event, user=user).first()
     previous_status = existing.status if existing is not None else None
+    if not rsvp.skip_host_gates:
+        enforce_rsvp_deadline(user, event, existing, rsvp.status)
 
     # Gate on the *requested* status, not the post-capacity one — else it slips through unconfirmed.
     gate_exempt = rsvp.paid_confirmed or rsvp.skip_host_gates
@@ -472,6 +475,7 @@ def _delete_rsvp_in_transaction(event_id, user) -> tuple[Event, list[str]]:
         raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
     if event.is_past and not can_edit_event(user, event):
         raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
+    enforce_rsvp_deadline(user, event, rsvp, RSVPStatus.CANT_GO)
 
     was_attending = rsvp.status == RSVPStatus.ATTENDING
     rsvp.delete()
