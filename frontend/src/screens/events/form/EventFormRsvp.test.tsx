@@ -100,3 +100,19 @@ describe('+1s lock for official and club events', () => {
     expect(screen.queryByText(lockNote)).not.toBeInTheDocument();
   });
 });
+
+describe('rsvp deadline field', () => {
+  it('shows a clear button only when a deadline is set', () => {
+    const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const { onChange } = renderRsvp({ rsvpDeadline: deadline });
+
+    expect(screen.getByText(/rsvp deadline/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'clear deadline' }));
+    expect(onChange).toHaveBeenCalledWith({ rsvpDeadline: null });
+  });
+
+  it('has no clear button without a deadline', () => {
+    renderRsvp();
+    expect(screen.queryByRole('button', { name: 'clear deadline' })).not.toBeInTheDocument();
+  });
+});

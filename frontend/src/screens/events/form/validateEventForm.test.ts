@@ -22,6 +22,7 @@ function validValues(overrides: Partial<EventFormValues> = {}): EventFormValues 
     rsvpEnabled: false,
     allowPlusOnes: false,
     maxAttendees: null,
+    rsvpDeadline: null,
     whatsappLink: '',
     partifulLink: '',
     otherLink: '',
@@ -168,6 +169,33 @@ describe('validateEventForm', () => {
     it('accepts null maxAttendees (= unlimited, user cleared the field)', () => {
       const errors = validateEventForm(validValues({ maxAttendees: null }));
       expect(errors.maxAttendees).toBeUndefined();
+    });
+  });
+
+  describe('rsvpDeadline', () => {
+    const start = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    const at = (hoursFromStart: number) =>
+      new Date(start.getTime() + hoursFromStart * 60 * 60 * 1000).toISOString();
+
+    it('accepts a deadline before the start', () => {
+      const errors = validateEventForm(
+        validValues({ startDatetime: start.toISOString(), rsvpDeadline: at(-24) }),
+      );
+      expect(errors.rsvpDeadline).toBeUndefined();
+    });
+
+    it('rejects a deadline after the start', () => {
+      const errors = validateEventForm(
+        validValues({ startDatetime: start.toISOString(), rsvpDeadline: at(1) }),
+      );
+      expect(errors.rsvpDeadline).toBe('must be before the event starts');
+    });
+
+    it('skips the check for tbd events', () => {
+      const errors = validateEventForm(
+        validValues({ datetimeTbd: true, startDatetime: null, rsvpDeadline: at(1) }),
+      );
+      expect(errors.rsvpDeadline).toBeUndefined();
     });
   });
 
