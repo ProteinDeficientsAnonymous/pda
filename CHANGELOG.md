@@ -1,3 +1,10 @@
+# [0.235.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.234.0...v0.235.0) (2026-11-13)
+
+
+### Features
+
+* 2118 - send no-show emails to members marked didn't go ([#2431](https://github.com/ProteinDeficientsAnonymous/pda/issues/2431)) ([d11f1c2](https://github.com/ProteinDeficientsAnonymous/pda/commit/d11f1c29b75a8d766aa3d48ca94284ecdfa473bc))
+
 # [0.234.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.8...v0.234.0) (2026-11-13)
 
 
