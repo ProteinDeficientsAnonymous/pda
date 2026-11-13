@@ -267,6 +267,7 @@ class EventRSVP(models.Model):
     waitlist_position = models.PositiveIntegerField(null=True, blank=True)
     # Stamped on create and on any status change (see save()); bulk .update() callers must set it.
     status_changed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    rsvp_deadline_reminder_sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
