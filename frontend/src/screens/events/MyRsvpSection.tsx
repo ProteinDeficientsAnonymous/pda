@@ -15,12 +15,15 @@ import {
 } from '@/models/event';
 
 import { RsvpBox } from './RsvpBox';
+import { MaybeDeadlineDialog, RsvpDeadlineNote } from './RsvpDeadline';
 import type { RsvpAnswerValue } from './rsvpQuestions';
 
 interface Props {
   event: Event;
   token?: string;
   locked?: boolean;
+  /** Past the rsvp deadline and not a host: only going → can't go is left. */
+  deadlineClosed?: boolean;
 }
 
 const STATUS_LINES: Record<RsvpInputStatus, string> = {
@@ -46,7 +49,7 @@ interface BoxState {
   initialStatus: RsvpInputStatus;
 }
 
-export function MyRsvpSection({ event, token, locked = false }: Props) {
+export function MyRsvpSection({ event, token, locked = false, deadlineClosed = false }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
   const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
@@ -57,6 +60,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
   const myUserId = token ? event.viewerUserId : authUserId;
   const [error, setError] = useState<string | null>(null);
   const [box, setBox] = useState<BoxState | null>(null);
+  const [maybeDeadline, setMaybeDeadline] = useState<Date | null>(null);
 
   const myRsvp = event.myRsvp;
   const onWaitlist = myRsvp === RsvpServerStatus.Waitlisted;
@@ -101,6 +105,9 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
         });
       }
       setBox(null);
+      if (args.status === RsvpStatus.Maybe && myRsvp !== RsvpStatus.Maybe) {
+        setMaybeDeadline(event.rsvpDeadline);
+      }
     } catch (err) {
       setError(extractError(err));
     }
@@ -143,10 +150,14 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
     <section aria-label="rsvp" className="flex flex-col gap-3">
       {!locked && onWaitlist ? (
         <WaitlistView
-          onEdit={() => {
-            setError(null);
-            setBox({ mode: 'edit', initialStatus: RsvpStatus.Attending });
-          }}
+          onEdit={
+            deadlineClosed
+              ? undefined
+              : () => {
+                  setError(null);
+                  setBox({ mode: 'edit', initialStatus: RsvpStatus.Attending });
+                }
+          }
           onLeave={() => void leaveWaitlist()}
           busy={busy}
         />
@@ -156,6 +167,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           atCapacity={atCapacity}
           busy={busy}
           locked={locked}
+          closed={deadlineClosed}
           onOpenCreate={(status) => {
             setError(null);
             setBox({ mode: 'create', initialStatus: status });
@@ -168,7 +180,24 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
         />
       )}
 
+      {!locked && deadlineClosed && myRsvp === RsvpServerStatus.Attending ? (
+        <Button
+          variant="ghost"
+          className="self-center"
+          disabled={busy}
+          onClick={() =>
+            void confirmRsvp({
+              status: RsvpStatus.CantGo,
+              hasPlusOne: false,
+              questionnaireResponses: {},
+            })
+          }
+        >
+          i can't go anymore
+        </Button>
+      ) : null}
       <SpotsLeft event={event} />
+      {locked ? null : <RsvpDeadlineNote event={event} closed={deadlineClosed} />}
       {error && !box ? (
         <p role="alert" className="text-destructive text-sm">
           {error}
@@ -202,6 +231,14 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           }}
         />
       ) : null}
+      {maybeDeadline ? (
+        <MaybeDeadlineDialog
+          deadline={maybeDeadline}
+          onClose={() => {
+            setMaybeDeadline(null);
+          }}
+        />
+      ) : null}
     </section>
   );
 }
@@ -214,6 +251,7 @@ function RsvpControls({
   atCapacity,
   busy,
   locked,
+  closed,
   onOpenCreate,
   onOpenEdit,
 }: {
@@ -221,14 +259,16 @@ function RsvpControls({
   atCapacity: boolean;
   busy: boolean;
   locked?: boolean;
+  closed: boolean;
   onOpenCreate: (status: RsvpInputStatus) => void;
   onOpenEdit: () => void;
 }) {
-  if (locked) {
+  if (locked || closed) {
     if (!myInputStatus) return null;
+    const labels = locked ? PAST_STATUS_LABELS : STATUS_BADGE_LABELS;
     return (
       <span className={RSVP_PILL_CLASSES}>
-        <span role="status">{PAST_STATUS_LABELS[myInputStatus]}</span>
+        <span role="status">{labels[myInputStatus]}</span>
       </span>
     );
   }
@@ -272,7 +312,7 @@ function WaitlistView({
   onLeave,
   busy,
 }: {
-  onEdit: () => void;
+  onEdit: (() => void) | undefined;
   onLeave: () => void;
   busy: boolean;
 }) {
@@ -282,9 +322,11 @@ function WaitlistView({
         you're on the waitlist
       </span>
       <div className="flex gap-1">
-        <Button variant="ghost" onClick={onEdit} disabled={busy}>
-          edit
-        </Button>
+        {onEdit ? (
+          <Button variant="ghost" onClick={onEdit} disabled={busy}>
+            edit
+          </Button>
+        ) : null}
         <Button variant="ghost" onClick={onLeave} disabled={busy}>
           leave waitlist
         </Button>

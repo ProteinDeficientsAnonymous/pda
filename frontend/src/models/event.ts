@@ -254,6 +254,10 @@ export function isLimited(user: Pick<User, 'membershipStatus'> | null | undefine
   return user != null && user.membershipStatus !== MembershipStatus.ActiveMember;
 }
 
+export function isRsvpDeadlinePassed(event: Event, now: number = Date.now()): boolean {
+  return event.rsvpDeadline !== null && event.rsvpDeadline.getTime() < now;
+}
+
 export function canPublicRsvp(event: Event): boolean {
   return (
     event.eventType === EventType.Official &&
