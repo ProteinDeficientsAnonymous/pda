@@ -1,3 +1,10 @@
+# [0.234.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.8...v0.234.0) (2026-11-13)
+
+
+### Features
+
+* 2123 - expose repeated no-shows in the MCP ([#2432](https://github.com/ProteinDeficientsAnonymous/pda/issues/2432)) ([3cb018f](https://github.com/ProteinDeficientsAnonymous/pda/commit/3cb018ffb25597cdb9a5a03dabc35c4f720fddb3))
+
 ## [0.233.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.7...v0.233.8) (2026-11-13)
 
 
