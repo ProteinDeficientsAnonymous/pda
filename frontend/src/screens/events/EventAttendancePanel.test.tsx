@@ -187,6 +187,39 @@ describe('EventAttendancePanel', () => {
     expect(didntAttend?.closest('li')).toHaveTextContent('alice');
   });
 
+  it("fires didn't go for a going guest and their +1, and hides it for a maybe +1", () => {
+    mockStats(BASE_STATS);
+    renderPanel(
+      makeEvent({
+        isPast: true,
+        guests: [
+          makeGuest({ userId: 'alice', name: 'alice', hasPlusOne: true }),
+          makeGuest({
+            userId: 'mabel',
+            name: 'mabel',
+            status: RsvpServerStatus.Maybe,
+            hasPlusOne: true,
+          }),
+        ],
+      }),
+    );
+
+    const didntAttend = screen.getAllByRole('button', { name: /^didn't attend$/i });
+    expect(didntAttend).toHaveLength(2);
+    didntAttend.forEach((btn) => {
+      fireEvent.click(btn);
+    });
+
+    expect(setAttendanceMutate).toHaveBeenCalledWith(
+      { userId: 'alice', attendance: AttendanceStatus.DidntGo, forPlusOne: false },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+    expect(setAttendanceMutate).toHaveBeenCalledWith(
+      { userId: 'alice', attendance: AttendanceStatus.DidntGo, forPlusOne: true },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+  });
+
   it('narrows the list to one rsvp status when a filter chip is picked', () => {
     mockStats(BASE_STATS);
     renderPanel(MIXED_RSVP_EVENT);

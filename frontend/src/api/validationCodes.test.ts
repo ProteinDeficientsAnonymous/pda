@@ -47,6 +47,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it("says only going guests can be marked didn't attend", () => {
+    expect(messageForCode({ code: Code.Event.DidntGoRequiresGoing, field: null })).toBe(
+      "only guests who rsvp'd going can be marked didn't attend",
+    );
+  });
+
   it('says only members can be co-hosts', () => {
     expect(messageForCode({ code: Code.CoHostInvite.NotMember, field: null })).toBe(
       'only members can be co-hosts',
