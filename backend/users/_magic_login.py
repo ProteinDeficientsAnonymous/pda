@@ -5,6 +5,7 @@ import logging
 from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
@@ -69,7 +70,7 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
             magic = (
                 MagicLoginToken.objects.select_for_update().select_related("user").get(token=token)
             )
-        except MagicLoginToken.DoesNotExist:
+        except (MagicLoginToken.DoesNotExist, ValidationError):
             audit_log(
                 logging.WARNING,
                 "magic_login_failed",

@@ -34,6 +34,11 @@ class TestMagicLogin:
         response = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")
         assert response.status_code == 400
 
+    def test_magic_login_malformed_token(self, api_client, db):
+        response = api_client.get("/api/auth/magic-login/not-a-uuid/")
+        assert response.status_code == 400
+        assert_error_code(response, Code.Auth.MAGIC_LINK_INVALID_OR_EXPIRED)
+
     def test_magic_login_used_token(self, api_client, test_user):
         magic = MagicLoginToken.create_for_user(test_user)
         magic.used = True
