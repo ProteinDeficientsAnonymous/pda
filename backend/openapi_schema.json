@@ -2127,6 +2127,18 @@
             "title": "Price",
             "type": "string"
           },
+          "rsvp_deadline": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsvp Deadline"
+          },
           "rsvp_enabled": {
             "default": false,
             "title": "Rsvp Enabled",
@@ -2729,6 +2741,18 @@
             "title": "Price",
             "type": "string"
           },
+          "rsvp_deadline": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsvp Deadline"
+          },
           "rsvp_enabled": {
             "default": false,
             "title": "Rsvp Enabled",
@@ -3034,6 +3058,18 @@
               }
             ],
             "title": "Price"
+          },
+          "rsvp_deadline": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsvp Deadline"
           },
           "rsvp_enabled": {
             "anyOf": [

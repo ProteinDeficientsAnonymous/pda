@@ -56,6 +56,13 @@ def check_max_attendees(v: int | None) -> int | None:
     return v
 
 
+def check_rsvp_deadline(deadline: datetime | None, start: datetime | None, tbd: bool) -> None:
+    if deadline is None or start is None or tbd:
+        return
+    if deadline > start:
+        raise_validation(Code.Event.RSVP_DEADLINE_AFTER_START, field="rsvp_deadline")
+
+
 def validate_event_slug(v: str) -> str:
     slug = v.strip().lower()
     # A UUID-shaped slug would be routed as an event id and never match by slug.
