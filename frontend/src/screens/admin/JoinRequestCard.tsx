@@ -3,12 +3,13 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { JoinRequestStatus, type JoinRequestSummary, type RsvpBreakdown } from '@/api/join';
-import { REJECTION_REASON_LABELS, RejectionReason } from '@/api/rejectionEmail';
+import { rejectionReasonText } from '@/api/rejectionEmail';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { AttendedEventsNote } from './AttendedEventsNote';
+import { PreviousArchiveNote, PreviousRejectionNote } from './JoinRequestPreviousRejection';
 import { TentativeActions } from './JoinRequestTentativeSection';
 import { JoinRequestWhatsappToggle } from './JoinRequestWhatsappToggle';
 import { SendMessageDialog } from './SendMessageDialog';
@@ -44,7 +45,7 @@ export function JoinRequestCard({
           <h2 className="text-base font-medium">{request.fullName}</h2>
           <p className="text-muted text-xs">
             {formatPhone(request.phoneNumber)} · {request.email} · submitted{' '}
-            {format(new Date(request.submittedAt), 'MMM d, h:mm a')}
+            {format(new Date(request.submittedAt), 'MMM d, h:mm a').toLowerCase()}
           </p>
           <RsvpBreakdownNote breakdown={request.rsvpBreakdown} />
           <AttendedEventsNote events={request.attendedEvents} />
@@ -62,7 +63,7 @@ export function JoinRequestCard({
           {request.previouslyArchived ? (
             <span
               className="bg-warning-subtle text-warning rounded-full px-2 py-0.5 text-xs"
-              title="this phone number belongs to a previously archived member — approving will restore their account"
+              title="this phone number belongs to a previously archived account — approving or tentatively approving restores it"
             >
               previously archived
             </span>
@@ -78,6 +79,8 @@ export function JoinRequestCard({
           <StatusBadge status={request.status} />
         </div>
       </header>
+      <PreviousArchiveNote archive={request.previousArchive} />
+      <PreviousRejectionNote rejection={request.previousRejection} />
 
       {request.answers.length > 0 ? (
         <dl className="mt-2 flex flex-col gap-2">
@@ -133,7 +136,6 @@ export function JoinRequestCard({
         </>
       ) : (
         <>
-          <TentativeAttribution request={request} />
           <DecisionAttribution request={request} />
           {isRejected ? (
             <div className="mt-3">
@@ -203,19 +205,28 @@ function RsvpBreakdownNote({ breakdown }: { breakdown: RsvpBreakdown }) {
   );
 }
 
+function stampText(at: string): string {
+  return format(new Date(at), 'MMM d, h:mm a').toLowerCase();
+}
+
+function changedBy(request: JoinRequestSummary): string {
+  return (request.statusChangedByName ?? 'an admin').toLowerCase();
+}
+
 function TentativeAttribution({ request }: { request: JoinRequestSummary }) {
-  if (!request.tentativeAt) return null;
-  const who = request.tentativeByName ?? 'an admin';
+  const at = request.statusChangedAt;
+  if (!at) return null;
   return (
     <p className="text-muted mt-3 text-xs">
-      tentatively approved by {who.toLowerCase()} on{' '}
-      {format(new Date(request.tentativeAt), 'MMM d, h:mm a').toLowerCase()}
+      tentatively approved by {changedBy(request)} on {stampText(at)}
     </p>
   );
 }
 
 function DecisionAttribution({ request }: { request: JoinRequestSummary }) {
-  if (request.status === JoinRequestStatus.APPROVED && request.approvedAt) {
+  const at = request.statusChangedAt;
+  if (!at) return null;
+  if (request.status === JoinRequestStatus.APPROVED) {
     if (request.approvedViaEventId) {
       return (
         <>
@@ -224,44 +235,44 @@ function DecisionAttribution({ request }: { request: JoinRequestSummary }) {
             <Link to={`/events/${request.approvedViaEventId}`} className="hover:underline">
               {(request.approvedViaEventTitle ?? 'an event').toLowerCase()}
             </Link>{' '}
-            on {format(new Date(request.approvedAt), 'MMM d, h:mm a').toLowerCase()}
+            on {stampText(at)}
           </p>
           <LoginStatus onboardedAt={request.onboardedAt} />
         </>
       );
     }
-    const who = request.approvedByName ?? 'an admin';
     return (
       <>
         <p className="text-muted mt-3 text-xs">
-          approved by {who.toLowerCase()} on{' '}
-          {format(new Date(request.approvedAt), 'MMM d, h:mm a').toLowerCase()}
+          approved by {changedBy(request)} on {stampText(at)}
         </p>
         <LoginStatus onboardedAt={request.onboardedAt} />
       </>
     );
   }
-  if (request.status === JoinRequestStatus.REJECTED && request.rejectedAt) {
-    const who = request.rejectedByName ?? 'an admin';
+  if (request.status === JoinRequestStatus.REJECTED) {
     return (
       <>
         <p className="text-muted mt-3 text-xs">
-          rejected by {who.toLowerCase()} on{' '}
-          {format(new Date(request.rejectedAt), 'MMM d, h:mm a').toLowerCase()}
+          rejected by {changedBy(request)} on {stampText(at)}
         </p>
         <RejectionReasonLine request={request} />
       </>
+    );
+  }
+  if (request.status === JoinRequestStatus.CLOSED) {
+    return (
+      <p className="text-muted mt-3 text-xs">
+        closed when {changedBy(request)} archived them on {stampText(at)}
+      </p>
     );
   }
   return null;
 }
 
 function RejectionReasonLine({ request }: { request: JoinRequestSummary }) {
-  if (!request.rejectionReason) return null;
-  const text =
-    request.rejectionReason === RejectionReason.OTHER
-      ? request.rejectionNote
-      : REJECTION_REASON_LABELS[request.rejectionReason];
+  const text = rejectionReasonText(request.rejectionReason, request.rejectionNote);
+  if (!text) return null;
   return <p className="text-muted mt-1 text-xs whitespace-pre-wrap">reason: {text}</p>;
 }
 
@@ -283,4 +294,5 @@ const STATUS_TONES: Record<JoinRequestStatus, string> = {
   [JoinRequestStatus.TENTATIVE]: 'bg-highlight-subtle text-highlight',
   [JoinRequestStatus.APPROVED]: 'bg-success-subtle text-success',
   [JoinRequestStatus.REJECTED]: 'bg-surface-raised text-foreground-secondary',
+  [JoinRequestStatus.CLOSED]: 'bg-surface-raised text-foreground-secondary',
 };

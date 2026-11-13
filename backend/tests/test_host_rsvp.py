@@ -3,9 +3,9 @@
 from unittest.mock import patch
 
 import pytest
-from community.models import Event, EventRSVP, EventStatus, RSVPStatus
+from community.models import CancelReason, Event, EventRSVP, EventStatus, RSVPStatus
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
@@ -37,7 +37,9 @@ def guest(db):
 @pytest.fixture
 def public_rsvper(db):
     return User.objects.create_user(
-        phone_number="+12025559105", first_name="Walkin", is_member=False
+        phone_number="+12025559105",
+        first_name="Walkin",
+        membership_status=MembershipStatus.NONE,
     )
 
 
@@ -240,6 +242,7 @@ class TestSetGuestRsvp:
         rsvp = EventRSVP.objects.get(event=host_rsvp_event, user=guest)
         assert rsvp.cancelled_at is not None
         assert rsvp.cancelled_at >= before
+        assert rsvp.cancel_reason == CancelReason.HOST
 
     def test_stamps_pre_cancel_status_on_transition_to_cant_go(
         self, api_client, host_rsvp_event, host_user, guest

@@ -144,5 +144,5 @@ def members_matching(
     param(sort): newest membership first, or longest since last qualifying event or joining
     return(QuerySet[User]): annotated with status, member_since and last_qualifying_at
     """
-    qs = with_last_qualifying_at(with_member_since(with_status(User.objects.members())))
+    qs = with_last_qualifying_at(with_member_since(with_status(User.objects.members_or_archived())))
     return qs.filter(*_conditions(filters, now)).order_by(*_ORDERING[sort])

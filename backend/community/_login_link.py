@@ -13,13 +13,8 @@ from notifications.email_sender import get_email_sender
 from notifications.service import create_magic_link_request_notifications
 from pydantic import BaseModel, Field
 from users.helpers import create_magic_token, magic_login_url
-from users.models import (
-    PUBLIC_FORM_PHONE_REGION,
-    MagicLoginToken,
-    MagicLoginTokenSource,
-    User,
-    validate_phone,
-)
+from users.models import MagicLoginToken, MagicLoginTokenSource, User, can_sign_in_q
+from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community.field_limits import FieldLimit
 from community.shared import ErrorOut, logger  # noqa: F401
@@ -90,7 +85,9 @@ def request_login_link(request, payload: RequestLoginLinkIn):
         )
         return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
 
-    user = User.objects.filter(phone_number=normalized, archived_at__isnull=True).first()
+    user = User.objects.filter(
+        can_sign_in_q(), phone_number=normalized, archived_at__isnull=True
+    ).first()
     if user is None:
         audit_log(
             logging.INFO,

@@ -1,3 +1,215 @@
+# [0.234.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.8...v0.234.0) (2026-11-13)
+
+
+### Features
+
+* 2123 - expose repeated no-shows in the MCP ([#2432](https://github.com/ProteinDeficientsAnonymous/pda/issues/2432)) ([3cb018f](https://github.com/ProteinDeficientsAnonymous/pda/commit/3cb018ffb25597cdb9a5a03dabc35c4f720fddb3))
+
+## [0.233.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.7...v0.233.8) (2026-11-13)
+
+
+### Bug Fixes
+
+* 2424 - return 400 for a malformed magic-login token ([#2428](https://github.com/ProteinDeficientsAnonymous/pda/issues/2428)) ([a40f143](https://github.com/ProteinDeficientsAnonymous/pda/commit/a40f143aba1956b4af28a8dd1dd649c0a2894efd))
+
+## [0.233.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.6...v0.233.7) (2026-11-13)
+
+
+### Bug Fixes
+
+* 2423 - don't show limited users "log in to comment" ([#2427](https://github.com/ProteinDeficientsAnonymous/pda/issues/2427)) ([6423c87](https://github.com/ProteinDeficientsAnonymous/pda/commit/6423c87409ce5b228ea1bd6e001c164f3d33aada))
+
+## [0.233.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.5...v0.233.6) (2026-11-12)
+
+
+### Bug Fixes
+
+* 2393 - let a paused host still view the event their pause drafted ([#2410](https://github.com/ProteinDeficientsAnonymous/pda/issues/2410)) ([1920038](https://github.com/ProteinDeficientsAnonymous/pda/commit/19200383d76b7f0d967458e5451b89ecf3d32196))
+
+## [0.233.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.4...v0.233.5) (2026-11-12)
+
+
+### Bug Fixes
+
+* **admin:** 2401 - attendance report button adds an attendance pause ([#2418](https://github.com/ProteinDeficientsAnonymous/pda/issues/2418)) ([460ab41](https://github.com/ProteinDeficientsAnonymous/pda/commit/460ab41d0559e37b69ea45289114f392bb8535a5))
+
+## [0.233.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.3...v0.233.4) (2026-11-12)
+
+
+### Bug Fixes
+
+* only public rsvpers can be issued an rsvp manage link ([#2421](https://github.com/ProteinDeficientsAnonymous/pda/issues/2421)) ([35ced51](https://github.com/ProteinDeficientsAnonymous/pda/commit/35ced513c1b71e5d117010c05dce60232018c5ce))
+
+## [0.233.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.2...v0.233.3) (2026-11-12)
+
+
+### Bug Fixes
+
+* **admin:** 2396 - pause dialog lists invites, roles and whatsapp ([#2416](https://github.com/ProteinDeficientsAnonymous/pda/issues/2416)) ([e101648](https://github.com/ProteinDeficientsAnonymous/pda/commit/e1016483444d82ce464b7a61ba64966ede7b7460))
+* **rsvps:** 2397, 2399 - block ineligible guests and invitees ([#2407](https://github.com/ProteinDeficientsAnonymous/pda/issues/2407)) ([9d7951e](https://github.com/ProteinDeficientsAnonymous/pda/commit/9d7951e9772ca8d167fa27b90edd90469ddc040b)), closes [#2397](https://github.com/ProteinDeficientsAnonymous/pda/issues/2397) [#2399](https://github.com/ProteinDeficientsAnonymous/pda/issues/2399)
+* **users:** 2396 - pause preview lists invites, roles and whatsapp ([#2415](https://github.com/ProteinDeficientsAnonymous/pda/issues/2415)) ([8b848e2](https://github.com/ProteinDeficientsAnonymous/pda/commit/8b848e29d1efdc8707e0fef2e61ec6e0cfbdd4e2))
+
+## [0.233.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.1...v0.233.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* 2398 - count only a member's own rsvp cancels ([#2413](https://github.com/ProteinDeficientsAnonymous/pda/issues/2413)) ([fb8af13](https://github.com/ProteinDeficientsAnonymous/pda/commit/fb8af139524151a4ecc11c386556747bd533e353))
+
+## [0.233.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.0...v0.233.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* revoke limited users' public rsvp manage links ([#2420](https://github.com/ProteinDeficientsAnonymous/pda/issues/2420)) ([85dc0b5](https://github.com/ProteinDeficientsAnonymous/pda/commit/85dc0b59812b0117f051e3ff81068c8cda849108))
+
+# [0.233.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.232.2...v0.233.0) (2026-11-12)
+
+
+### Features
+
+* **join-requests:** alert vetters when a check-in promotion fails ([#2419](https://github.com/ProteinDeficientsAnonymous/pda/issues/2419)) ([e2c1f6a](https://github.com/ProteinDeficientsAnonymous/pda/commit/e2c1f6a7185230fcb6933dae0e860edb9bc9f1a7))
+
+## [0.232.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.232.1...v0.232.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* **users:** 2395 - don't email or re-stamp archived users on pause ([#2414](https://github.com/ProteinDeficientsAnonymous/pda/issues/2414)) ([56f5be3](https://github.com/ProteinDeficientsAnonymous/pda/commit/56f5be3ea26146a57e90bb642f930e61fbf23d16))
+
+## [0.232.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.232.0...v0.232.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **rsvps:** 2392 - send attendance-paused members to login from public RSVP ([#2405](https://github.com/ProteinDeficientsAnonymous/pda/issues/2405)) ([41a508c](https://github.com/ProteinDeficientsAnonymous/pda/commit/41a508ce4d50132c9a4d2d9ee6d10fd4c49bf61f))
+
+# [0.232.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.231.3...v0.232.0) (2026-11-12)
+
+
+### Features
+
+* 2398 - record why an rsvp was cancelled ([#2406](https://github.com/ProteinDeficientsAnonymous/pda/issues/2406)) ([e086ff2](https://github.com/ProteinDeficientsAnonymous/pda/commit/e086ff200b59fcc8d08876bbb11ce45eaeafa22a))
+
+## [0.231.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.231.2...v0.231.3) (2026-11-12)
+
+
+### Bug Fixes
+
+* 2394 - give attendance-paused members their own notice copy ([#2404](https://github.com/ProteinDeficientsAnonymous/pda/issues/2404)) ([242d32b](https://github.com/ProteinDeficientsAnonymous/pda/commit/242d32b04454f1d9cd9fbaa568809968a3ffaa17))
+
+## [0.231.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.231.1...v0.231.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* 2400 - tentative promotion uses the join-form name ([#2409](https://github.com/ProteinDeficientsAnonymous/pda/issues/2409)) ([790cfd6](https://github.com/ProteinDeficientsAnonymous/pda/commit/790cfd618fe3c1493a86fec2d3b580045c40cea3))
+
+## [0.231.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.231.0...v0.231.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **users:** 2403 - count attendance-paused members in role user counts ([#2412](https://github.com/ProteinDeficientsAnonymous/pda/issues/2412)) ([e4cc6bd](https://github.com/ProteinDeficientsAnonymous/pda/commit/e4cc6bdbea319be95192eee54f5d56fdeb937107))
+* **users:** count attendance-paused members in role user counts ([9123ec0](https://github.com/ProteinDeficientsAnonymous/pda/commit/9123ec063fadce2314e104ac1fbf6c21af205aa1)), closes [#2403](https://github.com/ProteinDeficientsAnonymous/pda/issues/2403)
+
+# [0.231.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.230.0...v0.231.0) (2026-11-12)
+
+
+### Features
+
+* **users:** only a check-in lifts an attendance pause; a guidelines lift emails ([#2387](https://github.com/ProteinDeficientsAnonymous/pda/issues/2387)) ([fe26a16](https://github.com/ProteinDeficientsAnonymous/pda/commit/fe26a168682f35299656ce5bfab56da4a530b152))
+* **users:** only a check-in lifts an attendance pause; lifting a guidelines pause stamps unpaused_at and emails ([77c7e4a](https://github.com/ProteinDeficientsAnonymous/pda/commit/77c7e4a39db549c5b795682828d1d79c667cccf2))
+
+# [0.230.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.229.0...v0.230.0) (2026-11-12)
+
+
+### Bug Fixes
+
+* **auth:** accounts without membership can't sign in ([105413c](https://github.com/ProteinDeficientsAnonymous/pda/commit/105413cfe178cd3315fa301ac1966174d72861af))
+* **auth:** accounts without membership can't sign in ([#2363](https://github.com/ProteinDeficientsAnonymous/pda/issues/2363)) ([ef3bf1b](https://github.com/ProteinDeficientsAnonymous/pda/commit/ef3bf1b41601c83c7dd01e9a7b11a77e76f6b491))
+
+
+### Features
+
+* **admin:** confirm a guidelines pause with its preview; lock the event-rqmt toggle while guidelines-paused ([#2362](https://github.com/ProteinDeficientsAnonymous/pda/issues/2362)) ([8c7583a](https://github.com/ProteinDeficientsAnonymous/pda/commit/8c7583ae01a1a725d7039e2c917351e8678a26b4))
+* **admin:** confirm a guidelines pause with its preview; refuse an event-rqmt pause while guidelines-paused ([fecc8a4](https://github.com/ProteinDeficientsAnonymous/pda/commit/fecc8a4936e3b4d6729de7c8ed2210185104d3ec))
+* **admin:** list tentative people on the members screen; show closed requests ([4d4c2ca](https://github.com/ProteinDeficientsAnonymous/pda/commit/4d4c2ca0917a71ae55d5bf0ee14865170426f465))
+* **admin:** list tentative people on the members screen; show closed requests ([#2372](https://github.com/ProteinDeficientsAnonymous/pda/issues/2372)) ([c81bb3e](https://github.com/ProteinDeficientsAnonymous/pda/commit/c81bb3eacfebf8d54c3f57f338b2d7b2de9ab971))
+* **admin:** show earlier rejection and archive on the vetter card ([054edbb](https://github.com/ProteinDeficientsAnonymous/pda/commit/054edbb08cebf58a4e1c3ce63bf294605c63809a))
+* **admin:** show earlier rejection and archive on the vetter card ([#2370](https://github.com/ProteinDeficientsAnonymous/pda/issues/2370)) ([c7c0657](https://github.com/ProteinDeficientsAnonymous/pda/commit/c7c0657d1b79ef9551a7fac7a3b97394a9941d49))
+* **auth:** a rejected applicant is told they can request to join again ([c2d04d3](https://github.com/ProteinDeficientsAnonymous/pda/commit/c2d04d31ab07c252a4bf9040aea46fa43d911b74))
+* **auth:** a rejected applicant is told they can request to join again ([#2364](https://github.com/ProteinDeficientsAnonymous/pda/issues/2364)) ([f02dc28](https://github.com/ProteinDeficientsAnonymous/pda/commit/f02dc285f05aa51328ee86a3f21314ba54c193c4))
+* **join-requests:** expose the latest earlier rejection on join requests ([1a756c0](https://github.com/ProteinDeficientsAnonymous/pda/commit/1a756c056fee315d882813177fe9c72607a6afe4))
+* **join-requests:** expose the latest earlier rejection on join requests ([#2368](https://github.com/ProteinDeficientsAnonymous/pda/issues/2368)) ([4cc9b4f](https://github.com/ProteinDeficientsAnonymous/pda/commit/4cc9b4f350fb6cbced54de135d4b0258344011f5))
+* **join-requests:** expose who archived a re-applicant, and when ([625afd1](https://github.com/ProteinDeficientsAnonymous/pda/commit/625afd13de0bac3b7d38e4ff3e54c80de154471e))
+* **join-requests:** expose who archived a re-applicant, and when ([#2369](https://github.com/ProteinDeficientsAnonymous/pda/issues/2369)) ([59ec86d](https://github.com/ProteinDeficientsAnonymous/pda/commit/59ec86de0aa378525659f4da3c0d4f4b0af75f38))
+* **join-requests:** refuse rejecting a tentative request ([13edbfa](https://github.com/ProteinDeficientsAnonymous/pda/commit/13edbfaaa3bf420d60871506418c5a74a585f8f5))
+* **join-requests:** refuse rejecting a tentative request ([#2366](https://github.com/ProteinDeficientsAnonymous/pda/issues/2366)) ([1b90602](https://github.com/ProteinDeficientsAnonymous/pda/commit/1b90602d81aac6fb438a0fe6e8298305d1f84d83))
+* **join:** archiving a tentative person closes their request ([900bcb2](https://github.com/ProteinDeficientsAnonymous/pda/commit/900bcb2bde2a51c9915a7a5e43949abe65fa95d3))
+* **join:** archiving a tentative person closes their request ([#2371](https://github.com/ProteinDeficientsAnonymous/pda/issues/2371)) ([ccce0c7](https://github.com/ProteinDeficientsAnonymous/pda/commit/ccce0c7009ebee17d980adcd2ccc4791609a5f6d))
+* **join:** map previous archive and rejection from the wire ([#2379](https://github.com/ProteinDeficientsAnonymous/pda/issues/2379)) ([2ef9f95](https://github.com/ProteinDeficientsAnonymous/pda/commit/2ef9f95bea187bbb8a37bc1e6894e185ffbbf6cd))
+* **join:** map previous_archive and previous_rejection from the wire ([61fa18c](https://github.com/ProteinDeficientsAnonymous/pda/commit/61fa18cde95ffa3c82795b626f04a7c91d56c3e2)), closes [#2254](https://github.com/ProteinDeficientsAnonymous/pda/issues/2254)
+* **rsvps:** refuse public RSVPs from a rejected applicant ([2f89e7c](https://github.com/ProteinDeficientsAnonymous/pda/commit/2f89e7cbf1b93490417646e112ca9f5a3ca2559a))
+* **rsvps:** refuse public RSVPs from a rejected applicant ([#2365](https://github.com/ProteinDeficientsAnonymous/pda/issues/2365)) ([225dab9](https://github.com/ProteinDeficientsAnonymous/pda/commit/225dab9b5ab230b292acf35516e2d1e1b962f4ee))
+* **users:** a guidelines pause releases every RSVP and host spot ([29f27ff](https://github.com/ProteinDeficientsAnonymous/pda/commit/29f27ff98925e6fceb24c67619208575bdb7dede))
+* **users:** a guidelines pause releases every RSVP and host spot ([#2360](https://github.com/ProteinDeficientsAnonymous/pda/issues/2360)) ([52f5ecb](https://github.com/ProteinDeficientsAnonymous/pda/commit/52f5ecb9b8a672a53b0eb05a8b2e5936c35657e9))
+* **users:** an attendance pause keeps the member role ([08568d1](https://github.com/ProteinDeficientsAnonymous/pda/commit/08568d15d952c1feeb10bad3215932e3637a73f6))
+* **users:** an attendance pause keeps the member role ([#2359](https://github.com/ProteinDeficientsAnonymous/pda/issues/2359)) ([275366e](https://github.com/ProteinDeficientsAnonymous/pda/commit/275366eb9d8d2e8bb0119660701e7539d54cd1ac))
+* **users:** guidelines pause preview endpoint ([8326164](https://github.com/ProteinDeficientsAnonymous/pda/commit/8326164e3357409ab5cdd99e412232e8a039f133))
+* **users:** guidelines pause preview endpoint ([#2361](https://github.com/ProteinDeficientsAnonymous/pda/issues/2361)) ([4129262](https://github.com/ProteinDeficientsAnonymous/pda/commit/412926278d72cc82f589006ceb1660996f51b00d))
+
+# [0.229.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.228.0...v0.229.0) (2026-11-12)
+
+
+### Bug Fixes
+
+* **users:** a guidelines pause clears has_joined_whatsapp; lifting it leaves the flag ([32cf2e9](https://github.com/ProteinDeficientsAnonymous/pda/commit/32cf2e93cff6e42b2a6c89015700dd68182299d4))
+* **users:** lifting a guidelines pause clears is_member with the attendance pause it leaves ([4aaea8d](https://github.com/ProteinDeficientsAnonymous/pda/commit/4aaea8dc6b85cabf0e0ad1bcc797d5bfcdeeb889))
+* **users:** refuse an attendance pause while guidelines-paused, and keep archived users off is_member ([f0d58a1](https://github.com/ProteinDeficientsAnonymous/pda/commit/f0d58a1d5a9686201db3f4ef652e20a85e57d1b3))
+
+
+### Features
+
+* **users:** a guidelines pause is a membership status, exclusive with the attendance pause ([e302a5c](https://github.com/ProteinDeficientsAnonymous/pda/commit/e302a5cd520776421252fbeca5b454ddae4ba574))
+* **users:** a guidelines pause is a membership status, exclusive with the attendance pause ([dfd5d81](https://github.com/ProteinDeficientsAnonymous/pda/commit/dfd5d8164544c904f5fb64fc02fed43f441330c5))
+* **users:** a guidelines pause is a membership status; the attendance report reads it ([#2373](https://github.com/ProteinDeficientsAnonymous/pda/issues/2373)) ([16fd669](https://github.com/ProteinDeficientsAnonymous/pda/commit/16fd66994998820458fbf711edad23c3635e10dd))
+* **users:** drop the is_member sync from the guidelines pause ([e5c4573](https://github.com/ProteinDeficientsAnonymous/pda/commit/e5c457335edd6b392e3ff1190a8aba5ea3d5ad61))
+* **users:** refuse an attendance pause on a guidelines-paused member ([#2352](https://github.com/ProteinDeficientsAnonymous/pda/issues/2352)) ([8edd987](https://github.com/ProteinDeficientsAnonymous/pda/commit/8edd987a49f50f36e071cbf615dc15d9e1539dd9))
+
+# [0.228.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.227.3...v0.228.0) (2026-11-11)
+
+
+### Bug Fixes
+
+* **join-requests:** drop the is_member write from un-archiving ([2a03081](https://github.com/ProteinDeficientsAnonymous/pda/commit/2a0308175021fd0653ad3befdaba43853278b0f7))
+* **join-requests:** marking someone tentative sets their status and restores an archived account ([7dfd21c](https://github.com/ProteinDeficientsAnonymous/pda/commit/7dfd21c2acb54acad4eb9c09c28944d76d27479e))
+* **join-requests:** marking someone tentative sets their status and restores an archived account ([#2345](https://github.com/ProteinDeficientsAnonymous/pda/issues/2345)) ([223c337](https://github.com/ProteinDeficientsAnonymous/pda/commit/223c337aa08c45792ff143f417d80d4cbe313f41))
+* **join-requests:** re-approving an archived account restores it, pause included ([7692fe3](https://github.com/ProteinDeficientsAnonymous/pda/commit/7692fe3f4859ccfc8a39d625f472c6b25a8c59a4))
+* **join-requests:** re-approving an archived account restores it, pause included ([#2346](https://github.com/ProteinDeficientsAnonymous/pda/issues/2346)) ([8a072a4](https://github.com/ProteinDeficientsAnonymous/pda/commit/8a072a4a81e953d82e91c961ff080ca2a0be709a))
+* **join-requests:** un-archiving keeps is_member in step with the status ([244a47e](https://github.com/ProteinDeficientsAnonymous/pda/commit/244a47e2a67a34d91e8bef4431b8b7f9d1f3d6f0))
+* **users:** the backfill clears the attendance pause on archived guidelines-paused rows too ([c5ac989](https://github.com/ProteinDeficientsAnonymous/pda/commit/c5ac989ca4efd8b09e9bf6ab9fda4cc2480e0a39))
+
+
+### Features
+
+* **api:** expose membership_status; isLimited reads it ([49664bb](https://github.com/ProteinDeficientsAnonymous/pda/commit/49664bb6573ab49cb1d831de36b9ed340f42ca1c))
+* **api:** expose membership_status; isLimited reads it ([#2349](https://github.com/ProteinDeficientsAnonymous/pda/issues/2349)) ([143bc6b](https://github.com/ProteinDeficientsAnonymous/pda/commit/143bc6bfc03ca53c03091f728ff91dd0f743e109))
+
+## [0.227.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.227.2...v0.227.3) (2026-11-09)
+
+
+### Bug Fixes
+
+* **rsvp:** lowercase join request date and point revoked links to sign in ([#2274](https://github.com/ProteinDeficientsAnonymous/pda/issues/2274)) ([1ef98ac](https://github.com/ProteinDeficientsAnonymous/pda/commit/1ef98ace9efa92d7482319f1f20db2be2db68234))
+
+## [0.227.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.227.1...v0.227.2) (2026-11-09)
+
+
+### Bug Fixes
+
+* **auth:** route guidelines-paused users to login instead of decoys ([#2273](https://github.com/ProteinDeficientsAnonymous/pda/issues/2273)) ([ae6e0ff](https://github.com/ProteinDeficientsAnonymous/pda/commit/ae6e0ffd9e886e5a7ce8b0d07c9a90261963773e))
+
 ## [0.227.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.227.0...v0.227.1) (2026-11-08)
 
 

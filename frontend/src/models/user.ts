@@ -6,6 +6,30 @@ export const CalendarFeedScope = {
 } as const;
 export type CalendarFeedScopeValue = (typeof CalendarFeedScope)[keyof typeof CalendarFeedScope];
 
+export const MembershipStatus = {
+  None: 'none',
+  Tentative: 'tentative',
+  ActiveMember: 'active_member',
+  AttendancePaused: 'attendance_paused',
+  Archived: 'archived',
+  GuidelinesPaused: 'guidelines_paused',
+} as const;
+export type MembershipStatusValue = (typeof MembershipStatus)[keyof typeof MembershipStatus];
+
+// Paused members keep the member role; only active members get full access.
+export const MEMBER_STATUSES: readonly MembershipStatusValue[] = [
+  MembershipStatus.ActiveMember,
+  MembershipStatus.GuidelinesPaused,
+  MembershipStatus.AttendancePaused,
+];
+
+export function isAttendancePaused(user: { membershipStatus: MembershipStatusValue }): boolean {
+  return user.membershipStatus === MembershipStatus.AttendancePaused;
+}
+
+// Mirrors backend COMPLIANCE_MIN_COUNT and QUALIFYING_WINDOW_DAYS (365).
+export const ATTENDANCE_RULE = { minEvents: 2, windowMonths: 12 } as const;
+
 export interface Role {
   id: string;
   name: string;
@@ -41,6 +65,7 @@ export interface User {
   // False for a tentatively-approved applicant: signed in, but limited to
   // official/club events until an in-person check-in promotes them.
   isMember: boolean;
+  membershipStatus: MembershipStatusValue;
   isSuperuser: boolean;
   isStaff: boolean;
   needsOnboarding: boolean;

@@ -51,6 +51,12 @@ class JoinRequestStatus(models.TextChoices):
     TENTATIVE = "tentative", "Tentatively approved"
     APPROVED = "approved", "Approved"
     REJECTED = "rejected", "Rejected"
+    # Terminal: the tentative applicant was archived before they were approved.
+    CLOSED = "closed", "Closed"
+
+
+# Open requests can still change status; every other status is final.
+OPEN_JOIN_REQUEST_STATUSES = (JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE)
 
 
 class RejectionReason(models.TextChoices):
@@ -129,6 +135,13 @@ class RSVPStatus(models.TextChoices):
     CANT_GO = "cant_go", "Can't go"
     WAITLISTED = "waitlisted", "Waitlisted"
     REMOVED = "removed", "Removed"
+
+
+class CancelReason(models.TextChoices):
+    SELF = "self", "Self"
+    HOST = "host", "Host"
+    PAUSE = "pause", "Pause"
+    ARCHIVE = "archive", "Archive"
 
 
 # Guests a payment import can match and verify.

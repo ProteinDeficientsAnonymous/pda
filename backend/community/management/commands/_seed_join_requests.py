@@ -11,10 +11,6 @@ from ._seed_data import SEED_JOIN_FORM_QUESTIONS
 from ._seed_staging_data import JOIN_REQUEST_SPECS, JoinRequestSpec, joinreq_email, joinreq_phone
 
 
-def reset_join_requests() -> None:
-    JoinRequest.objects.filter(phone_number__startswith="+170255504").delete()
-
-
 def seed_join_form_questions(stdout) -> dict[str, JoinFormQuestion]:
     """Ensure default join form questions exist. Returns label→question mapping."""
     questions: dict[str, JoinFormQuestion] = {}
@@ -45,10 +41,11 @@ def _custom_answers(spec: JoinRequestSpec, questions_by_label: dict[str, JoinFor
 
 
 def _reviewer_fields(spec, reviewer: User | None, submitted_at) -> dict:
-    if spec.status == JoinRequestStatus.APPROVED:
-        return {"approved_at": submitted_at + timedelta(days=1), "approved_by": reviewer}
-    if spec.status == JoinRequestStatus.REJECTED:
-        return {"rejected_at": submitted_at + timedelta(days=1), "rejected_by": reviewer}
+    if spec.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED):
+        return {
+            "status_changed_at": submitted_at + timedelta(days=1),
+            "status_changed_by": reviewer,
+        }
     return {}
 
 

@@ -34,6 +34,7 @@ class NotificationType(models.TextChoices):
     SURVEY_RESPONSE = "survey_response", "Survey Response"
     EVENT_UNPUBLISHED = "event_unpublished", "Event Unpublished"
     MEMBER_RESTORED = "member_restored", "Member Restored"
+    CHECK_IN_PROMOTION_FAILED = "check_in_promotion_failed", "Check-in Promotion Failed"
 
 
 class Notification(models.Model):

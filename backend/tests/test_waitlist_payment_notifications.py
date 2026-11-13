@@ -5,6 +5,7 @@ from community.models import Event, EventRSVP, RSVPStatus
 from community.rsvps.waitlist import promote_from_waitlist
 from django.utils import timezone
 from notifications.models import Notification
+from users.models import MembershipStatus
 
 from tests._payment_helpers import create_paid_event
 
@@ -21,7 +22,9 @@ class TestWaitlistPromotionPaymentMessaging:
 
         event = _paid_event(test_user, max_attendees=1)
         waiting = django_user_model.objects.create_user(
-            phone_number="+14155550112", first_name="Waiting", is_member=True
+            phone_number="+14155550112",
+            first_name="Waiting",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=waiting, status=RSVPStatus.WAITLISTED)
         promote_from_waitlist(event)
@@ -33,7 +36,9 @@ class TestWaitlistPromotionPaymentMessaging:
 
         event = _paid_event(test_user, max_attendees=1, price="", venmo_link="")
         waiting = django_user_model.objects.create_user(
-            phone_number="+14155550113", first_name="Waiting", is_member=True
+            phone_number="+14155550113",
+            first_name="Waiting",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=waiting, status=RSVPStatus.WAITLISTED)
         promote_from_waitlist(event)
@@ -45,7 +50,9 @@ class TestWaitlistPromotionPaymentMessaging:
 
         event = _paid_event(test_user, max_attendees=1)
         paid = django_user_model.objects.create_user(
-            phone_number="+14155550114", first_name="Paid", is_member=True
+            phone_number="+14155550114",
+            first_name="Paid",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(
             event=event,
@@ -62,10 +69,14 @@ class TestWaitlistPromotionPaymentMessaging:
 
         event = _paid_event(test_user, max_attendees=2)
         paid = django_user_model.objects.create_user(
-            phone_number="+14155550115", first_name="Paid", is_member=True
+            phone_number="+14155550115",
+            first_name="Paid",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         unpaid = django_user_model.objects.create_user(
-            phone_number="+14155550116", first_name="Unpaid", is_member=True
+            phone_number="+14155550116",
+            first_name="Unpaid",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(
             event=event, user=paid, status=RSVPStatus.WAITLISTED, paid_confirmed_at=timezone.now()
@@ -83,7 +94,9 @@ class TestWaitlistPromotionPaymentMessaging:
         through promotion — the stamp isn't lost by the capacity detour."""
         event = _paid_event(test_user, max_attendees=1)
         seated = django_user_model.objects.create_user(
-            phone_number="+14155550111", first_name="Seated", is_member=True
+            phone_number="+14155550111",
+            first_name="Seated",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=seated, status=RSVPStatus.ATTENDING)
 

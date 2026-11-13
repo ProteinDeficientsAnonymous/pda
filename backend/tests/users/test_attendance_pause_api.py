@@ -1,8 +1,7 @@
 import pytest
 from community.models import EventStatus
 from tests._events import make_event
-from users.models import User
-from users.roles import Role
+from users.models import MembershipStatus, User
 
 
 def _patch(api_client, user: User, headers: dict, **payload):
@@ -24,25 +23,15 @@ class TestAttendancePausePatch:
         drafted.refresh_from_db()
         assert drafted.status == EventStatus.DRAFT
 
-    def test_unpause_restores_membership(
-        self,
-        api_client,
-        manage_users_headers,
-        member,
-        django_capture_on_commit_callbacks,
-    ):
-        member_role, _ = Role.objects.get_or_create(name="member", is_default=True)
+    def test_unpause_is_refused(self, api_client, manage_users_headers, member):
         _patch(api_client, member, manage_users_headers, attendance_paused=True)
 
-        with django_capture_on_commit_callbacks(execute=True):
-            response = _patch(api_client, member, manage_users_headers, attendance_paused=False)
+        response = _patch(api_client, member, manage_users_headers, attendance_paused=False)
 
-        assert response.status_code == 200
+        assert response.status_code == 400
         member.refresh_from_db()
-        assert member.attendance_paused_at is None
-        assert member.is_member is True
-        assert member.restored_at is None
-        assert list(member.roles.all()) == [member_role]
+        assert member.membership_status == MembershipStatus.ATTENDANCE_PAUSED
+        assert member.attendance_paused_at is not None
 
 
 @pytest.mark.django_db

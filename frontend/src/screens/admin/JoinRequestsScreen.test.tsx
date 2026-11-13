@@ -67,7 +67,7 @@ describe('JoinRequestsScreen whatsapp toggle', () => {
     mockResult([
       makeRequest({
         status: JoinRequestStatus.APPROVED,
-        approvedAt: '2026-01-10T00:00:00Z',
+        statusChangedAt: '2026-01-10T00:00:00Z',
         userId: 'u1',
       }),
     ]);
@@ -94,13 +94,13 @@ describe('JoinRequestsScreen sort', () => {
         id: 'older',
         fullName: 'Older Approval',
         status: JoinRequestStatus.APPROVED,
-        approvedAt: '2026-01-10T00:00:00Z',
+        statusChangedAt: '2026-01-10T00:00:00Z',
       }),
       makeRequest({
         id: 'newer',
         fullName: 'Newer Approval',
         status: JoinRequestStatus.APPROVED,
-        approvedAt: '2026-02-10T00:00:00Z',
+        statusChangedAt: '2026-02-10T00:00:00Z',
       }),
     ]);
 
@@ -121,7 +121,7 @@ describe('JoinRequestsScreen sort', () => {
 
   it('shows the sort hint within the approved-tab explainer', async () => {
     mockResult([
-      makeRequest({ status: JoinRequestStatus.APPROVED, approvedAt: '2026-01-10T00:00:00Z' }),
+      makeRequest({ status: JoinRequestStatus.APPROVED, statusChangedAt: '2026-01-10T00:00:00Z' }),
     ]);
 
     renderScreen();
@@ -251,6 +251,14 @@ describe('JoinRequestsScreen card', () => {
 
     expect(screen.getByText(/ada@example\.com/)).toBeInTheDocument();
   });
+
+  it('lowercases the submitted date', () => {
+    mockResult([makeRequest({ submittedAt: '2026-11-08T12:00:00' })]);
+
+    renderScreen();
+
+    expect(screen.getByText(/submitted nov 8, 12:00 pm/)).toBeInTheDocument();
+  });
 });
 
 describe('JoinRequestsScreen search', () => {
@@ -320,7 +328,7 @@ describe('JoinRequestsScreen pending actions', () => {
     mockResult([
       makeRequest({
         status: JoinRequestStatus.REJECTED,
-        rejectedAt: '2026-01-02T00:00:00Z',
+        statusChangedAt: '2026-01-02T00:00:00Z',
         rejectionReason: RejectionReason.OTHER,
         rejectionNote: 'we are full',
       }),
@@ -385,8 +393,8 @@ describe('JoinRequestsScreen tentative section', () => {
     mockResult([
       makeRequest({
         status: JoinRequestStatus.TENTATIVE,
-        tentativeAt: '2026-03-01T18:00:00Z',
-        tentativeByName: 'Sam Vettor',
+        statusChangedAt: '2026-03-01T18:00:00Z',
+        statusChangedByName: 'Sam Vettor',
       }),
     ]);
 
@@ -396,14 +404,12 @@ describe('JoinRequestsScreen tentative section', () => {
     expect(screen.getByText(/tentatively approved by sam vettor on mar 1/)).toBeInTheDocument();
   });
 
-  it('shows both the tentative approval and the check-in event that auto-approved them', async () => {
+  it('shows the check-in event that auto-approved them', async () => {
     mockResult([
       makeRequest({
         status: JoinRequestStatus.APPROVED,
-        tentativeAt: '2026-03-01T18:00:00Z',
-        tentativeByName: 'Sam Vettor',
-        approvedAt: '2026-03-08T19:00:00Z',
-        approvedByName: 'Hal Host',
+        statusChangedAt: '2026-03-08T19:00:00Z',
+        statusChangedByName: 'Hal Host',
         approvedViaEventId: 'e1',
         approvedViaEventTitle: 'Board Games',
       }),
@@ -412,7 +418,6 @@ describe('JoinRequestsScreen tentative section', () => {
     renderScreen();
     await userEvent.click(screen.getByRole('radio', { name: 'approved' }));
 
-    expect(screen.getByText(/tentatively approved by sam vettor on mar 1/)).toBeInTheDocument();
     expect(screen.getByText(/auto approved after joining/)).toHaveTextContent(
       /auto approved after joining board games on mar 8/,
     );

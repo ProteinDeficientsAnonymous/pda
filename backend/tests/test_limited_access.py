@@ -11,7 +11,7 @@ from community.models import (
 )
 from community.validation import Code
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
@@ -43,7 +43,7 @@ def tentative_user(db):
         phone_number="+16505551234",
         first_name="Sprout",
         email="sprout@example.com",
-        is_member=False,
+        membership_status=MembershipStatus.TENTATIVE,
         guidelines_consent_at=timezone.now(),
     )
     JoinRequest.objects.create(
@@ -61,7 +61,7 @@ def attendance_paused_member(db):
     return User.objects.create(
         phone_number="+16505551235",
         first_name="Paused",
-        is_member=False,
+        membership_status=MembershipStatus.ATTENDANCE_PAUSED,
         attendance_paused_at=timezone.now(),
         guidelines_consent_at=timezone.now(),
     )
@@ -98,7 +98,11 @@ class TestCheckPhoneTentative:
         assert response.json()["status"] == "unknown"
 
     def test_plain_non_member_without_tentative_request_stays_unknown(self, api_client, db):
-        User.objects.create(phone_number="+16505559999", first_name="Guest", is_member=False)
+        User.objects.create(
+            phone_number="+16505559999",
+            first_name="Guest",
+            membership_status=MembershipStatus.NONE,
+        )
         response = api_client.post(
             "/api/community/check-phone/",
             {"phone_number": "+16505559999"},
