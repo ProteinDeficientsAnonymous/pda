@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  canViewPlanning,
   hasAnyAdminPermission,
   hasPermission,
   normalizePermissions,
@@ -86,5 +87,23 @@ describe('hasAnyAdminPermission', () => {
       roles: [{ name: 'custom', isDefault: false, permissions: [Permission.EditFaq] }],
     });
     expect(hasAnyAdminPermission(u)).toBe(false);
+  });
+});
+
+describe('canViewPlanning', () => {
+  const withPerms = (permissions: string[]) =>
+    user({ roles: [{ name: 'custom', isDefault: false, permissions }] });
+
+  it('view permission grants it', () => {
+    expect(canViewPlanning(withPerms([Permission.ViewEventPlanning]))).toBe(true);
+  });
+
+  it('manage permission grants it', () => {
+    expect(canViewPlanning(withPerms([Permission.ManageEventPlanning]))).toBe(true);
+  });
+
+  it('plain member does not', () => {
+    expect(canViewPlanning(withPerms([]))).toBe(false);
+    expect(canViewPlanning(null)).toBe(false);
   });
 });
