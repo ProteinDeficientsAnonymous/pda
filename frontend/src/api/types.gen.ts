@@ -24,23 +24,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/bulk-create-users/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Bulk Create Users */
-        post: operations["users__management_bulk_create_users"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/auth/change-password/": {
         parameters: {
             query?: never;
@@ -69,23 +52,6 @@ export interface paths {
         put?: never;
         /** Complete Onboarding */
         post: operations["users__auth_complete_onboarding"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/create-user/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create User */
-        post: operations["users__management_create_user"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2804,33 +2770,6 @@ export interface components {
             event_verified_total: number;
             /** Verified User Ids */
             verified_user_ids: string[];
-        };
-        /** BulkUserCreateIn */
-        BulkUserCreateIn: {
-            /** Phone Numbers */
-            phone_numbers: string[];
-        };
-        /** BulkUserCreateOut */
-        BulkUserCreateOut: {
-            /** Created */
-            created: number;
-            /** Failed */
-            failed: number;
-            /** Results */
-            results: components["schemas"]["BulkUserResult"][];
-        };
-        /** BulkUserResult */
-        BulkUserResult: {
-            /** Error */
-            error?: string | null;
-            /** Magic Link Token */
-            magic_link_token?: string | null;
-            /** Phone Number */
-            phone_number: string;
-            /** Row */
-            row: number;
-            /** Success */
-            success: boolean;
         };
         /** CalendarTokenOut */
         CalendarTokenOut: {
@@ -5937,52 +5876,6 @@ export interface components {
             /** Count */
             count: number;
         };
-        /** UserCreateIn */
-        UserCreateIn: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /**
-             * First Name
-             * @default
-             */
-            first_name: string;
-            /**
-             * Last Name
-             * @default
-             */
-            last_name: string;
-            /** Phone Number */
-            phone_number: string;
-            /** Role Id */
-            role_id?: string | null;
-        };
-        /** UserCreateOut */
-        UserCreateOut: {
-            /**
-             * First Name
-             * @default
-             */
-            first_name: string;
-            /**
-             * Full Name
-             * @default
-             */
-            full_name: string;
-            /** Id */
-            id: string;
-            /**
-             * Last Name
-             * @default
-             */
-            last_name: string;
-            /** Magic Link Token */
-            magic_link_token: string;
-            /** Phone Number */
-            phone_number: string;
-        };
         /** UserOut */
         UserOut: {
             /**
@@ -6329,39 +6222,6 @@ export interface operations {
             };
         };
     };
-    users__management_bulk_create_users: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkUserCreateIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkUserCreateOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
     users__auth_change_password: {
         parameters: {
             query?: never;
@@ -6437,57 +6297,6 @@ export interface operations {
             };
             /** @description Unprocessable Content */
             422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    users__management_create_user: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserCreateIn"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserCreateOut"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Conflict */
-            409: {
                 headers: {
                     [name: string]: unknown;
                 };

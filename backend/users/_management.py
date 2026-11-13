@@ -6,8 +6,7 @@ import re
 from community.attendance.analytics import AttendedEventOut
 from community.models import AttendanceStatus, EventRSVP
 from community.rsvps.counts import attendance_q, reportable_events_q
-from community.shared import validate_display_name
-from community.validation import Code, ValidationException, raise_validation
+from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
@@ -19,25 +18,18 @@ from users._attendance_pause import apply_attendance_pause_patch, release_held_e
 from users._unpause import email_unpaused
 from users.helpers import (
     check_and_set_email,
-    create_magic_token,
-    create_user_with_role,
     is_admin,
     resolve_name_fields,
     validate_admin_role_change,
     validate_member_role_required,
     visible_name,
 )
-from users.models import MembershipStatus, User, status_change_stamp
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 from users.phone import ADMIN_ENTERED_PHONE_REGION, validate_phone
 from users.roles import Role
 from users.schemas import (
-    BulkUserCreateIn,
-    BulkUserCreateOut,
-    BulkUserResult,
     ErrorOut,
-    UserCreateIn,
-    UserCreateOut,
     UserOut,
     UserPatchIn,
     UserRolesIn,
@@ -64,127 +56,6 @@ def _require_permission(
 
 def require_manage_users(request, endpoint: str, user_id: str | None = None) -> None:
     _require_permission(request, PermissionKey.MANAGE_USERS, endpoint, user_id)
-
-
-@router.post(
-    "/create-user/",
-    response={201: UserCreateOut, 400: ErrorOut, 403: ErrorOut, 409: ErrorOut},
-    auth=gated_jwt,
-)
-def create_user(request, payload: UserCreateIn):
-    _require_permission(request, PermissionKey.CREATE_USER, "create_user")
-
-    if payload.last_name:
-        validate_display_name(payload.last_name, field="last_name")
-    first_name = payload.first_name.strip()
-    last_name = payload.last_name.strip()
-    validate_display_name(first_name, field="first_name")
-
-    user, magic_token = create_user_with_role(
-        payload.phone_number,
-        first_name,
-        last_name,
-        payload.email,
-        payload.role_id,
-        requesting_user=request.auth,
-    )
-
-    audit_log(
-        logging.INFO,
-        "user_created",
-        request,
-        target=AuditTarget(
-            type=AuditTargetType.USER,
-            id=str(user.id),
-            details={
-                "full_name": user.full_name,
-                "role_id": str(payload.role_id) if payload.role_id else None,
-            },
-        ),
-    )
-    return Status(
-        201,
-        UserCreateOut(
-            id=str(user.id),
-            phone_number=user.phone_number,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            full_name=user.full_name,
-            magic_link_token=magic_token,
-        ),
-    )
-
-
-@router.post(
-    "/bulk-create-users/",
-    response={200: BulkUserCreateOut, 403: ErrorOut},
-    auth=gated_jwt,
-)
-def bulk_create_users(request, payload: BulkUserCreateIn):
-    require_manage_users(request, "bulk_create_users")
-
-    member_role = Role.objects.filter(name="member", is_default=True).first()
-    results: list[BulkUserResult] = []
-    created = 0
-    failed = 0
-
-    for i, raw_phone in enumerate(payload.phone_numbers):
-        # Per-row errors are embedded in a 200 response, not raised as 4xx.
-        # We catch ValidationException and surface its code as the result's
-        # error field — the frontend maps codes → copy via messageForCode.
-        try:
-            validated_phone = validate_phone(raw_phone.strip(), ADMIN_ENTERED_PHONE_REGION)
-        except ValidationException as e:
-            results.append(
-                BulkUserResult(row=i + 1, phone_number=raw_phone, success=False, error=e.code)
-            )
-            failed += 1
-            continue
-
-        if User.objects.filter(phone_number=validated_phone).exists():
-            results.append(
-                BulkUserResult(
-                    row=i + 1,
-                    phone_number=raw_phone,
-                    success=False,
-                    error=Code.Phone.ALREADY_EXISTS,
-                )
-            )
-            failed += 1
-            continue
-
-        user = User.objects.create_user(
-            phone_number=validated_phone,
-            membership_status=MembershipStatus.ACTIVE_MEMBER,
-            needs_onboarding=True,
-            **status_change_stamp(request.auth),
-        )
-        user.set_unusable_password()
-        user.save(update_fields=["password"])
-        if member_role:
-            user.roles.add(member_role)
-
-        magic_token = create_magic_token(user)
-        results.append(
-            BulkUserResult(
-                row=i + 1,
-                phone_number=validated_phone,
-                success=True,
-                magic_link_token=magic_token,
-            )
-        )
-        created += 1
-
-    audit_log(
-        logging.INFO,
-        "users_bulk_created",
-        request,
-        target=AuditTarget(details={"count_created": created, "count_failed": failed}),
-    )
-    return Status(
-        200,
-        BulkUserCreateOut(results=results, created=created, failed=failed),
-    )
 
 
 def _matches_for_non_admin(u: User, q: str, digits: str) -> bool:
