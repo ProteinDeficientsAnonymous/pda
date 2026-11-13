@@ -37,7 +37,7 @@ class JoinRequest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     first_name = models.CharField(max_length=64, blank=True, default="")
     last_name = models.CharField(max_length=64, blank=True, default="")
-    phone_number = models.CharField(max_length=20, db_index=True)
+    phone_number = models.CharField(max_length=20)
     email = models.EmailField()
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -90,6 +90,9 @@ class JoinRequest(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["-submitted_at"]
+        indexes = [
+            models.Index(fields=["phone_number", "status"], name="joinrequest_phone_status_idx"),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["phone_number"],

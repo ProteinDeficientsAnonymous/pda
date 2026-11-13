@@ -146,6 +146,9 @@ class Event(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["start_datetime"]
+        indexes = [
+            models.Index(fields=["status", "start_datetime"], name="event_status_start_idx"),
+        ]
 
     def save(self, *args, **kwargs):
         # Assigned once and never regenerated on title edits, so shared links never break.
@@ -273,6 +276,9 @@ class EventRSVP(models.Model):
         ordering = ["created_at", "pk"]
         constraints = [
             models.UniqueConstraint(fields=["event", "user"], name="unique_event_rsvp"),
+        ]
+        indexes = [
+            models.Index(fields=["event", "status"], name="eventrsvp_event_status_idx"),
         ]
 
     @classmethod
