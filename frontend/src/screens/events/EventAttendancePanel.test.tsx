@@ -177,6 +177,49 @@ describe('EventAttendancePanel', () => {
     expect(screen.getByText('cassie')).toBeInTheDocument();
   });
 
+  it("offers didn't attend only for guests who rsvp'd going", () => {
+    mockStats(BASE_STATS);
+    renderPanel(MIXED_RSVP_EVENT);
+
+    expect(screen.getAllByRole('button', { name: /^attended$/i })).toHaveLength(3);
+    const [didntAttend, ...rest] = screen.getAllByRole('button', { name: /^didn't attend$/i });
+    expect(rest).toHaveLength(0);
+    expect(didntAttend?.closest('li')).toHaveTextContent('alice');
+  });
+
+  it("fires didn't go for a going guest and their +1, and hides it for a maybe +1", () => {
+    mockStats(BASE_STATS);
+    renderPanel(
+      makeEvent({
+        isPast: true,
+        guests: [
+          makeGuest({ userId: 'alice', name: 'alice', hasPlusOne: true }),
+          makeGuest({
+            userId: 'mabel',
+            name: 'mabel',
+            status: RsvpServerStatus.Maybe,
+            hasPlusOne: true,
+          }),
+        ],
+      }),
+    );
+
+    const didntAttend = screen.getAllByRole('button', { name: /^didn't attend$/i });
+    expect(didntAttend).toHaveLength(2);
+    didntAttend.forEach((btn) => {
+      fireEvent.click(btn);
+    });
+
+    expect(setAttendanceMutate).toHaveBeenCalledWith(
+      { userId: 'alice', attendance: AttendanceStatus.DidntGo, forPlusOne: false },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+    expect(setAttendanceMutate).toHaveBeenCalledWith(
+      { userId: 'alice', attendance: AttendanceStatus.DidntGo, forPlusOne: true },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+  });
+
   it('narrows the list to one rsvp status when a filter chip is picked', () => {
     mockStats(BASE_STATS);
     renderPanel(MIXED_RSVP_EVENT);

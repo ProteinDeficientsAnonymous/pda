@@ -1,3 +1,5 @@
+from itertools import product
+
 import pytest
 from community.models import AttendanceStatus, EventRSVP, RSVPStatus
 
@@ -320,3 +322,44 @@ class TestSetAttendance:
         )
         assert response.status_code == 400
         assert response.json()["detail"][0]["code"] == "event.no_plus_one_to_check_in"
+
+    @pytest.mark.parametrize(
+        "case",
+        list(product([RSVPStatus.MAYBE, RSVPStatus.CANT_GO, RSVPStatus.WAITLISTED], [False, True])),
+    )
+    def test_rejects_didnt_go_when_rsvp_not_going(
+        self, api_client, open_check_in_event, host, members, case
+    ):
+        rsvp_status, for_plus_one = case
+        rsvp = EventRSVP.objects.create(
+            event=open_check_in_event, user=members[0], status=rsvp_status, has_plus_one=True
+        )
+        response = api_client.post(
+            f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
+            {"attendance": AttendanceStatus.DIDNT_GO, "for_plus_one": for_plus_one},
+            content_type="application/json",
+            **auth_headers_for(host),
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"][0]["code"] == "event.didnt_go_requires_going"
+        rsvp.refresh_from_db()
+        assert rsvp.attendance == AttendanceStatus.UNKNOWN
+        assert rsvp.plus_one_attendance == AttendanceStatus.UNKNOWN
+
+    @pytest.mark.parametrize("for_plus_one", [False, True])
+    def test_allows_didnt_go_when_rsvp_going(
+        self, api_client, open_check_in_event, host, members, for_plus_one
+    ):
+        EventRSVP.objects.create(
+            event=open_check_in_event,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            has_plus_one=True,
+        )
+        response = api_client.post(
+            f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
+            {"attendance": AttendanceStatus.DIDNT_GO, "for_plus_one": for_plus_one},
+            content_type="application/json",
+            **auth_headers_for(host),
+        )
+        assert response.status_code == 200

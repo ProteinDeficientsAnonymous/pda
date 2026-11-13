@@ -1,7 +1,12 @@
 import { useState } from 'react';
 
 import type { AttendanceStatusValue, EventGuest, RsvpServerStatusValue } from '@/models/event';
-import { AttendanceStatus, RSVP_GROUP_LABELS, rsvpGroupLabel } from '@/models/event';
+import {
+  AttendanceStatus,
+  RSVP_GROUP_LABELS,
+  rsvpGroupLabel,
+  RsvpServerStatus,
+} from '@/models/event';
 import { cn } from '@/utils/cn';
 
 function firstName(name: string): string {
@@ -51,14 +56,16 @@ export function EventCheckInList({
                     }}
                     disabled={isPending}
                   />
-                  <AttendanceButton
-                    active={g.attendance === AttendanceStatus.DidntGo}
-                    label="didn't attend"
-                    onClick={() => {
-                      onMark(g.userId, AttendanceStatus.DidntGo);
-                    }}
-                    disabled={isPending}
-                  />
+                  {g.status === RsvpServerStatus.Attending ? (
+                    <AttendanceButton
+                      active={g.attendance === AttendanceStatus.DidntGo}
+                      label="didn't attend"
+                      onClick={() => {
+                        onMark(g.userId, AttendanceStatus.DidntGo);
+                      }}
+                      disabled={isPending}
+                    />
+                  ) : null}
                 </div>
               </div>
               {g.hasPlusOne ? (
@@ -75,14 +82,16 @@ export function EventCheckInList({
                       }}
                       disabled={isPending}
                     />
-                    <AttendanceButton
-                      active={g.plusOneAttendance === AttendanceStatus.DidntGo}
-                      label="didn't attend"
-                      onClick={() => {
-                        onMark(g.userId, AttendanceStatus.DidntGo, true);
-                      }}
-                      disabled={isPending}
-                    />
+                    {g.status === RsvpServerStatus.Attending ? (
+                      <AttendanceButton
+                        active={g.plusOneAttendance === AttendanceStatus.DidntGo}
+                        label="didn't attend"
+                        onClick={() => {
+                          onMark(g.userId, AttendanceStatus.DidntGo, true);
+                        }}
+                        disabled={isPending}
+                      />
+                    ) : null}
                   </div>
                 </div>
               ) : null}

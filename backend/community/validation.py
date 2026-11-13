@@ -37,6 +37,7 @@ class Code:
         RSVP_COULD_NOT_BE_CREATED = "event.rsvp_could_not_be_created"  # generic, no-oracle
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         NO_PLUS_ONE_TO_CHECK_IN = "event.no_plus_one_to_check_in"
+        DIDNT_GO_REQUIRES_GOING = "event.didnt_go_requires_going"
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }
         GUEST_NOT_ELIGIBLE = "event.guest_not_eligible"
         BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"

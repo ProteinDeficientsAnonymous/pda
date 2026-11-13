@@ -39,6 +39,7 @@ export const Code = {
     RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
     AttendanceOpensLater: 'event.attendance_opens_later',
     NoPlusOneToCheckIn: 'event.no_plus_one_to_check_in',
+    DidntGoRequiresGoing: 'event.didnt_go_requires_going',
     PermDenied: 'event.perm_denied',
     GuestNotEligible: 'event.guest_not_eligible',
     BlastInvalidAudience: 'event.blast_invalid_audience',
@@ -348,6 +349,7 @@ export type ValidationCode =
   | 'event.rsvp_could_not_be_created'
   | 'event.attendance_opens_later'
   | 'event.no_plus_one_to_check_in'
+  | 'event.didnt_go_requires_going'
   | 'event.perm_denied'
   | 'event.guest_not_eligible'
   | 'event.blast_invalid_audience'
@@ -581,6 +583,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvp_could_not_be_created': [],
   'event.attendance_opens_later': [],
   'event.no_plus_one_to_check_in': [],
+  'event.didnt_go_requires_going': [],
   'event.perm_denied': ['action'],
   'event.guest_not_eligible': [],
   'event.blast_invalid_audience': [],
