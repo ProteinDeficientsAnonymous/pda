@@ -4,6 +4,7 @@ import pytest
 from community.models import EventStatus, EventType, RSVPStatus
 from community.rsvps.reminder import due_rsvp_reminder_events, send_due_rsvp_reminders
 from django.core.management import call_command
+from users.models import MembershipStatus
 
 from tests._digest_helpers import make_tentative
 from tests._event_feedback_helpers import NOW, TZ
@@ -60,8 +61,12 @@ class TestSendDueRsvpReminders:
         [
             (make_user, EventType.COMMUNITY, "/events/"),
             (lambda: make_tentative("+12025558001"), EventType.OFFICIAL, "/events/"),
-            (lambda: make_tentative("+12025558002"), EventType.COMMUNITY, "/my-rsvps?token="),
-            (lambda: make_user(is_member=False), EventType.OFFICIAL, "/my-rsvps?token="),
+            (lambda: make_tentative("+12025558002"), EventType.COMMUNITY, "/events/"),
+            (
+                lambda: make_user(membership_status=MembershipStatus.NONE),
+                EventType.OFFICIAL,
+                "/my-rsvps?token=",
+            ),
         ],
     )
     def test_link_matches_guest_kind(self, fake_email_sender, make_guest, event_type, link):
