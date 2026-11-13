@@ -1883,6 +1883,24 @@ export interface paths {
         patch: operations["community_content_pages_update_page"];
         trace?: never;
     };
+    "/api/community/planning/slots/{slot_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Slot */
+        delete: operations["community_planning_years_delete_slot"];
+        options?: never;
+        head?: never;
+        /** Update Slot */
+        patch: operations["community_planning_years_update_slot"];
+        trace?: never;
+    };
     "/api/community/planning/years/": {
         parameters: {
             query?: never;
@@ -1895,6 +1913,24 @@ export interface paths {
         put?: never;
         /** Create Year */
         post: operations["community_planning_years_create_year"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/years/{year}/slots/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Slots */
+        get: operations["community_planning_years_list_slots"];
+        put?: never;
+        /** Create Slot */
+        post: operations["community_planning_years_create_slot"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5081,6 +5117,45 @@ export interface components {
              * @default
              */
             user_photo_url: string;
+        };
+        /** PlanningSlotIn */
+        PlanningSlotIn: {
+            kind: components["schemas"]["PlanningSlotKind"];
+            /** Label */
+            label: string;
+            /** Month */
+            month: number;
+        };
+        /**
+         * PlanningSlotKind
+         * @enum {string}
+         */
+        PlanningSlotKind: "monthly" | "biannual";
+        /** PlanningSlotOut */
+        PlanningSlotOut: {
+            /** Event Id */
+            event_id: string | null;
+            /** Event Slug */
+            event_slug: string | null;
+            /** Event Status */
+            event_status: string | null;
+            /** Id */
+            id: string;
+            kind: components["schemas"]["PlanningSlotKind"];
+            /** Label */
+            label: string;
+            /** Month */
+            month: number;
+            /** Order */
+            order: number;
+        };
+        /** PlanningSlotPatchIn */
+        PlanningSlotPatchIn: {
+            kind?: components["schemas"]["PlanningSlotKind"] | null;
+            /** Label */
+            label?: string | null;
+            /** Month */
+            month?: number | null;
         };
         /** PlanningYearIn */
         PlanningYearIn: {
@@ -11831,6 +11906,88 @@ export interface operations {
             };
         };
     };
+    community_planning_years_delete_slot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_years_update_slot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningSlotPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningSlotOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community_planning_years_list_years: {
         parameters: {
             query?: never;
@@ -11893,6 +12050,90 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_years_list_slots: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningSlotOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_years_create_slot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningSlotIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningSlotOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
