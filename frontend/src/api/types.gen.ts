@@ -3358,7 +3358,7 @@ export interface components {
             /** Can Post */
             can_post: boolean;
             /** Cannot Post Reason */
-            cannot_post_reason?: ("login_required" | "rsvp_required") | null;
+            cannot_post_reason?: ("login_required" | "rsvp_required" | "members_only") | null;
             /** Items */
             items: components["schemas"]["EventCommentOut"][];
         };

@@ -37,10 +37,13 @@ class EventCommentOut(EventCommentReplyOut):
     replies: list[EventCommentReplyOut]
 
 
+CannotPostReason = Literal["login_required", "rsvp_required", "members_only"]
+
+
 class EventCommentListOut(BaseModel):
     items: list[EventCommentOut]
     can_post: bool
-    cannot_post_reason: Literal["login_required", "rsvp_required"] | None = None
+    cannot_post_reason: CannotPostReason | None = None
 
 
 class CommentBodyIn(BaseModel):
