@@ -3,12 +3,13 @@ from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from users.permissions import PermissionKey
 
 from community.join_requests.manage import JoinRequestOut, join_request_out
-from community.models import JoinRequest, JoinRequestStatus
+from community.models import OPEN_JOIN_REQUEST_STATUSES, JoinRequest, JoinRequestStatus
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
 
@@ -47,14 +48,24 @@ def unreject_join_request(request, id: UUID):
         raise_validation(Code.JoinRequest.ONLY_REJECTED_CAN_BE_UN_REJECTED, status_code=400)
     if JoinRequest.objects.filter(
         phone_number=join_request.phone_number,
-        status__in=(JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE),
+        status__in=OPEN_JOIN_REQUEST_STATUSES,
     ).exists():
         raise_validation(Code.JoinRequest.OPEN_REQUEST_EXISTS, status_code=400)
 
     join_request.status = JoinRequestStatus.PENDING
+    join_request.status_changed_at = timezone.now()
+    join_request.status_changed_by = request.auth
     join_request.rejection_reason = ""
     join_request.rejection_note = ""
-    join_request.save(update_fields=["status", "rejection_reason", "rejection_note"])
+    join_request.save(
+        update_fields=[
+            "status",
+            "status_changed_at",
+            "status_changed_by",
+            "rejection_reason",
+            "rejection_note",
+        ]
+    )
 
     audit_log(
         logging.INFO,

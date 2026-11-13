@@ -9,7 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from PIL import Image
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._auth import auth_headers_for
 from tests._time import future_iso
@@ -296,11 +296,11 @@ class TestGetEventMemory:
         ]
         maybe_member = make_user(first_name="MM")
         attending_nonmembers = [
-            make_user(first_name="N1", is_member=False),
-            make_user(first_name="N2", is_member=False),
-            make_user(first_name="N3", is_member=False),
+            make_user(first_name="N1", membership_status=MembershipStatus.NONE),
+            make_user(first_name="N2", membership_status=MembershipStatus.NONE),
+            make_user(first_name="N3", membership_status=MembershipStatus.NONE),
         ]
-        maybe_nonmember = make_user(first_name="NM", is_member=False)
+        maybe_nonmember = make_user(first_name="NM", membership_status=MembershipStatus.NONE)
         waitlisted = make_user(first_name="W")
         for guest in (
             *attending_members,

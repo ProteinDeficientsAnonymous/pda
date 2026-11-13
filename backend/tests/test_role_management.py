@@ -1,11 +1,13 @@
 import pytest
+from audit.models import AuditLogEntry
 from community.validation import Code
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
+from tests._users import make_attendance_paused
 
 
 @pytest.fixture
@@ -185,17 +187,15 @@ class TestRoleManagementAPI:
 
 @pytest.mark.django_db
 class TestNonMemberCannotHoldRole:
-    """Issue 525: a non-member (is_member=False) must never hold a role, and the
-    role member-counts must reflect members only."""
+    """Issue 525: a non-member must never hold a role, and role counts reflect members only."""
 
     def _make_non_member(self):
 
-        # is_member=False overrides the conftest autouse default (is_member=True).
         return User.objects.create_user(
             phone_number="+12025559001",
             first_name="Non",
             last_name="Member",
-            is_member=False,
+            membership_status=MembershipStatus.NONE,
         )
 
     # The guard raises inside the m2m atomic block, so we can't query the DB after; pytest.raises proves the abort.
@@ -264,3 +264,29 @@ class TestNonMemberCannotHoldRole:
         assert response.status_code == 200
         counted = next(r for r in response.json() if r["name"] == "counted")
         assert counted["user_count"] == 1
+
+    def test_list_roles_count_includes_guidelines_paused(
+        self, api_client, manage_users_headers, test_user
+    ):
+        role = Role.objects.create(name="counted", permissions=[])
+        test_user.roles.add(role)
+        User.objects.filter(pk=test_user.pk).update(
+            membership_status=MembershipStatus.GUIDELINES_PAUSED
+        )
+        response = api_client.get("/api/auth/roles/", **manage_users_headers)
+        counted = next(r for r in response.json() if r["name"] == "counted")
+        assert counted["user_count"] == 1
+
+    def test_attendance_paused_holder_counted_in_list_and_delete(
+        self, api_client, manage_users_headers, django_capture_on_commit_callbacks
+    ):
+        role = Role.objects.create(name="counted", permissions=[])
+        make_attendance_paused().roles.add(role)
+        response = api_client.get("/api/auth/roles/", **manage_users_headers)
+        counted = next(r for r in response.json() if r["name"] == "counted")
+        assert counted["user_count"] == 1
+
+        with django_capture_on_commit_callbacks(execute=True):
+            api_client.delete(f"/api/auth/roles/{role.id}/", **manage_users_headers)
+        entry = AuditLogEntry.objects.get(action="role_deleted")
+        assert entry.details["affected_user_count"] == 1

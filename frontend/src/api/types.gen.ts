@@ -24,23 +24,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/bulk-create-users/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Bulk Create Users */
-        post: operations["users__management_bulk_create_users"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/auth/change-password/": {
         parameters: {
             query?: never;
@@ -69,23 +52,6 @@ export interface paths {
         put?: never;
         /** Complete Onboarding */
         post: operations["users__auth_complete_onboarding"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/create-user/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create User */
-        post: operations["users__management_create_user"];
         delete?: never;
         options?: never;
         head?: never;
@@ -367,6 +333,23 @@ export interface paths {
         };
         /** List Member Attended Events */
         get: operations["users__management_list_member_attended_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/users/{user_id}/guidelines-pause-preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Guidelines Pause Preview */
+        get: operations["users__attendance_pause_api_guidelines_pause_preview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2698,11 +2681,6 @@ export interface components {
             /** Updated Count */
             updated_count: number;
         };
-        /** AttendancePausePreviewOut */
-        AttendancePausePreviewOut: {
-            /** Events */
-            events: components["schemas"]["PauseImpactEventOut"][];
-        };
         /** AttendanceReportOut */
         AttendanceReportOut: {
             /**
@@ -2792,33 +2770,6 @@ export interface components {
             event_verified_total: number;
             /** Verified User Ids */
             verified_user_ids: string[];
-        };
-        /** BulkUserCreateIn */
-        BulkUserCreateIn: {
-            /** Phone Numbers */
-            phone_numbers: string[];
-        };
-        /** BulkUserCreateOut */
-        BulkUserCreateOut: {
-            /** Created */
-            created: number;
-            /** Failed */
-            failed: number;
-            /** Results */
-            results: components["schemas"]["BulkUserResult"][];
-        };
-        /** BulkUserResult */
-        BulkUserResult: {
-            /** Error */
-            error?: string | null;
-            /** Magic Link Token */
-            magic_link_token?: string | null;
-            /** Phone Number */
-            phone_number: string;
-            /** Row */
-            row: number;
-            /** Success */
-            success: boolean;
         };
         /** CalendarTokenOut */
         CalendarTokenOut: {
@@ -3346,7 +3297,7 @@ export interface components {
             /** Can Post */
             can_post: boolean;
             /** Cannot Post Reason */
-            cannot_post_reason?: ("login_required" | "rsvp_required") | null;
+            cannot_post_reason?: ("login_required" | "rsvp_required" | "members_only") | null;
             /** Items */
             items: components["schemas"]["EventCommentOut"][];
         };
@@ -4616,10 +4567,6 @@ export interface components {
              * @default []
              */
             answers: components["schemas"]["JoinRequestAnswerOut"][];
-            /** Approved At */
-            approved_at?: string | null;
-            /** Approved By Name */
-            approved_by_name?: string | null;
             /** Approved Via Event Id */
             approved_via_event_id?: string | null;
             /** Approved Via Event Title */
@@ -4665,6 +4612,8 @@ export interface components {
             onboarded_at?: string | null;
             /** Phone Number */
             phone_number: string;
+            previous_archive?: components["schemas"]["PreviousArchiveOut"] | null;
+            previous_rejection?: components["schemas"]["PreviousRejectionOut"] | null;
             /**
              * Previously Archived
              * @default false
@@ -4675,10 +4624,6 @@ export interface components {
              * @default false
              */
             previously_rejected: boolean;
-            /** Rejected At */
-            rejected_at?: string | null;
-            /** Rejected By Name */
-            rejected_by_name?: string | null;
             /**
              * Rejection Note
              * @default
@@ -4696,15 +4641,15 @@ export interface components {
             rsvp_events: components["schemas"]["JoinRequestRsvpOut"][];
             /** Status */
             status: string;
+            /** Status Changed At */
+            status_changed_at?: string | null;
+            /** Status Changed By Name */
+            status_changed_by_name?: string | null;
             /**
              * Submitted At
              * Format: date-time
              */
             submitted_at: string;
-            /** Tentative At */
-            tentative_at?: string | null;
-            /** Tentative By Name */
-            tentative_by_name?: string | null;
             /**
              * Upcoming Club Count
              * @default 0
@@ -4859,13 +4804,15 @@ export interface components {
             didnt_go_count: number;
             /** Full Name */
             full_name: string;
+            /** Is Attendance Paused */
+            is_attendance_paused: boolean;
+            /** Is Guidelines Paused */
+            is_guidelines_paused: boolean;
             /**
              * Is Pause Candidate
              * @default false
              */
             is_pause_candidate: boolean;
-            /** Is Paused */
-            is_paused: boolean;
             /** Last Qualifying At */
             last_qualifying_at?: string | null;
             /** Months Since Last Qualifying */
@@ -5014,6 +4961,11 @@ export interface components {
             /** Body */
             body?: string | null;
         };
+        /**
+         * MembershipStatus
+         * @enum {string}
+         */
+        MembershipStatus: "none" | "tentative" | "active_member" | "attendance_paused" | "archived" | "guidelines_paused";
         /** MyEventFeedbackOut */
         MyEventFeedbackOut: {
             /** Token */
@@ -5078,12 +5030,21 @@ export interface components {
          * PauseOutcome
          * @enum {string}
          */
-        PauseOutcome: "kept" | "removed" | "drafted";
+        PauseOutcome: "kept" | "removed" | "drafted" | "rescinded";
+        /** PausePreviewOut */
+        PausePreviewOut: {
+            /** Clears Whatsapp */
+            clears_whatsapp: boolean;
+            /** Events */
+            events: components["schemas"]["PauseImpactEventOut"][];
+            /** Stripped Roles */
+            stripped_roles: string[];
+        };
         /**
          * PauseRole
          * @enum {string}
          */
-        PauseRole: "rsvp" | "hosting";
+        PauseRole: "rsvp" | "hosting" | "cohost_invite";
         /** PendingCoHostInviteOut */
         PendingCoHostInviteOut: {
             /** Id */
@@ -5130,6 +5091,31 @@ export interface components {
             voters: {
                 [key: string]: components["schemas"]["VoterOut"][];
             };
+        };
+        /** PreviousArchiveOut */
+        PreviousArchiveOut: {
+            /** Archived At */
+            archived_at?: string | null;
+            /** Archived By Name */
+            archived_by_name?: string | null;
+            paused_status?: components["schemas"]["MembershipStatus"] | null;
+        };
+        /** PreviousRejectionOut */
+        PreviousRejectionOut: {
+            /**
+             * Rejection Note
+             * @default
+             */
+            rejection_note: string;
+            /**
+             * Rejection Reason
+             * @default
+             */
+            rejection_reason: string;
+            /** Status Changed At */
+            status_changed_at?: string | null;
+            /** Status Changed By Name */
+            status_changed_by_name?: string | null;
         };
         /** PublicRsvpIn */
         PublicRsvpIn: {
@@ -5890,52 +5876,6 @@ export interface components {
             /** Count */
             count: number;
         };
-        /** UserCreateIn */
-        UserCreateIn: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /**
-             * First Name
-             * @default
-             */
-            first_name: string;
-            /**
-             * Last Name
-             * @default
-             */
-            last_name: string;
-            /** Phone Number */
-            phone_number: string;
-            /** Role Id */
-            role_id?: string | null;
-        };
-        /** UserCreateOut */
-        UserCreateOut: {
-            /**
-             * First Name
-             * @default
-             */
-            first_name: string;
-            /**
-             * Full Name
-             * @default
-             */
-            full_name: string;
-            /** Id */
-            id: string;
-            /**
-             * Last Name
-             * @default
-             */
-            last_name: string;
-            /** Magic Link Token */
-            magic_link_token: string;
-            /** Phone Number */
-            phone_number: string;
-        };
         /** UserOut */
         UserOut: {
             /**
@@ -6019,11 +5959,6 @@ export interface components {
              */
             is_member: boolean;
             /**
-             * Is Paused
-             * @default false
-             */
-            is_paused: boolean;
-            /**
              * Is Superuser
              * @default false
              */
@@ -6040,6 +5975,8 @@ export interface components {
              * @default false
              */
             login_link_requested: boolean;
+            /** @default active_member */
+            membership_status: components["schemas"]["MembershipStatus"];
             /**
              * Monthly Digest Opt Out
              * @default false
@@ -6145,10 +6082,10 @@ export interface components {
             email?: string | null;
             /** First Name */
             first_name?: string | null;
+            /** Guidelines Paused */
+            guidelines_paused?: boolean | null;
             /** Has Joined Whatsapp */
             has_joined_whatsapp?: boolean | null;
-            /** Is Paused */
-            is_paused?: boolean | null;
             /** Last Name */
             last_name?: string | null;
             /** Phone Number */
@@ -6285,39 +6222,6 @@ export interface operations {
             };
         };
     };
-    users__management_bulk_create_users: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkUserCreateIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkUserCreateOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
     users__auth_change_password: {
         parameters: {
             query?: never;
@@ -6393,57 +6297,6 @@ export interface operations {
             };
             /** @description Unprocessable Content */
             422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    users__management_create_user: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserCreateIn"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserCreateOut"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Conflict */
-            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7198,7 +7051,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AttendancePausePreviewOut"];
+                    "application/json": components["schemas"]["PausePreviewOut"];
                 };
             };
             /** @description Forbidden */
@@ -7239,6 +7092,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AttendedEventOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    users__attendance_pause_api_guidelines_pause_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PausePreviewOut"];
                 };
             };
             /** @description Forbidden */
@@ -12133,6 +12026,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

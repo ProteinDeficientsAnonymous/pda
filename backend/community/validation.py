@@ -38,6 +38,7 @@ class Code:
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         NO_PLUS_ONE_TO_CHECK_IN = "event.no_plus_one_to_check_in"
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }
+        GUEST_NOT_ELIGIBLE = "event.guest_not_eligible"
         BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"
         BLAST_NO_RECIPIENTS = "event.blast_no_recipients"
         WOULD_REMOVE_NON_MEMBERS = "event.would_remove_non_members"  # params: { count: int }
@@ -114,7 +115,9 @@ class Code:
     class Auth:
         INVALID_CREDENTIALS = "auth.invalid_credentials"
         ACCOUNT_ARCHIVED = "auth.account_archived"
-        ACCOUNT_PAUSED = "auth.account_paused"
+        ACCOUNT_GUIDELINES_PAUSED = "auth.account_guidelines_paused"
+        ACCOUNT_REJECTED = "auth.account_rejected"
+        NOT_A_MEMBER = "auth.not_a_member"
         MAGIC_LINK_INVALID_OR_EXPIRED = "auth.magic_link_invalid_or_expired"
         MAGIC_LINK_ALREADY_USED = "auth.magic_link_already_used"
         ALREADY_SIGNED_IN_AS_DIFFERENT_USER = "auth.already_signed_in_as_different_user"
@@ -152,6 +155,8 @@ class Code:
         CANNOT_HARD_DELETE_LOGGED_IN = "user.cannot_hard_delete_logged_in"
         CANNOT_PAUSE_SELF = "user.cannot_pause_self"
         CANNOT_PAUSE_ADMIN = "user.cannot_pause_admin"
+        GUIDELINES_PAUSED = "user.guidelines_paused"
+        ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN = "user.attendance_pause_lifts_on_check_in"
         ROLE_IDS_NOT_FOUND = "user.role_ids_not_found"
         INVALID_BIRTHDAY = "user.invalid_birthday"
         INVALID_VEGANNIVERSARY = "user.invalid_veganniversary"
@@ -192,6 +197,7 @@ class Code:
     class JoinRequest:
         NOT_FOUND = "join_request.not_found"
         ALREADY_DECIDED = "join_request.already_decided"
+        TENTATIVE_CANNOT_BE_REJECTED = "join_request.tentative_cannot_be_rejected"
         ONLY_REJECTED_CAN_BE_UN_REJECTED = "join_request.only_rejected_can_be_un_rejected"
         ALREADY_MEMBER = "join_request.already_member"
         PHONE_ALREADY_INVITED = "join_request.phone_already_invited"

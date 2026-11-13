@@ -6,8 +6,6 @@ import { makeQueryClient, queryWrapper } from '@/test/render';
 
 import {
   useArchiveUser,
-  useBulkCreateUsers,
-  useCreateUser,
   useMemberAttendedEvents,
   useSendMemberMagicLink,
   useUpdateMemberRoles,
@@ -45,8 +43,6 @@ describe('useUsers', () => {
           show_phone: true,
           show_email: false,
           is_superuser: false,
-          is_paused: false,
-          attendance_paused_at: '2026-03-01T12:00:00Z',
           needs_onboarding: false,
           login_link_requested: false,
           attended_count: 4,
@@ -77,7 +73,6 @@ describe('useUsers', () => {
     expect(member?.showPhone).toBe(true);
     expect(member?.showEmail).toBe(false);
     expect(member?.attendedCount).toBe(4);
-    expect(member?.attendancePausedAt).toEqual(new Date('2026-03-01T12:00:00Z'));
     expect(member?.roles[0]).toEqual({
       id: 'r1',
       name: 'member',
@@ -110,7 +105,6 @@ describe('useUsers', () => {
       params: { include_non_members: true },
     });
     expect(result.current.data?.[0]?.isMember).toBe(false);
-    expect(result.current.data?.[0]?.attendancePausedAt).toBeNull();
   });
 
   it('propagates errors from the API', async () => {
@@ -134,79 +128,7 @@ describe('useUsers', () => {
 });
 
 // ---------------------------------------------------------------------------
-// useCreateUser
-// ---------------------------------------------------------------------------
-
-describe('useCreateUser', () => {
-  it('posts the payload, maps the response, and invalidates the users query', async () => {
-    mockedPost.mockResolvedValueOnce({
-      data: {
-        id: 'u2',
-        phone_number: '+15551230002',
-        first_name: 'Grace',
-        full_name: 'Grace',
-        magic_link_token: 'magic-abc',
-      },
-    });
-
-    const qc = makeQueryClient();
-    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useCreateUser(), { wrapper: queryWrapper(qc) });
-
-    const created = await result.current.mutateAsync({
-      phoneNumber: '+15551230002',
-      firstName: 'Grace',
-      lastName: 'Hopper',
-      email: 'grace@example.com',
-      roleId: 'role-xyz',
-    });
-
-    expect(mockedPost).toHaveBeenCalledWith('/api/auth/create-user/', {
-      phone_number: '+15551230002',
-      first_name: 'Grace',
-      last_name: 'Hopper',
-      email: 'grace@example.com',
-      role_id: 'role-xyz',
-    });
-    expect(created).toEqual({
-      id: 'u2',
-      phoneNumber: '+15551230002',
-      fullName: 'Grace',
-      firstName: 'Grace',
-      magicLinkToken: 'magic-abc',
-    });
-    await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));
-  });
-
-  it('omits optional fields from the wire payload when not provided', async () => {
-    mockedPost.mockResolvedValueOnce({
-      data: {
-        id: 'u3',
-        phone_number: '+15551230003',
-        full_name: '',
-        magic_link_token: 'magic-xyz',
-      },
-    });
-
-    const qc = makeQueryClient();
-    const { result } = renderHook(() => useCreateUser(), { wrapper: queryWrapper(qc) });
-
-    await result.current.mutateAsync({
-      phoneNumber: '+15551230003',
-      email: 'grace3@example.com',
-    });
-
-    expect(mockedPost).toHaveBeenCalledWith('/api/auth/create-user/', {
-      phone_number: '+15551230003',
-      email: 'grace3@example.com',
-    });
-  });
-});
-
-// ---------------------------------------------------------------------------
-// useUpdateUser — not on the Flutter list, but it's the natural pair for
-// useCreateUser and the test doc for tier 3 implicitly covers the admin CRUD
-// surface. Keep lightweight: one happy-path assertion.
+// useUpdateUser
 // ---------------------------------------------------------------------------
 
 describe('useUpdateUser', () => {
@@ -227,7 +149,7 @@ describe('useUpdateUser', () => {
     await result.current.mutateAsync({
       firstName: 'Ada',
       lastName: 'Lovelace',
-      isPaused: false,
+      guidelinesPaused: false,
       attendancePaused: true,
       hasJoinedWhatsapp: true,
     });
@@ -235,59 +157,12 @@ describe('useUpdateUser', () => {
     expect(mockedPatch).toHaveBeenCalledWith('/api/auth/users/u1/', {
       first_name: 'Ada',
       last_name: 'Lovelace',
-      is_paused: false,
+      guidelines_paused: false,
       attendance_paused: true,
       has_joined_whatsapp: true,
     });
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['member-attendance-analytics'] });
-  });
-});
-
-describe('useBulkCreateUsers', () => {
-  it('posts the phone list, maps results, and invalidates users query', async () => {
-    mockedPost.mockResolvedValueOnce({
-      data: {
-        results: [
-          {
-            row: 1,
-            phone_number: '+15551230001',
-            success: true,
-            magic_link_token: 'magic-1',
-          },
-          {
-            row: 2,
-            phone_number: 'garbage',
-            success: false,
-            error: 'Invalid phone number',
-          },
-        ],
-        created: 1,
-        failed: 1,
-      },
-    });
-
-    const qc = makeQueryClient();
-    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
-    const { result } = renderHook(() => useBulkCreateUsers(), { wrapper: queryWrapper(qc) });
-
-    const response = await result.current.mutateAsync(['+15551230001', 'garbage']);
-
-    expect(mockedPost).toHaveBeenCalledWith('/api/auth/bulk-create-users/', {
-      phone_numbers: ['+15551230001', 'garbage'],
-    });
-    expect(response.created).toBe(1);
-    expect(response.failed).toBe(1);
-    expect(response.results[0]).toEqual({
-      row: 1,
-      phoneNumber: '+15551230001',
-      success: true,
-      error: undefined,
-      magicLinkToken: 'magic-1',
-    });
-    expect(response.results[1]?.success).toBe(false);
-    expect(response.results[1]?.error).toBe('Invalid phone number');
-    await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));
   });
 });
 

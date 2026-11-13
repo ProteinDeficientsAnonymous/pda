@@ -7,7 +7,8 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, Field
-from users.models import PUBLIC_FORM_PHONE_REGION, PublicRsvpToken, User, validate_phone
+from users.models import SIGN_IN_STATUSES, PublicRsvpToken, User
+from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community.field_limits import FieldLimit
 from community.rsvps.public_shared import manage_rsvp_url
@@ -40,9 +41,9 @@ def _neutral() -> Status:
 
 
 def _find_public_rsvper(phone: str) -> User | None:
-    """Find the non-member User matching this phone. None if no match, a member, or paused."""
+    """Find the public rsvper matching this phone. None if no match, archived, or able to sign in."""
     match = User.objects.filter(phone_number=phone).first()
-    if match and (match.is_member or match.is_paused):
+    if match and (match.membership_status in SIGN_IN_STATUSES or match.archived_at is not None):
         return None
     return match
 

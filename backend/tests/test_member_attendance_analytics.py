@@ -5,6 +5,7 @@ from datetime import timedelta
 import pytest
 from community.models import (
     AttendanceStatus,
+    CancelReason,
     Event,
     EventRSVP,
     EventStatus,
@@ -12,7 +13,8 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from users.models import User
+from users._attendance_pause import apply_attendance_pause
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
@@ -29,7 +31,7 @@ def member(db):
         password="x",
         first_name="Member",
         last_name="One",
-        is_member=True,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
@@ -136,12 +138,42 @@ class TestMemberAttendanceAnalyticsEndpoint:
             user=member,
             status=RSVPStatus.CANT_GO,
             cancelled_at=timezone.now(),
+            cancel_reason=CancelReason.SELF,
         )
 
         response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["didnt_go_count"] == 1
         assert row["cancel_count"] == 1
+
+    @pytest.mark.parametrize(
+        "reason", [CancelReason.HOST, CancelReason.PAUSE, CancelReason.ARCHIVE]
+    )
+    def test_cancel_count_skips_cancels_the_member_did_not_make(
+        self, api_client, host_user, member, events_admin, reason
+    ):
+        EventRSVP.objects.create(
+            event=_make_event(host_user, "Released Event", days_ago=3),
+            user=member,
+            status=RSVPStatus.CANT_GO,
+            cancelled_at=timezone.now(),
+            cancel_reason=reason,
+        )
+
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
+        row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
+        assert row["cancel_count"] == 0
+
+    def test_pause_leaves_cancel_count_alone(self, rf, api_client, host_user, member, events_admin):
+        upcoming = _make_event(host_user, "Upcoming", days_ago=-3, event_type=EventType.COMMUNITY)
+        EventRSVP.objects.create(event=upcoming, user=member, status=RSVPStatus.ATTENDING)
+
+        apply_attendance_pause(rf.get("/"), member)
+
+        assert EventRSVP.objects.get(event=upcoming, user=member).cancelled_at is not None
+        response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
+        row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
+        assert row["cancel_count"] == 0
 
     def test_didnt_go_count_regardless_of_later_status_change(
         self, api_client, host_user, member, events_admin
@@ -167,10 +199,16 @@ class TestMemberAttendanceAnalyticsEndpoint:
     def test_pause_candidates_sorted_first(self, api_client, host_user, events_admin):
 
         compliant = User.objects.create_user(
-            phone_number="+12025552000", password="x", first_name="Compliant", is_member=True
+            phone_number="+12025552000",
+            password="x",
+            first_name="Compliant",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         candidate = User.objects.create_user(
-            phone_number="+12025552001", password="x", first_name="Candidate", is_member=True
+            phone_number="+12025552001",
+            password="x",
+            first_name="Candidate",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         recent = _make_event(host_user, "Recent", days_ago=5)
         EventRSVP.objects.create(
@@ -184,18 +222,25 @@ class TestMemberAttendanceAnalyticsEndpoint:
         ids = [r["user_id"] for r in response.json()["members"]]
         assert ids.index(str(candidate.pk)) < ids.index(str(compliant.pk))
 
-    def test_paused_member_included_and_labeled(self, api_client, host_user, events_admin):
-
+    @pytest.mark.parametrize(
+        ("status", "flag"),
+        [
+            (MembershipStatus.GUIDELINES_PAUSED, "is_guidelines_paused"),
+            (MembershipStatus.ATTENDANCE_PAUSED, "is_attendance_paused"),
+        ],
+    )
+    def test_paused_member_included_and_labeled(
+        self, api_client, host_user, events_admin, status, flag
+    ):
         paused = User.objects.create_user(
             phone_number="+12025552002",
             password="x",
             first_name="Paused",
-            is_member=True,
-            is_paused=True,
+            membership_status=status,
         )
         response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(paused.pk))
-        assert row["is_paused"] is True
+        assert row[flag] is True
         assert row["is_pause_candidate"] is False
 
     def test_archived_member_excluded(self, api_client, events_admin):
@@ -204,7 +249,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
             phone_number="+12025552003",
             password="x",
             first_name="Archived",
-            is_member=True,
+            membership_status=MembershipStatus.ARCHIVED,
             archived_at=timezone.now(),
         )
         response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
@@ -214,7 +259,10 @@ class TestMemberAttendanceAnalyticsEndpoint:
     def test_non_member_excluded(self, api_client, events_admin):
 
         guest = User.objects.create_user(
-            phone_number="+12025552004", password="x", first_name="Guest", is_member=False
+            phone_number="+12025552004",
+            password="x",
+            first_name="Guest",
+            membership_status=MembershipStatus.NONE,
         )
         response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
         ids = [r["user_id"] for r in response.json()["members"]]

@@ -60,6 +60,17 @@ describe('EventCommentsCard', () => {
     expect(screen.queryByRole('button', { name: /post/i })).not.toBeInTheDocument();
   });
 
+  it('shows members-only copy, not a login prompt, to a signed-in limited viewer', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { items: [], can_post: false, cannot_post_reason: 'members_only' },
+    });
+    renderCard();
+    await waitFor(() => {
+      expect(screen.getByText(/comments are for members/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/log in to comment/i)).not.toBeInTheDocument();
+  });
+
   it('hides the comment thread when the viewer has no active rsvp', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({
       data: {

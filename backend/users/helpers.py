@@ -14,13 +14,14 @@ from django.db.models import prefetch_related_objects
 from django.utils import timezone
 
 from users.models import (
-    ADMIN_ENTERED_PHONE_REGION,
     MagicLoginToken,
     MagicLoginTokenSource,
+    MembershipStatus,
     PublicRsvpToken,
     User,
-    validate_phone,
+    status_change_stamp,
 )
+from users.phone import ADMIN_ENTERED_PHONE_REGION, validate_phone
 from users.roles import Role
 
 
@@ -181,7 +182,7 @@ def check_and_set_email(
 def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
     """Block assigning the built-in admin role unless the requester is an admin.
 
-    Prevents privilege escalation when a user holds CREATE_USER but is not
+    Prevents privilege escalation when a user holds APPROVE_JOIN_REQUESTS but is not
     themselves an admin. No-op for any non-admin role (or no role).
     """
     if not role_id:
@@ -205,7 +206,7 @@ def create_user_with_role(  # noqa: PLR0913
 
     Raises ValidationException on validation failure (bad phone, duplicate, bad role).
     Assigning the built-in admin role is only permitted when ``requesting_user``
-    is themselves an admin (prevents escalation under CREATE_USER alone).
+    is themselves an admin (prevents escalation under APPROVE_JOIN_REQUESTS alone).
 
     Pass ``consent`` when the user was created from a join request that already
     captured consent — otherwise it defaults to None (e.g. admin-created users
@@ -223,7 +224,8 @@ def create_user_with_role(  # noqa: PLR0913
         first_name=first_name,
         last_name=last_name,
         email=normalized_email,
-        is_member=True,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
+        **status_change_stamp(requesting_user),
         needs_onboarding=True,
         guidelines_consent_at=consent.guidelines_consent_at if consent else None,
         sms_consent_at=consent.sms_consent_at if consent else None,
@@ -281,13 +283,17 @@ def validate_member_role_required(new_roles: list[Role]) -> None:
         raise_validation(Code.Role.MEMBER_ROLE_REQUIRED, status_code=400)
 
 
+def elevated_roles(user: User):
+    return user.roles.exclude(name="member", is_default=True)
+
+
 def strip_elevated_roles(user: User) -> list[str]:
     """Remove every role from user except the built-in member role.
 
     Called on the pause transition so a paused member holds no elevated role.
     Returns the ids of the removed roles (for audit logging).
     """
-    removed = list(user.roles.exclude(name="member", is_default=True))
+    removed = list(elevated_roles(user))
     if not removed:
         return []
     user.roles.remove(*removed)
@@ -299,7 +305,11 @@ def grant_membership(user: User) -> None:
     member_role = Role.objects.filter(name="member", is_default=True).first()
     if member_role:
         user.roles.add(member_role)
+    revoke_public_rsvp_tokens(user)
 
+
+def revoke_public_rsvp_tokens(user: User) -> None:
+    """Kill the user's live /my-rsvps links once they can sign in instead."""
     PublicRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
         revoked_at=timezone.now()
     )

@@ -1,6 +1,6 @@
 import pytest
 from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 
 from tests._time import future_iso
 
@@ -24,7 +24,7 @@ def public_rsvper(db, event):
         first_name="Non",
         last_name="Member",
         email="commenter@example.com",
-        is_member=False,
+        membership_status=MembershipStatus.NONE,
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])
@@ -65,7 +65,10 @@ class TestPublicRsvpTokenComments:
             title="Other", start_datetime=event.start_datetime, created_by=event.created_by
         )
         user = User.objects.create_user(
-            phone_number="+12025550166", first_name="No", last_name="Rsvp", is_member=False
+            phone_number="+12025550166",
+            first_name="No",
+            last_name="Rsvp",
+            membership_status=MembershipStatus.NONE,
         )
         user.set_unusable_password()
         user.save(update_fields=["password"])

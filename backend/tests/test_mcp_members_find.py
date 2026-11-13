@@ -8,7 +8,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import pda_mcp
 from mcp_gateway.tools.members_read import members_page
 from users.member_search import MemberFilters
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._mcp_members_helpers import (
     BUCKETS,
@@ -63,11 +63,11 @@ def test_bad_arguments_are_rejected(admin, arguments):
 def test_status_defaults_to_live_members_and_skips_non_members(admin):
     set_up = make_onboarded()
     new = make_onboarding()
-    paused = make_onboarding(is_paused=True)
+    paused = make_onboarding(membership_status=MembershipStatus.GUIDELINES_PAUSED)
     archived = make_onboarded(archived_at=timezone.now())
     make_onboarded(is_active=False)
     make_public_rsvper("+12025550198", "n@e.com")
-    make_member(is_member=False)
+    make_member(membership_status=MembershipStatus.NONE)
     assert {row["id"]: row["status"] for row in find_members(admin)["members"]} == {
         **dict.fromkeys(ids_of(admin, set_up), "active"),
         str(new.id): "still_onboarding",
@@ -78,7 +78,7 @@ def test_status_defaults_to_live_members_and_skips_non_members(admin):
 def test_totals_match_member_totals_buckets(admin):
     make_onboarded()
     make_onboarding()
-    make_onboarding(is_paused=True)
+    make_onboarding(membership_status=MembershipStatus.GUIDELINES_PAUSED)
     make_onboarded(archived_at=timezone.now())
     make_onboarded(is_active=False)
     totals = member_totals(admin)

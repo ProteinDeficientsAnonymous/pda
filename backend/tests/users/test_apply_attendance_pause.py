@@ -3,6 +3,7 @@ from datetime import timedelta
 import pytest
 from audit.models import AuditLogEntry
 from community.models import (
+    CancelReason,
     CoHostInviteStatus,
     EventCoHostInvite,
     EventRSVP,
@@ -13,6 +14,7 @@ from community.models import (
 from django.utils import timezone
 from tests._events import make_event, make_rsvp
 from users._attendance_pause import apply_attendance_pause
+from users.models import MembershipStatus
 from users.roles import Role
 
 
@@ -26,18 +28,17 @@ class TestApplyAttendancePause:
 
         member.refresh_from_db()
         assert member.attendance_paused_at is not None
-        assert member.is_member is False
+        assert member.membership_status == MembershipStatus.ATTENDANCE_PAUSED
         assert member.has_joined_whatsapp is False
-        assert member.is_paused is False
 
-    def test_strips_every_role(self, rf, member):
+    def test_keeps_member_role_and_strips_elevated(self, rf, member):
         member_role, _ = Role.objects.get_or_create(name="member", is_default=True)
         vettor = Role.objects.create(name="vettor")
         member.roles.add(member_role, vettor)
 
         apply_attendance_pause(rf.get("/"), member)
 
-        assert member.roles.count() == 0
+        assert list(member.roles.all()) == [member_role]
 
     def test_removes_other_rsvp_and_promotes_waitlist(self, rf, member, other_user):
         event = make_event(created_by=other_user, max_attendees=1)
@@ -49,6 +50,7 @@ class TestApplyAttendancePause:
         rsvp = EventRSVP.objects.get(event=event, user=member)
         assert rsvp.status == RSVPStatus.CANT_GO
         assert rsvp.cancelled_at is not None
+        assert rsvp.cancel_reason == CancelReason.PAUSE
         waiting.refresh_from_db()
         assert waiting.status == RSVPStatus.ATTENDING
 

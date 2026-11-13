@@ -1,7 +1,7 @@
 from django.utils import timezone
 
 BLOCK_CODES = {
-    "paused": "auth.account_paused",
+    "paused": "auth.account_guidelines_paused",
     "archived": "auth.account_archived",
     "needs_password_reset": "auth.password_reset_required",
     "needs_onboarding": "auth.onboarding_required",
@@ -11,8 +11,7 @@ BLOCK_CODES = {
 
 def block_user(user, block: str) -> None:
     if block == "paused":
-        user.is_paused = True
-        user.save(update_fields=["is_paused"])
+        user.save(update_fields=user.apply_guidelines_pause(by=None))
         return
     if block == "archived":
         user.archived_at = timezone.now()
