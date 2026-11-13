@@ -6,7 +6,7 @@ from uuid import UUID
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Count, Max
 from ninja import Router
 from ninja.responses import Status
 from users.permissions import PermissionKey
@@ -67,7 +67,7 @@ def list_surveys_admin(request):
             ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
-    surveys = Survey.objects.all()
+    surveys = Survey.objects.annotate(response_count=Count("responses"))
     return Status(
         200,
         [
@@ -81,7 +81,7 @@ def list_surveys_admin(request):
                 closes_at=s.closes_at,
                 max_responses=s.max_responses,
                 created_at=s.created_at,
-                response_count=s.responses.count(),
+                response_count=s.response_count,  # ty: ignore[unresolved-attribute]
             )
             for s in surveys
         ],
@@ -343,9 +343,10 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
     existing = list(SurveyQuestion.objects.filter(survey_id=survey_id))
     ordered_ids = resolve_question_order(existing, payload.question_ids)
     assert_order_keeps_dependencies(existing, ordered_ids)
-    with transaction.atomic():
-        for idx, qid in enumerate(ordered_ids):
-            SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
+    order = {qid: idx for idx, qid in enumerate(ordered_ids)}
+    for q in existing:
+        q.display_order = order[str(q.id)]
+    SurveyQuestion.objects.bulk_update(existing, ["display_order"])
     audit_log(
         logging.INFO,
         "survey_questions_reordered",
