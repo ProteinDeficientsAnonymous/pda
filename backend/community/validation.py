@@ -321,6 +321,10 @@ class Code:
         REQUEST_ALREADY_USED = "connect.request_already_used"
         APP_NOT_FOUND = "connect.app_not_found"
 
+    class Planning:
+        YEAR_EXISTS = "planning.year_exists"
+        YEAR_NOT_FOUND = "planning.year_not_found"
+
 
 class ValidationException(Exception):
     """Raised by validators and route handlers to signal a structured error.
