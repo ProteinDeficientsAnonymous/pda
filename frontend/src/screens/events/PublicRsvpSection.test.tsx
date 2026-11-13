@@ -1,8 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type * as RouterDom from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { canPublicRsvp, EventStatus, EventType, EventVisibility } from '@/models/event';
 import { makeEvent } from '@/test/fixtures';
@@ -130,5 +130,49 @@ describe('PublicRsvpSection', () => {
     );
     expect(mockSubmit).not.toHaveBeenCalled();
     expect(localStorage.getItem('pda-rsvp-token')).toBeNull();
+  });
+});
+
+describe('PublicRsvpSection — rsvp deadline', () => {
+  const HOUR = 60 * 60 * 1000;
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function renderSection(rsvpDeadline: Date) {
+    render(
+      <MemoryRouter>
+        <PublicRsvpSection event={officialEvent({ rsvpDeadline })} />
+      </MemoryRouter>,
+    );
+  }
+
+  it('shows the form and the rsvp-by date before the deadline', () => {
+    renderSection(new Date(Date.now() + 48 * HOUR));
+    expect(screen.getByRole('heading', { name: 'rsvp' })).toBeInTheDocument();
+    expect(screen.getByText(/^rsvp by /)).toBeInTheDocument();
+  });
+
+  it('hides the form and says how to cancel once the deadline passes', () => {
+    renderSection(new Date(Date.now() - HOUR));
+    expect(screen.queryByRole('heading', { name: 'rsvp' })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(/new rsvps aren't being taken/);
+    expect(
+      screen.getByText(/already going\? sign in, or use the link in your confirmation email/),
+    ).toBeInTheDocument();
+  });
+
+  it('closes on its own when the deadline passes while the page is open', () => {
+    vi.useFakeTimers();
+    renderSection(new Date(Date.now() + 60_000));
+    expect(screen.getByRole('heading', { name: 'rsvp' })).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(60_001);
+    });
+
+    expect(screen.queryByRole('heading', { name: 'rsvp' })).not.toBeInTheDocument();
+    expect(screen.getByText(/new rsvps aren't being taken/)).toBeInTheDocument();
   });
 });

@@ -6,6 +6,7 @@ import { useEvent } from '@/api/events';
 import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { Code } from '@/api/validationCodes';
 import { useAuthStore } from '@/auth/store';
+import { useRerenderAt } from '@/hooks/useRerenderAt';
 import type { Event } from '@/models/event';
 import { canManageEvent, canPublicRsvp, eventPath, EventType } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
@@ -274,6 +275,7 @@ function MemberRsvpControl({
   rsvpToken: string | undefined;
 }) {
   const user = useAuthStore((s) => s.user);
+  useRerenderAt(event.rsvpDeadline);
   if (!isAuthed && !hasTokenUnlock) return null;
 
   const { showRsvp, rsvpLocked, rsvpDeadlineClosed, membershipBlocksRsvp } =
