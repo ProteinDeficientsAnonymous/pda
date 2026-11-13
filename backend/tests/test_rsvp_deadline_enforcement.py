@@ -8,8 +8,8 @@ from users.models import PublicRsvpToken, User
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
+from tests._events import make_event, make_rsvp
 from tests._public_rsvp_helpers import make_official_event, make_public_rsvper, payload, post
-from tests._time import future_iso
 from tests._users import make_user
 
 
@@ -23,13 +23,8 @@ def guest(db):
 
 
 def _event(host, deadline_in: timedelta | None) -> Event:
-    return Event.objects.create(
-        title="Deadline Event",
-        start_datetime=future_iso(days=7),
-        rsvp_enabled=True,
-        rsvp_deadline=None if deadline_in is None else timezone.now() + deadline_in,
-        created_by=host,
-    )
+    deadline = None if deadline_in is None else timezone.now() + deadline_in
+    return make_event(created_by=host, rsvp_enabled=True, rsvp_deadline=deadline)
 
 
 @pytest.fixture
@@ -54,7 +49,7 @@ class TestMemberDeadline:
 
     def test_no_deadline_behaves_as_before(self, api_client, test_user, guest):
         event = _event(test_user, None)
-        EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.CANT_GO)
+        make_rsvp(event, guest, RSVPStatus.CANT_GO)
         assert _post_rsvp(api_client, event, guest, RSVPStatus.MAYBE).status_code == 200
 
     def test_new_rsvp_rejected(self, api_client, closed_event, guest):
@@ -73,7 +68,7 @@ class TestMemberDeadline:
         ],
     )
     def test_status_change_rejected(self, api_client, closed_event, guest, current, requested):
-        EventRSVP.objects.create(event=closed_event, user=guest, status=current)
+        make_rsvp(closed_event, guest, current)
         response = _post_rsvp(api_client, closed_event, guest, requested)
         assert response.status_code == 400
         assert_error_code(response, Code.Event.RSVPS_CLOSED_DEADLINE)
@@ -81,7 +76,7 @@ class TestMemberDeadline:
 
     @pytest.mark.parametrize("current", [RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED])
     def test_going_can_switch_to_cant_go(self, api_client, closed_event, guest, current):
-        EventRSVP.objects.create(event=closed_event, user=guest, status=current)
+        make_rsvp(closed_event, guest, current)
         response = _post_rsvp(api_client, closed_event, guest, RSVPStatus.CANT_GO)
         assert response.status_code == 200
         assert EventRSVP.objects.get(event=closed_event, user=guest).status == RSVPStatus.CANT_GO
@@ -91,14 +86,14 @@ class TestMemberDeadline:
         assert response.status_code == 200
 
     def test_delete_rejected_for_maybe(self, api_client, closed_event, guest):
-        EventRSVP.objects.create(event=closed_event, user=guest, status=RSVPStatus.MAYBE)
+        make_rsvp(closed_event, guest, RSVPStatus.MAYBE)
         response = api_client.delete(_rsvp_url(closed_event), **auth_headers_for(guest))
         assert response.status_code == 400
         assert_error_code(response, Code.Event.RSVPS_CLOSED_DEADLINE)
         assert EventRSVP.objects.filter(event=closed_event, user=guest).exists()
 
     def test_delete_allowed_for_going(self, api_client, closed_event, guest):
-        EventRSVP.objects.create(event=closed_event, user=guest, status=RSVPStatus.ATTENDING)
+        make_rsvp(closed_event, guest, RSVPStatus.ATTENDING)
         response = api_client.delete(_rsvp_url(closed_event), **auth_headers_for(guest))
         assert response.status_code == 204
 
@@ -124,7 +119,7 @@ class TestPublicDeadline:
         assert not User.objects.filter(phone_number=payload()["phone_number"]).exists()
 
     def test_maybe_cannot_confirm(self, api_client, event, rsvper):
-        EventRSVP.objects.create(event=event, user=rsvper, status=RSVPStatus.MAYBE)
+        make_rsvp(event, rsvper, RSVPStatus.MAYBE)
         response = api_client.post(
             self._manage_url(event, rsvper),
             {"status": RSVPStatus.ATTENDING},
@@ -134,12 +129,12 @@ class TestPublicDeadline:
         assert_error_code(response, Code.Event.RSVPS_CLOSED_DEADLINE)
 
     def test_maybe_cannot_delete(self, api_client, event, rsvper):
-        EventRSVP.objects.create(event=event, user=rsvper, status=RSVPStatus.MAYBE)
+        make_rsvp(event, rsvper, RSVPStatus.MAYBE)
         response = api_client.delete(self._manage_url(event, rsvper))
         assert response.status_code == 400
         assert EventRSVP.objects.filter(event=event, user=rsvper).exists()
 
     def test_going_can_delete(self, api_client, event, rsvper):
-        EventRSVP.objects.create(event=event, user=rsvper, status=RSVPStatus.ATTENDING)
+        make_rsvp(event, rsvper, RSVPStatus.ATTENDING)
         response = api_client.delete(self._manage_url(event, rsvper))
         assert response.status_code == 204
