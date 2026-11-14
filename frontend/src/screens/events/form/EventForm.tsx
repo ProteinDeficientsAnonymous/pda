@@ -47,6 +47,7 @@ import { validateEventForm } from './validateEventForm';
 interface Props {
   existing?: Event;
   initial?: Partial<EventFormValues>;
+  onCreated?: (event: Event) => Promise<void>;
 }
 
 // Field → section map. Drives which CollapsibleCard opens on validation
@@ -84,7 +85,7 @@ function hasAnyError(
   return fields.some((k) => errors[k]);
 }
 
-export function EventForm({ existing, initial }: Props) {
+export function EventForm({ existing, initial, onCreated }: Props) {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const canTagOfficial = hasPermission(user, Permission.TagOfficialEvent);
@@ -269,6 +270,7 @@ export function EventForm({ existing, initial }: Props) {
           toast.error("event saved, but couldn't create the poll — try from the event page");
         }
       }
+      await onCreated?.(created);
       if (nextStatus === 'draft') toast.success('saved draft');
       void navigate(eventPath(created));
     } catch (err) {
