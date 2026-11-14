@@ -1363,6 +1363,11 @@
         "name": "ASSIGNMENT_NOT_FOUND",
         "value": "planning.assignment_not_found",
         "params": []
+      },
+      {
+        "name": "NOT_PENDING",
+        "value": "planning.not_pending",
+        "params": []
       }
     ]
   }

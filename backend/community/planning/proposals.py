@@ -18,7 +18,7 @@ router = Router()
 _ACTIVE = (AssignmentStatus.PROPOSED, AssignmentStatus.COMMITTED)
 
 
-def _assignment_out(assignment: SlotAssignment) -> AssignmentOut:
+def assignment_out(assignment: SlotAssignment) -> AssignmentOut:
     return AssignmentOut(
         id=str(assignment.id),
         slot_id=str(assignment.slot_id),
@@ -48,7 +48,7 @@ def propose_assignment(request, slot_id: UUID, payload: ProposeIn):
             raise_validation(Code.Planning.ALREADY_ASSIGNED, field="user_id", status_code=400)
         assignment.propose(request.auth)
     notify_proposed(assignment)
-    return Status(201, _assignment_out(assignment))
+    return Status(201, assignment_out(assignment))
 
 
 @router.delete(
