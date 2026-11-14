@@ -8,7 +8,7 @@ import { MembersOnlyNotice } from '@/components/MembersOnlyNotice';
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
 import { isLimited } from '@/models/event';
-import { hasPermission, type PermissionKey } from '@/models/permissions';
+import { type PermissionRule, satisfiesRule } from '@/models/permissions';
 import { consentRedirect, isAttendancePaused, passwordSetupRedirect } from '@/models/user';
 
 import { attemptDevAutoLogin, devAutoLoginConfigured } from './devLogin';
@@ -136,7 +136,7 @@ export function RequireAuth() {
 // RequirePermission — authed + permission check.
 // ----------------------------------------------------------------------------
 
-export function RequirePermission({ perm }: { perm: PermissionKey }) {
+export function RequirePermission(rule: PermissionRule) {
   const user = useAuthStore((s) => s.user);
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const location = useLocation();
@@ -145,7 +145,7 @@ export function RequirePermission({ perm }: { perm: PermissionKey }) {
     const redirect = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?redirect=${redirect}`} replace />;
   }
-  if (!hasPermission(user, perm)) {
+  if (!satisfiesRule(user, rule)) {
     return <Navigate to="/calendar" replace />;
   }
   return <Outlet />;
