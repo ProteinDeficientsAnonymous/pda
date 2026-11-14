@@ -1883,6 +1883,23 @@ export interface paths {
         patch: operations["community_content_pages_update_page"];
         trace?: never;
     };
+    "/api/community/planning/assignments/{assignment_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Withdraw Assignment */
+        delete: operations["community_planning_proposals_withdraw_assignment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/planning/slots/{slot_id}/": {
         parameters: {
             query?: never;
@@ -1899,6 +1916,23 @@ export interface paths {
         head?: never;
         /** Update Slot */
         patch: operations["community_planning_years_update_slot"];
+        trace?: never;
+    };
+    "/api/community/planning/slots/{slot_id}/assignments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Propose Assignment */
+        post: operations["community_planning_proposals_propose_assignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/community/planning/years/": {
@@ -2676,6 +2710,28 @@ export interface components {
             /** User Id */
             user_id?: string | null;
         };
+        /** AssignmentOut */
+        AssignmentOut: {
+            /** Id */
+            id: string;
+            /**
+             * Proposed At
+             * Format: date-time
+             */
+            proposed_at: string;
+            /** Responded At */
+            responded_at: string | null;
+            /** Slot Id */
+            slot_id: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /** User Id */
+            user_id: string;
+        };
+        /**
+         * AssignmentStatus
+         * @enum {string}
+         */
+        AssignmentStatus: "proposed" | "committed" | "declined" | "withdrawn";
         /** AttendanceImportCommitIn */
         AttendanceImportCommitIn: {
             /** Event Date */
@@ -5265,6 +5321,14 @@ export interface components {
             status_changed_at?: string | null;
             /** Status Changed By Name */
             status_changed_by_name?: string | null;
+        };
+        /** ProposeIn */
+        ProposeIn: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /** PublicRsvpIn */
         PublicRsvpIn: {
@@ -11950,6 +12014,44 @@ export interface operations {
             };
         };
     };
+    community_planning_proposals_withdraw_assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community_planning_years_delete_slot: {
         parameters: {
             query?: never;
@@ -12010,6 +12112,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanningSlotOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_proposals_propose_assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposeIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignmentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Forbidden */
