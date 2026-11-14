@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
   type PlanningSlot,
   type SlotKind,
+  useCreateSlot,
   useDeleteSlot,
   usePlanningSlots,
   useUpdateSlot,
@@ -91,6 +92,57 @@ function SlotRow({ slot, year }: { slot: PlanningSlot; year: number }) {
   );
 }
 
+function AddSlotRow({ year }: { year: number }) {
+  const create = useCreateSlot(year);
+  const [label, setLabel] = useState('');
+  const [month, setMonth] = useState('1');
+  const [kind, setKind] = useState<SlotKind>('monthly');
+
+  async function onAdd() {
+    const input = { label: label.trim(), month: Number(month), kind };
+    if (await toastOnError(create.mutateAsync(input), "couldn't add slot — try again")) {
+      setLabel('');
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      <div className="min-w-40 flex-1">
+        <TextField
+          label="new slot label"
+          hideLabel
+          placeholder="new slot"
+          value={label}
+          onChange={(e) => {
+            setLabel(e.target.value);
+          }}
+        />
+      </div>
+      <Select
+        label="new slot month"
+        hideLabel
+        value={month}
+        options={MONTH_OPTIONS}
+        onChange={(e) => {
+          setMonth(e.target.value);
+        }}
+      />
+      <Select
+        label="new slot kind"
+        hideLabel
+        value={kind}
+        options={KIND_OPTIONS}
+        onChange={(e) => {
+          setKind(e.target.value as SlotKind);
+        }}
+      />
+      <Button disabled={create.isPending || !label.trim()} onClick={() => void onAdd()}>
+        add slot
+      </Button>
+    </div>
+  );
+}
+
 export function SlotEditor({ year }: { year: number }) {
   const slots = usePlanningSlots(year);
   if (slots.isPending) return null;
@@ -104,6 +156,7 @@ export function SlotEditor({ year }: { year: number }) {
           <SlotRow key={s.id} slot={s} year={year} />
         ))}
       </ul>
+      <AddSlotRow year={year} />
     </section>
   );
 }
