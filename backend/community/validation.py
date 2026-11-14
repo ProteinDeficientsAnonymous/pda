@@ -324,6 +324,7 @@ class Code:
     class Planning:
         YEAR_EXISTS = "planning.year_exists"
         YEAR_NOT_FOUND = "planning.year_not_found"
+        SLOT_NOT_FOUND = "planning.slot_not_found"
 
 
 class ValidationException(Exception):
