@@ -1986,6 +1986,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/planning/slots/{slot_id}/event/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Link Slot Event */
+        post: operations["community_planning_event_link_link_slot_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/planning/years/": {
         parameters: {
             query?: never;
@@ -4938,6 +4955,14 @@ export interface components {
              * Format: date-time
              */
             submitted_at: string;
+        };
+        /** LinkEventIn */
+        LinkEventIn: {
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
         };
         /** LoginIn */
         LoginIn: {
@@ -12395,6 +12420,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssignmentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_event_link_link_slot_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkEventIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningSlotOut"];
                 };
             };
             /** @description Bad Request */
