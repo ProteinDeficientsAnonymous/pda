@@ -6,6 +6,7 @@ from ninja.responses import Status
 
 from community.models import AssignmentStatus, SlotAssignment
 from community.planning._access import require_manage
+from community.planning._notify import notify_proposed, notify_withdrawn
 from community.planning._planners import planner_users
 from community.planning.schemas import AssignmentOut, ProposeIn
 from community.planning.years import get_slot_or_404
@@ -46,6 +47,7 @@ def propose_assignment(request, slot_id: UUID, payload: ProposeIn):
         if assignment.status in _ACTIVE:
             raise_validation(Code.Planning.ALREADY_ASSIGNED, field="user_id", status_code=400)
         assignment.propose(request.auth)
+    notify_proposed(assignment)
     return Status(201, _assignment_out(assignment))
 
 
@@ -62,4 +64,5 @@ def withdraw_assignment(request, assignment_id: UUID):
         raise_validation(Code.Planning.ASSIGNMENT_NOT_FOUND, status_code=404)
     if assignment.status in _ACTIVE:
         assignment.withdraw()
+        notify_withdrawn(assignment)
     return Status(204, None)
