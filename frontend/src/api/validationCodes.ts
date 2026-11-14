@@ -694,6 +694,24 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Connect.AppNotFound:
       return 'connected app not found';
 
+    // Planning
+    case Code.Planning.YearExists:
+      return 'that planning year already exists';
+    case Code.Planning.YearNotFound:
+      return "that planning year doesn't exist";
+    case Code.Planning.SlotNotFound:
+      return "that slot doesn't exist anymore";
+    case Code.Planning.SlotNotInYear:
+      return "one of those slots isn't part of this year";
+    case Code.Planning.NotAPlanner:
+      return "they're not a planner";
+    case Code.Planning.AlreadyAssigned:
+      return "they're already proposed or committed for this slot";
+    case Code.Planning.AssignmentNotFound:
+      return "that proposal doesn't exist anymore";
+    case Code.Planning.NotPending:
+      return "that proposal's already been answered";
+
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)
     case Code.Generic.FieldRequired:
       return err.field ? `${err.field.replace(/_/g, ' ')} is required` : 'this field is required';
