@@ -6,6 +6,7 @@ import type { components } from './types.gen';
 type WireSlot = components['schemas']['PlanningSlotOut'];
 type WireAvailability = components['schemas']['AvailabilityOut'];
 type WireGrid = components['schemas']['GridOut'];
+type WireMySlot = components['schemas']['MySlotOut'];
 
 export type SlotKind = components['schemas']['PlanningSlotKind'];
 export type BiannualInterest = components['schemas']['BiannualInterest'];
@@ -37,6 +38,14 @@ export interface Assignment {
   slotId: string;
   userId: string;
   status: AssignmentStatus;
+}
+
+export interface MySlot {
+  assignmentId: string;
+  status: AssignmentStatus;
+  year: number;
+  slot: PlanningSlot;
+  teammates: { name: string; status: AssignmentStatus }[];
 }
 
 export interface PlannerColumn {
@@ -73,6 +82,16 @@ function mapSlot(w: WireSlot): PlanningSlot {
     eventId: w.event_id,
     eventSlug: w.event_slug,
     eventStatus: w.event_status,
+  };
+}
+
+function mapMySlot(w: WireMySlot): MySlot {
+  return {
+    assignmentId: w.assignment_id,
+    status: w.status,
+    year: w.year,
+    slot: mapSlot(w.slot),
+    teammates: w.teammates,
   };
 }
 
@@ -273,4 +292,35 @@ export function useWithdraw(year: number) {
       void qc.invalidateQueries({ queryKey: ['planning', 'grid', year] });
     },
   });
+}
+
+export function useMySlots() {
+  return useQuery({
+    queryKey: ['planning', 'me'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<WireMySlot[]>('/api/community/planning/me/');
+      return data.map(mapMySlot);
+    },
+  });
+}
+
+function useRespond(action: 'commit' | 'decline') {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (assignmentId: string) => {
+      await apiClient.post(`/api/community/planning/assignments/${assignmentId}/${action}/`);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['planning', 'me'] });
+      void qc.invalidateQueries({ queryKey: ['planning', 'grid'] });
+    },
+  });
+}
+
+export function useCommit() {
+  return useRespond('commit');
+}
+
+export function useDecline() {
+  return useRespond('decline');
 }
