@@ -326,6 +326,9 @@ class Code:
         YEAR_NOT_FOUND = "planning.year_not_found"
         SLOT_NOT_FOUND = "planning.slot_not_found"
         SLOT_NOT_IN_YEAR = "planning.slot_not_in_year"
+        NOT_A_PLANNER = "planning.not_a_planner"
+        ALREADY_ASSIGNED = "planning.already_assigned"
+        ASSIGNMENT_NOT_FOUND = "planning.assignment_not_found"
 
 
 class ValidationException(Exception):

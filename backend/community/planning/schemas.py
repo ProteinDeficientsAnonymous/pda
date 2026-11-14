@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from community.models import BiannualInterest, PlanningSlotKind
+from community.models import AssignmentStatus, BiannualInterest, PlanningSlotKind
 
 
 class PlanningYearOut(BaseModel):
@@ -50,3 +50,16 @@ class AvailabilityIn(BaseModel):
     slot_ids: list[UUID] = Field(max_length=50)
     biannual_interest: BiannualInterest
     monthly_count: int = Field(ge=0, le=12)
+
+
+class ProposeIn(BaseModel):
+    user_id: UUID
+
+
+class AssignmentOut(BaseModel):
+    id: str
+    slot_id: str
+    user_id: str
+    status: AssignmentStatus
+    proposed_at: datetime
+    responded_at: datetime | None

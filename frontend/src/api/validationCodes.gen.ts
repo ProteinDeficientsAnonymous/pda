@@ -318,6 +318,9 @@ export const Code = {
     YearNotFound: 'planning.year_not_found',
     SlotNotFound: 'planning.slot_not_found',
     SlotNotInYear: 'planning.slot_not_in_year',
+    NotAPlanner: 'planning.not_a_planner',
+    AlreadyAssigned: 'planning.already_assigned',
+    AssignmentNotFound: 'planning.assignment_not_found',
   },
 } as const;
 
@@ -556,7 +559,10 @@ export type ValidationCode =
   | 'planning.year_exists'
   | 'planning.year_not_found'
   | 'planning.slot_not_found'
-  | 'planning.slot_not_in_year';
+  | 'planning.slot_not_in_year'
+  | 'planning.not_a_planner'
+  | 'planning.already_assigned'
+  | 'planning.assignment_not_found';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -794,4 +800,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'planning.year_not_found': [],
   'planning.slot_not_found': [],
   'planning.slot_not_in_year': [],
+  'planning.not_a_planner': [],
+  'planning.already_assigned': [],
+  'planning.assignment_not_found': [],
 };

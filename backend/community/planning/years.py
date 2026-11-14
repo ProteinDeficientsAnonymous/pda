@@ -28,7 +28,7 @@ def get_year_or_404(year: int) -> PlanningYear:
         raise_validation(Code.Planning.YEAR_NOT_FOUND, status_code=404)
 
 
-def _get_slot_or_404(slot_id: UUID) -> PlanningSlot:
+def get_slot_or_404(slot_id: UUID) -> PlanningSlot:
     try:
         return PlanningSlot.objects.select_related("event").get(pk=slot_id)
     except PlanningSlot.DoesNotExist:
@@ -111,7 +111,7 @@ def create_slot(request, year: int, payload: PlanningSlotIn):
 )
 def update_slot(request, slot_id: UUID, payload: PlanningSlotPatchIn):
     require_manage(request, "update_planning_slot")
-    slot = _get_slot_or_404(slot_id)
+    slot = get_slot_or_404(slot_id)
     changes = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
     for field, value in changes.items():
         setattr(slot, field, value)
@@ -126,5 +126,5 @@ def update_slot(request, slot_id: UUID, payload: PlanningSlotPatchIn):
 )
 def delete_slot(request, slot_id: UUID):
     require_manage(request, "delete_planning_slot")
-    _get_slot_or_404(slot_id).delete()
+    get_slot_or_404(slot_id).delete()
     return Status(204, None)

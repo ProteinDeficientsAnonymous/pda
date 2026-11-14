@@ -100,6 +100,62 @@
         "title": "ApproveJoinRequestOut",
         "type": "object"
       },
+      "AssignmentOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "proposed_at": {
+            "format": "date-time",
+            "title": "Proposed At",
+            "type": "string"
+          },
+          "responded_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responded At"
+          },
+          "slot_id": {
+            "title": "Slot Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssignmentStatus"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slot_id",
+          "user_id",
+          "status",
+          "proposed_at",
+          "responded_at"
+        ],
+        "title": "AssignmentOut",
+        "type": "object"
+      },
+      "AssignmentStatus": {
+        "enum": [
+          "proposed",
+          "committed",
+          "declined",
+          "withdrawn"
+        ],
+        "title": "AssignmentStatus",
+        "type": "string"
+      },
       "AttendanceImportCommitIn": {
         "properties": {
           "event_date": {
@@ -6126,6 +6182,20 @@
           }
         },
         "title": "PreviousRejectionOut",
+        "type": "object"
+      },
+      "ProposeIn": {
+        "properties": {
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id"
+        ],
+        "title": "ProposeIn",
         "type": "object"
       },
       "PublicRsvpIn": {
@@ -16799,6 +16869,57 @@
         ]
       }
     },
+    "/api/community/planning/assignments/{assignment_id}/": {
+      "delete": {
+        "operationId": "community_planning_proposals_withdraw_assignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assignment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Withdraw Assignment",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/planning/slots/{slot_id}/": {
       "delete": {
         "operationId": "community_planning_years_delete_slot",
@@ -16911,6 +17032,84 @@
           }
         ],
         "summary": "Update Slot",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/slots/{slot_id}/assignments/": {
+      "post": {
+        "operationId": "community_planning_proposals_propose_assignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slot_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Slot Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Propose Assignment",
         "tags": [
           "community"
         ]
