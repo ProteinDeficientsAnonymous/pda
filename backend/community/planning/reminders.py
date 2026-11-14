@@ -5,7 +5,7 @@ from uuid import UUID
 from django.conf import settings
 from django.db import transaction
 from django.db.models import F, Q, QuerySet
-from notifications.email_helpers import PlanningEmailVariant
+from notifications.planning_email import PlanningEmailVariant
 
 from community.models import AssignmentStatus, SlotAssignment
 from community.planning._notify import email_planner, notify_upcoming

@@ -1,13 +1,13 @@
 from uuid import UUID
 
 from django.conf import settings
-from notifications.email_helpers import (
+from notifications.email_sender import get_email_sender, send_best_effort
+from notifications.models import Notification, NotificationType
+from notifications.planning_email import (
     PlanningEmailDetails,
     PlanningEmailVariant,
     send_planning_email,
 )
-from notifications.email_sender import get_email_sender, send_best_effort
-from notifications.models import Notification, NotificationType
 from notifications.service import notify_users
 from users.helpers import visible_display_name
 from users.models import User
