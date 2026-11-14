@@ -7,6 +7,7 @@ from django.db import transaction
 from ninja import Router
 
 from community.models import AssignmentStatus, SlotAssignment
+from community.planning._access import require_view
 from community.planning._notify import notify_coordinators
 from community.planning.event_link import invite_planners_to_event, rescind_planner_invite
 from community.planning.proposals import assignment_out
@@ -16,16 +17,17 @@ from community.validation import Code, raise_validation
 
 router = Router()
 
-_RESPONSES = {400: ErrorOut, 404: ErrorOut, 429: ErrorOut}
+_RESPONSES = {400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut}
 
 
 def _respond(
     request,
+    action: str,
     assignment_id: UUID,
     allowed: tuple[AssignmentStatus, ...],
     apply: Callable[[SlotAssignment], None],
-    committed: bool,
 ) -> AssignmentOut:
+    require_view(request, action)
     with transaction.atomic():
         assignment = (
             SlotAssignment.objects.select_for_update(of=("self",))
@@ -39,7 +41,8 @@ def _respond(
             raise_validation(Code.Planning.NOT_PENDING, status_code=400)
         was_committed = assignment.status == AssignmentStatus.COMMITTED
         apply(assignment)
-    notify_coordinators(assignment, committed)
+    committed = assignment.status == AssignmentStatus.COMMITTED
+    notify_coordinators(assignment)
     event = assignment.slot.live_event
     if committed and event is not None:
         invite_planners_to_event(event, [assignment.user_id], event.created_by or request.auth)
@@ -56,7 +59,11 @@ def _respond(
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def commit_assignment(request, assignment_id: UUID):
     return _respond(
-        request, assignment_id, (AssignmentStatus.PROPOSED,), SlotAssignment.commit, True
+        request,
+        "commit_planning_assignment",
+        assignment_id,
+        (AssignmentStatus.PROPOSED,),
+        SlotAssignment.commit,
     )
 
 
@@ -68,4 +75,6 @@ def commit_assignment(request, assignment_id: UUID):
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def decline_assignment(request, assignment_id: UUID):
     allowed = (AssignmentStatus.PROPOSED, AssignmentStatus.COMMITTED)
-    return _respond(request, assignment_id, allowed, SlotAssignment.decline, False)
+    return _respond(
+        request, "decline_planning_assignment", assignment_id, allowed, SlotAssignment.decline
+    )

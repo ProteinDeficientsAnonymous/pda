@@ -19,7 +19,7 @@ from community.models import (
     EventStatus,
     PlanningSlot,
 )
-from community.planning._access import require_manage_or
+from community.planning._access import require_manage_or, require_view
 from community.planning.schemas import PlanningSlotOut
 from community.planning.years import slot_out
 from community.shared import ErrorOut
@@ -62,6 +62,7 @@ def rescind_planner_invite(slot: PlanningSlot, planner_id) -> None:
     auth=gated_jwt,
 )
 def link_slot_event(request, slot_id: UUID, payload: LinkEventIn):
+    require_view(request, "link_planning_slot_event")
     user = request.auth
     with transaction.atomic():
         slot = (

@@ -75,7 +75,11 @@ class TestProposalReminders:
 
     @pytest.mark.parametrize(
         "fields",
-        [{"membership_status": MembershipStatus.ATTENDANCE_PAUSED}, {"email": ""}],
+        [
+            {"membership_status": MembershipStatus.ATTENDANCE_PAUSED},
+            {"email": ""},
+            {"email": None},
+        ],
     )
     def test_paused_or_emailless_planner_skipped(self, proposed, fields, fake_email_sender):
         type(proposed.user).objects.filter(pk=proposed.user_id).update(**fields)
@@ -184,6 +188,13 @@ class TestUpcomingNotices:
         assert committed.upcoming_notified_at is None
         assert done.upcoming_notified_at == WINDOW_OPENS
         assert send_upcoming_notices(WINDOW_OPENS + DAY) == 1
+
+    def test_failed_ping_rolls_back_the_in_app_row(self, committed, fake_email_sender):
+        with patch("community.planning._notify.notify_users", side_effect=RuntimeError("boom")):
+            assert send_upcoming_notices(WINDOW_OPENS) == 0
+        assert not Notification.objects.exists()
+        assert send_upcoming_notices(WINDOW_OPENS + DAY) == 1
+        assert Notification.objects.count() == 1
 
     def test_failed_email_keeps_stamp_so_it_is_not_resent(self, committed, fake_email_sender):
         fake_email_sender.send.return_value = SendResult(success=False, error="nope")

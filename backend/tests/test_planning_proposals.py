@@ -200,6 +200,14 @@ class TestNotifications:
         assert notification.message == f"you're no longer down to plan {slot.label}"
         fake_email_sender.send.assert_not_called()
 
+    def test_withdraw_notice_names_the_withdrawing_coordinator(self, api_client, slot, coordinator):
+        planner = make_user(VIEW)
+        assignment = SlotAssignment.objects.create(
+            slot=slot, user=planner, proposed_by=make_user(MANAGE)
+        )
+        withdraw(api_client, assignment, coordinator)
+        assert Notification.objects.get(recipient=planner).related_user == coordinator
+
     def test_inactive_withdraw_does_not_notify(self, api_client, slot, coordinator):
         planner = make_user(VIEW)
         assignment = SlotAssignment.objects.create(

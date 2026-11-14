@@ -119,6 +119,33 @@ class TestSlots:
         )
         assert response.status_code == 422
 
+    @pytest.mark.parametrize("label", ["", "   "])
+    def test_blank_label_rejected(self, api_client, year, label):
+        slot = year.slots.get(label="march")
+        create = send(
+            api_client,
+            "post",
+            f"{BASE}/years/2027/slots/",
+            {**NEW_SLOT, "label": label},
+            headers_for(MANAGE),
+        )
+        patch = send(
+            api_client, "patch", f"{BASE}/slots/{slot.id}/", {"label": label}, headers_for(MANAGE)
+        )
+        assert (create.status_code, patch.status_code) == (422, 422)
+        slot.refresh_from_db()
+        assert slot.label == "march"
+
+    def test_label_is_trimmed(self, api_client, year):
+        response = send(
+            api_client,
+            "post",
+            f"{BASE}/years/2027/slots/",
+            {**NEW_SLOT, "label": "  extra walk "},
+            headers_for(MANAGE),
+        )
+        assert response.json()["label"] == "extra walk"
+
     def test_patch_slot_updates_only_sent_fields(self, api_client, year):
         slot = year.slots.get(label="march")
         response = send(

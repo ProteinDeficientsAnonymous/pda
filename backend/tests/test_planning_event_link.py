@@ -18,7 +18,7 @@ from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from tests._events import make_event
 from tests._planning import send
-from tests._users import make_user
+from tests._users import grant, make_attendance_paused, make_user
 
 VIEW = PermissionKey.VIEW_EVENT_PLANNING
 MANAGE = PermissionKey.MANAGE_EVENT_PLANNING
@@ -138,6 +138,27 @@ class TestLinkEvent:
         slot.refresh_from_db()
         assert slot.event == event
         assert invite_for(event, mate) is None
+
+    def test_one_rejected_planner_does_not_block_the_others(self, api_client, slot, planner):
+        paused = make_attendance_paused()
+        grant(paused, VIEW)
+        mate = make_user(VIEW)
+        for user in (planner, paused, mate):
+            assign(slot, user)
+        event = make_event(created_by=planner)
+        assert link(api_client, slot.id, event.id, planner).status_code == 200
+        assert invite_for(event, paused) is None
+        assert invite_for(event, mate).status == CoHostInviteStatus.PENDING
+
+    def test_planner_who_lost_the_role_is_403(self, api_client, slot, planner):
+        assign(slot, planner)
+        event = make_event(created_by=planner)
+        planner.roles.clear()
+        response = link(api_client, slot.id, event.id, planner)
+        assert response.status_code == 403
+        assert_error_code(response, Code.Perm.DENIED)
+        slot.refresh_from_db()
+        assert slot.event is None
 
     def test_unknown_slot_and_event(self, api_client, slot, planner):
         assign(slot, planner)

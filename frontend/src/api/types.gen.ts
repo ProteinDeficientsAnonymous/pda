@@ -2959,8 +2959,7 @@ export interface components {
         };
         /** AvailabilityOut */
         AvailabilityOut: {
-            /** Biannual Interest */
-            biannual_interest: string | null;
+            biannual_interest: components["schemas"]["BiannualInterest"] | null;
             /** Monthly Count */
             monthly_count: number;
             /** Slot Ids */
@@ -4463,6 +4462,11 @@ export interface components {
              */
             waitlisted_count: number;
         };
+        /**
+         * EventStatus
+         * @enum {string}
+         */
+        EventStatus: "draft" | "active" | "cancelled" | "deleted";
         /** FeedbackIn */
         FeedbackIn: {
             /** Description */
@@ -5368,8 +5372,7 @@ export interface components {
             event_id: string | null;
             /** Event Slug */
             event_slug: string | null;
-            /** Event Status */
-            event_status: string | null;
+            event_status: components["schemas"]["EventStatus"] | null;
             /** Id */
             id: string;
             kind: components["schemas"]["PlanningSlotKind"];
@@ -12218,6 +12221,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Not Found */
             404: {
                 headers: {
@@ -12260,6 +12272,15 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

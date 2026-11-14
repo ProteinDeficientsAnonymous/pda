@@ -534,13 +534,12 @@
           "biannual_interest": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/BiannualInterest"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Biannual Interest"
+            ]
           },
           "monthly_count": {
             "title": "Monthly Count",
@@ -3858,6 +3857,16 @@
         "title": "EventStatsOut",
         "type": "object"
       },
+      "EventStatus": {
+        "enum": [
+          "draft",
+          "active",
+          "cancelled",
+          "deleted"
+        ],
+        "title": "EventStatus",
+        "type": "string"
+      },
       "FeedbackIn": {
         "properties": {
           "description": {
@@ -6074,13 +6083,12 @@
           "event_status": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/EventStatus"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Event Status"
+            ]
           },
           "id": {
             "title": "Id",
@@ -17110,6 +17118,16 @@
             },
             "description": "Bad Request"
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
           "404": {
             "content": {
               "application/json": {
@@ -17177,6 +17195,16 @@
               }
             },
             "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
           },
           "404": {
             "content": {

@@ -66,7 +66,7 @@ def withdraw_assignment(request, assignment_id: UUID):
     if assignment.status in ACTIVE_STATUSES:
         was_committed = assignment.status == AssignmentStatus.COMMITTED
         assignment.withdraw()
-        notify_withdrawn(assignment)
+        notify_withdrawn(assignment, request.auth)
         if was_committed:
             rescind_planner_invite(assignment.slot, assignment.user_id)
     return Status(204, None)

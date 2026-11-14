@@ -94,6 +94,16 @@ class TestRespond:
         url = f"/api/community/planning/assignments/{assign(slot, planner).id}/{action}/"
         assert send(api_client, "post", url).status_code == 401
 
+    @pytest.mark.parametrize("action", ["commit", "decline"])
+    def test_planner_who_lost_the_role_is_403(self, api_client, slot, planner, action):
+        assignment = assign(slot, planner)
+        planner.roles.clear()
+        response = respond(api_client, assignment, action, planner)
+        assert response.status_code == 403
+        assert_error_code(response, Code.Perm.DENIED)
+        assignment.refresh_from_db()
+        assert assignment.status == Status.PROPOSED
+
     def test_rate_limited(self, api_client, slot, planner):
         assignment = assign(slot, planner, Status.DECLINED)
         codes = [respond(api_client, assignment, "commit", planner).status_code for _ in range(11)]
