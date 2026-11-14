@@ -8,6 +8,7 @@ from community.models import AssignmentStatus, SlotAssignment
 from community.planning._access import require_manage
 from community.planning._notify import notify_proposed, notify_withdrawn
 from community.planning._planners import planner_users
+from community.planning.event_link import rescind_planner_invite
 from community.planning.schemas import AssignmentOut, ProposeIn
 from community.planning.years import get_slot_or_404
 from community.shared import ErrorOut
@@ -63,6 +64,9 @@ def withdraw_assignment(request, assignment_id: UUID):
     except SlotAssignment.DoesNotExist:
         raise_validation(Code.Planning.ASSIGNMENT_NOT_FOUND, status_code=404)
     if assignment.status in ACTIVE_STATUSES:
+        was_committed = assignment.status == AssignmentStatus.COMMITTED
         assignment.withdraw()
         notify_withdrawn(assignment)
+        if was_committed:
+            rescind_planner_invite(assignment.slot, assignment.user_id)
     return Status(204, None)

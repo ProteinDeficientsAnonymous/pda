@@ -149,3 +149,104 @@ class TestLinkEvent:
         url = f"/api/community/planning/slots/{slot.id}/event/"
         body = {"event_id": str(uuid.uuid4())}
         assert send(api_client, "post", url, body).status_code == 401
+
+
+def set_invite(event, user, status):
+    return EventCoHostInvite.objects.create(event=event, user=user, status=status)
+
+
+def linked_slot(slot, creator):
+    slot.event = make_event(created_by=creator)
+    slot.save()
+    return slot.event
+
+
+def respond(api_client, assignment, action, actor):
+    url = f"/api/community/planning/assignments/{assignment.id}/{action}/"
+    return send(api_client, "post", url, headers=auth_headers_for(actor))
+
+
+@pytest.mark.django_db
+class TestInviteGuards:
+    def test_link_skips_a_removed_cohost(self, api_client, slot, planner):
+        mate = make_user(VIEW)
+        other = make_user(VIEW)
+        assign(slot, planner)
+        assign(slot, mate)
+        assign(slot, other)
+        event = make_event(created_by=planner)
+        set_invite(event, mate, CoHostInviteStatus.REMOVED)
+
+        assert link(api_client, slot.id, event.id, planner).status_code == 200
+
+        assert invite_for(event, mate).status == CoHostInviteStatus.REMOVED
+        assert invite_for(event, other).status == CoHostInviteStatus.PENDING
+        assert Notification.objects.get().recipient == other
+
+    def test_late_commit_skips_a_removed_cohost(self, api_client, slot, planner):
+        event = linked_slot(slot, make_user(VIEW))
+        set_invite(event, planner, CoHostInviteStatus.REMOVED)
+        respond(api_client, assign(slot, planner, Status.PROPOSED), "commit", planner)
+        assert invite_for(event, planner).status == CoHostInviteStatus.REMOVED
+        assert not Notification.objects.filter(recipient=planner).exists()
+
+    @pytest.mark.parametrize(
+        "old",
+        [CoHostInviteStatus.RESCINDED, CoHostInviteStatus.DECLINED, CoHostInviteStatus.EXPIRED],
+    )
+    def test_late_commit_reinvites_after_other_endings(self, api_client, slot, planner, old):
+        event = linked_slot(slot, make_user(VIEW))
+        set_invite(event, planner, old)
+        respond(api_client, assign(slot, planner, Status.PROPOSED), "commit", planner)
+        assert invite_for(event, planner).status == CoHostInviteStatus.PENDING
+
+    def test_creatorless_event_never_notifies_the_planner_of_their_own_invite(
+        self, api_client, slot, planner
+    ):
+        slot.event = make_event()
+        slot.save()
+        respond(api_client, assign(slot, planner, Status.PROPOSED), "commit", planner)
+        assert not Notification.objects.filter(recipient=planner).exists()
+
+
+@pytest.mark.django_db
+class TestRescindOnBackOut:
+    def pending_invite(self, slot, planner):
+        event = linked_slot(slot, make_user(VIEW))
+        set_invite(event, planner, CoHostInviteStatus.PENDING)
+        return event
+
+    def test_decline_from_committed_rescinds_pending_invite(self, api_client, slot, planner):
+        event = self.pending_invite(slot, planner)
+        respond(api_client, assign(slot, planner), "decline", planner)
+        assert invite_for(event, planner).status == CoHostInviteStatus.RESCINDED
+
+    @pytest.mark.parametrize("action", ["decline", "withdraw"])
+    def test_proposed_planner_keeps_a_manual_invite(self, api_client, slot, planner, action):
+        event = self.pending_invite(slot, planner)
+        assignment = assign(slot, planner, Status.PROPOSED)
+        if action == "decline":
+            respond(api_client, assignment, "decline", planner)
+        else:
+            url = f"/api/community/planning/assignments/{assignment.id}/"
+            send(api_client, "delete", url, headers=auth_headers_for(make_user(MANAGE)))
+        assert invite_for(event, planner).status == CoHostInviteStatus.PENDING
+
+    def test_withdraw_rescinds_pending_invite(self, api_client, slot, planner):
+        event = self.pending_invite(slot, planner)
+        assignment = assign(slot, planner)
+        url = f"/api/community/planning/assignments/{assignment.id}/"
+        coordinator = make_user(MANAGE)
+        assert (
+            send(api_client, "delete", url, headers=auth_headers_for(coordinator)).status_code
+            == 204
+        )
+        assert invite_for(event, planner).status == CoHostInviteStatus.RESCINDED
+
+    def test_accepted_cohost_is_left_alone(self, api_client, slot, planner):
+        event = linked_slot(slot, make_user(VIEW))
+        set_invite(event, planner, CoHostInviteStatus.ACCEPTED)
+        event.co_hosts.add(planner)
+        respond(api_client, assign(slot, planner), "decline", planner)
+        assert invite_for(event, planner).status == CoHostInviteStatus.ACCEPTED
+        assert event.co_hosts.filter(pk=planner.pk).exists()

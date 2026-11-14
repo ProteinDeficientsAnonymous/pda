@@ -8,7 +8,7 @@ from ninja import Router
 
 from community.models import AssignmentStatus, SlotAssignment
 from community.planning._notify import notify_coordinators
-from community.planning.event_link import invite_planners_to_event
+from community.planning.event_link import invite_planners_to_event, rescind_planner_invite
 from community.planning.proposals import assignment_out
 from community.planning.schemas import AssignmentOut
 from community.shared import ErrorOut
@@ -37,11 +37,14 @@ def _respond(
             raise_validation(Code.Planning.ASSIGNMENT_NOT_FOUND, status_code=404)
         if assignment.status not in allowed:
             raise_validation(Code.Planning.NOT_PENDING, status_code=400)
+        was_committed = assignment.status == AssignmentStatus.COMMITTED
         apply(assignment)
     notify_coordinators(assignment, committed)
     event = assignment.slot.live_event
     if committed and event is not None:
         invite_planners_to_event(event, [assignment.user_id], event.created_by or request.auth)
+    elif was_committed and not committed:
+        rescind_planner_invite(assignment.slot, assignment.user_id)
     return assignment_out(assignment)
 
 
