@@ -5,6 +5,7 @@ import type { components } from './types.gen';
 
 type WireSlot = components['schemas']['PlanningSlotOut'];
 type WireAvailability = components['schemas']['AvailabilityOut'];
+type WireGrid = components['schemas']['GridOut'];
 
 export type SlotKind = components['schemas']['PlanningSlotKind'];
 export type BiannualInterest = components['schemas']['BiannualInterest'];
@@ -27,6 +28,33 @@ export interface Availability {
   monthlyCount: number;
   slotIds: string[];
   updatedAt: string | null;
+}
+
+export type AssignmentStatus = components['schemas']['AssignmentStatus'];
+
+export interface Assignment {
+  id: string;
+  slotId: string;
+  userId: string;
+  status: AssignmentStatus;
+}
+
+export interface PlannerColumn {
+  userId: string;
+  name: string;
+  isPlanner: boolean;
+  hasEmail: boolean;
+  submitted: boolean;
+  biannualInterest: BiannualInterest | null;
+  monthlyCount: number;
+  availableSlotIds: string[];
+}
+
+export interface PlanningGrid {
+  year: number;
+  slots: PlanningSlot[];
+  planners: PlannerColumn[];
+  assignments: Assignment[];
 }
 
 export interface AvailabilityInput {
@@ -62,6 +90,29 @@ function mapAvailability(w: WireAvailability): Availability {
   };
 }
 
+function mapGrid(year: number, w: WireGrid): PlanningGrid {
+  return {
+    year,
+    slots: w.slots.map(mapSlot),
+    planners: w.planners.map((p) => ({
+      userId: p.user_id,
+      name: p.name,
+      isPlanner: p.is_planner,
+      hasEmail: p.has_email,
+      submitted: p.submitted,
+      biannualInterest: toInterest(p.biannual_interest),
+      monthlyCount: p.monthly_count,
+      availableSlotIds: p.available_slot_ids,
+    })),
+    assignments: w.assignments.map((a) => ({
+      id: a.id,
+      slotId: a.slot_id,
+      userId: a.user_id,
+      status: a.status,
+    })),
+  };
+}
+
 export function usePlanningYears() {
   return useQuery({
     queryKey: ['planning', 'years'],
@@ -80,6 +131,18 @@ export function usePlanningSlots(year: number) {
         `/api/community/planning/years/${String(year)}/slots/`,
       );
       return data.map(mapSlot);
+    },
+  });
+}
+
+export function usePlanningGrid(year: number) {
+  return useQuery({
+    queryKey: ['planning', 'grid', year],
+    queryFn: async () => {
+      const { data } = await apiClient.get<WireGrid>(
+        `/api/community/planning/years/${String(year)}/grid/`,
+      );
+      return mapGrid(year, data);
     },
   });
 }
@@ -113,6 +176,7 @@ export function useSaveAvailability(year: number) {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['planning', 'availability', year] });
+      void qc.invalidateQueries({ queryKey: ['planning', 'grid', year] });
     },
   });
 }
@@ -150,6 +214,7 @@ export function useCreateSlot(year: number) {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['planning', 'slots', year] });
+      void qc.invalidateQueries({ queryKey: ['planning', 'grid', year] });
     },
   });
 }
@@ -167,6 +232,7 @@ export function useUpdateSlot(year: number) {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['planning', 'slots', year] });
+      void qc.invalidateQueries({ queryKey: ['planning', 'grid', year] });
     },
   });
 }
@@ -179,6 +245,7 @@ export function useDeleteSlot(year: number) {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['planning', 'slots', year] });
+      void qc.invalidateQueries({ queryKey: ['planning', 'grid', year] });
     },
   });
 }
