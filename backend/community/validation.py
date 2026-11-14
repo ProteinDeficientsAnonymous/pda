@@ -329,6 +329,7 @@ class Code:
         NOT_A_PLANNER = "planning.not_a_planner"
         ALREADY_ASSIGNED = "planning.already_assigned"
         ASSIGNMENT_NOT_FOUND = "planning.assignment_not_found"
+        NOT_PENDING = "planning.not_pending"
 
 
 class ValidationException(Exception):
