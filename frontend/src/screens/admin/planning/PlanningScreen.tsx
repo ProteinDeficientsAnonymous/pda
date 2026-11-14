@@ -8,6 +8,7 @@ import { hasPermission, Permission } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { AvailabilityForm } from './AvailabilityForm';
+import { SlotEditor } from './SlotEditor';
 import { toastOnError } from './toastOnError';
 
 // the latest year is >= the current year whenever one exists, so one rule covers both cases
@@ -71,6 +72,7 @@ export default function PlanningScreen() {
         {canStartNext ? <StartYearButton year={nextYear} onStarted={setPicked} /> : null}
       </div>
       <AvailabilityForm year={year} />
+      {canManage ? <SlotEditor year={year} /> : null}
     </ContentContainer>
   );
 }
