@@ -37,6 +37,8 @@ class NotificationType(models.TextChoices):
     CHECK_IN_PROMOTION_FAILED = "check_in_promotion_failed", "Check-in Promotion Failed"
     PLANNING_PROPOSED = "planning_proposed", "Planning Proposed"
     PLANNING_WITHDRAWN = "planning_withdrawn", "Planning Withdrawn"
+    PLANNING_COMMITTED = "planning_committed", "Planning Committed"
+    PLANNING_DECLINED = "planning_declined", "Planning Declined"
 
 
 class Notification(models.Model):
