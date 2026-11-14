@@ -26,6 +26,7 @@ export const NotificationType = {
   PlanningWithdrawn: 'planning_withdrawn',
   PlanningCommitted: 'planning_committed',
   PlanningDeclined: 'planning_declined',
+  PlanningUpcoming: 'planning_upcoming',
   AccountDeleted: 'account_deleted',
 } as const;
 

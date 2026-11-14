@@ -39,6 +39,7 @@ class NotificationType(models.TextChoices):
     PLANNING_WITHDRAWN = "planning_withdrawn", "Planning Withdrawn"
     PLANNING_COMMITTED = "planning_committed", "Planning Committed"
     PLANNING_DECLINED = "planning_declined", "Planning Declined"
+    PLANNING_UPCOMING = "planning_upcoming", "Planning Upcoming"
 
 
 class Notification(models.Model):
