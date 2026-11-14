@@ -71,6 +71,43 @@ describe('MySlots', () => {
     expect(decline).toHaveBeenCalledWith('a1');
   });
 
+  it('lists committed slots with teammates and an event link', () => {
+    const row = mine('a2', 'committed');
+    state.data = [
+      {
+        ...row,
+        teammates: [
+          { name: 'bea', status: 'committed' },
+          { name: 'cy', status: 'proposed' },
+        ],
+        slot: { ...row.slot, eventId: 'e1', eventSlug: 'jan-potluck' },
+      },
+    ];
+    renderWithProviders(<MySlots />);
+    const section = screen.getByRole('region', { name: 'your slots' });
+    expect(within(section).getByText('label a2')).toBeInTheDocument();
+    expect(within(section).getByText('with bea (committed), cy (proposed)')).toBeInTheDocument();
+    expect(within(section).getByRole('link', { name: 'view event' })).toHaveAttribute(
+      'href',
+      '/events/jan-potluck',
+    );
+    expect(screen.queryByRole('region', { name: 'waiting on you' })).not.toBeInTheDocument();
+  });
+
+  it('backs out only after confirming', async () => {
+    state.data = [mine('a2', 'committed')];
+    renderWithProviders(<MySlots />);
+    await userEvent.click(screen.getByRole('button', { name: 'back out' }));
+    expect(
+      screen.getByText('back out of label a2? the coordinator will be told'),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'cancel' }));
+    expect(decline).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'back out' }));
+    await userEvent.click(screen.getByRole('button', { name: 'yes, back out' }));
+    expect(decline).toHaveBeenCalledWith('a2');
+  });
+
   it('prefixes the year only when several years are present', () => {
     state.data = [mine('a1', 'proposed'), mine('a2', 'proposed', 2028)];
     const { unmount } = renderWithProviders(<MySlots />);
