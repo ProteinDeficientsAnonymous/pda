@@ -1934,6 +1934,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/planning/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Slots */
+        get: operations["community_planning_mine_list_my_slots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/planning/slots/{slot_id}/": {
         parameters: {
             query?: never;
@@ -5185,6 +5202,17 @@ export interface components {
             /** Token */
             token: string | null;
         };
+        /** MySlotOut */
+        MySlotOut: {
+            /** Assignment Id */
+            assignment_id: string;
+            slot: components["schemas"]["PlanningSlotOut"];
+            status: components["schemas"]["AssignmentStatus"];
+            /** Teammates */
+            teammates: components["schemas"]["TeammateOut"][];
+            /** Year */
+            year: number;
+        };
         /** NotificationOut */
         NotificationOut: {
             /**
@@ -6113,6 +6141,12 @@ export interface components {
             name: string;
             /** Slug */
             slug: string;
+        };
+        /** TeammateOut */
+        TeammateOut: {
+            /** Name */
+            name: string;
+            status: components["schemas"]["AssignmentStatus"];
         };
         /** TentativeApprovalMessageOut */
         TentativeApprovalMessageOut: {
@@ -12219,6 +12253,35 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_mine_list_my_slots: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MySlotOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
