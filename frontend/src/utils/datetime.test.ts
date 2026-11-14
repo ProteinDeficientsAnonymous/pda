@@ -5,6 +5,7 @@ import {
   formatDayHeader,
   formatEventDateTime,
   formatVeganniversary,
+  MONTH_OPTIONS,
   parseIsoDate,
 } from './datetime';
 
@@ -85,5 +86,13 @@ describe('formatDayHeader', () => {
     expect(result).toMatch(/Wednesday/);
     expect(result).toMatch(/April/);
     expect(result).toMatch(/15/);
+  });
+});
+
+describe('MONTH_OPTIONS', () => {
+  it('lists the 12 lowercase months keyed 1-12', () => {
+    expect(MONTH_OPTIONS).toHaveLength(12);
+    expect(MONTH_OPTIONS[0]).toEqual({ value: '1', label: 'january' });
+    expect(MONTH_OPTIONS[11]).toEqual({ value: '12', label: 'december' });
   });
 });
