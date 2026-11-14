@@ -249,3 +249,28 @@ export function useDeleteSlot(year: number) {
     },
   });
 }
+
+export function usePropose(year: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ slotId, userId }: { slotId: string; userId: string }) => {
+      const body: components['schemas']['ProposeIn'] = { user_id: userId };
+      await apiClient.post(`/api/community/planning/slots/${slotId}/assignments/`, body);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['planning', 'grid', year] });
+    },
+  });
+}
+
+export function useWithdraw(year: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (assignmentId: string) => {
+      await apiClient.delete(`/api/community/planning/assignments/${assignmentId}/`);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['planning', 'grid', year] });
+    },
+  });
+}

@@ -27,3 +27,9 @@ export function cellState(
   const planner = grid.planners.find((p) => p.userId === userId);
   return planner?.availableSlotIds.includes(slotId) ? 'available' : 'blank';
 }
+
+const WITHDRAWABLE: CellState[] = ['committed', 'proposed', 'no_answer'];
+
+export function isWithdrawable(state: CellState): boolean {
+  return WITHDRAWABLE.includes(state);
+}

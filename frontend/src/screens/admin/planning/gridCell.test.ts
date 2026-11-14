@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Assignment, PlanningGrid } from '@/api/planning';
 
-import { cellState, findAssignment } from './gridCell';
+import { type CellState, cellState, findAssignment, isWithdrawable } from './gridCell';
 
 const slot = (id: string, month: number) => ({
   id,
@@ -86,5 +86,18 @@ describe('cellState', () => {
     const grid = makeGrid([{ status: 'proposed' }]);
     expect(findAssignment(grid, 's1', 'u1')?.id).toBe('a0');
     expect(findAssignment(grid, 's1', 'u2')).toBeUndefined();
+  });
+});
+
+describe('isWithdrawable', () => {
+  it.each<[CellState, boolean]>([
+    ['committed', true],
+    ['proposed', true],
+    ['no_answer', true],
+    ['declined', false],
+    ['available', false],
+    ['blank', false],
+  ])('%s -> %s', (state, expected) => {
+    expect(isWithdrawable(state)).toBe(expected);
   });
 });

@@ -1,20 +1,21 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { type PlannerColumn, type PlanningSlot, usePlanningGrid } from '@/api/planning';
+import {
+  type Assignment,
+  type PlannerColumn,
+  type PlanningSlot,
+  usePlanningGrid,
+  usePropose,
+  useWithdraw,
+} from '@/api/planning';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { eventPath } from '@/models/event';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
-import { type CellState, cellState } from './gridCell';
-
-const CELL_TEXT: Record<CellState, string> = {
-  committed: 'committed',
-  proposed: 'proposed',
-  no_answer: 'no answer',
-  declined: 'declined',
-  available: 'available',
-  blank: '',
-};
+import { type CellState, cellState, findAssignment, isWithdrawable } from './gridCell';
+import { GridCell } from './PlanningGridCell';
+import { toastOnError } from './toastOnError';
 
 function PlannerHeader({ planner }: { planner: PlannerColumn }) {
   return (
@@ -54,10 +55,39 @@ function SlotHeader({ slot }: { slot: PlanningSlot }) {
 export function PlanningGrid({ year }: { year: number }) {
   const { data: grid, isPending, isError } = usePlanningGrid(year);
   const [today] = useState(() => new Date());
+  const propose = usePropose(year);
+  const withdraw = useWithdraw(year);
+  const { confirm, element } = useConfirm();
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the planning grid — try refreshing" />;
   if (grid.planners.length === 0) return <p className="text-muted text-sm">no planners yet 🌿</p>;
+
+  async function act(
+    slot: PlanningSlot,
+    planner: PlannerColumn,
+    state: CellState,
+    assignment: Assignment | undefined,
+  ) {
+    if (!isWithdrawable(state)) {
+      await toastOnError(
+        propose.mutateAsync({ slotId: slot.id, userId: planner.userId }),
+        "couldn't propose that slot — try again",
+      );
+      return;
+    }
+    const ok = await confirm({
+      message: `withdraw ${planner.name} from ${slot.label}?`,
+      confirmLabel: 'withdraw',
+      destructive: true,
+    });
+    if (ok && assignment) {
+      await toastOnError(
+        withdraw.mutateAsync(assignment.id),
+        "couldn't withdraw that slot — try again",
+      );
+    }
+  }
 
   return (
     <section className="mt-8">
@@ -78,19 +108,23 @@ export function PlanningGrid({ year }: { year: number }) {
             {grid.slots.map((slot) => (
               <tr key={slot.id} className="border-border border-t">
                 <SlotHeader slot={slot} />
-                {grid.planners.map((p) => {
-                  const state = cellState(slot.id, p.userId, grid, today);
-                  return (
-                    <td key={p.userId} className="px-3 py-2">
-                      {CELL_TEXT[state] || <span className="sr-only">not available</span>}
-                    </td>
-                  );
-                })}
+                {grid.planners.map((p) => (
+                  <GridCell
+                    key={p.userId}
+                    slot={slot}
+                    planner={p}
+                    state={cellState(slot.id, p.userId, grid, today)}
+                    assignment={findAssignment(grid, slot.id, p.userId)}
+                    disabled={propose.isPending || withdraw.isPending}
+                    onAct={(state, assignment) => void act(slot, p, state, assignment)}
+                  />
+                ))}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {element}
     </section>
   );
 }
