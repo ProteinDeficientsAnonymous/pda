@@ -63,3 +63,20 @@ class AssignmentOut(BaseModel):
     status: AssignmentStatus
     proposed_at: datetime
     responded_at: datetime | None
+
+
+class PlannerColumnOut(BaseModel):
+    user_id: str
+    name: str
+    is_planner: bool
+    has_email: bool
+    submitted: bool
+    biannual_interest: BiannualInterest | None
+    monthly_count: int
+    available_slot_ids: list[str]
+
+
+class GridOut(BaseModel):
+    slots: list[PlanningSlotOut]
+    planners: list[PlannerColumnOut]
+    assignments: list[AssignmentOut]

@@ -39,7 +39,7 @@ def _year_out(planning_year: PlanningYear) -> PlanningYearOut:
     return PlanningYearOut(id=str(planning_year.id), year=planning_year.year)
 
 
-def _slot_out(slot: PlanningSlot) -> PlanningSlotOut:
+def slot_out(slot: PlanningSlot) -> PlanningSlotOut:
     event = slot.live_event
     return PlanningSlotOut(
         id=str(slot.id),
@@ -85,7 +85,7 @@ def create_year(request, payload: PlanningYearIn):
 def list_slots(request, year: int):
     require_view(request, "list_planning_slots")
     slots = get_year_or_404(year).slots.select_related("event")
-    return Status(200, [_slot_out(s) for s in slots])
+    return Status(200, [slot_out(s) for s in slots])
 
 
 @router.post(
@@ -101,7 +101,7 @@ def create_slot(request, year: int, payload: PlanningSlotIn):
         slot = PlanningSlot.objects.create(
             planning_year=planning_year, order=last + 1, **payload.model_dump()
         )
-    return Status(201, _slot_out(slot))
+    return Status(201, slot_out(slot))
 
 
 @router.patch(
@@ -116,7 +116,7 @@ def update_slot(request, slot_id: UUID, payload: PlanningSlotPatchIn):
     for field, value in changes.items():
         setattr(slot, field, value)
     slot.save(update_fields=list(changes) or None)
-    return Status(200, _slot_out(slot))
+    return Status(200, slot_out(slot))
 
 
 @router.delete(

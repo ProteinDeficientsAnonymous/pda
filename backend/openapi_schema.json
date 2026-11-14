@@ -4129,6 +4129,38 @@
         "title": "GiphySearchOut",
         "type": "object"
       },
+      "GridOut": {
+        "properties": {
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/AssignmentOut"
+            },
+            "title": "Assignments",
+            "type": "array"
+          },
+          "planners": {
+            "items": {
+              "$ref": "#/components/schemas/PlannerColumnOut"
+            },
+            "title": "Planners",
+            "type": "array"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/PlanningSlotOut"
+            },
+            "title": "Slots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slots",
+          "planners",
+          "assignments"
+        ],
+        "title": "GridOut",
+        "type": "object"
+      },
       "GuidelinesOut": {
         "properties": {
           "content": {
@@ -5875,6 +5907,63 @@
           "invited_at"
         ],
         "title": "PendingCoHostInviteOut",
+        "type": "object"
+      },
+      "PlannerColumnOut": {
+        "properties": {
+          "available_slot_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Available Slot Ids",
+            "type": "array"
+          },
+          "biannual_interest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BiannualInterest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "has_email": {
+            "title": "Has Email",
+            "type": "boolean"
+          },
+          "is_planner": {
+            "title": "Is Planner",
+            "type": "boolean"
+          },
+          "monthly_count": {
+            "title": "Monthly Count",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "submitted": {
+            "title": "Submitted",
+            "type": "boolean"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "name",
+          "is_planner",
+          "has_email",
+          "submitted",
+          "biannual_interest",
+          "monthly_count",
+          "available_slot_ids"
+        ],
+        "title": "PlannerColumnOut",
         "type": "object"
       },
       "PlanningSlotIn": {
@@ -17474,6 +17563,63 @@
           }
         ],
         "summary": "Put My Availability",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/years/{year}/grid/": {
+      "get": {
+        "operationId": "community_planning_grid_get_grid",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GridOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Grid",
         "tags": [
           "community"
         ]

@@ -2005,6 +2005,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/planning/years/{year}/grid/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Grid */
+        get: operations["community_planning_grid_get_grid"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/planning/years/{year}/slots/": {
         parameters: {
             query?: never;
@@ -4524,6 +4541,15 @@ export interface components {
             /** Results */
             results: components["schemas"]["GiphyResult"][];
         };
+        /** GridOut */
+        GridOut: {
+            /** Assignments */
+            assignments: components["schemas"]["AssignmentOut"][];
+            /** Planners */
+            planners: components["schemas"]["PlannerColumnOut"][];
+            /** Slots */
+            slots: components["schemas"]["PlanningSlotOut"][];
+        };
         /** GuidelinesOut */
         GuidelinesOut: {
             /** Content */
@@ -5251,6 +5277,24 @@ export interface components {
              * @default
              */
             user_photo_url: string;
+        };
+        /** PlannerColumnOut */
+        PlannerColumnOut: {
+            /** Available Slot Ids */
+            available_slot_ids: string[];
+            biannual_interest: components["schemas"]["BiannualInterest"] | null;
+            /** Has Email */
+            has_email: boolean;
+            /** Is Planner */
+            is_planner: boolean;
+            /** Monthly Count */
+            monthly_count: number;
+            /** Name */
+            name: string;
+            /** Submitted */
+            submitted: boolean;
+            /** User Id */
+            user_id: string;
         };
         /** PlanningSlotIn */
         PlanningSlotIn: {
@@ -12461,6 +12505,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_grid_get_grid: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GridOut"];
                 };
             };
             /** @description Forbidden */
