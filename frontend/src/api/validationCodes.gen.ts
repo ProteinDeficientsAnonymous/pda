@@ -322,6 +322,9 @@ export const Code = {
     AlreadyAssigned: 'planning.already_assigned',
     AssignmentNotFound: 'planning.assignment_not_found',
     NotPending: 'planning.not_pending',
+    NotEventHost: 'planning.not_event_host',
+    SlotHasEvent: 'planning.slot_has_event',
+    EventAlreadyLinked: 'planning.event_already_linked',
   },
 } as const;
 
@@ -564,7 +567,10 @@ export type ValidationCode =
   | 'planning.not_a_planner'
   | 'planning.already_assigned'
   | 'planning.assignment_not_found'
-  | 'planning.not_pending';
+  | 'planning.not_pending'
+  | 'planning.not_event_host'
+  | 'planning.slot_has_event'
+  | 'planning.event_already_linked';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -806,4 +812,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'planning.already_assigned': [],
   'planning.assignment_not_found': [],
   'planning.not_pending': [],
+  'planning.not_event_host': [],
+  'planning.slot_has_event': [],
+  'planning.event_already_linked': [],
 };

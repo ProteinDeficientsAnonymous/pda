@@ -1368,6 +1368,21 @@
         "name": "NOT_PENDING",
         "value": "planning.not_pending",
         "params": []
+      },
+      {
+        "name": "NOT_EVENT_HOST",
+        "value": "planning.not_event_host",
+        "params": []
+      },
+      {
+        "name": "SLOT_HAS_EVENT",
+        "value": "planning.slot_has_event",
+        "params": []
+      },
+      {
+        "name": "EVENT_ALREADY_LINKED",
+        "value": "planning.event_already_linked",
+        "params": []
       }
     ]
   }

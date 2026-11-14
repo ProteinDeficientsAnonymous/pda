@@ -330,6 +330,9 @@ class Code:
         ALREADY_ASSIGNED = "planning.already_assigned"
         ASSIGNMENT_NOT_FOUND = "planning.assignment_not_found"
         NOT_PENDING = "planning.not_pending"
+        NOT_EVENT_HOST = "planning.not_event_host"
+        SLOT_HAS_EVENT = "planning.slot_has_event"
+        EVENT_ALREADY_LINKED = "planning.event_already_linked"
 
 
 class ValidationException(Exception):
