@@ -80,6 +80,17 @@ def _rescind_invite(invite: EventCoHostInvite) -> bool:
     return was_accepted
 
 
+def rescind_pending_cohost_invite(event: Event, user_id) -> bool:
+    """Rescind the user's PENDING invite; accepted co-hosts are left for the hosts to manage."""
+    invite = EventCoHostInvite.objects.filter(
+        event=event, user_id=user_id, status=CoHostInviteStatus.PENDING
+    ).first()
+    if invite is None:
+        return False
+    _rescind_invite(invite)
+    return True
+
+
 def diff_cohost_invites(
     event: Event,
     co_host_ids: Iterable[str],
