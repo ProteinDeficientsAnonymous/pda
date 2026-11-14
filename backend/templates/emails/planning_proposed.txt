@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+you've been asked to plan {{ slot_label|lower }} on pda.
+
+let the coordinators know whether you're in:
+
+{{ planning_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}

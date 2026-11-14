@@ -354,6 +354,30 @@ def send_cohost_invite_email(
 
 
 @dataclass(frozen=True)
+class PlanningProposedEmailDetails:
+    to: str
+    display_name: str
+    slot_label: str
+    planning_url: str
+
+
+def send_planning_proposed_email(
+    *,
+    sender: EmailSender,
+    details: PlanningProposedEmailDetails,
+) -> SendResult:
+    context = asdict(details)
+    html = render_to_string("emails/planning_proposed.html", context)
+    text = render_to_string("emails/planning_proposed.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"can you plan {details.slot_label}?",
+        html=html,
+        text=text,
+    )
+
+
+@dataclass(frozen=True)
 class CheckinReminderEmailDetails:
     """Recipient + event details for the host check-in nudge email."""
 
