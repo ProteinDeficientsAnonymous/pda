@@ -76,7 +76,7 @@ importers:
         version: 7.72.1(react@19.2.5)
       react-image-crop:
         specifier: ^11.0.10
-        version: 11.0.10(react@19.2.5)
+        version: 11.1.2(react@19.2.5)
       react-phone-number-input:
         specifier: ^3.4.16
         version: 3.4.18(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -2017,8 +2017,8 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
 
-  react-image-crop@11.0.10:
-    resolution: {integrity: sha512-+5FfDXUgYLLqBh1Y/uQhIycpHCbXkI50a+nbfkB1C0xXXUTwkisHDo2QCB1SQJyHCqIuia4FeyReqXuMDKWQTQ==}
+  react-image-crop@11.1.2:
+    resolution: {integrity: sha512-+0Pc2fxpwKL4u4oLmdKBw8XSwUceFbXbKEHvFOlsl/MGB1OVNic4uBlAPmEHGXYgoJIq+b63xHbc/aJMG0AVkA==}
     peerDependencies:
       react: '>=16.13.1'
 
@@ -2168,6 +2168,7 @@ packages:
 
   tldts-core@7.4.20:
     resolution: {integrity: sha512-C630TWXZCZmLq0F2bW4QqwnaaxCQ/svpAqvJwnC4JvgEM5ohhBnGsEzTLSOXcN+xjz+kEaHS5uoWIw2klnqd0A==}
+    deprecated: Partial release, see https://github.com/remusao/tldts/issues/2735. Use >=7.4.22.
 
   tldts@7.4.19:
     resolution: {integrity: sha512-48dH6aSpQnpbzDUc4vIQZ1VjB8tkK+e8c1yx05/SZK+rkssgjEOlxDd/yU8/a4vGYQ9vRgJr9dwMq9TJ0b3X2Q==}
@@ -3927,7 +3928,7 @@ snapshots:
     dependencies:
       react: 19.2.5
 
-  react-image-crop@11.0.10(react@19.2.5):
+  react-image-crop@11.1.2(react@19.2.5):
     dependencies:
       react: 19.2.5
 
