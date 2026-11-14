@@ -10,8 +10,10 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from notifications.cohost_notifications import create_cohost_invite_notifications
 from notifications.email_helpers import CohostInviteEmailDetails, send_cohost_invite_email
 from notifications.email_sender import get_email_sender
+from notifications.service import broadcast_cohost_change
 from users.helpers import visible_display_name
 from users.models import MembershipStatus, User
 
@@ -158,6 +160,24 @@ def add_cohost_invites(
         for user_id in next_ids:
             if _upsert_pending_invite(event, user_id, inviter, existing_by_user.get(user_id)):
                 newly_invited.append(user_id)
+    return newly_invited
+
+
+def invite_cohosts_and_notify(
+    event: Event,
+    co_host_ids: Iterable[str],
+    inviter: UserModel,
+) -> list[str]:
+    """Invite with set-union semantics, then notify, email and live-ping the newly invited."""
+    newly_invited = add_cohost_invites(event, co_host_ids, inviter)
+    if newly_invited:
+        create_cohost_invite_notifications(event, newly_invited, inviter)
+        send_cohost_invite_emails(event, newly_invited, inviter)
+        broadcast_cohost_change(
+            event,
+            exclude_user_ids={str(inviter.pk)},
+            extra_user_ids=set(newly_invited),
+        )
     return newly_invited
 
 
