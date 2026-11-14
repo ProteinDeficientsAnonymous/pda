@@ -80,3 +80,16 @@ class GridOut(BaseModel):
     slots: list[PlanningSlotOut]
     planners: list[PlannerColumnOut]
     assignments: list[AssignmentOut]
+
+
+class TeammateOut(BaseModel):
+    name: str
+    status: AssignmentStatus
+
+
+class MySlotOut(BaseModel):
+    assignment_id: str
+    status: AssignmentStatus
+    year: int
+    slot: PlanningSlotOut
+    teammates: list[TeammateOut]

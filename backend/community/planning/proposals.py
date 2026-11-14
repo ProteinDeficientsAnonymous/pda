@@ -15,7 +15,7 @@ from community.validation import Code, raise_validation
 
 router = Router()
 
-_ACTIVE = (AssignmentStatus.PROPOSED, AssignmentStatus.COMMITTED)
+ACTIVE_STATUSES = (AssignmentStatus.PROPOSED, AssignmentStatus.COMMITTED)
 
 
 def assignment_out(assignment: SlotAssignment) -> AssignmentOut:
@@ -44,7 +44,7 @@ def propose_assignment(request, slot_id: UUID, payload: ProposeIn):
         slot=slot, user=user, defaults={"proposed_by": request.auth}
     )
     if not created:
-        if assignment.status in _ACTIVE:
+        if assignment.status in ACTIVE_STATUSES:
             raise_validation(Code.Planning.ALREADY_ASSIGNED, field="user_id", status_code=400)
         assignment.propose(request.auth)
     notify_proposed(assignment)
@@ -62,7 +62,7 @@ def withdraw_assignment(request, assignment_id: UUID):
         assignment = SlotAssignment.objects.select_related("slot", "user").get(pk=assignment_id)
     except SlotAssignment.DoesNotExist:
         raise_validation(Code.Planning.ASSIGNMENT_NOT_FOUND, status_code=404)
-    if assignment.status in _ACTIVE:
+    if assignment.status in ACTIVE_STATUSES:
         assignment.withdraw()
         notify_withdrawn(assignment)
     return Status(204, None)

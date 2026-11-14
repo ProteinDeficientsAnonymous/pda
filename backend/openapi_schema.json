@@ -5628,6 +5628,40 @@
         "title": "MyEventFeedbackOut",
         "type": "object"
       },
+      "MySlotOut": {
+        "properties": {
+          "assignment_id": {
+            "title": "Assignment Id",
+            "type": "string"
+          },
+          "slot": {
+            "$ref": "#/components/schemas/PlanningSlotOut"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssignmentStatus"
+          },
+          "teammates": {
+            "items": {
+              "$ref": "#/components/schemas/TeammateOut"
+            },
+            "title": "Teammates",
+            "type": "array"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assignment_id",
+          "status",
+          "year",
+          "slot",
+          "teammates"
+        ],
+        "title": "MySlotOut",
+        "type": "object"
+      },
       "NotificationOut": {
         "properties": {
           "created_at": {
@@ -8190,6 +8224,23 @@
           "slug"
         ],
         "title": "TagOut",
+        "type": "object"
+      },
+      "TeammateOut": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssignmentStatus"
+          }
+        },
+        "required": [
+          "name",
+          "status"
+        ],
+        "title": "TeammateOut",
         "type": "object"
       },
       "TentativeApprovalMessageOut": {
@@ -17140,6 +17191,47 @@
           }
         ],
         "summary": "Decline Assignment",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/me/": {
+      "get": {
+        "operationId": "community_planning_mine_list_my_slots",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MySlotOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List My Slots",
         "tags": [
           "community"
         ]
