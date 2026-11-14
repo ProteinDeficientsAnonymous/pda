@@ -5,7 +5,7 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import type { Veganniversary } from '@/models/user';
-import { formatBirthday, formatVeganniversary } from '@/utils/datetime';
+import { formatBirthday, formatVeganniversary, MONTH_OPTIONS } from '@/utils/datetime';
 
 export interface DateParts {
   month: number;
@@ -21,21 +21,6 @@ export interface DateDraft {
 
 const VEGANNIVERSARY_HINT =
   "the exact date isn't required, but please let us know at least the month and year!";
-
-const MONTH_OPTIONS = [
-  'january',
-  'february',
-  'march',
-  'april',
-  'may',
-  'june',
-  'july',
-  'august',
-  'september',
-  'october',
-  'november',
-  'december',
-].map((name, i) => ({ value: String(i + 1), label: name }));
 
 const NO_YEAR = '';
 const CURRENT_YEAR = new Date().getFullYear();

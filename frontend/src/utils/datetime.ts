@@ -40,3 +40,18 @@ export function formatVeganniversary(v: Veganniversary): string {
   const month = format(new Date(2000, v.month - 1, 1), 'MMMM').toLowerCase();
   return `${month} ${String(v.year)}`;
 }
+
+export const MONTH_OPTIONS = [
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december',
+].map((name, i) => ({ value: String(i + 1), label: name }));

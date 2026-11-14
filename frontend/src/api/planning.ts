@@ -116,3 +116,69 @@ export function useSaveAvailability(year: number) {
     },
   });
 }
+
+export function useCreateYear() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (year: number) => {
+      const body: components['schemas']['PlanningYearIn'] = { year };
+      const { data } = await apiClient.post<PlanningYear>('/api/community/planning/years/', body);
+      return data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['planning', 'years'] });
+    },
+  });
+}
+
+export interface SlotInput {
+  label: string;
+  month: number;
+  kind: SlotKind;
+}
+
+export function useCreateSlot(year: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: SlotInput) => {
+      const body: components['schemas']['PlanningSlotIn'] = input;
+      const { data } = await apiClient.post<WireSlot>(
+        `/api/community/planning/years/${String(year)}/slots/`,
+        body,
+      );
+      return mapSlot(data);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['planning', 'slots', year] });
+    },
+  });
+}
+
+export function useUpdateSlot(year: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<SlotInput> }) => {
+      const body: components['schemas']['PlanningSlotPatchIn'] = patch;
+      const { data } = await apiClient.patch<WireSlot>(
+        `/api/community/planning/slots/${id}/`,
+        body,
+      );
+      return mapSlot(data);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['planning', 'slots', year] });
+    },
+  });
+}
+
+export function useDeleteSlot(year: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/api/community/planning/slots/${id}/`);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['planning', 'slots', year] });
+    },
+  });
+}
