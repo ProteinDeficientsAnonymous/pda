@@ -1,13 +1,14 @@
 import uuid
 
 import pytest
-from community.models import AssignmentStatus, SlotAssignment
+from community.models import AssignmentStatus, CoHostInviteStatus, EventCoHostInvite, SlotAssignment
 from community.validation import Code
 from notifications.models import Notification, NotificationType
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
+from tests._events import make_event
 from tests._planning import send
 from tests._users import grant, make_attendance_paused, make_user
 
@@ -128,3 +129,30 @@ class TestCoordinatorNotifications:
         make_user(MANAGE)
         respond(api_client, assign(slot, planner, Status.DECLINED), "commit", planner)
         assert not Notification.objects.exists()
+
+
+@pytest.mark.django_db
+class TestLateCommitInvite:
+    def test_commit_after_link_invites_planner_as_cohost(self, api_client, slot, planner):
+        creator = make_user(VIEW)
+        slot.event = make_event(created_by=creator)
+        slot.save()
+
+        respond(api_client, assign(slot, planner), "commit", planner)
+
+        invite = EventCoHostInvite.objects.get(event=slot.event, user=planner)
+        assert invite.status == CoHostInviteStatus.PENDING
+        assert invite.invited_by == creator
+        assert Notification.objects.get(
+            recipient=planner, notification_type=NotificationType.COHOST_INVITE
+        )
+
+    def test_decline_after_link_does_not_invite(self, api_client, slot, planner):
+        slot.event = make_event(created_by=make_user(VIEW))
+        slot.save()
+        respond(api_client, assign(slot, planner), "decline", planner)
+        assert not EventCoHostInvite.objects.exists()
+
+    def test_commit_without_event_does_not_invite(self, api_client, slot, planner):
+        respond(api_client, assign(slot, planner), "commit", planner)
+        assert not EventCoHostInvite.objects.exists()
