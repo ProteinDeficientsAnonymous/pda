@@ -324,3 +324,12 @@ export function useCommit() {
 export function useDecline() {
   return useRespond('decline');
 }
+
+export async function linkSlotEvent(slotId: string, eventId: string): Promise<PlanningSlot> {
+  const body: components['schemas']['LinkEventIn'] = { event_id: eventId };
+  const { data } = await apiClient.post<WireSlot>(
+    `/api/community/planning/slots/${slotId}/event/`,
+    body,
+  );
+  return mapSlot(data);
+}
