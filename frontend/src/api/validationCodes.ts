@@ -701,6 +701,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "that planning year doesn't exist";
     case Code.Planning.SlotNotFound:
       return "that slot doesn't exist anymore";
+    case Code.Planning.SlotNotInYear:
+      return "one of those slots isn't part of this year";
 
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)
     case Code.Generic.FieldRequired:
