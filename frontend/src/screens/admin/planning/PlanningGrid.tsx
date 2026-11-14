@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 
 import {
   type Assignment,
@@ -10,11 +9,11 @@ import {
   useWithdraw,
 } from '@/api/planning';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { eventPath } from '@/models/event';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { type CellState, cellState, findAssignment, isWithdrawable } from './gridCell';
 import { GridCell } from './PlanningGridCell';
+import { SlotEventLink } from './SlotEventLink';
 import { toastOnError } from './toastOnError';
 
 function PlannerHeader({ planner }: { planner: PlannerColumn }) {
@@ -33,21 +32,14 @@ function PlannerHeader({ planner }: { planner: PlannerColumn }) {
   );
 }
 
-function SlotHeader({ slot }: { slot: PlanningSlot }) {
+function SlotHeader({ slot, year }: { slot: PlanningSlot; year: number }) {
   return (
     <th scope="row" className="bg-surface sticky left-0 px-3 py-2 text-left font-medium">
       <div>{slot.label}</div>
-      {slot.eventId ? (
-        <div className="text-xs font-normal">
-          scheduled ·{' '}
-          <Link
-            className="underline"
-            to={eventPath({ id: slot.eventId, slug: slot.eventSlug ?? '' })}
-          >
-            view event
-          </Link>
-        </div>
-      ) : null}
+      <div className="text-xs font-normal">
+        {slot.eventId ? 'scheduled · ' : null}
+        <SlotEventLink slot={slot} year={year} canCreate />
+      </div>
     </th>
   );
 }
@@ -107,7 +99,7 @@ export function PlanningGrid({ year }: { year: number }) {
           <tbody>
             {grid.slots.map((slot) => (
               <tr key={slot.id} className="border-border border-t">
-                <SlotHeader slot={slot} />
+                <SlotHeader slot={slot} year={year} />
                 {grid.planners.map((p) => (
                   <GridCell
                     key={p.userId}
