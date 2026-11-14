@@ -8,6 +8,7 @@ import { hasPermission, Permission } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { AvailabilityForm } from './AvailabilityForm';
+import { MySlots } from './MySlots';
 import { PlanningGrid } from './PlanningGrid';
 import { SlotEditor } from './SlotEditor';
 import { toastOnError } from './toastOnError';
@@ -72,6 +73,7 @@ export default function PlanningScreen() {
         </div>
         {canStartNext ? <StartYearButton year={nextYear} onStarted={setPicked} /> : null}
       </div>
+      <MySlots />
       <AvailabilityForm year={year} />
       {canManage ? <PlanningGrid year={year} /> : null}
       {canManage ? <SlotEditor year={year} /> : null}

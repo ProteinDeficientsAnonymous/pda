@@ -32,6 +32,10 @@ function signInWith(...perms: string[]) {
   useAuthStore.setState({ status: 'authed', user: makeUser({ roles }), accessToken: 'tok' });
 }
 
+vi.mock('./MySlots', () => ({
+  MySlots: () => <div>my slots</div>,
+}));
+
 vi.mock('./AvailabilityForm', () => ({
   AvailabilityForm: ({ year }: { year: number }) => <div>form for {year}</div>,
 }));
@@ -71,6 +75,14 @@ describe('PlanningScreen', () => {
     await userEvent.selectOptions(select, '2026');
     expect(select).toHaveValue('2026');
     expect(screen.getByText('form for 2026')).toBeInTheDocument();
+  });
+
+  it('shows my slots above the availability form', () => {
+    years = [{ id: 'y1', year: 2026 }];
+    renderWithProviders(<PlanningScreen />);
+    const mine = screen.getByText('my slots');
+    const form = screen.getByText('form for 2026');
+    expect(mine.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('shows the slot editor and grid to managers only', () => {
