@@ -9,7 +9,7 @@ import {
   RequirePermission,
 } from '@/auth/guards';
 import { AppShell } from '@/layout/AppShell';
-import { Permission } from '@/models/permissions';
+import { canViewPlanning, Permission } from '@/models/permissions';
 
 import { prefetchCalendarOnBoot, preloadCalendarChunk } from './bootPrefetch';
 import { lazyEl as el, lazyWithRetry } from './lazyRoute';
@@ -68,6 +68,7 @@ const SurveyCreate = lazyWithRetry(() => import('@/screens/admin/SurveyCreateScr
 const SurveyResponses = lazyWithRetry(() => import('@/screens/admin/SurveyResponsesScreen'));
 const SurveyPreview = lazyWithRetry(() => import('@/screens/admin/SurveyPreviewScreen'));
 const SpeechTemplate = lazyWithRetry(() => import('@/screens/admin/SpeechTemplateScreen'));
+const Planning = lazyWithRetry(() => import('@/screens/admin/planning/PlanningScreen'));
 const Members = lazyWithRetry(() => import('@/screens/admin/MembersScreen'));
 const MemberDetail = lazyWithRetry(() => import('@/screens/admin/MemberDetailScreen'));
 const MemberProfile = lazyWithRetry(() => import('@/screens/members/MemberProfileScreen'));
@@ -208,6 +209,11 @@ export const router = createBrowserRouter([
                   { path: '/admin/surveys/:id/responses', element: el(<SurveyResponses />) },
                   { path: '/admin/surveys/:id/preview', element: el(<SurveyPreview />) },
                 ],
+              },
+
+              {
+                element: <RequirePermission allow={canViewPlanning} />,
+                children: [{ path: '/admin/planning', element: el(<Planning />) }],
               },
 
               // ---- catch-all ----

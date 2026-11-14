@@ -54,4 +54,19 @@ describe('AdminHubScreen', () => {
     renderHub();
     expect(screen.queryByText('event speech')).not.toBeInTheDocument();
   });
+
+  it.each([Permission.ViewEventPlanning, Permission.ManageEventPlanning])(
+    'shows the event planning tile for a holder of only %s',
+    (perm) => {
+      setAuthed(makeUserWithPermissions([perm]));
+      renderHub();
+      expect(screen.getByText('event planning')).toBeInTheDocument();
+    },
+  );
+
+  it('hides the event planning tile without a planning permission', () => {
+    setAuthed(makeUser({ roles: [] }));
+    renderHub();
+    expect(screen.queryByText('event planning')).not.toBeInTheDocument();
+  });
 });
