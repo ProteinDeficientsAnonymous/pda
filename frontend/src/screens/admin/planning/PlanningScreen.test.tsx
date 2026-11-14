@@ -36,6 +36,10 @@ vi.mock('./AvailabilityForm', () => ({
   AvailabilityForm: ({ year }: { year: number }) => <div>form for {year}</div>,
 }));
 
+vi.mock('./PlanningGrid', () => ({
+  PlanningGrid: ({ year }: { year: number }) => <div>grid for {year}</div>,
+}));
+
 vi.mock('./SlotEditor', () => ({
   SlotEditor: ({ year }: { year: number }) => <div>editor for {year}</div>,
 }));
@@ -69,15 +73,17 @@ describe('PlanningScreen', () => {
     expect(screen.getByText('form for 2026')).toBeInTheDocument();
   });
 
-  it('shows the slot editor to managers only', () => {
+  it('shows the slot editor and grid to managers only', () => {
     years = [{ id: 'y1', year: 2026 }];
     const { unmount } = renderWithProviders(<PlanningScreen />);
     expect(screen.queryByText('editor for 2026')).not.toBeInTheDocument();
+    expect(screen.queryByText('grid for 2026')).not.toBeInTheDocument();
     unmount();
 
     signInWith(Permission.ManageEventPlanning);
     renderWithProviders(<PlanningScreen />);
     expect(screen.getByText('editor for 2026')).toBeInTheDocument();
+    expect(screen.getByText('grid for 2026')).toBeInTheDocument();
   });
 
   describe('start next year', () => {
