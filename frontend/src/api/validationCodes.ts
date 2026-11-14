@@ -709,6 +709,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "they're already proposed or committed for this slot";
     case Code.Planning.AssignmentNotFound:
       return "that proposal doesn't exist anymore";
+    case Code.Planning.NotPending:
+      return "that proposal's already been answered";
 
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)
     case Code.Generic.FieldRequired:
