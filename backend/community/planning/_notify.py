@@ -1,20 +1,31 @@
+from uuid import UUID
+
 from django.conf import settings
 from notifications.email_helpers import PlanningProposedEmailDetails, send_planning_proposed_email
 from notifications.email_sender import get_email_sender, send_best_effort
 from notifications.models import Notification, NotificationType
 from notifications.service import notify_users
+from users.helpers import visible_display_name
+from users.models import User
 
 from community.models import SlotAssignment
+from community.planning._planners import coordinator_users
+
+
+def _notify_many(
+    recipient_ids: list[UUID], kind: NotificationType, message: str, related_user: User | None
+) -> None:
+    Notification.objects.bulk_create(
+        Notification(
+            recipient_id=pk, notification_type=kind, related_user=related_user, message=message
+        )
+        for pk in recipient_ids
+    )
+    notify_users([str(pk) for pk in recipient_ids])
 
 
 def _notify(assignment: SlotAssignment, kind: NotificationType, message: str) -> None:
-    Notification.objects.create(
-        recipient_id=assignment.user_id,
-        notification_type=kind,
-        related_user=assignment.proposed_by,
-        message=message,
-    )
-    notify_users([str(assignment.user_id)])
+    _notify_many([assignment.user_id], kind, message, assignment.proposed_by)
 
 
 def notify_proposed(assignment: SlotAssignment) -> None:
@@ -44,3 +55,15 @@ def notify_withdrawn(assignment: SlotAssignment) -> None:
         NotificationType.PLANNING_WITHDRAWN,
         f"you're no longer down to plan {assignment.slot.label}",
     )
+
+
+def notify_coordinators(assignment: SlotAssignment, committed: bool) -> None:
+    planner, slot = assignment.user, assignment.slot
+    name = visible_display_name(planner, None).lower()
+    kind, message = (
+        (NotificationType.PLANNING_COMMITTED, f"{name} is in for {slot.label}")
+        if committed
+        else (NotificationType.PLANNING_DECLINED, f"{name} can't do {slot.label}")
+    )
+    recipients = list(coordinator_users().exclude(pk=planner.pk).values_list("pk", flat=True))
+    _notify_many(recipients, kind, message, planner)

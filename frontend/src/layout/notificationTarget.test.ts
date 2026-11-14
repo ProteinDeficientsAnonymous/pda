@@ -49,10 +49,12 @@ describe('notificationTarget', () => {
     expect(notificationTarget(n)).toBe('/join-requests');
   });
 
-  it.each([NotificationType.PlanningProposed, NotificationType.PlanningWithdrawn])(
-    'sends %s to the planning screen',
-    (notificationType) => {
-      expect(notificationTarget(notification({ notificationType }))).toBe('/admin/planning');
-    },
-  );
+  it.each([
+    NotificationType.PlanningProposed,
+    NotificationType.PlanningWithdrawn,
+    NotificationType.PlanningCommitted,
+    NotificationType.PlanningDeclined,
+  ])('sends %s to the planning screen', (notificationType) => {
+    expect(notificationTarget(notification({ notificationType }))).toBe('/admin/planning');
+  });
 });

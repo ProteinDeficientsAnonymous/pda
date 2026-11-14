@@ -3,14 +3,16 @@ import uuid
 import pytest
 from community.models import AssignmentStatus, SlotAssignment
 from community.validation import Code
+from notifications.models import Notification, NotificationType
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from tests._planning import send
-from tests._users import make_user
+from tests._users import grant, make_attendance_paused, make_user
 
 VIEW = PermissionKey.VIEW_EVENT_PLANNING
+MANAGE = PermissionKey.MANAGE_EVENT_PLANNING
 Status = AssignmentStatus
 
 
@@ -95,3 +97,34 @@ class TestRespond:
         assignment = assign(slot, planner, Status.DECLINED)
         codes = [respond(api_client, assignment, "commit", planner).status_code for _ in range(11)]
         assert codes[-1] == 429
+
+
+@pytest.mark.django_db
+class TestCoordinatorNotifications:
+    @pytest.mark.parametrize(
+        ("action", "kind", "verb"),
+        [
+            ("commit", NotificationType.PLANNING_COMMITTED, "is in for"),
+            ("decline", NotificationType.PLANNING_DECLINED, "can't do"),
+        ],
+    )
+    def test_notifies_coordinators_not_actor(self, api_client, slot, action, kind, verb):
+        actor = make_user(VIEW, MANAGE, first_name="Pat")
+        coordinator = make_user(MANAGE)
+        make_user(VIEW)
+        paused = make_attendance_paused()
+        grant(paused, MANAGE)
+        assignment = assign(slot, actor)
+
+        respond(api_client, assignment, action, actor)
+
+        notification = Notification.objects.get()
+        assert notification.recipient == coordinator
+        assert notification.notification_type == kind
+        assert notification.message == f"pat {verb} {slot.label}"
+        assert notification.related_user == actor
+
+    def test_failed_response_does_not_notify(self, api_client, slot, planner):
+        make_user(MANAGE)
+        respond(api_client, assign(slot, planner, Status.DECLINED), "commit", planner)
+        assert not Notification.objects.exists()

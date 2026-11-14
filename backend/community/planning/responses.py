@@ -7,6 +7,7 @@ from django.db import transaction
 from ninja import Router
 
 from community.models import AssignmentStatus, SlotAssignment
+from community.planning._notify import notify_coordinators
 from community.planning.proposals import assignment_out
 from community.planning.schemas import AssignmentOut
 from community.shared import ErrorOut
@@ -22,6 +23,7 @@ def _respond(
     assignment_id: UUID,
     allowed: tuple[AssignmentStatus, ...],
     apply: Callable[[SlotAssignment], None],
+    committed: bool,
 ) -> AssignmentOut:
     with transaction.atomic():
         assignment = (
@@ -35,6 +37,7 @@ def _respond(
         if assignment.status not in allowed:
             raise_validation(Code.Planning.NOT_PENDING, status_code=400)
         apply(assignment)
+    notify_coordinators(assignment, committed)
     return assignment_out(assignment)
 
 
@@ -45,7 +48,9 @@ def _respond(
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def commit_assignment(request, assignment_id: UUID):
-    return _respond(request, assignment_id, (AssignmentStatus.PROPOSED,), SlotAssignment.commit)
+    return _respond(
+        request, assignment_id, (AssignmentStatus.PROPOSED,), SlotAssignment.commit, True
+    )
 
 
 @router.post(
@@ -56,4 +61,4 @@ def commit_assignment(request, assignment_id: UUID):
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def decline_assignment(request, assignment_id: UUID):
     allowed = (AssignmentStatus.PROPOSED, AssignmentStatus.COMMITTED)
-    return _respond(request, assignment_id, allowed, SlotAssignment.decline)
+    return _respond(request, assignment_id, allowed, SlotAssignment.decline, False)
