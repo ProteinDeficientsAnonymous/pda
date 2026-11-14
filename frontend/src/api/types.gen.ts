@@ -1919,6 +1919,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/planning/years/{year}/availability/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get My Availability */
+        get: operations["community_planning_availability_get_my_availability"];
+        /** Put My Availability */
+        put: operations["community_planning_availability_put_my_availability"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/planning/years/{year}/slots/": {
         parameters: {
             query?: never;
@@ -2790,6 +2808,32 @@ export interface components {
             /** User Id */
             user_id: string;
         };
+        /** AvailabilityIn */
+        AvailabilityIn: {
+            biannual_interest: components["schemas"]["BiannualInterest"];
+            /** Monthly Count */
+            monthly_count: number;
+            /** Slot Ids */
+            slot_ids: string[];
+        };
+        /** AvailabilityOut */
+        AvailabilityOut: {
+            /** Biannual Interest */
+            biannual_interest: string | null;
+            /** Monthly Count */
+            monthly_count: number;
+            /** Slot Ids */
+            slot_ids: string[];
+            /** Submitted */
+            submitted: boolean;
+            /** Updated At */
+            updated_at: string | null;
+        };
+        /**
+         * BiannualInterest
+         * @enum {string}
+         */
+        BiannualInterest: "yes" | "maybe" | "no";
         /** BirthdayIn */
         BirthdayIn: {
             /** Day */
@@ -12050,6 +12094,99 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_availability_get_my_availability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_availability_put_my_availability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -317,6 +317,7 @@ export const Code = {
     YearExists: 'planning.year_exists',
     YearNotFound: 'planning.year_not_found',
     SlotNotFound: 'planning.slot_not_found',
+    SlotNotInYear: 'planning.slot_not_in_year',
   },
 } as const;
 
@@ -554,7 +555,8 @@ export type ValidationCode =
   | 'connect.app_not_found'
   | 'planning.year_exists'
   | 'planning.year_not_found'
-  | 'planning.slot_not_found';
+  | 'planning.slot_not_found'
+  | 'planning.slot_not_in_year';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -791,4 +793,5 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'planning.year_exists': [],
   'planning.year_not_found': [],
   'planning.slot_not_found': [],
+  'planning.slot_not_in_year': [],
 };

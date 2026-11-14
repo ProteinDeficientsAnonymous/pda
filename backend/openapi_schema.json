@@ -444,6 +444,95 @@
         "title": "AttendedPersonOut",
         "type": "object"
       },
+      "AvailabilityIn": {
+        "properties": {
+          "biannual_interest": {
+            "$ref": "#/components/schemas/BiannualInterest"
+          },
+          "monthly_count": {
+            "maximum": 12,
+            "minimum": 0,
+            "title": "Monthly Count",
+            "type": "integer"
+          },
+          "slot_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Slot Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slot_ids",
+          "biannual_interest",
+          "monthly_count"
+        ],
+        "title": "AvailabilityIn",
+        "type": "object"
+      },
+      "AvailabilityOut": {
+        "properties": {
+          "biannual_interest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Biannual Interest"
+          },
+          "monthly_count": {
+            "title": "Monthly Count",
+            "type": "integer"
+          },
+          "slot_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Slot Ids",
+            "type": "array"
+          },
+          "submitted": {
+            "title": "Submitted",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "submitted",
+          "biannual_interest",
+          "monthly_count",
+          "slot_ids",
+          "updated_at"
+        ],
+        "title": "AvailabilityOut",
+        "type": "object"
+      },
+      "BiannualInterest": {
+        "enum": [
+          "yes",
+          "maybe",
+          "no"
+        ],
+        "title": "BiannualInterest",
+        "type": "string"
+      },
       "BirthdayIn": {
         "properties": {
           "day": {
@@ -16918,6 +17007,138 @@
           }
         ],
         "summary": "Create Year",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/years/{year}/availability/me/": {
+      "get": {
+        "operationId": "community_planning_availability_get_my_availability",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get My Availability",
+        "tags": [
+          "community"
+        ]
+      },
+      "put": {
+        "operationId": "community_planning_availability_put_my_availability",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailabilityIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Put My Availability",
         "tags": [
           "community"
         ]

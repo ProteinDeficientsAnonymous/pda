@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from community.models import EventType, JoinFormQuestion, JoinRequest, Survey
+from community.models import EventType, JoinFormQuestion, JoinRequest, PlanningYear, Survey
 from django.conf import settings as django_settings
 from django.core.cache import caches
 from django.db import DatabaseError, connections
@@ -285,3 +285,8 @@ def fake_email_sender(monkeypatch):
     )
     yield fake
     # monkeypatch auto-cleans up.
+
+
+@pytest.fixture
+def year(db):
+    return PlanningYear.create_with_default_slots(2027)

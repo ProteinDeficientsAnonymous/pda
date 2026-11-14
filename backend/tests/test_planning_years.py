@@ -1,12 +1,12 @@
 import pytest
-from community.models import PlanningSlot, PlanningYear, SlotAssignment
+from community.models import PlanningSlot, SlotAssignment
 from community.planning.years import get_year_or_404
 from community.validation import Code, ValidationException
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
-from tests._auth import auth_headers_for
 from tests._events import make_event
+from tests._planning import headers_for, send
 from tests._users import make_user
 
 BASE = "/api/community/planning"
@@ -25,20 +25,6 @@ MANAGE_ROUTES = [
     ("patch", f"{BASE}/slots/{NO_SLOT}/", {"label": "x"}),
     ("delete", f"{BASE}/slots/{NO_SLOT}/", None),
 ]
-
-
-def send(api_client, method, url, body=None, headers=None):
-    kwargs = {"data": body, "content_type": "application/json"} if body is not None else {}
-    return getattr(api_client, method)(url, **kwargs, **(headers or {}))
-
-
-def headers_for(*permissions):
-    return auth_headers_for(make_user(*permissions))
-
-
-@pytest.fixture
-def year(db):
-    return PlanningYear.create_with_default_slots(2027)
 
 
 @pytest.mark.django_db

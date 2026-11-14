@@ -1343,6 +1343,11 @@
         "name": "SLOT_NOT_FOUND",
         "value": "planning.slot_not_found",
         "params": []
+      },
+      {
+        "name": "SLOT_NOT_IN_YEAR",
+        "value": "planning.slot_not_in_year",
+        "params": []
       }
     ]
   }
