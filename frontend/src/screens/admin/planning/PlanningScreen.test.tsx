@@ -12,6 +12,10 @@ vi.mock('@/api/planning', () => ({
   usePlanningYears: () => ({ isPending: false, isError: false, data: years }),
 }));
 
+vi.mock('./AvailabilityForm', () => ({
+  AvailabilityForm: ({ year }: { year: number }) => <div>form for {year}</div>,
+}));
+
 beforeEach(() => {
   years = [];
 });
@@ -32,7 +36,9 @@ describe('PlanningScreen', () => {
 
     const select = screen.getByLabelText('year');
     expect(select).toHaveValue('2028');
+    expect(screen.getByText('form for 2028')).toBeInTheDocument();
     await userEvent.selectOptions(select, '2026');
     expect(select).toHaveValue('2026');
+    expect(screen.getByText('form for 2026')).toBeInTheDocument();
   });
 });

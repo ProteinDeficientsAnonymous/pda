@@ -4,6 +4,8 @@ import { type PlanningYear, usePlanningYears } from '@/api/planning';
 import { Select } from '@/components/ui/Select';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { AvailabilityForm } from './AvailabilityForm';
+
 // the latest year is >= the current year whenever one exists, so one rule covers both cases
 function defaultYear(years: PlanningYear[]): number {
   return Math.max(...years.map((y) => y.year));
@@ -40,6 +42,7 @@ export default function PlanningScreen() {
           options={years.map((y) => ({ value: String(y.year), label: String(y.year) }))}
         />
       </div>
+      <AvailabilityForm year={year} />
     </ContentContainer>
   );
 }
