@@ -6,6 +6,7 @@ import {
   hasPermission,
   normalizePermissions,
   Permission,
+  satisfiesRule,
   type UserLike,
 } from './permissions';
 
@@ -82,6 +83,14 @@ describe('hasAnyAdminPermission', () => {
     expect(hasAnyAdminPermission(u)).toBe(true);
   });
 
+  it.each([Permission.ViewEventPlanning, Permission.ManageEventPlanning])(
+    'planning permission %s alone qualifies',
+    (perm) => {
+      const u = user({ roles: [{ name: 'custom', isDefault: false, permissions: [perm] }] });
+      expect(hasAnyAdminPermission(u)).toBe(true);
+    },
+  );
+
   it('non-admin permission alone does not qualify', () => {
     const u = user({
       roles: [{ name: 'custom', isDefault: false, permissions: [Permission.EditFaq] }],
@@ -105,5 +114,22 @@ describe('canViewPlanning', () => {
   it('plain member does not', () => {
     expect(canViewPlanning(withPerms([]))).toBe(false);
     expect(canViewPlanning(null)).toBe(false);
+  });
+});
+
+describe('satisfiesRule', () => {
+  const holder = (perm: string) =>
+    user({ roles: [{ name: 'custom', isDefault: false, permissions: [perm] }] });
+
+  it('checks a single permission for a perm rule', () => {
+    const rule = { perm: Permission.ManageUsers };
+    expect(satisfiesRule(holder(Permission.ManageUsers), rule)).toBe(true);
+    expect(satisfiesRule(holder(Permission.EditFaq), rule)).toBe(false);
+  });
+
+  it('delegates to the predicate for an allow rule', () => {
+    const rule = { allow: canViewPlanning };
+    expect(satisfiesRule(holder(Permission.ManageEventPlanning), rule)).toBe(true);
+    expect(satisfiesRule(holder(Permission.EditFaq), rule)).toBe(false);
   });
 });
