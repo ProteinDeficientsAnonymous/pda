@@ -62,6 +62,15 @@ def notify_proposed(assignment: SlotAssignment) -> None:
     email_planner(assignment, PlanningEmailVariant.PROPOSED)
 
 
+def notify_upcoming(assignment: SlotAssignment) -> None:
+    _notify(
+        assignment,
+        NotificationType.PLANNING_UPCOMING,
+        f"{assignment.slot.label} is coming up — time to create the event",
+    )
+    email_planner(assignment, PlanningEmailVariant.UPCOMING)
+
+
 def notify_withdrawn(assignment: SlotAssignment) -> None:
     _notify(
         assignment,

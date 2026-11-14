@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from uuid import UUID
 
@@ -7,11 +8,14 @@ from django.db.models import F, Q, QuerySet
 from notifications.email_helpers import PlanningEmailVariant
 
 from community.models import AssignmentStatus, SlotAssignment
-from community.planning._notify import email_planner
+from community.planning._notify import email_planner, notify_upcoming
 from community.planning._planners import planner_users
+
+logger = logging.getLogger(__name__)
 
 # An hour under the cadence so a daily cron that drifts early still sends, but a rerun doesn't.
 _REMINDER_GAP = timedelta(days=3) - timedelta(hours=1)
+_UPCOMING_LEAD = timedelta(days=42)
 
 
 def _month_not_started(now: datetime) -> Q:
@@ -68,4 +72,45 @@ def send_proposal_reminders(now: datetime) -> int:
         SlotAssignment.objects.filter(pk=claimed.pk).update(
             last_reminded_at=claimed.last_reminded_at, reminder_count=claimed.reminder_count
         )
+    return sent
+
+
+def _due_upcoming(now: datetime) -> QuerySet[SlotAssignment]:
+    return SlotAssignment.objects.filter(
+        _month_not_started(now),
+        status=AssignmentStatus.COMMITTED,
+        upcoming_notified_at__isnull=True,
+        user__in=planner_users(),
+    ).select_related("slot__planning_year", "slot__event", "user")
+
+
+def _in_upcoming_window(assignment: SlotAssignment, now: datetime) -> bool:
+    today = now.astimezone(settings.COMMUNITY_TZ).date()
+    return assignment.slot.live_event is None and (
+        today >= assignment.slot.month_start() - _UPCOMING_LEAD
+    )
+
+
+def send_upcoming_notices(now: datetime) -> int:
+    """Tell committed planners their slot is within six weeks of its month and has no event yet.
+
+    If the in-app notice raises, the stamp is rolled back (like a failed reminder) and the batch
+    continues; a failed email alone keeps the stamp since the in-app notice already landed.
+
+    return(int): number of planners notified
+    """
+    sent = 0
+    for candidate in list(_due_upcoming(now)):
+        if not _in_upcoming_window(candidate, now):
+            continue
+        claimed = _claim(_due_upcoming(now), candidate.pk, upcoming_notified_at=now)
+        if claimed is None:
+            continue
+        try:
+            notify_upcoming(claimed)
+        except Exception:  # noqa: BLE001 — one bad notice must not abort the batch
+            logger.exception("planning_upcoming_notice_failed", extra={"assignment": claimed.pk})
+            SlotAssignment.objects.filter(pk=claimed.pk).update(upcoming_notified_at=None)
+            continue
+        sent += 1
     return sent

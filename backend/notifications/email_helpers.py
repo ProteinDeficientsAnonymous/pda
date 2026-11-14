@@ -357,11 +357,13 @@ def send_cohost_invite_email(
 class PlanningEmailVariant(StrEnum):
     PROPOSED = "proposed"
     REMINDER = "reminder"
+    UPCOMING = "upcoming"
 
 
 _PLANNING_SUBJECTS = {
     PlanningEmailVariant.PROPOSED: "can you plan {label}?",
     PlanningEmailVariant.REMINDER: "still need an answer: can you plan {label}?",
+    PlanningEmailVariant.UPCOMING: "{label} is coming up",
 }
 
 
