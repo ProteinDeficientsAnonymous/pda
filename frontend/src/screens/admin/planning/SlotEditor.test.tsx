@@ -8,6 +8,7 @@ import { SlotEditor } from './SlotEditor';
 
 const updateSlot = vi.fn();
 const deleteSlot = vi.fn();
+const createSlot = vi.fn();
 const toastError = vi.fn();
 let updatePending = false;
 
@@ -30,6 +31,7 @@ vi.mock('@/api/planning', () => ({
     ],
   }),
   useUpdateSlot: () => ({ mutateAsync: updateSlot, isPending: updatePending }),
+  useCreateSlot: () => ({ mutateAsync: createSlot, isPending: false }),
   useDeleteSlot: () => ({ mutateAsync: deleteSlot, isPending: false }),
 }));
 
@@ -38,6 +40,7 @@ beforeEach(() => {
   toastError.mockReset();
   updateSlot.mockReset().mockResolvedValue(undefined);
   deleteSlot.mockReset().mockResolvedValue(undefined);
+  createSlot.mockReset().mockResolvedValue(undefined);
 });
 
 describe('SlotEditor', () => {
@@ -118,5 +121,19 @@ describe('SlotEditor', () => {
     updatePending = true;
     renderWithProviders(<SlotEditor year={2027} />);
     expect(screen.getByRole('button', { name: 'delete january' })).toBeDisabled();
+  });
+
+  it('adds a slot from the add row and clears the label', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SlotEditor year={2027} />);
+    const add = screen.getByRole('button', { name: 'add slot' });
+    expect(add).toBeDisabled();
+    await user.type(screen.getByLabelText('new slot label'), 'march');
+    await user.selectOptions(screen.getByLabelText('new slot month'), '3');
+    await user.click(add);
+    expect(createSlot).toHaveBeenCalledWith({ label: 'march', month: 3, kind: 'monthly' });
+    await waitFor(() => {
+      expect(screen.getByLabelText('new slot label')).toHaveValue('');
+    });
   });
 });
