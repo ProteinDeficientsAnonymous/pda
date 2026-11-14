@@ -5732,6 +5732,39 @@
         "title": "PendingCoHostInviteOut",
         "type": "object"
       },
+      "PlanningYearIn": {
+        "properties": {
+          "year": {
+            "maximum": 2100,
+            "minimum": 2020,
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year"
+        ],
+        "title": "PlanningYearIn",
+        "type": "object"
+      },
+      "PlanningYearOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "year"
+        ],
+        "title": "PlanningYearOut",
+        "type": "object"
+      },
       "PollOptionIn": {
         "properties": {
           "datetime": {
@@ -16530,6 +16563,102 @@
           }
         ],
         "summary": "Update Page",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/years/": {
+      "get": {
+        "operationId": "community_planning_years_list_years",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlanningYearOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List Years",
+        "tags": [
+          "community"
+        ]
+      },
+      "post": {
+        "operationId": "community_planning_years_create_year",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanningYearIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningYearOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Year",
         "tags": [
           "community"
         ]

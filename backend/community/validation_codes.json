@@ -1327,6 +1327,18 @@
         "value": "connect.app_not_found",
         "params": []
       }
+    ],
+    "Planning": [
+      {
+        "name": "YEAR_EXISTS",
+        "value": "planning.year_exists",
+        "params": []
+      },
+      {
+        "name": "YEAR_NOT_FOUND",
+        "value": "planning.year_not_found",
+        "params": []
+      }
     ]
   }
 }

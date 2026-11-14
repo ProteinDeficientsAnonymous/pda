@@ -313,6 +313,10 @@ export const Code = {
     RequestAlreadyUsed: 'connect.request_already_used',
     AppNotFound: 'connect.app_not_found',
   },
+  Planning: {
+    YearExists: 'planning.year_exists',
+    YearNotFound: 'planning.year_not_found',
+  },
 } as const;
 
 export type ValidationCode =
@@ -546,7 +550,9 @@ export type ValidationCode =
   | 'connect.request_not_found'
   | 'connect.request_expired'
   | 'connect.request_already_used'
-  | 'connect.app_not_found';
+  | 'connect.app_not_found'
+  | 'planning.year_exists'
+  | 'planning.year_not_found';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -780,4 +786,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'connect.request_expired': [],
   'connect.request_already_used': [],
   'connect.app_not_found': [],
+  'planning.year_exists': [],
+  'planning.year_not_found': [],
 };

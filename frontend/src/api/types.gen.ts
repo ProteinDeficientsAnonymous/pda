@@ -1883,6 +1883,24 @@ export interface paths {
         patch: operations["community_content_pages_update_page"];
         trace?: never;
     };
+    "/api/community/planning/years/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Years */
+        get: operations["community_planning_years_list_years"];
+        put?: never;
+        /** Create Year */
+        post: operations["community_planning_years_create_year"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/public/events/{event_id}/rsvp-phone-check/": {
         parameters: {
             query?: never;
@@ -5063,6 +5081,18 @@ export interface components {
              * @default
              */
             user_photo_url: string;
+        };
+        /** PlanningYearIn */
+        PlanningYearIn: {
+            /** Year */
+            year: number;
+        };
+        /** PlanningYearOut */
+        PlanningYearOut: {
+            /** Id */
+            id: string;
+            /** Year */
+            year: number;
         };
         /** PollOptionIn */
         PollOptionIn: {
@@ -11779,6 +11809,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EditablePageOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_years_list_years: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningYearOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_years_create_year: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningYearIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningYearOut"];
                 };
             };
             /** @description Bad Request */
