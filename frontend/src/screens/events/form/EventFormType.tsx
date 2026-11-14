@@ -1,6 +1,8 @@
 import type { EventFormValues } from '@/api/eventWrites';
 import { Toggle } from '@/components/ui/Toggle';
-import { EventFormat, EventType, EventVisibility, isOfficialOrClub } from '@/models/event';
+import { EventFormat, EventType } from '@/models/event';
+
+import { typeDefaults } from './typeDefaults';
 
 interface Props {
   values: EventFormValues;
@@ -14,12 +16,7 @@ export function EventFormType({ values, onChange, canTagOfficial, canTagClub }: 
   if (!canTagOfficial && !canTagClub) return null;
 
   const setType = (type: EventFormValues['eventType']) => {
-    onChange({
-      eventType: type,
-      ...(isOfficialOrClub(type)
-        ? { visibility: EventVisibility.Public, allowPlusOnes: false }
-        : {}),
-    });
+    onChange({ eventType: type, ...typeDefaults(type) });
   };
 
   return (
