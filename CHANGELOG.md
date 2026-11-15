@@ -1,3 +1,10 @@
+# [0.238.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.237.0...v0.238.0) (2026-11-15)
+
+
+### Features
+
+* 2119 - rsvp deadlines with maybe reminders ([#2433](https://github.com/ProteinDeficientsAnonymous/pda/issues/2433)) ([f032e95](https://github.com/ProteinDeficientsAnonymous/pda/commit/f032e959086f68f74b841a5383bd1d66a201acd7)), closes [#2434](https://github.com/ProteinDeficientsAnonymous/pda/issues/2434) [#2435](https://github.com/ProteinDeficientsAnonymous/pda/issues/2435) [#2436](https://github.com/ProteinDeficientsAnonymous/pda/issues/2436) [#2437](https://github.com/ProteinDeficientsAnonymous/pda/issues/2437) [#2438](https://github.com/ProteinDeficientsAnonymous/pda/issues/2438) [#2475](https://github.com/ProteinDeficientsAnonymous/pda/issues/2475) [#2476](https://github.com/ProteinDeficientsAnonymous/pda/issues/2476) [#2119](https://github.com/ProteinDeficientsAnonymous/pda/issues/2119)
+
 # [0.237.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.236.2...v0.237.0) (2026-11-15)
 
 
