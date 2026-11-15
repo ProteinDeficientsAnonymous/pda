@@ -40,23 +40,30 @@ class NameIndex:
     sender_nickname: dict[str, list[GuestRecord]] = field(default_factory=lambda: defaultdict(list))
     note_full: dict[str, list[GuestRecord]] = field(default_factory=lambda: defaultdict(list))
     note_single: dict[str, list[GuestRecord]] = field(default_factory=lambda: defaultdict(list))
+    sender_first: dict[str, list[GuestRecord]] = field(default_factory=lambda: defaultdict(list))
+    sender_last: dict[str, list[GuestRecord]] = field(default_factory=lambda: defaultdict(list))
     max_tokens: int = 1
 
     @classmethod
     def build(cls, guests: list[GuestRecord]) -> "NameIndex":
         index = cls()
         for guest in guests:
-            full = full_name_keys(guest)
-            for key in full:
-                index.sender[key].append(guest)
-            for key in _keys(guest.nickname) - full:
-                index.sender_nickname[key].append(guest)
-            for key in full:
-                index.note_full[key].append(guest)
-                index.max_tokens = max(index.max_tokens, key.count(" ") + 1)
-            for key in single_name_keys(guest):
-                index.note_single[key].append(guest)
+            index._add(guest)
         return index
+
+    def _add(self, guest: GuestRecord) -> None:
+        full = full_name_keys(guest)
+        for key in full:
+            self.sender[key].append(guest)
+            self.note_full[key].append(guest)
+            self.max_tokens = max(self.max_tokens, key.count(" ") + 1)
+        for key in _keys(guest.nickname) - full:
+            self.sender_nickname[key].append(guest)
+        for key in single_name_keys(guest):
+            self.note_single[key].append(guest)
+            self.sender_first[key].append(guest)
+        for key in _keys(guest.last_name):
+            self.sender_last[key].append(guest)
 
     def sender_matches(self, sender_name: str) -> tuple[list[GuestRecord], bool]:
         """return(tuple): (matching guests, True when only a bare nickname matched)."""
@@ -66,6 +73,16 @@ class NameIndex:
         if full:
             return list({g.user_id: g for g in full + nickname}.values()), False
         return list(nickname), bool(nickname)
+
+    def partial_sender_matches(self, sender_name: str) -> list[GuestRecord]:
+        """Guests sharing the sender's first or last name, e.g. "Elizabeth Vazquez" -> Beth Vazquez."""
+        tokens = normalize_name(sender_name).split()
+        if not tokens:
+            return []
+        guests = self.sender_first.get(tokens[0], [])
+        if len(tokens) > 1:
+            guests = guests + self.sender_last.get(tokens[-1], [])
+        return list({g.user_id: g for g in guests}.values())
 
     def note_hits(
         self, note: str
