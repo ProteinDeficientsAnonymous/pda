@@ -172,6 +172,7 @@ export interface Event {
   rsvpEnabled: boolean;
   allowPlusOnes: boolean;
   maxAttendees: number | null;
+  rsvpDeadline: Date | null;
   attendingCount: number;
   waitlistedCount: number;
   invitedCount: number;
@@ -251,6 +252,10 @@ export function canLimitedRsvp(event: Event): boolean {
 // Mirrors backend is_limited: signed in without full access (tentative or attendance-paused).
 export function isLimited(user: Pick<User, 'membershipStatus'> | null | undefined): boolean {
   return user != null && user.membershipStatus !== MembershipStatus.ActiveMember;
+}
+
+export function isRsvpDeadlinePassed(event: Event, now: number = Date.now()): boolean {
+  return event.rsvpDeadline !== null && event.rsvpDeadline.getTime() < now;
 }
 
 export function canPublicRsvp(event: Event): boolean {

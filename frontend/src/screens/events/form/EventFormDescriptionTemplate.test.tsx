@@ -10,7 +10,7 @@ import { renderWithProviders } from '@/test/render';
 
 vi.mock('@/api/eventDescriptionTemplates', () => ({
   useEventDescriptionTemplates: () => ({
-    data: { officialWalk: 'walk copy', officialNonWalk: 'non-walk copy' },
+    data: { officialWalk: 'walk copy', officialNonWalk: 'non-walk copy', club: 'club copy' },
   }),
 }));
 
@@ -30,7 +30,7 @@ function renderForm(existing?: Event) {
   renderWithProviders(<EventForm existing={existing} />);
 }
 
-describe('EventForm official description template', () => {
+describe('EventForm description templates', () => {
   beforeEach(() => {
     useAuthStore.setState({
       user: makeUser({
@@ -40,7 +40,7 @@ describe('EventForm official description template', () => {
             id: 'r1',
             name: 'planner',
             isDefault: false,
-            permissions: [Permission.TagOfficialEvent],
+            permissions: [Permission.TagOfficialEvent, Permission.TagClubEvent],
           },
         ],
       }),
@@ -58,6 +58,12 @@ describe('EventForm official description template', () => {
 
     await userEvent.click(screen.getByLabelText("it's a walk"));
     expect(screen.getByLabelText('description')).toHaveValue('walk copy');
+  });
+
+  it('fills the club template when club is toggled on', async () => {
+    renderForm();
+    await userEvent.click(screen.getByLabelText('make it a pda club event'));
+    expect(screen.getByLabelText('description')).toHaveValue('club copy');
   });
 
   it('keeps a description the planner already wrote', async () => {
