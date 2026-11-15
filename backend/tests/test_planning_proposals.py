@@ -19,11 +19,6 @@ MANAGE = PermissionKey.MANAGE_EVENT_PLANNING
 
 
 @pytest.fixture
-def slot(year):
-    return year.slots.first()
-
-
-@pytest.fixture
 def coordinator(db):
     return make_user(MANAGE)
 

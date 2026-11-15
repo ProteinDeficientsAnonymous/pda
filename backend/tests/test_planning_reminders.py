@@ -23,11 +23,6 @@ WINDOW_OPENS = MONTH_START - 42 * DAY
 
 
 @pytest.fixture
-def slot(year):
-    return year.slots.first()
-
-
-@pytest.fixture
 def proposed(slot):
     planner = make_user(VIEW, email="planner@example.com")
     return SlotAssignment.objects.create(slot=slot, user=planner, proposed_at=PROPOSED_AT)

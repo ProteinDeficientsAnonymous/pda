@@ -7,7 +7,6 @@ from community.models import (
     CoHostInviteStatus,
     EventCoHostInvite,
     EventStatus,
-    SlotAssignment,
 )
 from community.validation import Code
 from django.utils import timezone
@@ -17,26 +16,12 @@ from users.permissions import PermissionKey
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from tests._events import make_event
-from tests._planning import send
+from tests._planning import assign, respond, send
 from tests._users import grant, make_attendance_paused, make_user
 
 VIEW = PermissionKey.VIEW_EVENT_PLANNING
 MANAGE = PermissionKey.MANAGE_EVENT_PLANNING
 Status = AssignmentStatus
-
-
-@pytest.fixture
-def slot(year):
-    return year.slots.first()
-
-
-@pytest.fixture
-def planner(db):
-    return make_user(VIEW)
-
-
-def assign(slot, user, status=Status.COMMITTED):
-    return SlotAssignment.objects.create(slot=slot, user=user, status=status)
 
 
 def link(api_client, slot_id, event_id, actor):
@@ -53,8 +38,8 @@ class TestLinkEvent:
     def test_committed_planner_links_and_invites_teammates(self, api_client, slot, planner):
         mate = make_user(VIEW)
         proposed = make_user(VIEW)
-        assign(slot, planner)
-        assign(slot, mate)
+        assign(slot, planner, Status.COMMITTED)
+        assign(slot, mate, Status.COMMITTED)
         assign(slot, proposed, Status.PROPOSED)
         event = make_event(created_by=planner)
 
@@ -89,19 +74,19 @@ class TestLinkEvent:
 
     def test_committed_on_another_slot_is_403(self, api_client, year, planner):
         first, second = year.slots.all()[:2]
-        assign(first, planner)
+        assign(first, planner, Status.COMMITTED)
         event = make_event(created_by=planner)
         assert link(api_client, second.id, event.id, planner).status_code == 403
 
     def test_caller_must_host_the_event(self, api_client, slot, planner):
-        assign(slot, planner)
+        assign(slot, planner, Status.COMMITTED)
         event = make_event(created_by=make_user())
         response = link(api_client, slot.id, event.id, planner)
         assert response.status_code == 400
         assert_error_code(response, Code.Planning.NOT_EVENT_HOST)
 
     def test_slot_with_live_event_is_rejected(self, api_client, slot, planner):
-        assign(slot, planner)
+        assign(slot, planner, Status.COMMITTED)
         slot.event = make_event(created_by=planner)
         slot.save()
         other = make_event(created_by=planner)
@@ -111,8 +96,8 @@ class TestLinkEvent:
 
     def test_event_already_linked_to_another_slot_is_rejected(self, api_client, year, planner):
         first, second = year.slots.all()[:2]
-        assign(first, planner)
-        assign(second, planner)
+        assign(first, planner, Status.COMMITTED)
+        assign(second, planner, Status.COMMITTED)
         event = make_event(created_by=planner)
         assert link(api_client, first.id, event.id, planner).status_code == 200
         response = link(api_client, second.id, event.id, planner)
@@ -122,7 +107,7 @@ class TestLinkEvent:
         assert second.event is None
 
     def test_deleted_event_can_be_replaced(self, api_client, slot, planner):
-        assign(slot, planner)
+        assign(slot, planner, Status.COMMITTED)
         slot.event = make_event(created_by=planner, status=EventStatus.DELETED)
         slot.save()
         event = make_event(created_by=planner)
@@ -130,8 +115,8 @@ class TestLinkEvent:
 
     def test_rejected_invites_do_not_undo_the_link(self, api_client, slot, planner):
         mate = make_user(VIEW)
-        assign(slot, planner)
-        assign(slot, mate)
+        assign(slot, planner, Status.COMMITTED)
+        assign(slot, mate, Status.COMMITTED)
         past = timezone.now() - timedelta(days=2)
         event = make_event(created_by=planner, start_datetime=past)
         assert link(api_client, slot.id, event.id, planner).status_code == 200
@@ -144,14 +129,14 @@ class TestLinkEvent:
         grant(paused, VIEW)
         mate = make_user(VIEW)
         for user in (planner, paused, mate):
-            assign(slot, user)
+            assign(slot, user, Status.COMMITTED)
         event = make_event(created_by=planner)
         assert link(api_client, slot.id, event.id, planner).status_code == 200
         assert invite_for(event, paused) is None
         assert invite_for(event, mate).status == CoHostInviteStatus.PENDING
 
     def test_planner_who_lost_the_role_is_403(self, api_client, slot, planner):
-        assign(slot, planner)
+        assign(slot, planner, Status.COMMITTED)
         event = make_event(created_by=planner)
         planner.roles.clear()
         response = link(api_client, slot.id, event.id, planner)
@@ -161,7 +146,7 @@ class TestLinkEvent:
         assert slot.event is None
 
     def test_unknown_slot_and_event(self, api_client, slot, planner):
-        assign(slot, planner)
+        assign(slot, planner, Status.COMMITTED)
         event = make_event(created_by=planner)
         assert link(api_client, uuid.uuid4(), event.id, planner).status_code == 404
         assert link(api_client, slot.id, uuid.uuid4(), planner).status_code == 404
@@ -182,19 +167,14 @@ def linked_slot(slot, creator):
     return slot.event
 
 
-def respond(api_client, assignment, action, actor):
-    url = f"/api/community/planning/assignments/{assignment.id}/{action}/"
-    return send(api_client, "post", url, headers=auth_headers_for(actor))
-
-
 @pytest.mark.django_db
 class TestInviteGuards:
     def test_link_skips_a_removed_cohost(self, api_client, slot, planner):
         mate = make_user(VIEW)
         other = make_user(VIEW)
-        assign(slot, planner)
-        assign(slot, mate)
-        assign(slot, other)
+        assign(slot, planner, Status.COMMITTED)
+        assign(slot, mate, Status.COMMITTED)
+        assign(slot, other, Status.COMMITTED)
         event = make_event(created_by=planner)
         set_invite(event, mate, CoHostInviteStatus.REMOVED)
 
@@ -239,7 +219,7 @@ class TestRescindOnBackOut:
 
     def test_decline_from_committed_rescinds_pending_invite(self, api_client, slot, planner):
         event = self.pending_invite(slot, planner)
-        respond(api_client, assign(slot, planner), "decline", planner)
+        respond(api_client, assign(slot, planner, Status.COMMITTED), "decline", planner)
         assert invite_for(event, planner).status == CoHostInviteStatus.RESCINDED
 
     @pytest.mark.parametrize("action", ["decline", "withdraw"])
@@ -255,7 +235,7 @@ class TestRescindOnBackOut:
 
     def test_withdraw_rescinds_pending_invite(self, api_client, slot, planner):
         event = self.pending_invite(slot, planner)
-        assignment = assign(slot, planner)
+        assignment = assign(slot, planner, Status.COMMITTED)
         url = f"/api/community/planning/assignments/{assignment.id}/"
         coordinator = make_user(MANAGE)
         assert (
@@ -268,6 +248,6 @@ class TestRescindOnBackOut:
         event = linked_slot(slot, make_user(VIEW))
         set_invite(event, planner, CoHostInviteStatus.ACCEPTED)
         event.co_hosts.add(planner)
-        respond(api_client, assign(slot, planner), "decline", planner)
+        respond(api_client, assign(slot, planner, Status.COMMITTED), "decline", planner)
         assert invite_for(event, planner).status == CoHostInviteStatus.ACCEPTED
         assert event.co_hosts.filter(pk=planner.pk).exists()
