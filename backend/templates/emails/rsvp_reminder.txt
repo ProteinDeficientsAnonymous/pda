@@ -7,10 +7,10 @@ where: {{ event_location|lower }}{% endif %}
 
 how to show up at pda events:
 
-- say hi to someone you don't know yet, and if you already know a lot of people, talk to newer folks and make them feel welcome
-- stay curious — ask questions and really listen to the answers
-- if you're a cis man, and especially a white cis man, be mindful of the space you take up. let people finish their thoughts before jumping in, notice if you're steering every conversation, and make room for others. if you see other men cutting people off, be the one to ask them to let others finish.
-- if you're white, be mindful of your privilege and watch for microaggressions. if someone names one, thank them and listen rather than getting defensive or explaining yourself. if you see someone else make one, say something or let the facilitators know.
+• say hi to someone you don't know yet, and if you already know a lot of people, talk to newer folks and make them feel welcome
+• stay curious — ask questions and really listen to the answers
+• if you're a cis man, and especially a white cis man, be mindful of the space you take up. let people finish their thoughts before jumping in, notice if you're steering every conversation, and make room for others. if you see other men cutting people off, be the one to ask them to let others finish.
+• if you're white, be mindful of your privilege and watch for microaggressions. if someone names one, thank them and listen rather than getting defensive or explaining yourself. if you see someone else make one, say something or let the facilitators know.
 
 plans changed? update your rsvp so someone else can take your spot:
 

@@ -3353,6 +3353,8 @@ export interface components {
         };
         /** EventDescriptionTemplatesOut */
         EventDescriptionTemplatesOut: {
+            /** Club */
+            club: string;
             /** Official Non Walk */
             official_non_walk: string;
             /** Official Walk */
