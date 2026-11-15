@@ -6,10 +6,10 @@ from pydantic import BaseModel
 router = Router()
 
 HOW_TO_SHOW_UP = """How to show up at PDA events:
-- Say hi to someone you don't know yet, and if you already know a lot of people, talk to newer folks and make them feel welcome
-- Stay curious — ask questions and really listen to the answers
-- If you're a cis man, and especially a white cis man, be mindful of the space you take up. Let people finish their thoughts before jumping in, notice if you're steering every conversation, and make room for others. If you see other men cutting people off, be the one to ask them to let others finish.
-- If you're white, be mindful of your privilege and watch for microaggressions. If someone names one, thank them and listen rather than getting defensive or explaining yourself. If you see someone else make one, say something or let the facilitators know."""
+• Say hi to someone you don't know yet, and if you already know a lot of people, talk to newer folks and make them feel welcome
+• Stay curious — ask questions and really listen to the answers
+• If you're a cis man, and especially a white cis man, be mindful of the space you take up. Let people finish their thoughts before jumping in, notice if you're steering every conversation, and make room for others. If you see other men cutting people off, be the one to ask them to let others finish.
+• If you're white, be mindful of your privilege and watch for microaggressions. If someone names one, thank them and listen rather than getting defensive or explaining yourself. If you see someone else make one, say something or let the facilitators know."""
 
 OFFICIAL_WALK_TEMPLATE = f"""Come join us on a walk around [NEIGHBORHOOD / PARK]!
 
