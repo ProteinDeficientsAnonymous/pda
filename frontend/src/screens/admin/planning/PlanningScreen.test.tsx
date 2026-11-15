@@ -2,9 +2,9 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
-import { makeUser } from '@/test/fixtures';
+import { setAuthed } from '@/test/auth';
+import { makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import PlanningScreen from './PlanningScreen';
@@ -28,9 +28,12 @@ vi.mock('@/api/planning', () => ({
 }));
 
 function signInWith(...perms: string[]) {
-  const roles = [{ id: 'r1', name: 'planner', isDefault: false, permissions: perms }];
-  useAuthStore.setState({ status: 'authed', user: makeUser({ roles }), accessToken: 'tok' });
+  setAuthed(makeUserWithPermissions(perms));
 }
+
+vi.mock('./MySlots', () => ({
+  MySlots: () => <div>my slots</div>,
+}));
 
 vi.mock('./AvailabilityForm', () => ({
   AvailabilityForm: ({ year }: { year: number }) => <div>form for {year}</div>,
@@ -71,6 +74,14 @@ describe('PlanningScreen', () => {
     await userEvent.selectOptions(select, '2026');
     expect(select).toHaveValue('2026');
     expect(screen.getByText('form for 2026')).toBeInTheDocument();
+  });
+
+  it('shows my slots above the availability form', () => {
+    years = [{ id: 'y1', year: 2026 }];
+    renderWithProviders(<PlanningScreen />);
+    const mine = screen.getByText('my slots');
+    const form = screen.getByText('form for 2026');
+    expect(mine.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('shows the slot editor and grid to managers only', () => {

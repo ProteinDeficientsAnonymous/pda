@@ -1,20 +1,28 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 
-import { type PlannerColumn, type PlanningSlot, usePlanningGrid } from '@/api/planning';
-import { eventPath } from '@/models/event';
+import {
+  type Assignment,
+  type PlanningGrid as Grid,
+  type PlannerColumn,
+  type PlanningSlot,
+  usePlanningGrid,
+  usePropose,
+  useWithdraw,
+} from '@/api/planning';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
-import { type CellState, cellState } from './gridCell';
-
-const CELL_TEXT: Record<CellState, string> = {
-  committed: 'committed',
-  proposed: 'proposed',
-  no_answer: 'no answer',
-  declined: 'declined',
-  available: 'available',
-  blank: '',
-};
+import {
+  type CellState,
+  cellState,
+  findAssignment,
+  isWithdrawable,
+  slotHasCommitted,
+  slotNeedsPlanner,
+} from './gridCell';
+import { GridCell } from './PlanningGridCell';
+import { SlotEventLink } from './SlotEventLink';
+import { toastOnError } from './toastOnError';
 
 function PlannerHeader({ planner }: { planner: PlannerColumn }) {
   return (
@@ -32,21 +40,16 @@ function PlannerHeader({ planner }: { planner: PlannerColumn }) {
   );
 }
 
-function SlotHeader({ slot }: { slot: PlanningSlot }) {
+function SlotHeader({ slot, year, grid }: { slot: PlanningSlot; year: number; grid: Grid }) {
   return (
     <th scope="row" className="bg-surface sticky left-0 px-3 py-2 text-left font-medium">
       <div>{slot.label}</div>
-      {slot.eventId ? (
-        <div className="text-xs font-normal">
-          scheduled ·{' '}
-          <Link
-            className="underline"
-            to={eventPath({ id: slot.eventId, slug: slot.eventSlug ?? '' })}
-          >
-            view event
-          </Link>
-        </div>
+      {slotNeedsPlanner(grid, slot.id) ? (
+        <div className="text-xs font-normal">needs a planner</div>
       ) : null}
+      <div className="font-normal">
+        <SlotEventLink slot={slot} year={year} canCreate={slotHasCommitted(grid, slot.id)} />
+      </div>
     </th>
   );
 }
@@ -54,10 +57,39 @@ function SlotHeader({ slot }: { slot: PlanningSlot }) {
 export function PlanningGrid({ year }: { year: number }) {
   const { data: grid, isPending, isError } = usePlanningGrid(year);
   const [today] = useState(() => new Date());
+  const propose = usePropose();
+  const withdraw = useWithdraw();
+  const { confirm, element } = useConfirm();
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the planning grid — try refreshing" />;
   if (grid.planners.length === 0) return <p className="text-muted text-sm">no planners yet 🌿</p>;
+
+  async function act(
+    slot: PlanningSlot,
+    planner: PlannerColumn,
+    state: CellState,
+    assignment: Assignment | undefined,
+  ) {
+    if (!isWithdrawable(state)) {
+      await toastOnError(
+        propose.mutateAsync({ slotId: slot.id, userId: planner.userId }),
+        "couldn't propose that slot — try again",
+      );
+      return;
+    }
+    const ok = await confirm({
+      message: `withdraw ${planner.name} from ${slot.label}?`,
+      confirmLabel: 'withdraw',
+      destructive: true,
+    });
+    if (ok && assignment) {
+      await toastOnError(
+        withdraw.mutateAsync(assignment.id),
+        "couldn't withdraw that slot — try again",
+      );
+    }
+  }
 
   return (
     <section className="mt-8">
@@ -77,20 +109,24 @@ export function PlanningGrid({ year }: { year: number }) {
           <tbody>
             {grid.slots.map((slot) => (
               <tr key={slot.id} className="border-border border-t">
-                <SlotHeader slot={slot} />
-                {grid.planners.map((p) => {
-                  const state = cellState(slot.id, p.userId, grid, today);
-                  return (
-                    <td key={p.userId} className="px-3 py-2">
-                      {CELL_TEXT[state] || <span className="sr-only">not available</span>}
-                    </td>
-                  );
-                })}
+                <SlotHeader slot={slot} year={year} grid={grid} />
+                {grid.planners.map((p) => (
+                  <GridCell
+                    key={p.userId}
+                    slot={slot}
+                    planner={p}
+                    state={cellState(slot.id, p.userId, grid, today)}
+                    assignment={findAssignment(grid, slot.id, p.userId)}
+                    disabled={propose.isPending || withdraw.isPending}
+                    onAct={(state, assignment) => void act(slot, p, state, assignment)}
+                  />
+                ))}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {element}
     </section>
   );
 }
