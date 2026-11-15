@@ -1,3 +1,10 @@
+## [0.239.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.239.0...v0.239.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* 2119 - stop clipping the rsvp deadline calendar in the event form ([#2489](https://github.com/ProteinDeficientsAnonymous/pda/issues/2489)) ([5d8e5ba](https://github.com/ProteinDeficientsAnonymous/pda/commit/5d8e5badef79e8ccae70c1a0b80a2faa6daa4dc9))
+
 # [0.239.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.238.0...v0.239.0) (2026-11-15)
 
 
