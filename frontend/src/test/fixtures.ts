@@ -1,6 +1,7 @@
 import type { EventAttendanceRow } from '@/api/attendanceReport';
 import type { JoinRequestSummary } from '@/api/join';
 import { JoinRequestStatus } from '@/api/join';
+import type { PlanningSlot } from '@/api/planning';
 import type { Member } from '@/api/users';
 import type { Event, EventGuest } from '@/models/event';
 import {
@@ -166,6 +167,20 @@ export function makeUserWithPermissions(
 
 export const creator = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
 export const nonHost = makeUser({ id: 'user-non-host', firstName: 'Casey', fullName: 'Casey' });
+
+export function makeSlot(overrides: Partial<PlanningSlot> = {}): PlanningSlot {
+  return {
+    id: 's1',
+    label: 'march',
+    month: 3,
+    kind: 'monthly',
+    order: 3,
+    eventId: null,
+    eventSlug: null,
+    eventStatus: null,
+    ...overrides,
+  };
+}
 
 export function makeMember(overrides: Partial<Member> = {}): Member {
   return {
