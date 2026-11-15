@@ -709,6 +709,20 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "that slot doesn't exist anymore";
     case Code.Planning.SlotNotInYear:
       return "one of those slots isn't part of this year";
+    case Code.Planning.NotAPlanner:
+      return "they're not a planner";
+    case Code.Planning.AlreadyAssigned:
+      return "they're already proposed or committed for this slot";
+    case Code.Planning.AssignmentNotFound:
+      return "that proposal doesn't exist anymore";
+    case Code.Planning.NotPending:
+      return "that proposal's already been answered";
+    case Code.Planning.NotEventHost:
+      return 'you need to be a host of that event to link it';
+    case Code.Planning.SlotHasEvent:
+      return 'that slot already has an event';
+    case Code.Planning.EventAlreadyLinked:
+      return 'that event is already linked to another slot';
 
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)
     case Code.Generic.FieldRequired:
