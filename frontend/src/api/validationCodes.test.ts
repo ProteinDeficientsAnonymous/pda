@@ -24,6 +24,18 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says the rsvp deadline must come before the start', () => {
+    expect(
+      messageForCode({ code: Code.Event.RsvpDeadlineAfterStart, field: 'rsvp_deadline' }),
+    ).toBe('the rsvp deadline must be before the event starts');
+  });
+
+  it('says going guests can only step down after the rsvp deadline', () => {
+    expect(messageForCode({ code: Code.Event.RsvpsClosedDeadline, field: null })).toBe(
+      "the rsvp deadline has passed — going guests can only switch to can't go or drop their +1",
+    );
+  });
+
   it('uses the field name for generic fallback codes', () => {
     expect(messageForCode({ code: Code.Generic.FieldRequired, field: 'title' })).toContain('title');
     expect(messageForCode({ code: Code.Generic.FieldInvalid, field: 'max_attendees' })).toContain(
@@ -44,6 +56,12 @@ describe('messageForCode', () => {
   it('says a bulk payment verify only covers attending or waitlisted guests', () => {
     expect(messageForCode({ code: Code.Event.PaymentVerifyNotGuests, field: null })).toMatch(
       /attending or waitlisted/,
+    );
+  });
+
+  it("says only going guests can be marked didn't attend", () => {
+    expect(messageForCode({ code: Code.Event.DidntGoRequiresGoing, field: null })).toBe(
+      "only guests who rsvp'd going can be marked didn't attend",
     );
   });
 

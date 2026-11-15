@@ -100,3 +100,41 @@ describe('+1s lock for official and club events', () => {
     expect(screen.queryByText(lockNote)).not.toBeInTheDocument();
   });
 });
+
+describe('rsvp deadline field', () => {
+  it('shows a clear button only when a deadline is set', () => {
+    const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const { onChange } = renderRsvp({ rsvpDeadline: deadline });
+
+    expect(screen.getByText(/rsvp deadline/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'clear deadline' }));
+    expect(onChange).toHaveBeenCalledWith({ rsvpDeadline: null });
+  });
+
+  it('clears the deadline when rsvp is turned off', () => {
+    const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const { onChange } = renderRsvp({ rsvpDeadline: deadline });
+
+    fireEvent.click(screen.getByRole('switch', { name: 'enable rsvp' }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ rsvpEnabled: false, rsvpDeadline: null }),
+    );
+  });
+
+  it('saves a picked time as the deadline', () => {
+    const deadline = new Date(2030, 2, 1, 17, 0);
+    const { onChange } = renderRsvp({ rsvpDeadline: deadline.toISOString() });
+
+    fireEvent.click(screen.getByRole('button', { name: /march 1/ }));
+    fireEvent.change(screen.getByDisplayValue('17:00'), { target: { value: '09:30' } });
+
+    expect(onChange).toHaveBeenCalledWith({
+      rsvpDeadline: new Date(2030, 2, 1, 9, 30).toISOString(),
+    });
+  });
+
+  it('has no clear button without a deadline', () => {
+    renderRsvp();
+    expect(screen.queryByRole('button', { name: 'clear deadline' })).not.toBeInTheDocument();
+  });
+});
