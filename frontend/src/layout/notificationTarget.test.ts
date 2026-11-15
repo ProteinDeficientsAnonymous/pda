@@ -54,6 +54,7 @@ describe('notificationTarget', () => {
     NotificationType.PlanningWithdrawn,
     NotificationType.PlanningCommitted,
     NotificationType.PlanningDeclined,
+    NotificationType.PlanningUpcoming,
   ])('sends %s to the planning screen', (notificationType) => {
     expect(notificationTarget(notification({ notificationType }))).toBe('/admin/planning');
   });
