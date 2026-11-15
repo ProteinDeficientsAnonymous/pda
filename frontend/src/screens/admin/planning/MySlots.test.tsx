@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MySlot } from '@/api/planning';
+import { makeSlot } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { MySlots } from './MySlots';
@@ -11,16 +12,7 @@ const mine = (id: string, status: MySlot['status'], year = 2027): MySlot => ({
   assignmentId: id,
   status,
   year,
-  slot: {
-    id: `slot-${id}`,
-    label: `label ${id}`,
-    month: 1,
-    kind: 'monthly',
-    order: 1,
-    eventId: null,
-    eventSlug: null,
-    eventStatus: null,
-  },
+  slot: makeSlot({ id: `slot-${id}`, label: `label ${id}`, month: 1, order: 1 }),
   teammates: [],
 });
 
@@ -60,15 +52,65 @@ describe('MySlots', () => {
     state.data = [mine('a1', 'proposed')];
     renderWithProviders(<MySlots />);
     const section = screen.getByRole('region', { name: 'waiting on you' });
-    await userEvent.click(within(section).getByRole('button', { name: "i'm in" }));
+    await userEvent.click(within(section).getByRole('button', { name: "i'm in for label a1" }));
     expect(commit).toHaveBeenCalledWith('a1');
   });
 
   it('declines a proposed slot without confirming', async () => {
     state.data = [mine('a1', 'proposed')];
     renderWithProviders(<MySlots />);
-    await userEvent.click(screen.getByRole('button', { name: "can't do it" }));
+    await userEvent.click(screen.getByRole('button', { name: "can't do label a1" }));
     expect(decline).toHaveBeenCalledWith('a1');
+  });
+
+  it('lists committed slots with teammates and an event link', () => {
+    const row = mine('a2', 'committed');
+    state.data = [
+      {
+        ...row,
+        teammates: [
+          { name: 'bea', status: 'committed' },
+          { name: 'cy', status: 'proposed' },
+        ],
+        slot: { ...row.slot, eventId: 'e1', eventSlug: 'jan-potluck', eventStatus: 'draft' },
+      },
+    ];
+    renderWithProviders(<MySlots />);
+    const section = screen.getByRole('region', { name: 'your slots' });
+    expect(within(section).getByText('label a2')).toBeInTheDocument();
+    expect(within(section).getByText('with bea (committed), cy (proposed)')).toBeInTheDocument();
+    expect(within(section).getByRole('link', { name: 'view event' })).toHaveAttribute(
+      'href',
+      '/events/jan-potluck',
+    );
+    expect(within(section).getByText(/draft ·/)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'waiting on you' })).not.toBeInTheDocument();
+  });
+
+  it('offers create event only on committed rows', () => {
+    state.data = [mine('a1', 'proposed'), mine('a2', 'committed')];
+    renderWithProviders(<MySlots />);
+    const waiting = screen.getByRole('region', { name: 'waiting on you' });
+    expect(within(waiting).queryByRole('link')).not.toBeInTheDocument();
+    const yours = screen.getByRole('region', { name: 'your slots' });
+    expect(within(yours).getByRole('link', { name: 'create event' })).toHaveAttribute(
+      'href',
+      '/events/add?planningSlot=slot-a2&year=2027',
+    );
+  });
+
+  it('backs out only after confirming', async () => {
+    state.data = [mine('a2', 'committed')];
+    renderWithProviders(<MySlots />);
+    await userEvent.click(screen.getByRole('button', { name: 'back out of label a2' }));
+    expect(
+      screen.getByText('back out of label a2? the coordinator will be told'),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'cancel' }));
+    expect(decline).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'back out of label a2' }));
+    await userEvent.click(screen.getByRole('button', { name: 'yes, back out' }));
+    expect(decline).toHaveBeenCalledWith('a2');
   });
 
   it('prefixes the year only when several years are present', () => {
@@ -86,7 +128,7 @@ describe('MySlots', () => {
     commit.mockRejectedValue(new Error('nope'));
     state.data = [mine('a1', 'proposed')];
     renderWithProviders(<MySlots />);
-    await userEvent.click(screen.getByRole('button', { name: "i'm in" }));
+    await userEvent.click(screen.getByRole('button', { name: "i'm in for label a1" }));
     expect(toastError).toHaveBeenCalledWith("couldn't save your response — try again");
   });
 
