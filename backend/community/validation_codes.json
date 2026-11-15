@@ -117,6 +117,11 @@
         "params": []
       },
       {
+        "name": "RSVPS_CLOSED_DEADLINE",
+        "value": "event.rsvps_closed_deadline",
+        "params": []
+      },
+      {
         "name": "RSVP_DEADLINE_AFTER_START",
         "value": "event.rsvp_deadline_after_start",
         "params": []

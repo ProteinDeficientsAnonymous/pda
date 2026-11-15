@@ -30,6 +30,12 @@ describe('messageForCode', () => {
     ).toBe('the rsvp deadline must be before the event starts');
   });
 
+  it('says going guests can only step down after the rsvp deadline', () => {
+    expect(messageForCode({ code: Code.Event.RsvpsClosedDeadline, field: null })).toBe(
+      "the rsvp deadline has passed — going guests can only switch to can't go or drop their +1",
+    );
+  });
+
   it('uses the field name for generic fallback codes', () => {
     expect(messageForCode({ code: Code.Generic.FieldRequired, field: 'title' })).toContain('title');
     expect(messageForCode({ code: Code.Generic.FieldInvalid, field: 'max_attendees' })).toContain(

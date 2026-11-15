@@ -198,6 +198,10 @@ class Event(models.Model):
         return self.start_datetime + DEFAULT_EVENT_DURATION < timezone.now()
 
     @property
+    def rsvp_deadline_passed(self) -> bool:
+        return self.rsvp_deadline is not None and self.rsvp_deadline < timezone.now()
+
+    @property
     def is_draft(self) -> bool:
         return self.status == EventStatus.DRAFT
 
@@ -265,6 +269,7 @@ class EventRSVP(models.Model):
     waitlist_position = models.PositiveIntegerField(null=True, blank=True)
     # Stamped on create and on any status change (see save()); bulk .update() callers must set it.
     status_changed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    rsvp_deadline_reminder_sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
