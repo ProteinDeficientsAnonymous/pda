@@ -21,6 +21,7 @@ const KIND_OPTIONS: { value: SlotKind; label: string }[] = [
   { value: 'biannual', label: 'biannual' },
 ];
 
+const LABEL_MAX = 100;
 const SAVE_FAILED = "couldn't save slot — try again";
 
 function SlotRow({ slot }: { slot: PlanningSlot }) {
@@ -56,6 +57,7 @@ function SlotRow({ slot }: { slot: PlanningSlot }) {
           id={`slot-${slot.id}-label`}
           label={`label for ${slot.label}`}
           hideLabel
+          maxLength={LABEL_MAX}
           value={label}
           onChange={(e) => {
             setLabel(e.target.value);
@@ -112,6 +114,7 @@ function AddSlotRow({ year }: { year: number }) {
           label="new slot label"
           hideLabel
           placeholder="new slot"
+          maxLength={LABEL_MAX}
           value={label}
           onChange={(e) => {
             setLabel(e.target.value);
