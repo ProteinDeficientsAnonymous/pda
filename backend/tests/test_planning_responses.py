@@ -1,36 +1,19 @@
 import uuid
 
 import pytest
-from community.models import AssignmentStatus, SlotAssignment
+from community.models import AssignmentStatus, CoHostInviteStatus, EventCoHostInvite, SlotAssignment
 from community.validation import Code
+from notifications.models import Notification, NotificationType
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
-from tests._auth import auth_headers_for
-from tests._planning import send
-from tests._users import make_user
+from tests._events import make_event
+from tests._planning import assign, respond, send
+from tests._users import grant, make_attendance_paused, make_user
 
 VIEW = PermissionKey.VIEW_EVENT_PLANNING
+MANAGE = PermissionKey.MANAGE_EVENT_PLANNING
 Status = AssignmentStatus
-
-
-@pytest.fixture
-def slot(year):
-    return year.slots.first()
-
-
-@pytest.fixture
-def planner(db):
-    return make_user(VIEW)
-
-
-def respond(api_client, assignment, action, actor):
-    url = f"/api/community/planning/assignments/{assignment.id}/{action}/"
-    return send(api_client, "post", url, headers=auth_headers_for(actor))
-
-
-def assign(slot, user, status=Status.PROPOSED):
-    return SlotAssignment.objects.create(slot=slot, user=user, status=status)
 
 
 @pytest.mark.django_db
@@ -91,7 +74,75 @@ class TestRespond:
         url = f"/api/community/planning/assignments/{assign(slot, planner).id}/{action}/"
         assert send(api_client, "post", url).status_code == 401
 
+    @pytest.mark.parametrize("action", ["commit", "decline"])
+    def test_planner_who_lost_the_role_is_403(self, api_client, slot, planner, action):
+        assignment = assign(slot, planner)
+        planner.roles.clear()
+        response = respond(api_client, assignment, action, planner)
+        assert response.status_code == 403
+        assert_error_code(response, Code.Perm.DENIED)
+        assignment.refresh_from_db()
+        assert assignment.status == Status.PROPOSED
+
     def test_rate_limited(self, api_client, slot, planner):
         assignment = assign(slot, planner, Status.DECLINED)
         codes = [respond(api_client, assignment, "commit", planner).status_code for _ in range(11)]
         assert codes[-1] == 429
+
+
+@pytest.mark.django_db
+class TestCoordinatorNotifications:
+    @pytest.mark.parametrize(
+        ("action", "kind", "verb"),
+        [
+            ("commit", NotificationType.PLANNING_COMMITTED, "is in for"),
+            ("decline", NotificationType.PLANNING_DECLINED, "can't do"),
+        ],
+    )
+    def test_notifies_coordinators_not_actor(self, api_client, slot, action, kind, verb):
+        actor = make_user(VIEW, MANAGE, first_name="Pat")
+        coordinator = make_user(MANAGE)
+        make_user(VIEW)
+        paused = make_attendance_paused()
+        grant(paused, MANAGE)
+        assignment = assign(slot, actor)
+
+        respond(api_client, assignment, action, actor)
+
+        notification = Notification.objects.get()
+        assert notification.recipient == coordinator
+        assert notification.notification_type == kind
+        assert notification.message == f"pat {verb} {slot.label}"
+        assert notification.related_user == actor
+
+    def test_failed_response_does_not_notify(self, api_client, slot, planner):
+        make_user(MANAGE)
+        respond(api_client, assign(slot, planner, Status.DECLINED), "commit", planner)
+        assert not Notification.objects.exists()
+
+
+@pytest.mark.django_db
+class TestLateCommitInvite:
+    def test_commit_after_link_invites_planner_as_cohost(self, api_client, slot, planner):
+        creator = make_user(VIEW)
+        slot.event = make_event(created_by=creator)
+        slot.save()
+
+        respond(api_client, assign(slot, planner), "commit", planner)
+
+        invite = EventCoHostInvite.objects.get(event=slot.event, user=planner)
+        assert invite.status == CoHostInviteStatus.PENDING
+        assert invite.invited_by == creator
+        assert Notification.objects.get(
+            recipient=planner, notification_type=NotificationType.COHOST_INVITE
+        )
+
+    def test_decline_after_link_does_not_invite(self, api_client, slot, planner):
+        slot.event = make_event(created_by=make_user(VIEW))
+        slot.save()
+        respond(api_client, assign(slot, planner), "decline", planner)
+        assert not EventCoHostInvite.objects.exists()
+
+    def test_commit_without_event_does_not_invite(self, api_client, slot, planner):
+        respond(api_client, assign(slot, planner), "commit", planner)
+        assert not EventCoHostInvite.objects.exists()
