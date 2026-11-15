@@ -1,3 +1,10 @@
+## [0.236.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.236.1...v0.236.2) (2026-11-15)
+
+
+### Bug Fixes
+
+* **migrations:** run rsvp reminder migration after no-show migration ([#2440](https://github.com/ProteinDeficientsAnonymous/pda/issues/2440)) ([8826cc5](https://github.com/ProteinDeficientsAnonymous/pda/commit/8826cc5d62700f451011fa6d97ce7e0d8ba15e17))
+
 ## [0.236.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.236.0...v0.236.1) (2026-11-13)
 
 
