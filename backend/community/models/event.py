@@ -82,6 +82,7 @@ class Event(models.Model):
     datetime_tbd = models.BooleanField(default=False)
     allow_plus_ones = models.BooleanField(default=False)
     max_attendees = models.PositiveIntegerField(null=True, blank=True)
+    rsvp_deadline = models.DateTimeField(null=True, blank=True)
     photo = models.ImageField(upload_to="event_photos/", blank=True)
     photo_updated_at = models.DateTimeField(null=True, blank=True)
     event_type = models.CharField(
@@ -113,6 +114,7 @@ class Event(models.Model):
     deleted_at = models.DateTimeField(null=True, blank=True)
     checkin_nudge_sent_at = models.DateTimeField(null=True, blank=True)
     cohost_reminder_sent_at = models.DateTimeField(null=True, blank=True)
+    rsvp_reminder_sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     if TYPE_CHECKING:
         created_by_id: uuid.UUID | None
@@ -196,6 +198,10 @@ class Event(models.Model):
         return self.start_datetime + DEFAULT_EVENT_DURATION < timezone.now()
 
     @property
+    def rsvp_deadline_passed(self) -> bool:
+        return self.rsvp_deadline is not None and self.rsvp_deadline < timezone.now()
+
+    @property
     def is_draft(self) -> bool:
         return self.status == EventStatus.DRAFT
 
@@ -241,6 +247,7 @@ class EventRSVP(models.Model):
         default=AttendanceStatus.UNKNOWN,
     )
     plus_one_checked_in_at = models.DateTimeField(null=True, blank=True)
+    no_show_emailed_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     cancel_reason = models.CharField(
         max_length=20, choices=CancelReason.choices, null=True, blank=True
@@ -262,6 +269,7 @@ class EventRSVP(models.Model):
     waitlist_position = models.PositiveIntegerField(null=True, blank=True)
     # Stamped on create and on any status change (see save()); bulk .update() callers must set it.
     status_changed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    rsvp_deadline_reminder_sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
