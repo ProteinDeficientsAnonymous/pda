@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
 import { type PlanningYear, useCreateYear, usePlanningYears } from '@/api/planning';
-import { useAuthStore } from '@/auth/store';
+import { useHasPermission } from '@/auth/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
-import { hasPermission, Permission } from '@/models/permissions';
+import { Permission } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { AvailabilityForm } from './AvailabilityForm';
@@ -38,7 +38,7 @@ export default function PlanningScreen() {
   const { data: years, isPending, isError } = usePlanningYears();
   const [picked, setPicked] = useState<number | null>(null);
   const [nextYear] = useState(() => new Date().getFullYear() + 1);
-  const canManage = useAuthStore((s) => hasPermission(s.user, Permission.ManageEventPlanning));
+  const canManage = useHasPermission(Permission.ManageEventPlanning);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load planning years — try refreshing" />;
