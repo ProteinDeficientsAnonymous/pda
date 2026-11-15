@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import {
   type Event,
+  isRsvpDeadlinePassed,
   isRsvpInputStatus,
   type RsvpInputStatus,
   RsvpServerStatus,
@@ -16,7 +17,7 @@ import {
 } from '@/models/event';
 
 import { RsvpBox } from './RsvpBox';
-import { RsvpDeadlineNote } from './RsvpDeadline';
+import { MaybeDeadlineDialog, RsvpDeadlineNote } from './RsvpDeadline';
 import type { RsvpAnswerValue } from './rsvpQuestions';
 
 interface Props {
@@ -61,6 +62,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
   const myUserId = token ? event.viewerUserId : authUserId;
   const [error, setError] = useState<string | null>(null);
   const [box, setBox] = useState<BoxState | null>(null);
+  const [maybeDeadline, setMaybeDeadline] = useState<Date | null>(null);
   const { confirm, element: confirmElement } = useConfirm();
 
   const myRsvp = event.myRsvp;
@@ -106,6 +108,11 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
         });
       }
       setBox(null);
+      const newMaybe = args.status === RsvpStatus.Maybe && myRsvp !== RsvpServerStatus.Maybe;
+      // hosts can still pick maybe after the deadline, when a confirm-by date makes no sense
+      if (newMaybe && !isRsvpDeadlinePassed(event)) {
+        setMaybeDeadline(event.rsvpDeadline);
+      }
     } catch (err) {
       setError(extractError(err));
     }
@@ -231,6 +238,14 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
           onClose={() => {
             setError(null);
             setBox(null);
+          }}
+        />
+      ) : null}
+      {maybeDeadline ? (
+        <MaybeDeadlineDialog
+          deadline={maybeDeadline}
+          onClose={() => {
+            setMaybeDeadline(null);
           }}
         />
       ) : null}
