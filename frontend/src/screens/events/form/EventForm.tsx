@@ -61,6 +61,7 @@ const RSVP_FIELDS: readonly (keyof EventFormValues)[] = [
   'rsvpEnabled',
   'allowPlusOnes',
   'maxAttendees',
+  'rsvpDeadline',
 ];
 const LINK_FIELDS: readonly (keyof EventFormValues)[] = [
   'whatsappLink',
