@@ -1,11 +1,9 @@
-import { Link } from 'react-router-dom';
-
 import { type MySlot, useCommit, useDecline, useMySlots } from '@/api/planning';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { eventPath } from '@/models/event';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { SlotEventLink } from './SlotEventLink';
 import { toastOnError } from './toastOnError';
 
 const RESPOND_FAILED = "couldn't save your response — try again";
@@ -31,14 +29,7 @@ function SlotRow({
             with {teammates.map((t) => `${t.name} (${t.status})`).join(', ')}
           </p>
         ) : null}
-        {slot.eventId ? (
-          <Link
-            className="text-xs underline"
-            to={eventPath({ id: slot.eventId, slug: slot.eventSlug ?? '' })}
-          >
-            view event
-          </Link>
-        ) : null}
+        <SlotEventLink slot={slot} year={row.year} canCreate={row.status === 'committed'} />
       </div>
       <div className="flex gap-2">{children}</div>
     </li>
@@ -85,6 +76,7 @@ export function MySlots() {
             {waiting.map((row) => (
               <SlotRow key={row.assignmentId} row={row} showYear={showYear}>
                 <Button
+                  aria-label={`i'm in for ${row.slot.label}`}
                   disabled={busy}
                   onClick={() => {
                     respond(commit, row);
@@ -94,6 +86,7 @@ export function MySlots() {
                 </Button>
                 <Button
                   variant="secondary"
+                  aria-label={`can't do ${row.slot.label}`}
                   disabled={busy}
                   onClick={() => {
                     respond(decline, row);
@@ -114,7 +107,12 @@ export function MySlots() {
           <ul>
             {committed.map((row) => (
               <SlotRow key={row.assignmentId} row={row} showYear={showYear}>
-                <Button variant="destructive" disabled={busy} onClick={() => void backOut(row)}>
+                <Button
+                  variant="destructive"
+                  aria-label={`back out of ${row.slot.label}`}
+                  disabled={busy}
+                  onClick={() => void backOut(row)}
+                >
                   back out
                 </Button>
               </SlotRow>

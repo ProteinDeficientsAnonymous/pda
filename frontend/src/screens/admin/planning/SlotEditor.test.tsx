@@ -62,6 +62,12 @@ describe('SlotEditor', () => {
     expect(input).toHaveValue('jan');
   });
 
+  it('caps slot labels at the backend limit', () => {
+    renderWithProviders(<SlotEditor year={2027} />);
+    expect(screen.getByLabelText('label for january')).toHaveAttribute('maxlength', '100');
+    expect(screen.getByLabelText('new slot label')).toHaveAttribute('maxlength', '100');
+  });
+
   it('does not patch when the label is unchanged', async () => {
     const user = userEvent.setup();
     renderWithProviders(<SlotEditor year={2027} />);
