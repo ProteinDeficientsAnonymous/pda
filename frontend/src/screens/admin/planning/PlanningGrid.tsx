@@ -47,8 +47,8 @@ function SlotHeader({ slot, year }: { slot: PlanningSlot; year: number }) {
 export function PlanningGrid({ year }: { year: number }) {
   const { data: grid, isPending, isError } = usePlanningGrid(year);
   const [today] = useState(() => new Date());
-  const propose = usePropose(year);
-  const withdraw = useWithdraw(year);
+  const propose = usePropose();
+  const withdraw = useWithdraw();
   const { confirm, element } = useConfirm();
 
   if (isPending) return <ContentLoading />;
