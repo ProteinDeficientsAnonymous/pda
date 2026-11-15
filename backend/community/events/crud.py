@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from users.helpers import visible_display_name
 
 from community.cohosts.invite_helpers import reject_non_member_cohosts
+from community.events._field_validators import check_rsvp_deadline
 from community.events._transitions import handle_status_update, set_event_participants
 from community.events._update import (
     apply_field_updates,
@@ -230,6 +231,8 @@ def create_event(request, payload: EventIn):
             check_past=True,
         )
 
+    check_rsvp_deadline(payload.rsvp_deadline, payload.start_datetime, payload.datetime_tbd)
+
     for question in payload.rsvp_questions:
         validate_event_rsvp_question(question)
     reject_non_member_cohosts(payload.co_host_ids)
@@ -253,6 +256,7 @@ def create_event(request, payload: EventIn):
         datetime_tbd=payload.datetime_tbd,
         allow_plus_ones=payload.allow_plus_ones,
         max_attendees=payload.max_attendees,
+        rsvp_deadline=payload.rsvp_deadline,
         event_type=payload.event_type,
         event_format=event_format,
         visibility=payload.visibility,
