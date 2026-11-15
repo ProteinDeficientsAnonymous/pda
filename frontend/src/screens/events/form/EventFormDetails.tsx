@@ -3,8 +3,8 @@ import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { EventVisibility } from '@/models/event';
 
+import { hasTemplatePlaceholders } from './descriptionTemplate';
 import { LockIcon } from './LockIcon';
-import { hasTemplatePlaceholders } from './officialTemplate';
 
 type Visibility = EventFormValues['visibility'];
 

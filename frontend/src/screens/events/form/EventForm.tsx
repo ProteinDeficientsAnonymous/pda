@@ -30,6 +30,7 @@ import type { User } from '@/models/user';
 import { EventHostSection } from '../EventHostSection';
 import { eventMemberSectionFlags } from '../eventMemberFlags';
 import type { RsvpQuestionDraft } from '../rsvpQuestions';
+import { withDescriptionTemplate } from './descriptionTemplate';
 import { EventFormBasics } from './EventFormBasics';
 import { EventFormDetails } from './EventFormDetails';
 import { EventFormLinks, EventFormMoney } from './EventFormLinksAndCost';
@@ -39,7 +40,6 @@ import { EventFormRsvp } from './EventFormRsvp';
 import { EventFormSlug } from './EventFormSlug';
 import { EventFormTags } from './EventFormTags';
 import { officialExtras } from './officialQuestions';
-import { withOfficialTemplate } from './officialTemplate';
 import { typeDefaults } from './typeDefaults';
 import { validateEventForm } from './validateEventForm';
 
@@ -63,6 +63,7 @@ const RSVP_FIELDS: readonly (keyof EventFormValues)[] = [
   'rsvpEnabled',
   'allowPlusOnes',
   'maxAttendees',
+  'rsvpDeadline',
 ];
 const LINK_FIELDS: readonly (keyof EventFormValues)[] = [
   'whatsappLink',
@@ -136,7 +137,9 @@ export function EventForm({ existing, initial, onCreated }: Props) {
   const update = useUpdateEvent(existing?.id ?? '');
   const uploadPhoto = useUploadEventPhoto();
   const { confirm, element: confirmElement } = useConfirm();
-  const { data: templates } = useEventDescriptionTemplates(!existing && canTagOfficial);
+  const { data: templates } = useEventDescriptionTemplates(
+    !existing && (canTagOfficial || canTagClub),
+  );
   const { data: officialDefaults } = useOfficialEventDefaults(canTagOfficial);
 
   const saving = create.isPending || update.isPending || uploadPhoto.isPending;
@@ -148,7 +151,7 @@ export function EventForm({ existing, initial, onCreated }: Props) {
     pendingOfficialPrefill.current = false;
     const extras = officialExtras(officialDefaults, true, values.cashappLink);
     setRsvpQuestions(extras.questions);
-    setValues((v) => withOfficialTemplate({ ...v, ...extras.values }, templates));
+    setValues((v) => withDescriptionTemplate({ ...v, ...extras.values }, templates));
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- once, when the defaults load
   }, [officialDefaults, templates]);
 
@@ -166,7 +169,7 @@ export function EventForm({ existing, initial, onCreated }: Props) {
     setValues((v) => {
       const next = { ...v, ...p };
       if (existing || (!('eventType' in p) && !('eventFormat' in p))) return next;
-      return withOfficialTemplate(next, templates);
+      return withDescriptionTemplate(next, templates);
     });
   }
 
