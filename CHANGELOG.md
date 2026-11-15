@@ -1,3 +1,55 @@
+# [0.239.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.238.0...v0.239.0) (2026-11-15)
+
+
+### Features
+
+* add how-to-show-up section to official and club event templates ([#2487](https://github.com/ProteinDeficientsAnonymous/pda/issues/2487)) ([9c748b4](https://github.com/ProteinDeficientsAnonymous/pda/commit/9c748b443063089dff07e99a3c27270f7972ff2b))
+
+# [0.238.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.237.0...v0.238.0) (2026-11-15)
+
+
+### Features
+
+* 2119 - rsvp deadlines with maybe reminders ([#2433](https://github.com/ProteinDeficientsAnonymous/pda/issues/2433)) ([f032e95](https://github.com/ProteinDeficientsAnonymous/pda/commit/f032e959086f68f74b841a5383bd1d66a201acd7)), closes [#2434](https://github.com/ProteinDeficientsAnonymous/pda/issues/2434) [#2435](https://github.com/ProteinDeficientsAnonymous/pda/issues/2435) [#2436](https://github.com/ProteinDeficientsAnonymous/pda/issues/2436) [#2437](https://github.com/ProteinDeficientsAnonymous/pda/issues/2437) [#2438](https://github.com/ProteinDeficientsAnonymous/pda/issues/2438) [#2475](https://github.com/ProteinDeficientsAnonymous/pda/issues/2475) [#2476](https://github.com/ProteinDeficientsAnonymous/pda/issues/2476) [#2119](https://github.com/ProteinDeficientsAnonymous/pda/issues/2119)
+
+# [0.237.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.236.2...v0.237.0) (2026-11-15)
+
+
+### Features
+
+* add how-to-show-up section to day-before rsvp reminder ([#2474](https://github.com/ProteinDeficientsAnonymous/pda/issues/2474)) ([6e2d0b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/6e2d0b23ee0423629b73b72a7421898fba67b453))
+
+## [0.236.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.236.1...v0.236.2) (2026-11-15)
+
+
+### Bug Fixes
+
+* **migrations:** run rsvp reminder migration after no-show migration ([#2440](https://github.com/ProteinDeficientsAnonymous/pda/issues/2440)) ([8826cc5](https://github.com/ProteinDeficientsAnonymous/pda/commit/8826cc5d62700f451011fa6d97ce7e0d8ba15e17))
+
+## [0.236.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.236.0...v0.236.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* only allow didn't-go marks on going rsvps ([#2439](https://github.com/ProteinDeficientsAnonymous/pda/issues/2439)) ([c2c0945](https://github.com/ProteinDeficientsAnonymous/pda/commit/c2c09458808dbd459c3c55107d49c6b5899397fd))
+
+# [0.236.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.235.0...v0.236.0) (2026-11-13)
+
+
+### Features
+
+* day-before rsvp reminder email template ([e2fa559](https://github.com/ProteinDeficientsAnonymous/pda/commit/e2fa5595e35f9841053a0ccebb926c8ac3a984a2))
+* day-before rsvp reminder email template ([#2134](https://github.com/ProteinDeficientsAnonymous/pda/issues/2134)) ([b34d2ae](https://github.com/ProteinDeficientsAnonymous/pda/commit/b34d2ae2f4f602f6d22de86151c1c83c3b9b04ea))
+* day-before rsvp reminder emails via daily cron ([#2135](https://github.com/ProteinDeficientsAnonymous/pda/issues/2135)) ([d0417a9](https://github.com/ProteinDeficientsAnonymous/pda/commit/d0417a94a8e20b2f3d2d9b735b9a4433704c49de))
+* email guests the day before an event to remind them of their rsvp ([db4894e](https://github.com/ProteinDeficientsAnonymous/pda/commit/db4894e4fd80573575aefe2cbd93add17b86082a))
+
+# [0.235.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.234.0...v0.235.0) (2026-11-13)
+
+
+### Features
+
+* 2118 - send no-show emails to members marked didn't go ([#2431](https://github.com/ProteinDeficientsAnonymous/pda/issues/2431)) ([d11f1c2](https://github.com/ProteinDeficientsAnonymous/pda/commit/d11f1c29b75a8d766aa3d48ca94284ecdfa473bc))
+
 # [0.234.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.233.8...v0.234.0) (2026-11-13)
 
 
