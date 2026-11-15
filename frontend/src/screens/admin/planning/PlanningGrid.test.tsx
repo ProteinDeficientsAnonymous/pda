@@ -15,7 +15,7 @@ const slot = (id: string, label: string, month: number, event?: string) => ({
   order: month,
   eventId: event ?? null,
   eventSlug: event ? 'jan-potluck' : null,
-  eventStatus: null,
+  eventStatus: event ? ('active' as const) : null,
 });
 
 const planner = (userId: string, name: string, extra: object = {}) => ({
@@ -88,10 +88,49 @@ describe('PlanningGrid', () => {
       'href',
       '/events/jan-potluck',
     );
-    expect(within(january).getByText(/scheduled/)).toBeInTheDocument();
+    expect(within(january).getByText(/scheduled ·/)).toBeInTheDocument();
     expect(
       within(screen.getByRole('row', { name: /february/ })).getByText('available'),
     ).toBeVisible();
+  });
+
+  it('offers create event only on slots with a committed planner', () => {
+    grid = {
+      year: 2999,
+      slots: [slot('s1', 'january', 1), slot('s2', 'february', 2)],
+      planners: [planner('u1', 'ada'), planner('u2', 'bo')],
+      assignments: [
+        { id: 'a1', slotId: 's1', userId: 'u1', status: 'committed' },
+        { id: 'a2', slotId: 's2', userId: 'u2', status: 'proposed' },
+      ],
+    };
+    renderWithProviders(<PlanningGrid year={2999} />);
+    const january = screen.getByRole('row', { name: /january/ });
+    expect(within(january).getByRole('link', { name: 'create event' })).toBeInTheDocument();
+    const february = screen.getByRole('row', { name: /february/ });
+    expect(within(february).queryByRole('link')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['only declines', ['declined'], true],
+    ['a decline and a proposal', ['declined', 'proposed'], false],
+    ['a decline and a commit', ['declined', 'committed'], false],
+    ['no assignments', [], false],
+  ] as const)('flags needs a planner with %s: %s', (_name, statuses, flagged) => {
+    grid = {
+      year: 2999,
+      slots: [slot('s1', 'january', 1)],
+      planners: [planner('u1', 'ada'), planner('u2', 'bo')],
+      assignments: statuses.map((status, i) => ({
+        id: `a${String(i)}`,
+        slotId: 's1',
+        userId: `u${String(i + 1)}`,
+        status,
+      })),
+    };
+    renderWithProviders(<PlanningGrid year={2999} />);
+    const january = screen.getByRole('row', { name: /january/ });
+    expect(within(january).queryByText('needs a planner') !== null).toBe(flagged);
   });
 
   it('shows the empty state without planners', () => {

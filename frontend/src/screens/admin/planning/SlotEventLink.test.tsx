@@ -1,10 +1,7 @@
 import { screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import type { PlanningSlot } from '@/api/planning';
-import { useAuthStore } from '@/auth/store';
-import { Permission } from '@/models/permissions';
-import { makeUser, makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { SlotEventLink } from './SlotEventLink';
@@ -25,20 +22,18 @@ function renderLink(s: PlanningSlot, canCreate = true) {
   renderWithProviders(<SlotEventLink slot={s} year={2027} canCreate={canCreate} />);
 }
 
-beforeEach(() => {
-  useAuthStore.setState({
-    user: makeUserWithPermissions([Permission.TagOfficialEvent]),
-    status: 'authed',
-  });
-});
-
 describe('SlotEventLink', () => {
-  it('links to the event when the slot has one', () => {
-    renderLink(slot({ eventId: 'e1', eventSlug: 'march-walk' }), false);
+  it.each([
+    ['active', 'scheduled'],
+    ['draft', 'draft'],
+    ['cancelled', 'cancelled'],
+  ] as const)('links a %s event and says %s', (eventStatus, text) => {
+    renderLink(slot({ eventId: 'e1', eventSlug: 'march-walk', eventStatus }), false);
     expect(screen.getByRole('link', { name: 'view event' })).toHaveAttribute(
       'href',
       '/events/march-walk',
     );
+    expect(screen.getByText(`${text} ·`, { exact: false })).toBeInTheDocument();
   });
 
   it('links to the create form for the slot when there is no event', () => {
@@ -51,12 +46,6 @@ describe('SlotEventLink', () => {
 
   it('shows nothing when the viewer cannot create it', () => {
     renderLink(slot(), false);
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
-  });
-
-  it('shows nothing without the official-event permission', () => {
-    useAuthStore.setState({ user: makeUser(), status: 'authed' });
-    renderLink(slot());
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
 });

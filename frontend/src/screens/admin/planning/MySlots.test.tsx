@@ -60,14 +60,14 @@ describe('MySlots', () => {
     state.data = [mine('a1', 'proposed')];
     renderWithProviders(<MySlots />);
     const section = screen.getByRole('region', { name: 'waiting on you' });
-    await userEvent.click(within(section).getByRole('button', { name: "i'm in" }));
+    await userEvent.click(within(section).getByRole('button', { name: "i'm in for label a1" }));
     expect(commit).toHaveBeenCalledWith('a1');
   });
 
   it('declines a proposed slot without confirming', async () => {
     state.data = [mine('a1', 'proposed')];
     renderWithProviders(<MySlots />);
-    await userEvent.click(screen.getByRole('button', { name: "can't do it" }));
+    await userEvent.click(screen.getByRole('button', { name: "can't do label a1" }));
     expect(decline).toHaveBeenCalledWith('a1');
   });
 
@@ -80,7 +80,7 @@ describe('MySlots', () => {
           { name: 'bea', status: 'committed' },
           { name: 'cy', status: 'proposed' },
         ],
-        slot: { ...row.slot, eventId: 'e1', eventSlug: 'jan-potluck' },
+        slot: { ...row.slot, eventId: 'e1', eventSlug: 'jan-potluck', eventStatus: 'draft' },
       },
     ];
     renderWithProviders(<MySlots />);
@@ -91,19 +91,32 @@ describe('MySlots', () => {
       'href',
       '/events/jan-potluck',
     );
+    expect(within(section).getByText(/draft ·/)).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'waiting on you' })).not.toBeInTheDocument();
+  });
+
+  it('offers create event only on committed rows', () => {
+    state.data = [mine('a1', 'proposed'), mine('a2', 'committed')];
+    renderWithProviders(<MySlots />);
+    const waiting = screen.getByRole('region', { name: 'waiting on you' });
+    expect(within(waiting).queryByRole('link')).not.toBeInTheDocument();
+    const yours = screen.getByRole('region', { name: 'your slots' });
+    expect(within(yours).getByRole('link', { name: 'create event' })).toHaveAttribute(
+      'href',
+      '/events/add?planningSlot=slot-a2&year=2027',
+    );
   });
 
   it('backs out only after confirming', async () => {
     state.data = [mine('a2', 'committed')];
     renderWithProviders(<MySlots />);
-    await userEvent.click(screen.getByRole('button', { name: 'back out' }));
+    await userEvent.click(screen.getByRole('button', { name: 'back out of label a2' }));
     expect(
       screen.getByText('back out of label a2? the coordinator will be told'),
     ).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'cancel' }));
     expect(decline).not.toHaveBeenCalled();
-    await userEvent.click(screen.getByRole('button', { name: 'back out' }));
+    await userEvent.click(screen.getByRole('button', { name: 'back out of label a2' }));
     await userEvent.click(screen.getByRole('button', { name: 'yes, back out' }));
     expect(decline).toHaveBeenCalledWith('a2');
   });
@@ -123,7 +136,7 @@ describe('MySlots', () => {
     commit.mockRejectedValue(new Error('nope'));
     state.data = [mine('a1', 'proposed')];
     renderWithProviders(<MySlots />);
-    await userEvent.click(screen.getByRole('button', { name: "i'm in" }));
+    await userEvent.click(screen.getByRole('button', { name: "i'm in for label a1" }));
     expect(toastError).toHaveBeenCalledWith("couldn't save your response — try again");
   });
 
