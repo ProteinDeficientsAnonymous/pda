@@ -8,6 +8,7 @@ from ninja.responses import Status
 
 from community.models import PlanningSlot, PlanningYear
 from community.planning._access import require_manage, require_view
+from community.planning._shared import get_slot_or_404, get_year_or_404, slot_out
 from community.planning.schemas import (
     PlanningSlotIn,
     PlanningSlotOut,
@@ -21,36 +22,8 @@ from community.validation import Code, raise_validation
 router = Router()
 
 
-def get_year_or_404(year: int) -> PlanningYear:
-    try:
-        return PlanningYear.objects.get(year=year)
-    except PlanningYear.DoesNotExist:
-        raise_validation(Code.Planning.YEAR_NOT_FOUND, status_code=404)
-
-
-def get_slot_or_404(slot_id: UUID) -> PlanningSlot:
-    try:
-        return PlanningSlot.objects.select_related("event").get(pk=slot_id)
-    except PlanningSlot.DoesNotExist:
-        raise_validation(Code.Planning.SLOT_NOT_FOUND, status_code=404)
-
-
 def _year_out(planning_year: PlanningYear) -> PlanningYearOut:
     return PlanningYearOut(id=str(planning_year.id), year=planning_year.year)
-
-
-def slot_out(slot: PlanningSlot) -> PlanningSlotOut:
-    event = slot.live_event
-    return PlanningSlotOut(
-        id=str(slot.id),
-        label=slot.label,
-        month=slot.month,
-        kind=slot.kind,
-        order=slot.order,
-        event_id=str(event.id) if event else None,
-        event_slug=event.slug if event else None,
-        event_status=event.status if event else None,
-    )
 
 
 @router.get(

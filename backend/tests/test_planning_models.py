@@ -17,11 +17,6 @@ MONTHS = [
 ]  # fmt: skip
 
 
-@pytest.fixture
-def year(db) -> PlanningYear:
-    return PlanningYear.create_with_default_slots(2027)
-
-
 @pytest.mark.django_db
 class TestPlanningYear:
     def test_default_slots(self, year):
