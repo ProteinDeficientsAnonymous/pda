@@ -3541,6 +3541,8 @@ export interface components {
         };
         /** EventDescriptionTemplatesOut */
         EventDescriptionTemplatesOut: {
+            /** Club */
+            club: string;
             /** Official Non Walk */
             official_non_walk: string;
             /** Official Walk */
@@ -3696,6 +3698,8 @@ export interface components {
              * @default
              */
             price: string;
+            /** Rsvp Deadline */
+            rsvp_deadline?: string | null;
             /**
              * Rsvp Enabled
              * @default false
@@ -4043,6 +4047,8 @@ export interface components {
              * @default
              */
             price: string;
+            /** Rsvp Deadline */
+            rsvp_deadline?: string | null;
             /**
              * Rsvp Enabled
              * @default false
@@ -4138,6 +4144,8 @@ export interface components {
             partiful_link?: string | null;
             /** Price */
             price?: string | null;
+            /** Rsvp Deadline */
+            rsvp_deadline?: string | null;
             /** Rsvp Enabled */
             rsvp_enabled?: boolean | null;
             /** Slug */
