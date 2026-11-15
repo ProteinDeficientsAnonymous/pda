@@ -316,7 +316,7 @@ def apply_rsvp_in_transaction(event_id, user, rsvp: RsvpApply) -> tuple[str, lis
     existing = EventRSVP.objects.filter(event=event, user=user).first()
     previous_status = existing.status if existing is not None else None
     if not rsvp.skip_host_gates:
-        enforce_rsvp_deadline(user, event, existing, rsvp.status)
+        enforce_rsvp_deadline(user, event, existing, rsvp.status, rsvp.has_plus_one)
 
     # Gate on the *requested* status, not the post-capacity one — else it slips through unconfirmed.
     gate_exempt = rsvp.paid_confirmed or rsvp.skip_host_gates

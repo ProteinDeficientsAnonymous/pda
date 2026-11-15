@@ -32,10 +32,10 @@ def closed_event(test_user):
     return _event(test_user, timedelta(hours=-1))
 
 
-def _post_rsvp(api_client, event, user, status):
+def _post_rsvp(api_client, event, user, status, *, has_plus_one=False):
     return api_client.post(
         _rsvp_url(event),
-        {"status": status},
+        {"status": status, "has_plus_one": has_plus_one},
         content_type="application/json",
         **auth_headers_for(user),
     )
@@ -81,9 +81,36 @@ class TestMemberDeadline:
         assert response.status_code == 200
         assert EventRSVP.objects.get(event=closed_event, user=guest).status == RSVPStatus.CANT_GO
 
+    @pytest.mark.parametrize(
+        "case",
+        [pytest.param((True, False, 200), id="drop"), pytest.param((False, True, 400), id="add")],
+    )
+    def test_plus_one_can_only_be_dropped(self, api_client, closed_event, guest, case):
+        had, wants, code = case
+        closed_event.allow_plus_ones = True
+        closed_event.save(update_fields=["allow_plus_ones"])
+        make_rsvp(closed_event, guest, RSVPStatus.ATTENDING, has_plus_one=had)
+        response = _post_rsvp(
+            api_client, closed_event, guest, RSVPStatus.ATTENDING, has_plus_one=wants
+        )
+        assert response.status_code == code
+        rsvp = EventRSVP.objects.get(event=closed_event, user=guest)
+        assert (rsvp.status, rsvp.has_plus_one) == (RSVPStatus.ATTENDING, False)
+
     def test_host_is_exempt(self, api_client, closed_event, test_user):
         response = _post_rsvp(api_client, closed_event, test_user, RSVPStatus.ATTENDING)
         assert response.status_code == 200
+
+    def test_host_can_still_change_a_guest(self, api_client, closed_event, test_user, guest):
+        make_rsvp(closed_event, guest, RSVPStatus.MAYBE)
+        response = api_client.post(
+            f"/api/community/events/{closed_event.id}/rsvps/{guest.pk}/rsvp/",
+            {"status": RSVPStatus.ATTENDING},
+            content_type="application/json",
+            **auth_headers_for(test_user),
+        )
+        assert response.status_code == 200
+        assert EventRSVP.objects.get(event=closed_event, user=guest).status == RSVPStatus.ATTENDING
 
     def test_delete_rejected_for_maybe(self, api_client, closed_event, guest):
         make_rsvp(closed_event, guest, RSVPStatus.MAYBE)
