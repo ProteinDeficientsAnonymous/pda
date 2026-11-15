@@ -29,9 +29,9 @@ We'll share our location in the WhatsApp community when we start. Please DM a ho
 
 The price for this event is your share of the group order and will not be returned to you. No refunds will be issued for cancellations within 5 days of the event. Any leftover money goes towards PDA ops, a fund to assist low-income friends, and a coffee for our event planners / facilitators.
 
-Disclaimer: your physical safety is your responsibility. We will do all we can to be safe, but we are not liable for any injury or harm that comes to you. It's your responsibility to know your physical limitations and communicate them as needed.
-
 {HOW_TO_SHOW_UP}
+
+Disclaimer: your physical safety is your responsibility. We will do all we can to be safe, but we are not liable for any injury or harm that comes to you. It's your responsibility to know your physical limitations and communicate them as needed.
 
 We take group photos at events and share them on Instagram. If you don't want your photo shared, please let us know in advance or during the event 💞🌱
 
