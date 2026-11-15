@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
-from django.conf import settings
 from notifications.email_helpers import (
     MemberRsvpEmailDetails,
     RsvpEmailDetails,
@@ -18,13 +17,14 @@ from community.models import Event, RSVPStatus
 from community.rsvps.public_shared import (
     collect_event_links,
     email_details,
+    event_page_url,
     log_email_failure,
     unpaid_user_ids,
 )
 from community.shared import logger
 
 
-def _member_email_ids(user_ids: list[str]) -> set[str]:
+def member_email_ids(user_ids: list[str]) -> set[str]:
     """Ids of users who get member emails; a manage link only serves public rsvpers."""
     users = User.objects.filter(can_sign_in_q(), pk__in=user_ids)
     return {str(pk) for pk in users.values_list("pk", flat=True)}
@@ -38,7 +38,7 @@ def _member_email_details(event: Event, user: User) -> MemberRsvpEmailDetails:
         event_when=format_event_when(event),
         event_location=event.location,
         event_links=collect_event_links(event),
-        event_url=f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.id}",
+        event_url=event_page_url(event),
     )
 
 
@@ -91,7 +91,7 @@ def email_host_set_rsvp_status(
     """Email a guest "you're in" when a host sets them to attending. Best-effort; never raises."""
     if status == previous_status or status != RSVPStatus.ATTENDING or not user.email:
         return
-    if str(user.pk) in _member_email_ids([str(user.pk)]):
+    if str(user.pk) in member_email_ids([str(user.pk)]):
         _send_member_email(request, event, user, "attending")
         return
     _email_public_rsvper(
@@ -121,12 +121,12 @@ def email_promoted_users(request, event: Event, promoted_user_ids: list[str]) ->
         return
     promoted = User.objects.filter(id__in=promoted_user_ids).exclude(email__isnull=True)
     unpaid = unpaid_user_ids(event, promoted_user_ids)
-    member_email_ids = _member_email_ids(promoted_user_ids)
+    member_ids = member_email_ids(promoted_user_ids)
     for user in promoted:
         if not user.email:
             continue
         payment_pending = str(user.id) in unpaid
-        if str(user.id) in member_email_ids:
+        if str(user.id) in member_ids:
             _send_member_email(request, event, user, "promoted", payment_pending)
         else:
             _email_promoted_public_rsvper(request, event, user, payment_pending)
