@@ -1,3 +1,10 @@
+# [0.237.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.236.2...v0.237.0) (2026-11-15)
+
+
+### Features
+
+* add how-to-show-up section to day-before rsvp reminder ([#2474](https://github.com/ProteinDeficientsAnonymous/pda/issues/2474)) ([6e2d0b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/6e2d0b23ee0423629b73b72a7421898fba67b453))
+
 ## [0.236.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.236.1...v0.236.2) (2026-11-15)
 
 
