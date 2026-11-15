@@ -8,8 +8,8 @@ export function hasTemplatePlaceholders(description: string): boolean {
   return PLACEHOLDER_PATTERN.test(description);
 }
 
-// Fills (or swaps/clears) the description from the official templates, but only while the planner hasn't edited it.
-export function withOfficialTemplate(
+// Fills (or swaps/clears) the description from the official/club templates, but only while the planner hasn't edited it.
+export function withDescriptionTemplate(
   values: EventFormValues,
   templates: EventDescriptionTemplates | undefined,
 ): EventFormValues {
@@ -18,15 +18,21 @@ export function withOfficialTemplate(
   const untouched =
     description.trim() === '' ||
     description === templates.officialWalk ||
-    description === templates.officialNonWalk;
+    description === templates.officialNonWalk ||
+    description === templates.club;
   if (!untouched) return values;
 
-  if (values.eventType !== EventType.Official) {
+  const template = templateFor(values, templates);
+  if (template === null) {
     return description === '' ? values : { ...values, description: '' };
   }
-  return {
-    ...values,
-    description:
-      values.eventFormat === EventFormat.Walk ? templates.officialWalk : templates.officialNonWalk,
-  };
+  return { ...values, description: template };
+}
+
+function templateFor(values: EventFormValues, templates: EventDescriptionTemplates): string | null {
+  if (values.eventType === EventType.Club) return templates.club;
+  if (values.eventType !== EventType.Official) return null;
+  return values.eventFormat === EventFormat.Walk
+    ? templates.officialWalk
+    : templates.officialNonWalk;
 }
