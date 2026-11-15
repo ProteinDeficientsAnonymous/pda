@@ -159,7 +159,9 @@ describe('PublicRsvpSection — rsvp deadline', () => {
     expect(screen.queryByRole('heading', { name: 'rsvp' })).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent(/new rsvps aren't being taken/);
     expect(
-      screen.getByText(/already going\? sign in, or use the link in your confirmation email/),
+      screen.getByText(
+        /already going\? sign in, or use the link in your confirmation email, to change your rsvp/,
+      ),
     ).toBeInTheDocument();
   });
 

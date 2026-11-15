@@ -28,7 +28,7 @@ export function PublicRsvpSection({ event }: Props) {
         <CostSection event={event} />
         <RsvpDeadlineNote event={event} closed />
         <p className="text-foreground-secondary text-center text-sm">
-          already going? sign in, or use the link in your confirmation email, to switch to can't go
+          already going? sign in, or use the link in your confirmation email, to change your rsvp
         </p>
       </div>
     );
