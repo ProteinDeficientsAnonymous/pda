@@ -26,7 +26,6 @@ import { useConfirm } from '@/components/ui/useConfirm';
 import { type Event, eventHostCount, eventPath, EventType, isOfficialOrClub } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
-import { fromCashAppUrl } from '@/utils/paymentHandle';
 
 import { EventHostSection } from '../EventHostSection';
 import { eventMemberSectionFlags } from '../eventMemberFlags';
@@ -40,11 +39,14 @@ import { EventFormQuestions } from './EventFormQuestions';
 import { EventFormRsvp } from './EventFormRsvp';
 import { EventFormSlug } from './EventFormSlug';
 import { EventFormTags } from './EventFormTags';
-import { withOfficialQuestions } from './officialQuestions';
+import { officialExtras } from './officialQuestions';
+import { typeDefaults } from './typeDefaults';
 import { validateEventForm } from './validateEventForm';
 
 interface Props {
   existing?: Event;
+  initial?: Partial<EventFormValues>;
+  onCreated?: (event: Event) => Promise<void>;
 }
 
 // Field → section map. Drives which CollapsibleCard opens on validation
@@ -83,16 +85,18 @@ function hasAnyError(
   return fields.some((k) => errors[k]);
 }
 
-export function EventForm({ existing }: Props) {
+export function EventForm({ existing, initial, onCreated }: Props) {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const canTagOfficial = hasPermission(user, Permission.TagOfficialEvent);
   const canTagClub = hasPermission(user, Permission.TagClubEvent);
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  const [values, setValues] = useState<EventFormValues>(() =>
-    existing ? eventToFormValues(existing) : emptyEventFormValues(),
-  );
+  const [values, setValues] = useState<EventFormValues>(() => {
+    if (existing) return eventToFormValues(existing);
+    const base = { ...emptyEventFormValues(), ...initial };
+    return { ...base, ...typeDefaults(base.eventType) };
+  });
   const [coHosts, setCoHosts] = useState<MemberSearchResult[]>([]);
   // On edit, pre-run validation so issues in the loaded values (e.g. a stale
   // draft whose start is now in the past) are visible immediately instead of
@@ -141,13 +145,25 @@ export function EventForm({ existing }: Props) {
   const saving = create.isPending || update.isPending || uploadPhoto.isPending;
   const isDraft = values.status === 'draft';
 
+  const pendingOfficialPrefill = useRef(!existing && initial?.eventType === EventType.Official);
+  useEffect(() => {
+    if (!pendingOfficialPrefill.current || !officialDefaults || !templates) return;
+    pendingOfficialPrefill.current = false;
+    const extras = officialExtras(officialDefaults, true, values.cashappLink);
+    setRsvpQuestions(extras.questions);
+    setValues((v) => withDescriptionTemplate({ ...v, ...extras.values }, templates));
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- once, when the defaults load
+  }, [officialDefaults, templates]);
+
   function patch(input: Partial<EventFormValues>) {
     let p = input;
-    if (p.eventType !== undefined && p.eventType !== values.eventType && officialDefaults) {
-      const official = p.eventType === EventType.Official;
-      setRsvpQuestions((qs) => withOfficialQuestions(qs, official, officialDefaults.rsvpQuestions));
-      if (official && !values.cashappLink.trim()) {
-        p = { ...p, cashappLink: fromCashAppUrl(officialDefaults.cashappLink) };
+    if (p.eventType !== undefined && p.eventType !== values.eventType) {
+      pendingOfficialPrefill.current = false;
+      if (officialDefaults) {
+        const official = p.eventType === EventType.Official;
+        const extras = officialExtras(officialDefaults, official, values.cashappLink);
+        setRsvpQuestions(extras.questions);
+        p = { ...p, ...extras.values };
       }
     }
     setValues((v) => {
@@ -255,6 +271,7 @@ export function EventForm({ existing }: Props) {
           toast.error("event saved, but couldn't create the poll — try from the event page");
         }
       }
+      await onCreated?.(created);
       if (nextStatus === 'draft') toast.success('saved draft');
       void navigate(eventPath(created));
     } catch (err) {

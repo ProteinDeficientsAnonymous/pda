@@ -316,6 +316,19 @@ export const Code = {
     RequestAlreadyUsed: 'connect.request_already_used',
     AppNotFound: 'connect.app_not_found',
   },
+  Planning: {
+    YearExists: 'planning.year_exists',
+    YearNotFound: 'planning.year_not_found',
+    SlotNotFound: 'planning.slot_not_found',
+    SlotNotInYear: 'planning.slot_not_in_year',
+    NotAPlanner: 'planning.not_a_planner',
+    AlreadyAssigned: 'planning.already_assigned',
+    AssignmentNotFound: 'planning.assignment_not_found',
+    NotPending: 'planning.not_pending',
+    NotEventHost: 'planning.not_event_host',
+    SlotHasEvent: 'planning.slot_has_event',
+    EventAlreadyLinked: 'planning.event_already_linked',
+  },
 } as const;
 
 export type ValidationCode =
@@ -552,7 +565,18 @@ export type ValidationCode =
   | 'connect.request_not_found'
   | 'connect.request_expired'
   | 'connect.request_already_used'
-  | 'connect.app_not_found';
+  | 'connect.app_not_found'
+  | 'planning.year_exists'
+  | 'planning.year_not_found'
+  | 'planning.slot_not_found'
+  | 'planning.slot_not_in_year'
+  | 'planning.not_a_planner'
+  | 'planning.already_assigned'
+  | 'planning.assignment_not_found'
+  | 'planning.not_pending'
+  | 'planning.not_event_host'
+  | 'planning.slot_has_event'
+  | 'planning.event_already_linked';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -789,4 +813,15 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'connect.request_expired': [],
   'connect.request_already_used': [],
   'connect.app_not_found': [],
+  'planning.year_exists': [],
+  'planning.year_not_found': [],
+  'planning.slot_not_found': [],
+  'planning.slot_not_in_year': [],
+  'planning.not_a_planner': [],
+  'planning.already_assigned': [],
+  'planning.assignment_not_found': [],
+  'planning.not_pending': [],
+  'planning.not_event_host': [],
+  'planning.slot_has_event': [],
+  'planning.event_already_linked': [],
 };
