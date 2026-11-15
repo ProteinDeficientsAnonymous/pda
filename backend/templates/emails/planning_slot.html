@@ -3,10 +3,10 @@
 <body style="margin: 0; padding: 24px; background: #f5f5f3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #222;">
   <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 32px;">
     <p style="margin: 0 0 16px;">hi{% if display_name %} {{ display_name|lower }}{% endif %} —</p>
-    <p style="margin: 0 0 24px;">you've been asked to plan <strong>{{ slot_label|lower }}</strong> on pda.</p>
-    <p style="margin: 0 0 24px; color: #666; font-size: 13px;">let the coordinators know whether you're in.</p>
+    <p style="margin: 0 0 24px;">{% if variant == "upcoming" %}<strong>{{ slot_label|lower }}</strong> is coming up and you're planning it.{% else %}you've been asked to plan <strong>{{ slot_label|lower }}</strong> on pda.{% endif %}</p>
+    <p style="margin: 0 0 24px; color: #666; font-size: 13px;">{% if variant == "upcoming" %}create the event from the planning page so it's on the calendar.{% else %}let the coordinators know whether you're in.{% endif %}</p>
     <p style="margin: 0 0 24px;">
-      <a href="{{ planning_url }}" style="display: inline-block; background: #3c6939; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500;">respond</a>
+      <a href="{{ planning_url }}" style="display: inline-block; background: #3c6939; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500;">{% if variant == "upcoming" %}create the event{% else %}respond{% endif %}</a>
     </p>
     <p style="margin: 0 0 8px; font-size: 13px; color: #666;">or paste this into your browser:</p>
     <p style="margin: 0; font-size: 13px; word-break: break-all;"><a href="{{ planning_url }}" style="color: #3c6939;">{{ planning_url }}</a></p>
