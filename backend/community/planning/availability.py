@@ -6,8 +6,8 @@ from ninja.responses import Status
 
 from community.models import PlanningAvailability
 from community.planning._access import require_view
+from community.planning._shared import get_year_or_404
 from community.planning.schemas import AvailabilityIn, AvailabilityOut
-from community.planning.years import get_year_or_404
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
 
