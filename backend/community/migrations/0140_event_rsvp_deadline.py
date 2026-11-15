@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0137_backfill_rsvp_cancel_reason"),
+        ("community", "0139_event_rsvp_reminder_sent_at"),
     ]
 
     operations = [
