@@ -102,6 +102,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'rsvps are closed for cancelled events';
     case Code.Event.RsvpsClosedPast:
       return 'rsvps are closed for past events';
+    case Code.Event.RsvpsClosedDeadline:
+      return "the rsvp deadline has passed — going guests can only switch to can't go or drop their +1";
+    case Code.Event.RsvpDeadlineAfterStart:
+      return 'the rsvp deadline must be before the event starts';
     case Code.Event.NoPlusOneSpots:
       return 'no spots available for a +1';
     case Code.Event.RsvpNotFound:
@@ -118,6 +122,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'check-in opens an hour before the event starts';
     case Code.Event.NoPlusOneToCheckIn:
       return "this guest doesn't have a +1 to check in";
+    case Code.Event.DidntGoRequiresGoing:
+      return "only guests who rsvp'd going can be marked didn't attend";
     case Code.Event.BlastInvalidAudience:
       return 'that audience choice is not valid';
     case Code.Event.BlastNoRecipients:
