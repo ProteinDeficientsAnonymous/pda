@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 
-from django.conf import settings
 from django.db.models import QuerySet
 from django.utils import timezone
 from notifications.email_helpers import format_eastern_datetime
@@ -12,6 +11,7 @@ from notifications.rsvp_deadline_email import (
 from users.models import HAS_EMAIL, SIGN_IN_STATUSES, MembershipStatus, PublicRsvpToken, User
 
 from community.models import Event, EventRSVP, EventStatus, RSVPStatus
+from community.rsvps.public_shared import event_page_url, manage_rsvp_url
 
 REMINDER_LEAD = timedelta(hours=24)
 
@@ -51,9 +51,8 @@ def _claim(rsvp: EventRSVP, now: datetime) -> bool:
 
 def _rsvp_url(rsvp: EventRSVP) -> str:
     if rsvp.user.membership_status in SIGN_IN_STATUSES:
-        return f"{settings.FRONTEND_BASE_URL}/events/{rsvp.event.slug or rsvp.event.pk}"
-    token = PublicRsvpToken.issue_or_extend(rsvp.user)
-    return f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
+        return event_page_url(rsvp.event)
+    return manage_rsvp_url(PublicRsvpToken.issue_or_extend(rsvp.user).token)
 
 
 def _send(sender: EmailSender, rsvp: EventRSVP, deadline: datetime) -> bool:

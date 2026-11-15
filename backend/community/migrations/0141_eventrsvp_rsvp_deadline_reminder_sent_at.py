@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0138_event_rsvp_deadline"),
+        ("community", "0140_event_rsvp_deadline"),
     ]
 
     operations = [
