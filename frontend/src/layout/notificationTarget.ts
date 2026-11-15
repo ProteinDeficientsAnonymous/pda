@@ -33,6 +33,7 @@ export function notificationTarget(n: AppNotification): string | null {
     case NotificationType.PlanningWithdrawn:
     case NotificationType.PlanningCommitted:
     case NotificationType.PlanningDeclined:
+    case NotificationType.PlanningUpcoming:
       return '/admin/planning';
     case NotificationType.MagicLinkRequest:
       return n.relatedUserId ? `/admin/members/${n.relatedUserId}` : '/admin/members';

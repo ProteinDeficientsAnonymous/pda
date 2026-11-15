@@ -27,3 +27,24 @@ export function cellState(
   const planner = grid.planners.find((p) => p.userId === userId);
   return planner?.availableSlotIds.includes(slotId) ? 'available' : 'blank';
 }
+
+function slotStatuses(grid: PlanningGrid, slotId: string): Assignment['status'][] {
+  return grid.assignments.filter((a) => a.slotId === slotId).map((a) => a.status);
+}
+
+export function slotHasCommitted(grid: PlanningGrid, slotId: string): boolean {
+  return slotStatuses(grid, slotId).includes('committed');
+}
+
+export function slotNeedsPlanner(grid: PlanningGrid, slotId: string): boolean {
+  const statuses = slotStatuses(grid, slotId);
+  return (
+    statuses.includes('declined') && !statuses.some((s) => s === 'proposed' || s === 'committed')
+  );
+}
+
+const WITHDRAWABLE: CellState[] = ['committed', 'proposed', 'no_answer'];
+
+export function isWithdrawable(state: CellState): boolean {
+  return WITHDRAWABLE.includes(state);
+}

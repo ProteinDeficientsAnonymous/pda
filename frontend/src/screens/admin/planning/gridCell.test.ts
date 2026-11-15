@@ -1,19 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Assignment, PlanningGrid } from '@/api/planning';
+import { makeSlot } from '@/test/fixtures';
 
-import { cellState, findAssignment } from './gridCell';
+import { type CellState, cellState, findAssignment, isWithdrawable } from './gridCell';
 
-const slot = (id: string, month: number) => ({
-  id,
-  label: id,
-  month,
-  kind: 'monthly' as const,
-  order: month,
-  eventId: null,
-  eventSlug: null,
-  eventStatus: null,
-});
+const slot = (id: string, month: number) => makeSlot({ id, label: id, month, order: month });
 
 function makeGrid(
   assignments: Pick<Assignment, 'status'>[] = [],
@@ -86,5 +78,18 @@ describe('cellState', () => {
     const grid = makeGrid([{ status: 'proposed' }]);
     expect(findAssignment(grid, 's1', 'u1')?.id).toBe('a0');
     expect(findAssignment(grid, 's1', 'u2')).toBeUndefined();
+  });
+});
+
+describe('isWithdrawable', () => {
+  it.each<[CellState, boolean]>([
+    ['committed', true],
+    ['proposed', true],
+    ['no_answer', true],
+    ['declined', false],
+    ['available', false],
+    ['blank', false],
+  ])('%s -> %s', (state, expected) => {
+    expect(isWithdrawable(state)).toBe(expected);
   });
 });
