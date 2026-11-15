@@ -5,6 +5,7 @@ from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.utils import timezone
 
 from community.cohosts.helpers import update_co_hosts
+from community.events._field_validators import check_rsvp_deadline
 from community.events.helpers import (
     can_edit_event,
     enforce_type_tag_permission,
@@ -60,6 +61,16 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
     # the 6-hour grace window (enforced client-side).
     check_past = "start_datetime" in updates or event.is_draft
     _validate_event_datetimes(effective_start, effective_end, effective_tbd, check_past=check_past)
+
+
+def _validate_rsvp_deadline_update(event: Event, updates: dict) -> None:
+    if not any(f in updates for f in ("rsvp_deadline", "start_datetime", "datetime_tbd")):
+        return
+    check_rsvp_deadline(
+        updates.get("rsvp_deadline", event.rsvp_deadline),
+        updates.get("start_datetime", event.start_datetime),
+        updates.get("datetime_tbd", event.datetime_tbd),
+    )
 
 
 def promote_if_capacity_increased(
@@ -137,6 +148,7 @@ def apply_field_updates(request, event: Event, event_id: UUID, updates: dict) ->
         # Lock the row so a concurrent capacity-based promotion can't race this edit.
         Event.objects.select_for_update().get(id=event_id)
     _validate_update_payload(request, event, event_id, updates)
+    _validate_rsvp_deadline_update(event, updates)
     _lock_typed_plus_ones(event, updates)
     _resolve_event_format(event, updates)
     co_host_ids = updates.pop("co_host_ids", None)
