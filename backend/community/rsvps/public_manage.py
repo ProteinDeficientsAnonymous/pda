@@ -17,6 +17,7 @@ from community.events.schemas import EventOut, RsvpAnswer
 from community.field_limits import FieldLimit
 from community.models import Event, EventRSVP, RSVPStatus
 from community.models.event import public_rsvp_eligible_q
+from community.rsvps._deadline import enforce_rsvp_deadline
 from community.rsvps.member import (
     RsvpApply,
     apply_rsvp_in_transaction,
@@ -231,6 +232,7 @@ def delete_my_rsvp(request, event_id, token: str = ""):
         rsvp = EventRSVP.objects.filter(event=event, user=user).first()
         if not rsvp:
             raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
+        enforce_rsvp_deadline(user, event, rsvp, RSVPStatus.CANT_GO)
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.delete()
         if was_attending:
