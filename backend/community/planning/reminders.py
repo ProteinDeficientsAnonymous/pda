@@ -5,7 +5,8 @@ from uuid import UUID
 from django.conf import settings
 from django.db import transaction
 from django.db.models import F, Q, QuerySet
-from notifications.email_helpers import PlanningEmailVariant
+from notifications.planning_email import PlanningEmailVariant
+from users.models import HAS_EMAIL
 
 from community.models import AssignmentStatus, SlotAssignment
 from community.planning._notify import email_planner, notify_upcoming
@@ -31,7 +32,7 @@ def _due_reminders(now: datetime) -> QuerySet[SlotAssignment]:
         SlotAssignment.objects.filter(
             _month_not_started(now),
             status=AssignmentStatus.PROPOSED,
-            user__in=planner_users().exclude(email=""),
+            user__in=planner_users().filter(HAS_EMAIL),
         )
         .filter(
             Q(last_reminded_at__isnull=True, proposed_at__lte=cutoff)

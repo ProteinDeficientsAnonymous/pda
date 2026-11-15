@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   type BiannualInterest,
   useMyAvailability,
@@ -12,6 +11,8 @@ import { Button } from '@/components/ui/Button';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TextField } from '@/components/ui/TextField';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+
+import { toastOnError } from './toastOnError';
 
 const INTEREST_OPTIONS: { value: BiannualInterest; label: string }[] = [
   { value: 'yes', label: 'yes' },
@@ -58,15 +59,13 @@ function FormFields({ year, slots, initial }: { year: number; slots: Slots; init
     e.preventDefault();
     const monthlyCount = parseCount(count);
     if (!interest || monthlyCount === null) return;
-    try {
-      await save.mutateAsync({
-        slotIds: slots.filter((s) => slotIds.has(s.id)).map((s) => s.id),
-        biannualInterest: interest,
-        monthlyCount,
-      });
+    const saving = save.mutateAsync({
+      slotIds: slots.filter((s) => slotIds.has(s.id)).map((s) => s.id),
+      biannualInterest: interest,
+      monthlyCount,
+    });
+    if (await toastOnError(saving, "couldn't save availability — try again")) {
       toast.success('availability saved 🌱');
-    } catch (err) {
-      toast.error(extractApiErrorOr(err, "couldn't save availability — try again"));
     }
   }
 
