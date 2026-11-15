@@ -10,7 +10,6 @@ from django.core.management import call_command
 from django.utils import timezone
 from users.models import MembershipStatus
 
-from tests._auth import auth_headers_for
 from tests._events import make_event, make_rsvp
 from tests._public_rsvp_helpers import make_public_rsvper
 from tests._users import make_user
@@ -55,7 +54,7 @@ class TestDueDeadlineReminders:
             pytest.param({"deadline_in": -H}, id="deadline-passed"),
             pytest.param({"event_kwargs": {"status": EventStatus.CANCELLED}}, id="cancelled"),
             pytest.param({"event_kwargs": {"rsvp_enabled": False}}, id="rsvps-off"),
-            pytest.param({"rsvp_deadline_reminder_sent_at": SENT_AT}, id="already-sent"),
+            pytest.param({"rsvp_deadline_reminder_sent_at": timezone.now()}, id="already-sent"),
         ],
     )
     def test_excludes_ineligible(self, kwargs):
@@ -103,18 +102,12 @@ class TestSendDeadlineReminders:
         rsvp.refresh_from_db()
         assert rsvp.rsvp_deadline_reminder_sent_at is not None
 
-    def test_moving_the_deadline_rearms(self, api_client, test_user):
-        rsvp = _maybe(
-            event_kwargs={"created_by": test_user}, rsvp_deadline_reminder_sent_at=SENT_AT
-        )
-        response = api_client.patch(
-            f"/api/community/events/{rsvp.event.id}/",
-            {"rsvp_deadline": (timezone.now() + 20 * H).isoformat()},
-            content_type="application/json",
-            **auth_headers_for(test_user),
-        )
-        assert response.status_code == 200
-        assert _due() == [rsvp]
+    def test_moving_the_deadline_later_reminds_again(self):
+        rsvp = _maybe(rsvp_deadline_reminder_sent_at=timezone.now())
+        rsvp.event.rsvp_deadline = timezone.now() + 60 * H
+        rsvp.event.save(update_fields=["rsvp_deadline"])
+
+        assert due_deadline_reminders(timezone.now() + 48 * H).get() == rsvp
 
     def test_command(self, fake_email_sender, capsys):
         _maybe()

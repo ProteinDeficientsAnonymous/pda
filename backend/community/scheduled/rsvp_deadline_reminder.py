@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from django.db.models import QuerySet
+from django.db.models import F, Q, QuerySet
 from django.utils import timezone
 from notifications.email_helpers import format_eastern_datetime
 from notifications.email_sender import EmailSender, send_best_effort
@@ -10,7 +10,7 @@ from notifications.rsvp_deadline_email import (
 )
 from users.models import HAS_EMAIL, SIGN_IN_STATUSES, MembershipStatus, PublicRsvpToken, User
 
-from community.models import Event, EventRSVP, EventStatus, RSVPStatus
+from community.models import EventRSVP, EventStatus, RSVPStatus
 from community.rsvps.public_shared import event_page_url, manage_rsvp_url
 
 REMINDER_LEAD = timedelta(hours=24)
@@ -23,10 +23,18 @@ def _reachable_users() -> QuerySet[User]:
     )
 
 
+def _not_reminded_for_current_deadline() -> Q:
+    # A reminder sent before this deadline's window was for an earlier deadline, so a moved one re-sends.
+    window_start = F("event__rsvp_deadline") - REMINDER_LEAD
+    return Q(rsvp_deadline_reminder_sent_at__isnull=True) | Q(
+        rsvp_deadline_reminder_sent_at__lt=window_start
+    )
+
+
 def due_deadline_reminders(now: datetime) -> QuerySet[EventRSVP]:
     return EventRSVP.objects.filter(
+        _not_reminded_for_current_deadline(),
         status=RSVPStatus.MAYBE,
-        rsvp_deadline_reminder_sent_at__isnull=True,
         event__status=EventStatus.ACTIVE,
         event__rsvp_enabled=True,
         event__rsvp_deadline__gt=now,
@@ -35,16 +43,10 @@ def due_deadline_reminders(now: datetime) -> QuerySet[EventRSVP]:
     ).select_related("event", "user")
 
 
-def rearm_deadline_reminders(event: Event, old_deadline: datetime | None) -> None:
-    """A moved deadline gets its own reminder, even for maybes already reminded."""
-    if event.rsvp_deadline != old_deadline:
-        EventRSVP.objects.filter(event=event).update(rsvp_deadline_reminder_sent_at=None)
-
-
 def _claim(rsvp: EventRSVP, now: datetime) -> bool:
     """The conditional update lets exactly one overlapping cron run claim each rsvp."""
     claimed = EventRSVP.objects.filter(
-        pk=rsvp.pk, status=RSVPStatus.MAYBE, rsvp_deadline_reminder_sent_at__isnull=True
+        _not_reminded_for_current_deadline(), pk=rsvp.pk, status=RSVPStatus.MAYBE
     ).update(rsvp_deadline_reminder_sent_at=now)
     return claimed == 1
 
