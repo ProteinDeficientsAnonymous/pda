@@ -6,6 +6,7 @@ import pytest
 from asgiref.sync import async_to_sync
 from community.events.crud import list_events
 from community.events.description_templates import (
+    CLUB_TEMPLATE,
     OFFICIAL_NON_WALK_TEMPLATE,
     OFFICIAL_WALK_TEMPLATE,
 )
@@ -151,6 +152,7 @@ def test_official_templates_with_slots(test_user):
     walk = {"text": OFFICIAL_WALK_TEMPLATE, "slots": template_slots(OFFICIAL_WALK_TEMPLATE)}
     assert body["official_walk"] == walk and len(walk["slots"]) == 9
     assert body["official_non_walk"]["slots"] == ["WHAT WE'RE ORDERING, PER PERSON"]
+    assert body["club"] == {"text": CLUB_TEMPLATE, "slots": []}
 
 
 def test_official_templates_hint_is_driven_by_event_format(test_user):
