@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+{% if variant == "upcoming" %}{{ slot_label|lower }} is coming up and you're planning it.{% else %}you've been asked to plan {{ slot_label|lower }} on pda.{% endif %}
+
+{% if variant == "upcoming" %}create the event from the planning page so it's on the calendar:{% else %}let the coordinators know whether you're in:{% endif %}
+
+{{ planning_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}
