@@ -58,6 +58,7 @@ from community.message_templates.tentative_approval import (
 from community.message_templates.welcome import router as welcome_template_router
 from community.message_templates.whatsapp_link import router as whatsapp_link_router
 from community.planning.availability import router as planning_availability_router
+from community.planning.event_link import router as planning_event_link_router
 from community.planning.grid import router as planning_grid_router
 from community.planning.mine import router as planning_mine_router
 from community.planning.proposals import router as planning_proposals_router
@@ -141,6 +142,7 @@ router.add_router("", planning_grid_router)
 router.add_router("", planning_mine_router)
 router.add_router("", planning_proposals_router)
 router.add_router("", planning_responses_router)
+router.add_router("", planning_event_link_router)
 router.add_router("", geocode_router)
 router.add_router("", giphy_router)
 router.add_router("", version_router)
