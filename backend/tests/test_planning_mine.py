@@ -1,9 +1,9 @@
 import pytest
-from community.models import AssignmentStatus, PlanningYear, SlotAssignment
+from community.models import AssignmentStatus, PlanningYear
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
-from tests._planning import headers_for, send
+from tests._planning import assign, headers_for, send
 from tests._users import make_user
 
 VIEW = PermissionKey.VIEW_EVENT_PLANNING
@@ -15,14 +15,13 @@ def get_mine(api_client, headers):
     return send(api_client, "get", URL, headers=headers)
 
 
-def assign(slot, user, status=S.PROPOSED):
-    return SlotAssignment.objects.create(slot=slot, user=user, status=status)
-
-
 @pytest.mark.django_db
 class TestMySlots:
     def test_requires_view(self, api_client, year):
         assert get_mine(api_client, headers_for()).status_code == 403
+
+    def test_unauthenticated(self, api_client, year):
+        assert get_mine(api_client, None).status_code == 401
 
     def test_lists_only_own_proposed_and_committed(self, api_client, year):
         me = make_user(VIEW)

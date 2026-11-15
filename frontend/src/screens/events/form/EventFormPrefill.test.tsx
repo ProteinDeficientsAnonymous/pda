@@ -4,9 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import { QuestionType } from '@/api/questionTypes';
-import { useAuthStore } from '@/auth/store';
 import { EventType } from '@/models/event';
 import { Permission } from '@/models/permissions';
+import { setAuthed } from '@/test/auth';
 import { makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -15,15 +15,15 @@ vi.mock('@/api/eventDescriptionTemplates', () => ({
     data: { officialWalk: 'walk copy', officialNonWalk: 'non-walk copy' },
   }),
 }));
+const DEFAULTS = {
+  cashappLink: 'https://cash.app/$pdanyc',
+  rsvpQuestions: [
+    { label: 'paid?', fieldType: QuestionType.Select, options: ['Yes'], required: true },
+  ],
+};
+let defaultsLoaded = true;
 vi.mock('@/api/officialEventDefaults', () => ({
-  useOfficialEventDefaults: () => ({
-    data: {
-      cashappLink: 'https://cash.app/$pdanyc',
-      rsvpQuestions: [
-        { label: 'paid?', fieldType: QuestionType.Select, options: ['Yes'], required: true },
-      ],
-    },
-  }),
+  useOfficialEventDefaults: () => ({ data: defaultsLoaded ? DEFAULTS : undefined }),
 }));
 vi.mock('@/api/eventTags', () => ({ useEventTags: () => ({ data: [], isPending: false }) }));
 vi.mock('./EventFormPhoto', () => ({ EventFormPhoto: () => null }));
@@ -36,10 +36,8 @@ const post = vi.spyOn(apiClient, 'post');
 
 beforeEach(() => {
   post.mockReset().mockRejectedValue(new Error('stop after capturing the body'));
-  useAuthStore.setState({
-    user: makeUserWithPermissions([Permission.TagOfficialEvent]),
-    status: 'authed',
-  });
+  defaultsLoaded = true;
+  setAuthed(makeUserWithPermissions([Permission.TagOfficialEvent]));
 });
 
 describe('EventForm prefilled as official', () => {
@@ -68,5 +66,16 @@ describe('EventForm prefilled as official', () => {
       expect(screen.getByLabelText('description')).toHaveValue('walk copy');
     });
     expect(screen.getByLabelText('cash app')).toHaveValue('$pdanyc');
+  });
+
+  it('drops the official prefill when the type changes before the defaults load', async () => {
+    defaultsLoaded = false;
+    const initial = { eventType: EventType.Official };
+    const { rerender } = renderWithProviders(<EventForm initial={initial} />);
+    await userEvent.click(screen.getByRole('switch', { name: 'make it an official pda event' }));
+    defaultsLoaded = true;
+    rerender(<EventForm initial={initial} />);
+    expect(screen.queryByText('paid?')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('cash app')).toHaveValue('');
   });
 });
