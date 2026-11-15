@@ -4,7 +4,6 @@ from typing import NoReturn
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
-from django.conf import settings
 from django.core.cache import caches
 from django.db import DatabaseError, IntegrityError, transaction
 from ninja import Router
@@ -32,6 +31,7 @@ from community.rsvps.public_shared import (
     email_details,
     load_public_rsvp_event,
     log_email_failure,
+    manage_rsvp_url,
     reject_if_rejected_applicant,
 )
 from community.rsvps.status_emails import email_promoted_users
@@ -187,7 +187,7 @@ def _send_recognized_login_link(request, user: User) -> None:
         # probe from spamming an unverified inbox or repeatedly extending the token.
         return
     token = PublicRsvpToken.issue_or_extend(user)
-    manage_url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
+    manage_url = manage_rsvp_url(token.token)
     try:
         result = send_rsvp_manage_link_email(
             sender=get_email_sender(),
