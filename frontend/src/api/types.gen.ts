@@ -2023,6 +2023,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/reserve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Reserve */
+        get: operations["community_reserve_read_get_reserve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/speech-template/": {
         parameters: {
             query?: never;
@@ -5414,6 +5431,33 @@ export interface components {
         ResendManageLinkOut: {
             /** Detail */
             detail: string;
+        };
+        /** ReserveEntryOut */
+        ReserveEntryOut: {
+            /** Collected */
+            collected: string;
+            /** Facilitator Drinks */
+            facilitator_drinks: string;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Left Over */
+            left_over: string;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Paid Out */
+            paid_out: string;
+        };
+        /** ReserveOut */
+        ReserveOut: {
+            /** Entries */
+            entries: components["schemas"]["ReserveEntryOut"][];
+            /** Updated At */
+            updated_at: string | null;
         };
         /** ResetPasswordOut */
         ResetPasswordOut: {
@@ -12210,6 +12254,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_reserve_read_get_reserve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReserveOut"];
                 };
             };
         };

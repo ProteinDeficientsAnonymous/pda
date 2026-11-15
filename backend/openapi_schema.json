@@ -6609,6 +6609,83 @@
         "title": "ResendManageLinkOut",
         "type": "object"
       },
+      "ReserveEntryOut": {
+        "properties": {
+          "collected": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Collected",
+            "type": "string"
+          },
+          "facilitator_drinks": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Facilitator Drinks",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "left_over": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Left Over",
+            "type": "string"
+          },
+          "occurred_on": {
+            "format": "date",
+            "title": "Occurred On",
+            "type": "string"
+          },
+          "paid_out": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Paid Out",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "occurred_on",
+          "collected",
+          "paid_out",
+          "facilitator_drinks",
+          "left_over"
+        ],
+        "title": "ReserveEntryOut",
+        "type": "object"
+      },
+      "ReserveOut": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/ReserveEntryOut"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "entries",
+          "updated_at"
+        ],
+        "title": "ReserveOut",
+        "type": "object"
+      },
       "ResetPasswordOut": {
         "properties": {
           "detail": {
@@ -17112,6 +17189,28 @@
           }
         },
         "summary": "Request Login Link",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/reserve/": {
+      "get": {
+        "operationId": "community_reserve_read_get_reserve",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReserveOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get Reserve",
         "tags": [
           "community"
         ]
