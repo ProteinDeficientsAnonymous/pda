@@ -10,7 +10,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0138_planning_years"),
+        ("community", "0142_planning_years"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
