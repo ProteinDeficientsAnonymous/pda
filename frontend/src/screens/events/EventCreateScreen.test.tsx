@@ -107,6 +107,26 @@ describe('EventCreateScreen', () => {
     expect(screen.queryByText('event form')).not.toBeInTheDocument();
   });
 
+  it('shows an error instead of a second event when the slot already has one', () => {
+    slotsState = { data: [{ ...slot, eventId: 'e1' }], isPending: false, isError: false };
+    renderWithProviders(<EventCreateScreen />, { route: '/events/add?planningSlot=s1&year=2027' });
+    expect(screen.getByRole('alert')).toHaveTextContent('that slot already has an event');
+    expect(screen.queryByText('event form')).not.toBeInTheDocument();
+  });
+
+  it.each(['', '&year=', '&year=next'])(
+    'shows an error instead of an unlinked form when the year is bad (%j)',
+    (yearParam) => {
+      renderWithProviders(<EventCreateScreen />, {
+        route: `/events/add?planningSlot=s1${yearParam}`,
+      });
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        "couldn't load that planning slot — try again from the planning page",
+      );
+      expect(screen.queryByText('event form')).not.toBeInTheDocument();
+    },
+  );
+
   it('keeps the event type open without the official-event permission', async () => {
     useAuthStore.setState({ user: makeUserWithPermissions([]), status: 'authed' });
     renderWithProviders(<EventCreateScreen />, { route: '/events/add?planningSlot=s1&year=2027' });
