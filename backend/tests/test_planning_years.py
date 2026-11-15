@@ -1,12 +1,12 @@
 import pytest
-from community.models import PlanningSlot, PlanningYear, SlotAssignment
-from community.planning.years import get_year_or_404
+from community.models import PlanningSlot, SlotAssignment
+from community.planning._shared import get_year_or_404
 from community.validation import Code, ValidationException
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
-from tests._auth import auth_headers_for
 from tests._events import make_event
+from tests._planning import headers_for, send
 from tests._users import make_user
 
 BASE = "/api/community/planning"
@@ -25,20 +25,6 @@ MANAGE_ROUTES = [
     ("patch", f"{BASE}/slots/{NO_SLOT}/", {"label": "x"}),
     ("delete", f"{BASE}/slots/{NO_SLOT}/", None),
 ]
-
-
-def send(api_client, method, url, body=None, headers=None):
-    kwargs = {"data": body, "content_type": "application/json"} if body is not None else {}
-    return getattr(api_client, method)(url, **kwargs, **(headers or {}))
-
-
-def headers_for(*permissions):
-    return auth_headers_for(make_user(*permissions))
-
-
-@pytest.fixture
-def year(db):
-    return PlanningYear.create_with_default_slots(2027)
 
 
 @pytest.mark.django_db
@@ -132,6 +118,33 @@ class TestSlots:
             headers_for(MANAGE),
         )
         assert response.status_code == 422
+
+    @pytest.mark.parametrize("label", ["", "   "])
+    def test_blank_label_rejected(self, api_client, year, label):
+        slot = year.slots.get(label="march")
+        create = send(
+            api_client,
+            "post",
+            f"{BASE}/years/2027/slots/",
+            {**NEW_SLOT, "label": label},
+            headers_for(MANAGE),
+        )
+        patch = send(
+            api_client, "patch", f"{BASE}/slots/{slot.id}/", {"label": label}, headers_for(MANAGE)
+        )
+        assert (create.status_code, patch.status_code) == (422, 422)
+        slot.refresh_from_db()
+        assert slot.label == "march"
+
+    def test_label_is_trimmed(self, api_client, year):
+        response = send(
+            api_client,
+            "post",
+            f"{BASE}/years/2027/slots/",
+            {**NEW_SLOT, "label": "  extra walk "},
+            headers_for(MANAGE),
+        )
+        assert response.json()["label"] == "extra walk"
 
     def test_patch_slot_updates_only_sent_fields(self, api_client, year):
         slot = year.slots.get(label="march")

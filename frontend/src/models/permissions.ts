@@ -31,6 +31,8 @@ const ADMIN_PERMISSIONS: readonly PermissionKey[] = [
   Permission.ApproveJoinRequests,
   Permission.EditJoinQuestions,
   Permission.ManageDocuments,
+  Permission.ViewEventPlanning,
+  Permission.ManageEventPlanning,
 ];
 
 export interface UserLike {
@@ -55,6 +57,14 @@ export function isAdmin(user: UserLike | null): boolean {
 export function hasPermission(user: UserLike | null, key: PermissionKey): boolean {
   if (!user) return false;
   return isAdmin(user) || user.roles.some((r) => normalizePermissions(r.permissions).includes(key));
+}
+
+export type PermissionRule =
+  | { perm: PermissionKey; allow?: never }
+  | { allow: (user: UserLike | null) => boolean; perm?: never };
+
+export function satisfiesRule(user: UserLike | null, rule: PermissionRule): boolean {
+  return rule.allow ? rule.allow(user) : hasPermission(user, rule.perm);
 }
 
 export function canViewPlanning(user: UserLike | null): boolean {
