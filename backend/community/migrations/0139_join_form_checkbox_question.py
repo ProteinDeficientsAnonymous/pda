@@ -5,7 +5,8 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0135_remove_joinrequest_decision_stamps"),
+        ("community", "0138_event_rsvp_reminder_sent_at"),
+        ("community", "0138_eventrsvp_no_show_emailed_at"),
     ]
 
     operations = [
