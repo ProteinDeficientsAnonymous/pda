@@ -8,9 +8,8 @@ from users.models import User
 from community.models import AssignmentStatus, PlanningAvailability, PlanningSlot, SlotAssignment
 from community.planning._access import require_manage
 from community.planning._planners import planner_users
-from community.planning.proposals import assignment_out
+from community.planning._shared import assignment_out, get_year_or_404, slot_out
 from community.planning.schemas import GridOut, PlannerColumnOut
-from community.planning.years import get_year_or_404, slot_out
 from community.shared import ErrorOut
 
 router = Router()

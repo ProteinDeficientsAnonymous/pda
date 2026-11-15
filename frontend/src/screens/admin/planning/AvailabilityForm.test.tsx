@@ -8,13 +8,31 @@ import { AvailabilityForm } from './AvailabilityForm';
 
 const mutateAsync = vi.fn();
 const toastSuccess = vi.fn();
+const toastError = vi.fn();
+interface Saved {
+  submitted: boolean;
+  biannualInterest: string | null;
+  monthlyCount: number;
+  slotIds: string[];
+  updatedAt: string | null;
+}
+const EMPTY: Saved = {
+  submitted: false,
+  biannualInterest: null,
+  monthlyCount: 0,
+  slotIds: [],
+  updatedAt: null,
+};
+let saved = EMPTY;
 
 vi.mock('sonner', () => ({
   toast: {
     success: (m: string) => {
       toastSuccess(m);
     },
-    error: vi.fn(),
+    error: (m: string) => {
+      toastError(m);
+    },
   },
 }));
 
@@ -28,23 +46,15 @@ vi.mock('@/api/planning', () => ({
       { id: 's3', label: 'spring biannual', month: 4, kind: 'biannual', order: 3 },
     ],
   }),
-  useMyAvailability: () => ({
-    isPending: false,
-    isError: false,
-    data: {
-      submitted: false,
-      biannualInterest: null,
-      monthlyCount: 0,
-      slotIds: [],
-      updatedAt: null,
-    },
-  }),
+  useMyAvailability: () => ({ isPending: false, isError: false, data: saved }),
   useSaveAvailability: () => ({ mutateAsync, isPending: false }),
 }));
 
 beforeEach(() => {
   mutateAsync.mockReset().mockResolvedValue(undefined);
   toastSuccess.mockReset();
+  toastError.mockReset();
+  saved = EMPTY;
 });
 
 describe('AvailabilityForm', () => {
@@ -104,5 +114,35 @@ describe('AvailabilityForm', () => {
     expect(screen.getByText('enter a whole number from 0 to 12')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'save availability' })).toBeDisabled();
     expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('prefills a saved answer', () => {
+    saved = {
+      submitted: true,
+      biannualInterest: 'maybe',
+      monthlyCount: 4,
+      slotIds: ['s2'],
+      updatedAt: '2026-11-01T00:00:00Z',
+    };
+    renderWithProviders(<AvailabilityForm year={2027} />);
+
+    expect(screen.getByLabelText('february')).toBeChecked();
+    expect(screen.getByLabelText('january')).not.toBeChecked();
+    expect(screen.getByLabelText('maybe')).toBeChecked();
+    expect(screen.getByLabelText('how many monthlies will you plan?')).toHaveValue(4);
+  });
+
+  it('toasts the error and not success when saving fails', async () => {
+    mutateAsync.mockRejectedValue(new Error('boom'));
+    const user = userEvent.setup();
+    renderWithProviders(<AvailabilityForm year={2027} />);
+
+    await user.click(screen.getByLabelText('yes'));
+    await user.click(screen.getByRole('button', { name: 'save availability' }));
+
+    await waitFor(() => {
+      expect(toastError).toHaveBeenCalledWith("couldn't save availability — try again");
+    });
+    expect(toastSuccess).not.toHaveBeenCalled();
   });
 });

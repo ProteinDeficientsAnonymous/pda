@@ -4,7 +4,7 @@ import type { OfficialRsvpQuestion } from '@/api/officialEventDefaults';
 import { QuestionType } from '@/api/questionTypes';
 
 import type { RsvpQuestionDraft } from '../rsvpQuestions';
-import { withOfficialQuestions } from './officialQuestions';
+import { officialExtras, withOfficialQuestions } from './officialQuestions';
 
 const custom: RsvpQuestionDraft = {
   id: 'q-custom',
@@ -53,5 +53,26 @@ describe('withOfficialQuestions', () => {
   it('leaves non-official questions alone', () => {
     const qs = [custom];
     expect(withOfficial(qs, false)).toBe(qs);
+  });
+});
+
+describe('officialExtras', () => {
+  const defaults = { cashappLink: 'https://cash.app/$pdanyc', rsvpQuestions: official };
+
+  it('fills an empty cash app and hands back the question update without applying it', () => {
+    const extras = officialExtras(defaults, true, ' ');
+    expect(extras.values).toEqual({ cashappLink: '$pdanyc' });
+    expect(extras.questions([custom]).map((q) => q.label)).toEqual([
+      'any allergies?',
+      'paid?',
+      'photos ok?',
+    ]);
+  });
+
+  it('keeps a typed cash app and drops untouched official questions when not official', () => {
+    expect(officialExtras(defaults, true, '$mine').values).toEqual({});
+    const off = officialExtras(defaults, false, '');
+    expect(off.values).toEqual({});
+    expect(off.questions(withOfficial([custom], true))).toEqual([custom]);
   });
 });
