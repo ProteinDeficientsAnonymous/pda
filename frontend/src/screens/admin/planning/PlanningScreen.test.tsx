@@ -2,9 +2,9 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
-import { makeUser } from '@/test/fixtures';
+import { setAuthed } from '@/test/auth';
+import { makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import PlanningScreen from './PlanningScreen';
@@ -28,12 +28,19 @@ vi.mock('@/api/planning', () => ({
 }));
 
 function signInWith(...perms: string[]) {
-  const roles = [{ id: 'r1', name: 'planner', isDefault: false, permissions: perms }];
-  useAuthStore.setState({ status: 'authed', user: makeUser({ roles }), accessToken: 'tok' });
+  setAuthed(makeUserWithPermissions(perms));
 }
+
+vi.mock('./MySlots', () => ({
+  MySlots: () => <div>my slots</div>,
+}));
 
 vi.mock('./AvailabilityForm', () => ({
   AvailabilityForm: ({ year }: { year: number }) => <div>form for {year}</div>,
+}));
+
+vi.mock('./PlanningGrid', () => ({
+  PlanningGrid: ({ year }: { year: number }) => <div>grid for {year}</div>,
 }));
 
 vi.mock('./SlotEditor', () => ({
@@ -69,15 +76,25 @@ describe('PlanningScreen', () => {
     expect(screen.getByText('form for 2026')).toBeInTheDocument();
   });
 
-  it('shows the slot editor to managers only', () => {
+  it('shows my slots above the availability form', () => {
+    years = [{ id: 'y1', year: 2026 }];
+    renderWithProviders(<PlanningScreen />);
+    const mine = screen.getByText('my slots');
+    const form = screen.getByText('form for 2026');
+    expect(mine.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows the slot editor and grid to managers only', () => {
     years = [{ id: 'y1', year: 2026 }];
     const { unmount } = renderWithProviders(<PlanningScreen />);
     expect(screen.queryByText('editor for 2026')).not.toBeInTheDocument();
+    expect(screen.queryByText('grid for 2026')).not.toBeInTheDocument();
     unmount();
 
     signInWith(Permission.ManageEventPlanning);
     renderWithProviders(<PlanningScreen />);
     expect(screen.getByText('editor for 2026')).toBeInTheDocument();
+    expect(screen.getByText('grid for 2026')).toBeInTheDocument();
   });
 
   describe('start next year', () => {
