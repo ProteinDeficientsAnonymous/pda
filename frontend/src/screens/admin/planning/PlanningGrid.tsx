@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import {
   type Assignment,
+  type PlanningGrid as Grid,
   type PlannerColumn,
   type PlanningSlot,
   usePlanningGrid,
@@ -11,7 +12,14 @@ import {
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
-import { type CellState, cellState, findAssignment, isWithdrawable } from './gridCell';
+import {
+  type CellState,
+  cellState,
+  findAssignment,
+  isWithdrawable,
+  slotHasCommitted,
+  slotNeedsPlanner,
+} from './gridCell';
 import { GridCell } from './PlanningGridCell';
 import { SlotEventLink } from './SlotEventLink';
 import { toastOnError } from './toastOnError';
@@ -32,13 +40,15 @@ function PlannerHeader({ planner }: { planner: PlannerColumn }) {
   );
 }
 
-function SlotHeader({ slot, year }: { slot: PlanningSlot; year: number }) {
+function SlotHeader({ slot, year, grid }: { slot: PlanningSlot; year: number; grid: Grid }) {
   return (
     <th scope="row" className="bg-surface sticky left-0 px-3 py-2 text-left font-medium">
       <div>{slot.label}</div>
-      <div className="text-xs font-normal">
-        {slot.eventId ? 'scheduled · ' : null}
-        <SlotEventLink slot={slot} year={year} canCreate />
+      {slotNeedsPlanner(grid, slot.id) ? (
+        <div className="text-xs font-normal">needs a planner</div>
+      ) : null}
+      <div className="font-normal">
+        <SlotEventLink slot={slot} year={year} canCreate={slotHasCommitted(grid, slot.id)} />
       </div>
     </th>
   );
@@ -47,8 +57,8 @@ function SlotHeader({ slot, year }: { slot: PlanningSlot; year: number }) {
 export function PlanningGrid({ year }: { year: number }) {
   const { data: grid, isPending, isError } = usePlanningGrid(year);
   const [today] = useState(() => new Date());
-  const propose = usePropose(year);
-  const withdraw = useWithdraw(year);
+  const propose = usePropose();
+  const withdraw = useWithdraw();
   const { confirm, element } = useConfirm();
 
   if (isPending) return <ContentLoading />;
@@ -99,7 +109,7 @@ export function PlanningGrid({ year }: { year: number }) {
           <tbody>
             {grid.slots.map((slot) => (
               <tr key={slot.id} className="border-border border-t">
-                <SlotHeader slot={slot} year={year} />
+                <SlotHeader slot={slot} year={year} grid={grid} />
                 {grid.planners.map((p) => (
                   <GridCell
                     key={p.userId}

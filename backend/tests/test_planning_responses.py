@@ -7,33 +7,13 @@ from notifications.models import Notification, NotificationType
 from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
-from tests._auth import auth_headers_for
 from tests._events import make_event
-from tests._planning import send
+from tests._planning import assign, respond, send
 from tests._users import grant, make_attendance_paused, make_user
 
 VIEW = PermissionKey.VIEW_EVENT_PLANNING
 MANAGE = PermissionKey.MANAGE_EVENT_PLANNING
 Status = AssignmentStatus
-
-
-@pytest.fixture
-def slot(year):
-    return year.slots.first()
-
-
-@pytest.fixture
-def planner(db):
-    return make_user(VIEW)
-
-
-def respond(api_client, assignment, action, actor):
-    url = f"/api/community/planning/assignments/{assignment.id}/{action}/"
-    return send(api_client, "post", url, headers=auth_headers_for(actor))
-
-
-def assign(slot, user, status=Status.PROPOSED):
-    return SlotAssignment.objects.create(slot=slot, user=user, status=status)
 
 
 @pytest.mark.django_db
