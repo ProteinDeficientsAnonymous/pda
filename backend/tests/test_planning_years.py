@@ -1,6 +1,6 @@
 import pytest
 from community.models import PlanningSlot, SlotAssignment
-from community.planning.years import get_year_or_404
+from community.planning._shared import get_year_or_404
 from community.validation import Code, ValidationException
 from users.permissions import PermissionKey
 

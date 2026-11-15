@@ -8,26 +8,18 @@ from community.models import AssignmentStatus, SlotAssignment
 from community.planning._access import require_manage
 from community.planning._notify import notify_proposed, notify_withdrawn
 from community.planning._planners import planner_users
-from community.planning.event_link import rescind_planner_invite
+from community.planning._shared import (
+    ACTIVE_STATUSES,
+    assignment_out,
+    get_assignment_or_404,
+    get_slot_or_404,
+    rescind_planner_invite,
+)
 from community.planning.schemas import AssignmentOut, ProposeIn
-from community.planning.years import get_slot_or_404
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
 
 router = Router()
-
-ACTIVE_STATUSES = (AssignmentStatus.PROPOSED, AssignmentStatus.COMMITTED)
-
-
-def assignment_out(assignment: SlotAssignment) -> AssignmentOut:
-    return AssignmentOut(
-        id=str(assignment.id),
-        slot_id=str(assignment.slot_id),
-        user_id=str(assignment.user_id),
-        status=assignment.status,
-        proposed_at=assignment.proposed_at,
-        responded_at=assignment.responded_at,
-    )
 
 
 @router.post(
@@ -59,10 +51,7 @@ def propose_assignment(request, slot_id: UUID, payload: ProposeIn):
 )
 def withdraw_assignment(request, assignment_id: UUID):
     require_manage(request, "withdraw_planning_assignment")
-    try:
-        assignment = SlotAssignment.objects.select_related("slot", "user").get(pk=assignment_id)
-    except SlotAssignment.DoesNotExist:
-        raise_validation(Code.Planning.ASSIGNMENT_NOT_FOUND, status_code=404)
+    assignment = get_assignment_or_404(assignment_id)
     if assignment.status in ACTIVE_STATUSES:
         was_committed = assignment.status == AssignmentStatus.COMMITTED
         assignment.withdraw()

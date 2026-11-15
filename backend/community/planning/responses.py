@@ -9,8 +9,12 @@ from ninja import Router
 from community.models import AssignmentStatus, SlotAssignment
 from community.planning._access import require_view
 from community.planning._notify import notify_coordinators
-from community.planning.event_link import invite_planners_to_event, rescind_planner_invite
-from community.planning.proposals import assignment_out
+from community.planning._shared import (
+    assignment_out,
+    get_assignment_or_404,
+    invite_planners_to_event,
+    rescind_planner_invite,
+)
 from community.planning.schemas import AssignmentOut
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
@@ -29,14 +33,7 @@ def _respond(
 ) -> AssignmentOut:
     require_view(request, action)
     with transaction.atomic():
-        assignment = (
-            SlotAssignment.objects.select_for_update(of=("self",))
-            .select_related("slot", "user")
-            .filter(pk=assignment_id, user=request.auth)
-            .first()
-        )
-        if assignment is None:
-            raise_validation(Code.Planning.ASSIGNMENT_NOT_FOUND, status_code=404)
+        assignment = get_assignment_or_404(assignment_id, request.auth, lock=True)
         if assignment.status not in allowed:
             raise_validation(Code.Planning.NOT_PENDING, status_code=400)
         was_committed = assignment.status == AssignmentStatus.COMMITTED
