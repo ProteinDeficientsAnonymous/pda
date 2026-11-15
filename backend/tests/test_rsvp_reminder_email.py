@@ -36,3 +36,7 @@ def test_renders_status_line_and_link(status, line):
         assert line in body
         assert "the park" in body
         assert "https://pda.test/events/vegan-potluck" in body
+        assert "how to show up at pda events" in body
+        assert "especially a white cis man" in body
+        assert "let people finish their thoughts" in body
+        assert "let the facilitators know" in body
