@@ -1,19 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Assignment, PlanningGrid } from '@/api/planning';
+import { makeSlot } from '@/test/fixtures';
 
 import { type CellState, cellState, findAssignment, isWithdrawable } from './gridCell';
 
-const slot = (id: string, month: number) => ({
-  id,
-  label: id,
-  month,
-  kind: 'monthly' as const,
-  order: month,
-  eventId: null,
-  eventSlug: null,
-  eventStatus: null,
-});
+const slot = (id: string, month: number) => makeSlot({ id, label: id, month, order: month });
 
 function makeGrid(
   assignments: Pick<Assignment, 'status'>[] = [],
