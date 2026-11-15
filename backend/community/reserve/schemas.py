@@ -1,8 +1,10 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Annotated
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from community.field_limits import FieldLimit
 from community.models import ReserveEntry
 
 
@@ -31,3 +33,22 @@ def entry_out(entry: ReserveEntry) -> ReserveEntryOut:
         facilitator_drinks=entry.facilitator_drinks,
         left_over=entry.left_over,
     )
+
+
+Money = Annotated[Decimal, Field(ge=0, max_digits=10, decimal_places=2)]
+
+
+class ReserveEntryIn(BaseModel):
+    label: str = Field(min_length=1, max_length=FieldLimit.TITLE)
+    occurred_on: date
+    collected: Money = Decimal("0")
+    paid_out: Money = Decimal("0")
+    facilitator_drinks: Money = Decimal("0")
+
+
+class ReserveEntryPatchIn(BaseModel):
+    label: str | None = Field(default=None, min_length=1, max_length=FieldLimit.TITLE)
+    occurred_on: date | None = None
+    collected: Money | None = None
+    paid_out: Money | None = None
+    facilitator_drinks: Money | None = None

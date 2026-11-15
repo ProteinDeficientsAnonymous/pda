@@ -2040,6 +2040,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/reserve/entries/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Reserve Entry */
+        post: operations["community_reserve_manage_create_reserve_entry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/reserve/entries/{entry_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Reserve Entry */
+        delete: operations["community_reserve_manage_delete_reserve_entry"];
+        options?: never;
+        head?: never;
+        /** Update Reserve Entry */
+        patch: operations["community_reserve_manage_update_reserve_entry"];
+        trace?: never;
+    };
     "/api/community/speech-template/": {
         parameters: {
             query?: never;
@@ -5432,6 +5467,31 @@ export interface components {
             /** Detail */
             detail: string;
         };
+        /** ReserveEntryIn */
+        ReserveEntryIn: {
+            /**
+             * Collected
+             * @default 0
+             */
+            collected: number | string;
+            /**
+             * Facilitator Drinks
+             * @default 0
+             */
+            facilitator_drinks: number | string;
+            /** Label */
+            label: string;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /**
+             * Paid Out
+             * @default 0
+             */
+            paid_out: number | string;
+        };
         /** ReserveEntryOut */
         ReserveEntryOut: {
             /** Collected */
@@ -5451,6 +5511,19 @@ export interface components {
             occurred_on: string;
             /** Paid Out */
             paid_out: string;
+        };
+        /** ReserveEntryPatchIn */
+        ReserveEntryPatchIn: {
+            /** Collected */
+            collected?: number | string | null;
+            /** Facilitator Drinks */
+            facilitator_drinks?: number | string | null;
+            /** Label */
+            label?: string | null;
+            /** Occurred On */
+            occurred_on?: string | null;
+            /** Paid Out */
+            paid_out?: number | string | null;
         };
         /** ReserveOut */
         ReserveOut: {
@@ -12274,6 +12347,121 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReserveOut"];
+                };
+            };
+        };
+    };
+    community_reserve_manage_create_reserve_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReserveEntryIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReserveEntryOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_reserve_manage_delete_reserve_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_reserve_manage_update_reserve_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReserveEntryPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReserveEntryOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };
