@@ -6,26 +6,20 @@ from ninja.responses import Status
 
 from community.models import AssignmentStatus, SlotAssignment
 from community.planning._access import require_manage
+from community.planning._notify import notify_proposed, notify_withdrawn
 from community.planning._planners import planner_users
+from community.planning._shared import (
+    ACTIVE_STATUSES,
+    assignment_out,
+    get_assignment_or_404,
+    get_slot_or_404,
+    rescind_planner_invite,
+)
 from community.planning.schemas import AssignmentOut, ProposeIn
-from community.planning.years import get_slot_or_404
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
 
 router = Router()
-
-_ACTIVE = (AssignmentStatus.PROPOSED, AssignmentStatus.COMMITTED)
-
-
-def _assignment_out(assignment: SlotAssignment) -> AssignmentOut:
-    return AssignmentOut(
-        id=str(assignment.id),
-        slot_id=str(assignment.slot_id),
-        user_id=str(assignment.user_id),
-        status=assignment.status,
-        proposed_at=assignment.proposed_at,
-        responded_at=assignment.responded_at,
-    )
 
 
 @router.post(
@@ -43,10 +37,11 @@ def propose_assignment(request, slot_id: UUID, payload: ProposeIn):
         slot=slot, user=user, defaults={"proposed_by": request.auth}
     )
     if not created:
-        if assignment.status in _ACTIVE:
+        if assignment.status in ACTIVE_STATUSES:
             raise_validation(Code.Planning.ALREADY_ASSIGNED, field="user_id", status_code=400)
         assignment.propose(request.auth)
-    return Status(201, _assignment_out(assignment))
+    notify_proposed(assignment)
+    return Status(201, assignment_out(assignment))
 
 
 @router.delete(
@@ -56,10 +51,11 @@ def propose_assignment(request, slot_id: UUID, payload: ProposeIn):
 )
 def withdraw_assignment(request, assignment_id: UUID):
     require_manage(request, "withdraw_planning_assignment")
-    try:
-        assignment = SlotAssignment.objects.select_related("slot", "user").get(pk=assignment_id)
-    except SlotAssignment.DoesNotExist:
-        raise_validation(Code.Planning.ASSIGNMENT_NOT_FOUND, status_code=404)
-    if assignment.status in _ACTIVE:
+    assignment = get_assignment_or_404(assignment_id)
+    if assignment.status in ACTIVE_STATUSES:
+        was_committed = assignment.status == AssignmentStatus.COMMITTED
         assignment.withdraw()
+        notify_withdrawn(assignment, request.auth)
+        if was_committed:
+            rescind_planner_invite(assignment.slot, assignment.user_id)
     return Status(204, None)

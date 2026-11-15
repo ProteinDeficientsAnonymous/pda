@@ -33,3 +33,8 @@ def require_view(request, action: str) -> None:
 def require_manage(request, action: str) -> None:
     if not can_manage_planning(request.auth):
         _deny(request, action, PermissionKey.MANAGE_EVENT_PLANNING)
+
+
+def require_manage_or(request, action: str, allowed: bool) -> None:
+    if not (allowed or can_manage_planning(request.auth)):
+        _deny(request, action, PermissionKey.MANAGE_EVENT_PLANNING)
