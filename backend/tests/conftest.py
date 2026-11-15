@@ -14,6 +14,7 @@ from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 def pytest_configure() -> None:
@@ -290,3 +291,13 @@ def fake_email_sender(monkeypatch):
 @pytest.fixture
 def year(db):
     return PlanningYear.create_with_default_slots(2027)
+
+
+@pytest.fixture
+def slot(year):
+    return year.slots.first()
+
+
+@pytest.fixture
+def planner(db):
+    return make_user(PermissionKey.VIEW_EVENT_PLANNING)
