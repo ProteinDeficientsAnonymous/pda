@@ -1859,6 +1859,10 @@
       },
       "EventDescriptionTemplatesOut": {
         "properties": {
+          "club": {
+            "title": "Club",
+            "type": "string"
+          },
           "official_non_walk": {
             "title": "Official Non Walk",
             "type": "string"
@@ -1870,7 +1874,8 @@
         },
         "required": [
           "official_walk",
-          "official_non_walk"
+          "official_non_walk",
+          "club"
         ],
         "title": "EventDescriptionTemplatesOut",
         "type": "object"
@@ -2215,6 +2220,18 @@
             "maxLength": 300,
             "title": "Price",
             "type": "string"
+          },
+          "rsvp_deadline": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsvp Deadline"
           },
           "rsvp_enabled": {
             "default": false,
@@ -2818,6 +2835,18 @@
             "title": "Price",
             "type": "string"
           },
+          "rsvp_deadline": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsvp Deadline"
+          },
           "rsvp_enabled": {
             "default": false,
             "title": "Rsvp Enabled",
@@ -3123,6 +3152,18 @@
               }
             ],
             "title": "Price"
+          },
+          "rsvp_deadline": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsvp Deadline"
           },
           "rsvp_enabled": {
             "anyOf": [
