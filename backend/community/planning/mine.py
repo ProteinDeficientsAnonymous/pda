@@ -7,9 +7,8 @@ from users.helpers import visible_display_name
 
 from community.models import SlotAssignment
 from community.planning._access import require_view
-from community.planning.proposals import ACTIVE_STATUSES
+from community.planning._shared import ACTIVE_STATUSES, slot_out
 from community.planning.schemas import MySlotOut, TeammateOut
-from community.planning.years import slot_out
 from community.shared import ErrorOut
 
 router = Router()

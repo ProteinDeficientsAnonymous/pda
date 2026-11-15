@@ -534,13 +534,12 @@
           "biannual_interest": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/BiannualInterest"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Biannual Interest"
+            ]
           },
           "monthly_count": {
             "title": "Monthly Count",
@@ -3899,6 +3898,16 @@
         "title": "EventStatsOut",
         "type": "object"
       },
+      "EventStatus": {
+        "enum": [
+          "draft",
+          "active",
+          "cancelled",
+          "deleted"
+        ],
+        "title": "EventStatus",
+        "type": "string"
+      },
       "FeedbackIn": {
         "properties": {
           "description": {
@@ -4977,6 +4986,20 @@
           "submitted_at"
         ],
         "title": "JoinRequestSubmittedOut",
+        "type": "object"
+      },
+      "LinkEventIn": {
+        "properties": {
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id"
+        ],
+        "title": "LinkEventIn",
         "type": "object"
       },
       "LoginIn": {
@@ -6101,13 +6124,12 @@
           "event_status": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/EventStatus"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Event Status"
+            ]
           },
           "id": {
             "title": "Id",
@@ -17137,6 +17159,16 @@
             },
             "description": "Bad Request"
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
           "404": {
             "content": {
               "application/json": {
@@ -17204,6 +17236,16 @@
               }
             },
             "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
           },
           "404": {
             "content": {
@@ -17468,6 +17510,84 @@
           }
         ],
         "summary": "Propose Assignment",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/slots/{slot_id}/event/": {
+      "post": {
+        "operationId": "community_planning_event_link_link_slot_event",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slot_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Slot Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkEventIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningSlotOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Link Slot Event",
         "tags": [
           "community"
         ]
