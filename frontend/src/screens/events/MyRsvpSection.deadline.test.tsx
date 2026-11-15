@@ -24,6 +24,19 @@ function renderSection(event: Event, deadlineClosed = false) {
   return renderWithProviders(<MyRsvpSection event={event} deadlineClosed={deadlineClosed} />);
 }
 
+function rsvpMaybe() {
+  fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+  fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
+  fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+}
+
+async function expectSavedWithoutPopUp() {
+  await vi.waitFor(() => {
+    expect(setRsvpMutate).toHaveBeenCalled();
+  });
+  expect(screen.queryByRole('dialog', { name: /^confirm by / })).not.toBeInTheDocument();
+}
+
 beforeEach(() => {
   setRsvpMutate.mockReset();
   setRsvpMutate.mockResolvedValue(undefined);
@@ -36,6 +49,22 @@ describe('MyRsvpSection — open rsvp deadline', () => {
   it('shows the rsvp-by date', () => {
     renderSection(makeEvent({ myRsvp: null, rsvpDeadline: deadline }));
     expect(screen.getByText(/^rsvp by /)).toBeInTheDocument();
+  });
+
+  it('pops up the confirm-by date after rsvping maybe', async () => {
+    renderSection(makeEvent({ myRsvp: null, rsvpDeadline: deadline }));
+    rsvpMaybe();
+
+    expect(await screen.findByRole('dialog', { name: /^confirm by / })).toBeInTheDocument();
+    expect(setRsvpMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ status: RsvpStatus.Maybe }),
+    );
+  });
+
+  it('skips the pop-up when there is no deadline', async () => {
+    renderSection(makeEvent({ myRsvp: null }));
+    rsvpMaybe();
+    await expectSavedWithoutPopUp();
   });
 });
 
@@ -84,5 +113,11 @@ describe('MyRsvpSection — host past the rsvp deadline', () => {
   it('drops the rsvp-by note', () => {
     renderSection(makeEvent({ myRsvp: null, rsvpDeadline: deadline }));
     expect(screen.queryByText(/rsvp by /)).not.toBeInTheDocument();
+  });
+
+  it('skips the confirm-by pop-up after picking maybe', async () => {
+    renderSection(makeEvent({ myRsvp: null, rsvpDeadline: deadline }));
+    rsvpMaybe();
+    await expectSavedWithoutPopUp();
   });
 });
