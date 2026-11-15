@@ -1,3 +1,10 @@
+# [0.239.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.238.0...v0.239.0) (2026-11-15)
+
+
+### Features
+
+* add how-to-show-up section to official and club event templates ([#2487](https://github.com/ProteinDeficientsAnonymous/pda/issues/2487)) ([9c748b4](https://github.com/ProteinDeficientsAnonymous/pda/commit/9c748b443063089dff07e99a3c27270f7972ff2b))
+
 # [0.238.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.237.0...v0.238.0) (2026-11-15)
 
 
