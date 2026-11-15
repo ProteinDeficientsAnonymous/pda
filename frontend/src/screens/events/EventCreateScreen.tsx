@@ -11,6 +11,7 @@ import { ContentError, ContentLoading } from '@/screens/public/ContentContainer'
 import { EventForm } from './form/EventForm';
 
 const LINK_FAILED = "event saved, but couldn't link it to the planning slot";
+const SLOT_ERROR = "couldn't load that planning slot — try again from the planning page";
 const SLOT_START_HOUR = 10;
 
 function slotStart(year: number, month: number): string {
@@ -26,11 +27,8 @@ function PlanningSlotEventForm({ slotId, year }: { slotId: string; year: number 
   const { data: slots, isPending, isError } = usePlanningSlots(year);
   if (isPending) return <ContentLoading />;
   const slot = slots?.find((s) => s.id === slotId);
-  if (isError || !slot) {
-    return (
-      <ContentError message="couldn't load that planning slot — try again from the planning page" />
-    );
-  }
+  if (isError || !slot) return <ContentError message={SLOT_ERROR} />;
+  if (slot.eventId) return <ContentError message="that slot already has an event" />;
 
   async function onCreated(event: Event) {
     try {
@@ -53,15 +51,19 @@ function PlanningSlotEventForm({ slotId, year }: { slotId: string; year: number 
   );
 }
 
+function createBody(slotId: string | null, year: number) {
+  if (slotId === null) return <EventForm />;
+  if (!Number.isInteger(year) || year <= 0) return <ContentError message={SLOT_ERROR} />;
+  return <PlanningSlotEventForm slotId={slotId} year={year} />;
+}
+
 export default function EventCreateScreen() {
   const [params] = useSearchParams();
   const slotId = params.get('planningSlot');
   const year = Number(params.get('year'));
   return (
     <main className="bg-background min-h-full">
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        {slotId && year ? <PlanningSlotEventForm slotId={slotId} year={year} /> : <EventForm />}
-      </div>
+      <div className="mx-auto max-w-6xl px-4 py-8">{createBody(slotId, year)}</div>
     </main>
   );
 }

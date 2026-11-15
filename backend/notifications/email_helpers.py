@@ -1,6 +1,5 @@
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -349,44 +348,6 @@ def send_cohost_invite_email(
     return sender.send(
         to=details.to,
         subject=f"you've been invited to co-host {details.event_title.lower()}",
-        html=html,
-        text=text,
-    )
-
-
-class PlanningEmailVariant(StrEnum):
-    PROPOSED = "proposed"
-    REMINDER = "reminder"
-    UPCOMING = "upcoming"
-
-
-_PLANNING_SUBJECTS = {
-    PlanningEmailVariant.PROPOSED: "can you plan {label}?",
-    PlanningEmailVariant.REMINDER: "still need an answer: can you plan {label}?",
-    PlanningEmailVariant.UPCOMING: "{label} is coming up",
-}
-
-
-@dataclass(frozen=True)
-class PlanningEmailDetails:
-    to: str
-    display_name: str
-    slot_label: str
-    planning_url: str
-    variant: PlanningEmailVariant
-
-
-def send_planning_email(
-    *,
-    sender: EmailSender,
-    details: PlanningEmailDetails,
-) -> SendResult:
-    context = asdict(details)
-    html = render_to_string("emails/planning_slot.html", context)
-    text = render_to_string("emails/planning_slot.txt", context)
-    return sender.send(
-        to=details.to,
-        subject=_PLANNING_SUBJECTS[details.variant].format(label=details.slot_label),
         html=html,
         text=text,
     )

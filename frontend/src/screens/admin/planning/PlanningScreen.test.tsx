@@ -2,9 +2,9 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
-import { makeUser } from '@/test/fixtures';
+import { setAuthed } from '@/test/auth';
+import { makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import PlanningScreen from './PlanningScreen';
@@ -28,8 +28,7 @@ vi.mock('@/api/planning', () => ({
 }));
 
 function signInWith(...perms: string[]) {
-  const roles = [{ id: 'r1', name: 'planner', isDefault: false, permissions: perms }];
-  useAuthStore.setState({ status: 'authed', user: makeUser({ roles }), accessToken: 'tok' });
+  setAuthed(makeUserWithPermissions(perms));
 }
 
 vi.mock('./MySlots', () => ({
