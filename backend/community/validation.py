@@ -28,6 +28,8 @@ class Code:
         RSVPS_NOT_ENABLED = "event.rsvps_not_enabled"
         RSVPS_CLOSED_CANCELLED = "event.rsvps_closed_cancelled"
         RSVPS_CLOSED_PAST = "event.rsvps_closed_past"
+        RSVPS_CLOSED_DEADLINE = "event.rsvps_closed_deadline"
+        RSVP_DEADLINE_AFTER_START = "event.rsvp_deadline_after_start"
         RSVP_INVALID_STATUS = "event.rsvp_invalid_status"
         NO_PLUS_ONE_SPOTS = "event.no_plus_one_spots"
         RSVP_NOT_FOUND = "event.rsvp_not_found"
@@ -37,6 +39,7 @@ class Code:
         RSVP_COULD_NOT_BE_CREATED = "event.rsvp_could_not_be_created"  # generic, no-oracle
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         NO_PLUS_ONE_TO_CHECK_IN = "event.no_plus_one_to_check_in"
+        DIDNT_GO_REQUIRES_GOING = "event.didnt_go_requires_going"
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }
         GUEST_NOT_ELIGIBLE = "event.guest_not_eligible"
         BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"
