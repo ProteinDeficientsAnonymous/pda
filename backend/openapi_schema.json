@@ -1770,6 +1770,10 @@
       },
       "EventDescriptionTemplatesOut": {
         "properties": {
+          "club": {
+            "title": "Club",
+            "type": "string"
+          },
           "official_non_walk": {
             "title": "Official Non Walk",
             "type": "string"
@@ -1781,7 +1785,8 @@
         },
         "required": [
           "official_walk",
-          "official_non_walk"
+          "official_non_walk",
+          "club"
         ],
         "title": "EventDescriptionTemplatesOut",
         "type": "object"
