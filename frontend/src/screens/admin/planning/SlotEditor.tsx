@@ -21,11 +21,12 @@ const KIND_OPTIONS: { value: SlotKind; label: string }[] = [
   { value: 'biannual', label: 'biannual' },
 ];
 
+const LABEL_MAX = 100;
 const SAVE_FAILED = "couldn't save slot — try again";
 
-function SlotRow({ slot, year }: { slot: PlanningSlot; year: number }) {
-  const update = useUpdateSlot(year);
-  const remove = useDeleteSlot(year);
+function SlotRow({ slot }: { slot: PlanningSlot }) {
+  const update = useUpdateSlot();
+  const remove = useDeleteSlot();
   const { confirm, element } = useConfirm();
   const [label, setLabel] = useState(slot.label);
 
@@ -56,6 +57,7 @@ function SlotRow({ slot, year }: { slot: PlanningSlot; year: number }) {
           id={`slot-${slot.id}-label`}
           label={`label for ${slot.label}`}
           hideLabel
+          maxLength={LABEL_MAX}
           value={label}
           onChange={(e) => {
             setLabel(e.target.value);
@@ -112,6 +114,7 @@ function AddSlotRow({ year }: { year: number }) {
           label="new slot label"
           hideLabel
           placeholder="new slot"
+          maxLength={LABEL_MAX}
           value={label}
           onChange={(e) => {
             setLabel(e.target.value);
@@ -153,7 +156,7 @@ export function SlotEditor({ year }: { year: number }) {
       <h2 className="text-lg font-medium">manage slots</h2>
       <ul className="flex flex-col gap-3">
         {slots.data.map((s) => (
-          <SlotRow key={s.id} slot={s} year={year} />
+          <SlotRow key={s.id} slot={s} />
         ))}
       </ul>
       <AddSlotRow year={year} />
