@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MySlot } from '@/api/planning';
+import { makeSlot } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { MySlots } from './MySlots';
@@ -11,16 +12,7 @@ const mine = (id: string, status: MySlot['status'], year = 2027): MySlot => ({
   assignmentId: id,
   status,
   year,
-  slot: {
-    id: `slot-${id}`,
-    label: `label ${id}`,
-    month: 1,
-    kind: 'monthly',
-    order: 1,
-    eventId: null,
-    eventSlug: null,
-    eventStatus: null,
-  },
+  slot: makeSlot({ id: `slot-${id}`, label: `label ${id}`, month: 1, order: 1 }),
   teammates: [],
 });
 

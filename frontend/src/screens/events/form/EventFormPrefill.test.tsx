@@ -4,9 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import { QuestionType } from '@/api/questionTypes';
-import { useAuthStore } from '@/auth/store';
 import { EventType } from '@/models/event';
 import { Permission } from '@/models/permissions';
+import { setAuthed } from '@/test/auth';
 import { makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -37,10 +37,7 @@ const post = vi.spyOn(apiClient, 'post');
 beforeEach(() => {
   post.mockReset().mockRejectedValue(new Error('stop after capturing the body'));
   defaultsLoaded = true;
-  useAuthStore.setState({
-    user: makeUserWithPermissions([Permission.TagOfficialEvent]),
-    status: 'authed',
-  });
+  setAuthed(makeUserWithPermissions([Permission.TagOfficialEvent]));
 });
 
 describe('EventForm prefilled as official', () => {

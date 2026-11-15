@@ -3,20 +3,19 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PlanningGrid as Grid } from '@/api/planning';
+import { makeSlot } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { PlanningGrid } from './PlanningGrid';
 
-const slot = (id: string, label: string, month: number, event?: string) => ({
-  id,
-  label,
-  month,
-  kind: 'monthly' as const,
-  order: month,
-  eventId: event ?? null,
-  eventSlug: event ? 'jan-potluck' : null,
-  eventStatus: event ? ('active' as const) : null,
-});
+const slot = (id: string, label: string, month: number, event?: string) =>
+  makeSlot({
+    id,
+    label,
+    month,
+    order: month,
+    ...(event ? { eventId: event, eventSlug: 'jan-potluck', eventStatus: 'active' } : {}),
+  });
 
 const planner = (userId: string, name: string, extra: object = {}) => ({
   userId,
