@@ -24,6 +24,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says the rsvp deadline must come before the start', () => {
+    expect(
+      messageForCode({ code: Code.Event.RsvpDeadlineAfterStart, field: 'rsvp_deadline' }),
+    ).toBe('the rsvp deadline must be before the event starts');
+  });
+
   it('uses the field name for generic fallback codes', () => {
     expect(messageForCode({ code: Code.Generic.FieldRequired, field: 'title' })).toContain('title');
     expect(messageForCode({ code: Code.Generic.FieldInvalid, field: 'max_attendees' })).toContain(
