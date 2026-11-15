@@ -1,59 +1,17 @@
-import logging
-from collections.abc import Iterable
 from uuid import UUID
 
 from config.auth import gated_jwt
 from django.db import transaction
 from ninja import Router
-from pydantic import BaseModel
 
-from community.cohosts.invite_helpers import (
-    invite_cohosts_and_notify,
-    rescind_pending_cohost_invite,
-)
-from community.models import (
-    AssignmentStatus,
-    CoHostInviteStatus,
-    Event,
-    EventCoHostInvite,
-    EventStatus,
-    PlanningSlot,
-)
+from community.models import AssignmentStatus, Event, EventStatus, PlanningSlot
 from community.planning._access import require_manage_or, require_view
-from community.planning.schemas import PlanningSlotOut
-from community.planning.years import slot_out
+from community.planning._shared import invite_planners_to_event, slot_out
+from community.planning.schemas import LinkEventIn, PlanningSlotOut
 from community.shared import ErrorOut
-from community.validation import Code, ValidationException, raise_validation
+from community.validation import Code, raise_validation
 
 router = Router()
-logger = logging.getLogger("pda.community.planning_event_link")
-
-
-class LinkEventIn(BaseModel):
-    event_id: UUID
-
-
-def invite_planners_to_event(event: Event, planner_ids: Iterable, inviter) -> None:
-    """Best-effort: the link or commit has already succeeded, so a rejected invite must not undo it."""
-    ids = [str(pk) for pk in planner_ids]
-    removed = EventCoHostInvite.objects.filter(
-        event=event, user_id__in=ids, status=CoHostInviteStatus.REMOVED
-    ).values_list("user_id", flat=True)
-    removed_ids = {str(pk) for pk in removed}
-    for planner_id in ids:
-        # add_cohost_invites would revive a host's removal back to pending
-        if planner_id in removed_ids:
-            continue
-        try:
-            invite_cohosts_and_notify(event, [planner_id], inviter)
-        except ValidationException:
-            logger.warning("planning_cohost_invite_rejected", exc_info=True)
-
-
-def rescind_planner_invite(slot: PlanningSlot, planner_id) -> None:
-    event = slot.live_event
-    if event is not None:
-        rescind_pending_cohost_invite(event, planner_id)
 
 
 @router.post(

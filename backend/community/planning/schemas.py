@@ -63,6 +63,10 @@ class AvailabilityIn(BaseModel):
     monthly_count: int = Field(ge=0, le=12)
 
 
+class LinkEventIn(BaseModel):
+    event_id: UUID
+
+
 class ProposeIn(BaseModel):
     user_id: UUID
 

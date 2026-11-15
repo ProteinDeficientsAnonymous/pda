@@ -26,7 +26,6 @@ import { useConfirm } from '@/components/ui/useConfirm';
 import { type Event, eventHostCount, eventPath, EventType, isOfficialOrClub } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
-import { fromCashAppUrl } from '@/utils/paymentHandle';
 
 import { EventHostSection } from '../EventHostSection';
 import { eventMemberSectionFlags } from '../eventMemberFlags';
@@ -40,7 +39,7 @@ import { EventFormQuestions } from './EventFormQuestions';
 import { EventFormRsvp } from './EventFormRsvp';
 import { EventFormSlug } from './EventFormSlug';
 import { EventFormTags } from './EventFormTags';
-import { withOfficialQuestions } from './officialQuestions';
+import { officialExtras } from './officialQuestions';
 import { typeDefaults } from './typeDefaults';
 import { validateEventForm } from './validateEventForm';
 
@@ -146,27 +145,26 @@ export function EventForm({ existing, initial, onCreated }: Props) {
   const saving = create.isPending || update.isPending || uploadPhoto.isPending;
   const isDraft = values.status === 'draft';
 
-  function officialExtras(official: boolean): Partial<EventFormValues> {
-    if (!officialDefaults) return {};
-    setRsvpQuestions((qs) => withOfficialQuestions(qs, official, officialDefaults.rsvpQuestions));
-    return official && !values.cashappLink.trim()
-      ? { cashappLink: fromCashAppUrl(officialDefaults.cashappLink) }
-      : {};
-  }
-
   const pendingOfficialPrefill = useRef(!existing && initial?.eventType === EventType.Official);
   useEffect(() => {
     if (!pendingOfficialPrefill.current || !officialDefaults || !templates) return;
     pendingOfficialPrefill.current = false;
-    const extras = officialExtras(true);
-    setValues((v) => withDescriptionTemplate({ ...v, ...extras }, templates));
+    const extras = officialExtras(officialDefaults, true, values.cashappLink);
+    setRsvpQuestions(extras.questions);
+    setValues((v) => withDescriptionTemplate({ ...v, ...extras.values }, templates));
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- once, when the defaults load
   }, [officialDefaults, templates]);
 
   function patch(input: Partial<EventFormValues>) {
     let p = input;
     if (p.eventType !== undefined && p.eventType !== values.eventType) {
-      p = { ...p, ...officialExtras(p.eventType === EventType.Official) };
+      pendingOfficialPrefill.current = false;
+      if (officialDefaults) {
+        const official = p.eventType === EventType.Official;
+        const extras = officialExtras(officialDefaults, official, values.cashappLink);
+        setRsvpQuestions(extras.questions);
+        p = { ...p, ...extras.values };
+      }
     }
     setValues((v) => {
       const next = { ...v, ...p };
