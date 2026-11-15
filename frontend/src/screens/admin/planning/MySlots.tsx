@@ -76,6 +76,7 @@ export function MySlots() {
             {waiting.map((row) => (
               <SlotRow key={row.assignmentId} row={row} showYear={showYear}>
                 <Button
+                  aria-label={`i'm in for ${row.slot.label}`}
                   disabled={busy}
                   onClick={() => {
                     respond(commit, row);
@@ -85,6 +86,7 @@ export function MySlots() {
                 </Button>
                 <Button
                   variant="secondary"
+                  aria-label={`can't do ${row.slot.label}`}
                   disabled={busy}
                   onClick={() => {
                     respond(decline, row);
@@ -105,7 +107,12 @@ export function MySlots() {
           <ul>
             {committed.map((row) => (
               <SlotRow key={row.assignmentId} row={row} showYear={showYear}>
-                <Button variant="destructive" disabled={busy} onClick={() => void backOut(row)}>
+                <Button
+                  variant="destructive"
+                  aria-label={`back out of ${row.slot.label}`}
+                  disabled={busy}
+                  onClick={() => void backOut(row)}
+                >
                   back out
                 </Button>
               </SlotRow>

@@ -2,10 +2,10 @@ import { screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PlanningSlot } from '@/api/planning';
-import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { Permission } from '@/models/permissions';
-import { makeEvent, makeUserWithPermissions } from '@/test/fixtures';
+import { setAuthed } from '@/test/auth';
+import { makeEvent, makeSlot, makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import EventCreateScreen from './EventCreateScreen';
@@ -21,16 +21,7 @@ const { formProps, linkSlotEvent, toastError } = vi.hoisted(() => ({
   toastError: vi.fn(),
 }));
 
-const slot: PlanningSlot = {
-  id: 's1',
-  label: 'march',
-  month: 3,
-  kind: 'monthly',
-  order: 3,
-  eventId: null,
-  eventSlug: null,
-  eventStatus: null,
-};
+const slot = makeSlot();
 
 vi.mock('sonner', () => ({ toast: { error: toastError } }));
 let slotsState: { data?: PlanningSlot[]; isPending: boolean; isError: boolean };
@@ -54,10 +45,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   slotsState = { data: [slot], isPending: false, isError: false };
   linkSlotEvent.mockResolvedValue(slot);
-  useAuthStore.setState({
-    user: makeUserWithPermissions([Permission.TagOfficialEvent]),
-    status: 'authed',
-  });
+  setAuthed(makeUserWithPermissions([Permission.TagOfficialEvent]));
 });
 
 afterEach(() => {
@@ -107,8 +95,28 @@ describe('EventCreateScreen', () => {
     expect(screen.queryByText('event form')).not.toBeInTheDocument();
   });
 
+  it('shows an error instead of a second event when the slot already has one', () => {
+    slotsState = { data: [{ ...slot, eventId: 'e1' }], isPending: false, isError: false };
+    renderWithProviders(<EventCreateScreen />, { route: '/events/add?planningSlot=s1&year=2027' });
+    expect(screen.getByRole('alert')).toHaveTextContent('that slot already has an event');
+    expect(screen.queryByText('event form')).not.toBeInTheDocument();
+  });
+
+  it.each(['', '&year=', '&year=next'])(
+    'shows an error instead of an unlinked form when the year is bad (%j)',
+    (yearParam) => {
+      renderWithProviders(<EventCreateScreen />, {
+        route: `/events/add?planningSlot=s1${yearParam}`,
+      });
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        "couldn't load that planning slot — try again from the planning page",
+      );
+      expect(screen.queryByText('event form')).not.toBeInTheDocument();
+    },
+  );
+
   it('keeps the event type open without the official-event permission', async () => {
-    useAuthStore.setState({ user: makeUserWithPermissions([]), status: 'authed' });
+    setAuthed(makeUserWithPermissions([]));
     renderWithProviders(<EventCreateScreen />, { route: '/events/add?planningSlot=s1&year=2027' });
     await screen.findByText('event form');
     expect(lastProps().initial?.eventType).toBeUndefined();

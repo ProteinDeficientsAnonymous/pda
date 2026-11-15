@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom';
 
 import type { PlanningSlot } from '@/api/planning';
-import { useHasPermission } from '@/auth/useAuth';
 import { eventPath } from '@/models/event';
-import { Permission } from '@/models/permissions';
 
 interface Props {
   slot: PlanningSlot;
@@ -11,19 +9,28 @@ interface Props {
   canCreate: boolean;
 }
 
+const STATUS_TEXT: Record<NonNullable<PlanningSlot['eventStatus']>, string> = {
+  active: 'scheduled',
+  draft: 'draft',
+  cancelled: 'cancelled',
+  deleted: 'deleted',
+};
+
 export function SlotEventLink({ slot, year, canCreate }: Props) {
-  const canTagOfficial = useHasPermission(Permission.TagOfficialEvent);
   if (slot.eventId) {
     return (
-      <Link
-        className="text-xs underline"
-        to={eventPath({ id: slot.eventId, slug: slot.eventSlug ?? '' })}
-      >
-        view event
-      </Link>
+      <span className="text-xs">
+        {slot.eventStatus ? `${STATUS_TEXT[slot.eventStatus]} · ` : null}
+        <Link
+          className="underline"
+          to={eventPath({ id: slot.eventId, slug: slot.eventSlug ?? '' })}
+        >
+          view event
+        </Link>
+      </span>
     );
   }
-  if (!canCreate || !canTagOfficial) return null;
+  if (!canCreate) return null;
   return (
     <Link
       className="text-xs underline"
