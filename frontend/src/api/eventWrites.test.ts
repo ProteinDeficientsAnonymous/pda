@@ -90,6 +90,13 @@ describe('toPartialWireBody', () => {
     expect(body).toEqual({ rsvp_enabled: false, price: '', max_attendees: null });
   });
 
+  it('round-trips an existing rsvp deadline through the form', () => {
+    const deadline = new Date('2030-03-01T17:00:00Z');
+    const form = eventToFormValues(makeEvent({ rsvpDeadline: deadline }));
+    expect(form.rsvpDeadline).toBe(deadline.toISOString());
+    expect(toWireBody(form).rsvp_deadline).toBe(deadline.toISOString());
+  });
+
   it('sends a cleared rsvp deadline as null', () => {
     expect(toPartialWireBody({ rsvpDeadline: null })).toEqual({ rsvp_deadline: null });
   });
