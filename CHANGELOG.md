@@ -1,3 +1,10 @@
+# [0.247.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.246.1...v0.247.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - ask planners for availability; weekly reminder ([#2538](https://github.com/ProteinDeficientsAnonymous/pda/issues/2538)) ([175bee8](https://github.com/ProteinDeficientsAnonymous/pda/commit/175bee806333dda75cdf7fe21cf72fb65c811b23))
+
 ## [0.246.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.246.0...v0.246.1) (2026-11-16)
 
 
