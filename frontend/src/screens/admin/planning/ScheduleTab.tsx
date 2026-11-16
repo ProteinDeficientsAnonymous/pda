@@ -40,7 +40,6 @@ export function ScheduleTab({ year }: { year: number }) {
               <MonthPanel
                 grid={grid}
                 slotId={openSlotId}
-                year={year}
                 today={today}
                 onClose={() => {
                   setOpenSlotId(null);

@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 import type { PlanningGrid } from '@/api/planning';
 import { Button } from '@/components/ui/Button';
 
@@ -8,7 +10,6 @@ import { SlotEventLink } from './SlotEventLink';
 interface MonthPanelProps {
   grid: PlanningGrid;
   slotId: string;
-  year: number;
   today: Date;
   onClose: () => void;
 }
@@ -16,17 +17,22 @@ interface MonthPanelProps {
 const TAG: Record<Coverage['kind'], string> = {
   in: 'covered',
   sent: 'waiting',
-  draft: 'waiting',
+  draft: 'not sent yet',
   free: 'needs a planner',
   past: 'past',
 };
 
-export function MonthPanel({ grid, slotId, year, today, onClose }: MonthPanelProps) {
+export function MonthPanel({ grid, slotId, today, onClose }: MonthPanelProps) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView({ block: 'nearest' });
+  }, [slotId]);
   const slot = grid.slots.find((s) => s.id === slotId);
   if (!slot) return null;
 
   return (
     <section
+      ref={ref}
       aria-labelledby="month-panel-heading"
       className="border-border rounded-md border p-3 text-sm md:w-72 md:shrink-0"
     >
@@ -36,11 +42,11 @@ export function MonthPanel({ grid, slotId, year, today, onClose }: MonthPanelPro
             {slot.label}
           </h2>
           <p className="text-muted text-xs">{TAG[slotCoverage(grid, slotId, today).kind]}</p>
-          <SlotEventLink slot={slot} year={year} canCreate={slotHasCommitted(grid, slotId)} />
+          <SlotEventLink slot={slot} year={grid.year} canCreate={slotHasCommitted(grid, slotId)} />
         </div>
         <Button
           variant="ghost"
-          className="h-8 px-2"
+          className="h-10 min-w-10 px-2"
           aria-label={`close ${slot.label}`}
           onClick={onClose}
         >
