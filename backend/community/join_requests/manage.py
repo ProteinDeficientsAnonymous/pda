@@ -332,7 +332,10 @@ def _apply_status_transition(
         # A tentative person who shouldn't stay is archived from the members screen instead.
         if was_tentative and status == JoinRequestStatus.REJECTED:
             raise_validation(Code.JoinRequest.TENTATIVE_CANNOT_BE_REJECTED, status_code=400)
-        if status in _ADMITTED_STATUSES and applicant_guidelines_paused(join_request):
+        approving = status == JoinRequestStatus.APPROVED
+        if status in _ADMITTED_STATUSES and applicant_guidelines_paused(
+            join_request, approving=approving
+        ):
             raise_validation(Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED, status_code=400)
 
         _stamp_decision(join_request, status, actor, rejection)

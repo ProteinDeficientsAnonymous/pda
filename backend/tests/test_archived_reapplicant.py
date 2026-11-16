@@ -141,6 +141,17 @@ def test_approval_checks_the_phone_match_as_well_as_the_linked_user(
     assert_error_code(response, Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED)
 
 
+def test_a_paused_phone_match_does_not_block_a_linked_rsvper(
+    api_client, vettor_headers, sample_join_request
+):
+    sample_join_request.user = make_user(
+        phone_number="+16505559999", membership_status=MembershipStatus.NONE
+    )
+    sample_join_request.save(update_fields=["user"])
+    make_user(phone_number=PHONE, membership_status=MembershipStatus.GUIDELINES_PAUSED)
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+
+
 def test_approving_a_tentative_who_is_guidelines_paused_is_refused(
     api_client, vettor_headers, sample_join_request
 ):

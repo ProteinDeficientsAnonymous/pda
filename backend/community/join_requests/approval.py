@@ -1,7 +1,6 @@
 import logging
 
 from django.conf import settings
-from django.db.models import Q
 from django.utils import timezone
 from notifications.email_helpers import send_join_approval_email
 from notifications.email_sender import get_email_sender
@@ -170,12 +169,17 @@ def _make_tentative(user, join_request, by: User) -> list[str]:
     return [*fields, "first_name", "last_name"]
 
 
-def applicant_guidelines_paused(join_request) -> bool:
-    """Whether the linked or phone-matched user, either of which approval may admit, is paused."""
-    candidates = User.objects.select_for_update().filter(
-        Q(pk=join_request.user_id) | Q(phone_number=join_request.phone_number)
-    )
-    return any(user.is_guidelines_paused for user in candidates)
+def _admitted_user(join_request, *, approving: bool) -> User | None:
+    """The linked user, else the phone match; approval skips a linked member or archived account."""
+    linked = join_request.user
+    if linked is not None and not (approving and linked.membership_status in MEMBER_OR_ARCHIVED):
+        return linked
+    return User.objects.filter(phone_number=join_request.phone_number).first()
+
+
+def applicant_guidelines_paused(join_request, *, approving: bool) -> bool:
+    user = _admitted_user(join_request, approving=approving)
+    return user is not None and user.is_guidelines_paused
 
 
 def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
@@ -188,7 +192,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     limits them to official/club events (see ``community/events/limited_access``).
     Returns ``(user, magic_token)``.
     """
-    user = join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
+    user = _admitted_user(join_request, approving=False)
     if user is None:
         user = User.objects.create(
             phone_number=join_request.phone_number,
@@ -230,7 +234,7 @@ def maybe_promote_tentative(user, event, actor) -> bool:
     user has a linked TENTATIVE join request. Returns whether a promotion
     happened, so the caller knows to send the approval email.
     """
-    # Only older tentative rows can be guidelines-paused now; check-in doesn't lift it.
+    # A tentative applicant can be guidelines-paused; check-in doesn't lift it.
     if not is_official_or_club(event.event_type) or user.is_guidelines_paused:
         return False
     join_request = user.join_requests.filter(status=JoinRequestStatus.TENTATIVE).first()
@@ -267,7 +271,7 @@ def provision_approved_user(
             return None, False
         return _promote_public_rsvper(join_request.user, join_request, requesting_user), False
 
-    existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
+    existing_user = _admitted_user(join_request, approving=True)
     if existing_user is None:
         first_name, last_name = _resolve_names(join_request)
         _, magic_token = create_user_with_role(
