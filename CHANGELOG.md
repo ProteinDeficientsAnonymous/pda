@@ -1,3 +1,10 @@
+# [0.240.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.239.1...v0.240.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - yearly event planning schedule ([#2441](https://github.com/ProteinDeficientsAnonymous/pda/issues/2441)) ([0748b12](https://github.com/ProteinDeficientsAnonymous/pda/commit/0748b1228258cd0359ccd80845d03cea851212e2))
+
 ## [0.239.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.239.0...v0.239.1) (2026-11-15)
 
 
