@@ -24,11 +24,15 @@ export function SendProposalsBar({ send, drafts }: SendProposalsBarProps) {
   }
 
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-3">
-      <Button disabled={send.isPending} onClick={() => void sendAll()}>
-        {`send ${plural(drafts, 'proposal')}`}
+    <div className="bg-brand-600 text-brand-on mb-3 flex items-center justify-between gap-3 rounded-full py-2 pr-2 pl-5">
+      <p className="min-w-0 truncate text-sm font-medium">{`${String(drafts)} not sent yet`}</p>
+      <Button
+        disabled={send.isPending}
+        onClick={() => void sendAll()}
+        className="bg-brand-on text-brand-600 hover:bg-brand-on/90 disabled:bg-brand-on/70 shrink-0"
+      >
+        send proposals
       </Button>
-      <p className="text-muted text-sm">drafts aren&apos;t sent until you hit send</p>
     </div>
   );
 }
