@@ -219,6 +219,10 @@ describe('messageForCode', () => {
     ).toBe('this number already has an open request — review that one instead');
   });
 
+  it.each(Object.values(Code.Planning))('gives planning code %s its own copy', (code) => {
+    expect(messageForCode({ code, field: null })).not.toMatch(/double-check/i);
+  });
+
   it('returns a safe fallback for unknown codes', () => {
     expect(messageForCode({ code: 'something_the_fe_doesnt_know', field: null })).toMatch(
       /double-check/i,
