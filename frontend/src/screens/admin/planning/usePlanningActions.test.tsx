@@ -12,17 +12,18 @@ import { usePlanningActions } from './usePlanningActions';
 const propose = vi.fn();
 const withdraw = vi.fn();
 const toastError = vi.fn();
+let pending = { propose: false, withdraw: false, send: false };
 
 vi.mock('sonner', () => ({ toast: { error: (m: string) => void toastError(m) } }));
 
 vi.mock('@/api/planning', () => ({
-  usePropose: () => ({ mutateAsync: propose, isPending: false }),
-  useWithdraw: () => ({ mutateAsync: withdraw, isPending: false }),
-  useSendProposals: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  usePropose: () => ({ mutateAsync: propose, isPending: pending.propose }),
+  useWithdraw: () => ({ mutateAsync: withdraw, isPending: pending.withdraw }),
+  useSendProposals: () => ({ mutateAsync: vi.fn(), isPending: pending.send }),
 }));
 
 function Harness({ state, status }: { state: CellState; status?: Assignment['status'] }) {
-  const { act, confirmElement } = usePlanningActions(2999);
+  const { act, busy, confirmElement } = usePlanningActions(2999);
   const slot = makeSlot({ label: 'january' });
   const planner = { userId: 'u1', name: 'ada' } as PlannerColumn;
   const assignment = status ? { id: 'a1', slotId: slot.id, userId: 'u1', status } : undefined;
@@ -30,6 +31,7 @@ function Harness({ state, status }: { state: CellState; status?: Assignment['sta
     <>
       {confirmElement}
       <button onClick={() => void act(slot, planner, state, assignment)}>go</button>
+      <p>{busy ? 'busy' : 'idle'}</p>
     </>
   );
 }
@@ -44,6 +46,7 @@ const answer = (label: 'withdraw' | 'cancel') =>
 
 beforeEach(() => {
   vi.resetAllMocks();
+  pending = { propose: false, withdraw: false, send: false };
 });
 
 describe('usePlanningActions', () => {
@@ -78,5 +81,16 @@ describe('usePlanningActions', () => {
     await run(state, status);
     if (state === 'committed') await answer('withdraw');
     expect(toastError).toHaveBeenCalledWith(message);
+  });
+
+  it('is idle with nothing in flight', () => {
+    renderWithProviders(<Harness state="available" />);
+    expect(screen.getByText('idle')).toBeInTheDocument();
+  });
+
+  it.each(['propose', 'withdraw', 'send'] as const)('is busy while %s is pending', (key) => {
+    pending = { ...pending, [key]: true };
+    renderWithProviders(<Harness state="available" />);
+    expect(screen.getByText('busy')).toBeInTheDocument();
   });
 });
