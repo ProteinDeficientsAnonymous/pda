@@ -45,6 +45,10 @@ vi.mock('./ScheduleTab', () => ({
   ScheduleTab: ({ year }: { year: number }) => <div>grid for {year}</div>,
 }));
 
+vi.mock('./ChecklistTab', () => ({
+  ChecklistTab: () => <div>checklist tab</div>,
+}));
+
 vi.mock('./GuidelinesTab', () => ({
   GuidelinesTab: () => <div>guidelines tab</div>,
 }));
@@ -90,6 +94,8 @@ describe('PlanningScreen', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'my availability' }));
     expect(screen.getByText('form for 2026')).toBeInTheDocument();
     expect(screen.queryByText('my slots')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: 'checklist' }));
+    expect(screen.getByText('checklist tab')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('radio', { name: 'guidelines' }));
     expect(screen.getByText('guidelines tab')).toBeInTheDocument();
   });
@@ -183,7 +189,7 @@ describe('PlanningScreen', () => {
       (route) => {
         years = [{ id: 'y1', year: 2027 }];
         renderWithProviders(<PlanningScreen />, { route });
-        expect(screen.getAllByRole('radio')).toHaveLength(3);
+        expect(screen.getAllByRole('radio')).toHaveLength(4);
         expect(screen.getByRole('radio', { name: 'my events' })).toBeChecked();
         expect(screen.getByRole('radio', { name: 'my availability' })).toBeInTheDocument();
         expect(screen.getByText('my slots')).toBeInTheDocument();
