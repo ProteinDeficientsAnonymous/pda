@@ -121,7 +121,7 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
   const free: PanelRow[] = [];
   const others: PanelRow[] = [];
   for (const planner of grid.planners) {
-    const state = cellState(slotId, planner.userId, grid, today);
+    const state = cellState(slotId, planner.userId, grid);
     const assignment = findAssignment(grid, slotId, planner.userId);
     const notes = plannerNotes(planner, extraSlot);
     if (assignment) {

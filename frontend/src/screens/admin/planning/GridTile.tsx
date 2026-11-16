@@ -7,7 +7,6 @@ import { cellActionLabel, type CellState, isWithdrawable, STATE_TEXT } from './g
 const TILE_CLASS: Record<CellState, string> = {
   committed: 'rounded-[3px] bg-plan-in text-plan-in-fg',
   proposed: 'rounded-full bg-plan-sent text-plan-sent-fg',
-  no_answer: 'rounded-full bg-plan-sent text-plan-sent-fg',
   draft: 'rounded-[3px] border border-dashed border-plan-draft bg-surface',
   declined: 'rounded-[3px] bg-plan-blank text-muted',
   available: 'rounded-[3px] border border-plan-free-edge bg-plan-free',
@@ -17,7 +16,6 @@ const TILE_CLASS: Record<CellState, string> = {
 const GLYPH: Partial<Record<CellState, string>> = {
   committed: '✓',
   proposed: '?',
-  no_answer: '!',
   declined: '✕',
 };
 
