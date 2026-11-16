@@ -1,3 +1,10 @@
+# [0.246.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.3...v0.246.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - split planning into my events and my availability tabs ([#2528](https://github.com/ProteinDeficientsAnonymous/pda/issues/2528)) ([df5aff3](https://github.com/ProteinDeficientsAnonymous/pda/commit/df5aff306cb3000405ca66e2741ebce2fd862a1f))
+
 ## [0.245.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.2...v0.245.3) (2026-11-16)
 
 
