@@ -106,6 +106,18 @@ def notify_proposed(user: User, slots: list[PlanningSlot], proposed_by: User) ->
     transaction.on_commit(lambda: email_planner(user, slots, PlanningEmailVariant.PROPOSED))
 
 
+def notify_confirmed(assignment: SlotAssignment, by: User) -> None:
+    name = visible_display_name(by, None).lower()
+    _notify(
+        assignment,
+        NotificationType.PLANNING_COMMITTED,
+        f"{name} put you down to plan {assignment.slot.label} 🌱",
+        by,
+    )
+    user, slot = assignment.user, assignment.slot
+    transaction.on_commit(lambda: email_planner(user, [slot], PlanningEmailVariant.CONFIRMED))
+
+
 def notify_upcoming(assignment: SlotAssignment) -> None:
     _notify(
         assignment,

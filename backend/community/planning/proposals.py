@@ -10,7 +10,7 @@ from users.models import User
 
 from community.models import AssignmentStatus, SlotAssignment
 from community.planning._access import require_manage
-from community.planning._notify import notify_proposed, notify_withdrawn
+from community.planning._notify import notify_confirmed, notify_proposed, notify_withdrawn
 from community.planning._planners import planner_users
 from community.planning._shared import (
     ACTIVE_STATUSES,
@@ -19,6 +19,7 @@ from community.planning._shared import (
     get_assignment_or_404,
     get_slot_or_404,
     get_year_or_404,
+    invite_planners_to_event,
     rescind_planner_invite,
 )
 from community.planning.schemas import AssignmentOut, ProposalsSentOut, ProposeIn
@@ -50,6 +51,32 @@ def propose_assignment(request, slot_id: UUID, payload: ProposeIn):
         if assignment.status in HELD_STATUSES:
             raise_validation(Code.Planning.ALREADY_ASSIGNED, field="user_id", status_code=400)
         assignment.stage(request.auth)
+    return Status(201, assignment_out(assignment))
+
+
+@router.post(
+    "/planning/slots/{slot_id}/assignments/confirm/",
+    response={201: AssignmentOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def confirm_assignment(request, slot_id: UUID, payload: ProposeIn):
+    require_manage(request, "confirm_planning_assignment")
+    slot = get_slot_or_404(slot_id)
+    user = planner_users().filter(pk=payload.user_id).first()
+    if user is None:
+        raise_validation(Code.Planning.NOT_A_PLANNER, field="user_id", status_code=400)
+    with transaction.atomic():
+        assignment, _ = SlotAssignment.objects.select_for_update(of=("self",)).get_or_create(
+            slot=slot, user=user, defaults={"status": AssignmentStatus.DRAFT}
+        )
+        if assignment.status == AssignmentStatus.COMMITTED:
+            raise_validation(Code.Planning.ALREADY_ASSIGNED, field="user_id", status_code=400)
+        assignment.confirm(request.auth)
+        if user != request.auth:
+            notify_confirmed(assignment, request.auth)
+    event = slot.live_event
+    if event is not None:
+        invite_planners_to_event(event, [user.pk], event.created_by or request.auth)
     return Status(201, assignment_out(assignment))
 
 
