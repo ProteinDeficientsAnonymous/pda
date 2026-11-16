@@ -122,7 +122,7 @@ export default function PlanningScreen() {
         />
       ) : null}
       {!defaultSettled ? <ContentLoading /> : null}
-      {defaultSettled && tab === 'schedule' ? <ScheduleTab year={year} /> : null}
+      {defaultSettled && tab === 'schedule' ? <ScheduleTab key={year} year={year} /> : null}
       {defaultSettled && tab === 'mine' ? <MineTab year={year} /> : null}
       {defaultSettled && tab === 'slots' ? (
         <>
