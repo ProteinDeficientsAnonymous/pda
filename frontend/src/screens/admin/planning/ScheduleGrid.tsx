@@ -4,7 +4,7 @@ import type { PlannerColumn, PlanningGrid } from '@/api/planning';
 import { cn } from '@/utils/cn';
 
 import { cellState, findAssignment } from './gridCell';
-import { gridTemplate, loadTrack, slotColumns } from './gridLayout';
+import { GRID_SIZE_CLASS, gridTemplate, loadTrack, slotColumns } from './gridLayout';
 import { CoverageMark, GridKey } from './GridMarks';
 import { LoadCell, NameCell } from './GridRowCells';
 import { plannerLoad, slotCoverage } from './gridSummary';
@@ -22,7 +22,7 @@ interface ScheduleGridProps {
 
 const at = (row: number, column: number | string) => ({ gridRow: row, gridColumn: column });
 
-const ROW = '22px';
+const ROW = 'var(--pg-row)';
 
 function rowTemplate(submitted: number, notSubmitted: number): string {
   const rows = [ROW, ROW, '1px', ...Array<string>(submitted).fill(ROW)];
@@ -73,7 +73,7 @@ export function ScheduleGrid({
   );
 
   return (
-    <div>
+    <div className={GRID_SIZE_CLASS}>
       <div className="relative overflow-x-auto overflow-y-hidden py-0.5">
         <div
           className="mx-auto grid w-max"
@@ -82,10 +82,13 @@ export function ScheduleGrid({
             gridTemplateRows: rowTemplate(submitted.length, notSubmitted.length),
           }}
         >
-          <span style={at(2, 1)} className="text-muted self-center text-xs">
+          <span style={at(2, 1)} className="text-muted self-center text-xs md:text-sm">
             month
           </span>
-          <span style={at(1, loadColumn)} className="text-muted self-center text-right text-[10px]">
+          <span
+            style={at(1, loadColumn)}
+            className="text-muted self-center text-right text-[10px] md:text-xs"
+          >
             load
           </span>
           {columns.map(({ slot, header, track }) => {
@@ -102,7 +105,7 @@ export function ScheduleGrid({
                     onToggleSlot(slot.id);
                   }}
                   className={cn(
-                    'focus-visible:outline-plan-ink rounded text-[11px] font-semibold focus-visible:outline-2',
+                    'focus-visible:outline-plan-ink rounded text-[11px] font-semibold focus-visible:outline-2 md:text-sm',
                     open ? 'bg-plan-ink text-plan-ink-fg' : 'hover:bg-plan-blank',
                   )}
                 >
@@ -110,7 +113,7 @@ export function ScheduleGrid({
                 </button>
                 <div
                   style={at(2, track)}
-                  className="flex items-center justify-center text-[10px] font-semibold"
+                  className="flex items-center justify-center text-[10px] font-semibold md:text-xs"
                 >
                   <span className="sr-only">{`${slot.label}: `}</span>
                   <CoverageMark coverage={slotCoverage(grid, slot.id, today)} />

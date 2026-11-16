@@ -2,11 +2,9 @@ import type { PlanningSlot } from '@/api/planning';
 
 export const EXTRA_MARKERS = ['★', '◆', '▲', '●'] as const;
 
-const NAME_PX = 54;
-const COLUMN_PX = 17;
-const QUARTER_GAP_PX = 5;
-const EXTRA_GAP_PX = 8;
-const LOAD_PX = 26;
+export const GRID_SIZE_CLASS =
+  '[--pg-name:54px] [--pg-col:17px] [--pg-row:22px] [--pg-tile:15px] [--pg-qgap:5px] [--pg-xgap:8px] [--pg-load:26px] ' +
+  'md:[--pg-name:150px] md:[--pg-col:30px] md:[--pg-row:34px] md:[--pg-tile:24px] md:[--pg-qgap:10px] md:[--pg-xgap:16px] md:[--pg-load:44px]';
 
 export interface SlotColumn {
   slot: PlanningSlot;
@@ -41,16 +39,16 @@ export function slotColumns(slots: PlanningSlot[]): SlotColumn[] {
 }
 
 export function gridTemplate(columns: SlotColumn[]): string {
-  const tracks = [`${String(NAME_PX)}px`];
+  const tracks = ['var(--pg-name)'];
   let next = 2;
   for (const column of columns) {
     if (column.track > next) {
-      tracks.push(`${String(column.isExtra ? EXTRA_GAP_PX : QUARTER_GAP_PX)}px`);
+      tracks.push(column.isExtra ? 'var(--pg-xgap)' : 'var(--pg-qgap)');
     }
-    tracks.push(`${String(COLUMN_PX)}px`);
+    tracks.push('var(--pg-col)');
     next = column.track + 1;
   }
-  tracks.push(`${String(LOAD_PX)}px`);
+  tracks.push('var(--pg-load)');
   return tracks.join(' ');
 }
 

@@ -39,7 +39,7 @@ function CoverageFace({ coverage }: { coverage: Coverage }): ReactElement {
         <span
           aria-hidden="true"
           className={cn(
-            'flex h-[15px] min-w-[15px] items-center justify-center rounded-[3px]',
+            'flex h-[var(--pg-tile,15px)] min-w-[var(--pg-tile,15px)] items-center justify-center rounded-[3px]',
             coverage.count === 0 && 'bg-plan-ink text-plan-ink-fg',
           )}
         >

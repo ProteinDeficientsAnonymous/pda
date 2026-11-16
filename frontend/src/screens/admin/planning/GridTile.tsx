@@ -26,12 +26,14 @@ export function TileFace({ state }: { state: CellState }) {
     <span
       aria-hidden="true"
       className={cn(
-        'flex size-[15px] shrink-0 items-center justify-center text-[10px] leading-none font-bold',
+        'flex size-[var(--pg-tile,15px)] shrink-0 items-center justify-center text-[10px] leading-none font-bold md:text-sm',
         TILE_CLASS[state],
       )}
     >
       {GLYPH[state]}
-      {state === 'available' ? <span className="bg-plan-free-dot size-1.5 rounded-full" /> : null}
+      {state === 'available' ? (
+        <span className="bg-plan-free-dot size-1.5 rounded-full md:size-2.5" />
+      ) : null}
     </span>
   );
 }
@@ -63,7 +65,7 @@ export function GridTile({
       title={blockedReason ?? undefined}
       disabled={disabled || blockedReason !== null}
       onClick={onAct}
-      className="focus-visible:outline-plan-ink enabled:hover:bg-surface-dim relative inline-flex h-[22px] w-[17px] items-center justify-center rounded focus-visible:z-10 focus-visible:outline-2 disabled:opacity-50"
+      className="focus-visible:outline-plan-ink enabled:hover:bg-surface-dim relative inline-flex h-[var(--pg-row)] w-[var(--pg-col)] items-center justify-center rounded focus-visible:z-10 focus-visible:outline-2 disabled:opacity-50"
     >
       <TileFace state={state} />
       <span id={textId} className="sr-only">

@@ -70,8 +70,8 @@ describe('GridTile', () => {
   it('fits the fixed grid cell footprint and lifts its focus ring over neighbours', () => {
     renderTile();
     expect(screen.getByRole('button')).toHaveClass(
-      'h-[22px]',
-      'w-[17px]',
+      'h-[var(--pg-row)]',
+      'w-[var(--pg-col)]',
       'relative',
       'focus-visible:z-10',
     );
