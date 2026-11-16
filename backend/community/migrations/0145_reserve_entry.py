@@ -8,7 +8,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0141_eventrsvp_rsvp_deadline_reminder_sent_at"),
+        ("community", "0144_alter_slotassignment_status"),
     ]
 
     operations = [
