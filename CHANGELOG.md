@@ -1,3 +1,10 @@
+## [0.246.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.246.0...v0.246.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - drop the no answer grid state ([#2536](https://github.com/ProteinDeficientsAnonymous/pda/issues/2536)) ([f2248ac](https://github.com/ProteinDeficientsAnonymous/pda/commit/f2248acb1262e8bd683ca9590929246e02f49a86))
+
 # [0.246.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.3...v0.246.0) (2026-11-16)
 
 
