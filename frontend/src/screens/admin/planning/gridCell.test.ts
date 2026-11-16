@@ -9,6 +9,7 @@ import {
   cellState,
   findAssignment,
   isWithdrawable,
+  slotHasCommitted,
 } from './gridCell';
 
 const slot = (id: string, month: number) => makeSlot({ id, label: id, month, order: month });
@@ -112,5 +113,15 @@ describe('cellActionLabel', () => {
     ['available', 'propose ada for january'],
   ])('%s -> %s', (state, expected) => {
     expect(cellActionLabel(state, 'ada', 'january')).toBe(expected);
+  });
+});
+
+describe('slotHasCommitted', () => {
+  it.each<[Assignment['status'], boolean]>([
+    ['committed', true],
+    ['proposed', false],
+    ['draft', false],
+  ])('%s -> %s', (status, expected) => {
+    expect(slotHasCommitted(makeGrid([{ status }]), 's1')).toBe(expected);
   });
 });

@@ -21,6 +21,21 @@ const GLYPH: Partial<Record<CellState, string>> = {
   declined: '✕',
 };
 
+export function TileFace({ state }: { state: CellState }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'flex size-[15px] shrink-0 items-center justify-center text-[10px] leading-none font-bold',
+        TILE_CLASS[state],
+      )}
+    >
+      {GLYPH[state]}
+      {state === 'available' ? <span className="bg-plan-free-dot size-1.5 rounded-full" /> : null}
+    </span>
+  );
+}
+
 interface GridTileProps {
   state: CellState;
   plannerName: string;
@@ -50,16 +65,7 @@ export function GridTile({
       onClick={onAct}
       className="focus-visible:outline-plan-ink enabled:hover:bg-surface-dim relative inline-flex h-[22px] w-[17px] items-center justify-center rounded focus-visible:z-10 focus-visible:outline-2 disabled:opacity-50"
     >
-      <span
-        aria-hidden="true"
-        className={cn(
-          'flex size-[15px] items-center justify-center text-[10px] leading-none font-bold',
-          TILE_CLASS[state],
-        )}
-      >
-        {GLYPH[state]}
-        {state === 'available' ? <span className="bg-plan-free-dot size-1.5 rounded-full" /> : null}
-      </span>
+      <TileFace state={state} />
       <span id={textId} className="sr-only">
         {STATE_TEXT[state]}
         {blockedReason ? ` · ${blockedReason}` : null}
