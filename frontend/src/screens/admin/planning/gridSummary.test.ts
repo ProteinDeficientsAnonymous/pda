@@ -68,6 +68,14 @@ describe('slotCoverage', () => {
     expect(slotCoverage(grid, 's1', today)).toEqual({ kind: 'free', count: 2 });
   });
 
+  it('does not count ex-planners who marked the slot as free', () => {
+    const ps = [
+      planner('u1', { availableSlotIds: ['s1'] }),
+      planner('u2', { isPlanner: false, availableSlotIds: ['s1'] }),
+    ];
+    expect(slotCoverage(makeGrid(ps), 's1', today)).toEqual({ kind: 'free', count: 1 });
+  });
+
   it('is past for an ended slot with nothing, sent for one with a proposal', () => {
     expect(slotCoverage(makeGrid([planner('u1')], [], 1), 's1', today)).toEqual({ kind: 'past' });
     const proposed = makeGrid([planner('u1')], [asg('s1', 'u1', 'proposed')], 1);
@@ -86,13 +94,14 @@ describe('needsPlanner', () => {
 });
 
 describe('plannerLoad', () => {
-  it('counts draft and committed monthly slots but not biannual', () => {
+  it('counts draft, proposed and committed monthly slots but not biannual', () => {
     const grid: PlanningGrid = {
       year: 2027,
       slots: [
         makeSlot({ id: 'm1', month: 3 }),
         makeSlot({ id: 'm2', month: 4 }),
         makeSlot({ id: 'm3', month: 5 }),
+        makeSlot({ id: 'm4', month: 7 }),
         makeSlot({ id: 'b1', month: 6, kind: 'biannual' }),
       ],
       planners: [planner('u1', { monthlyCount: 3 })],
@@ -100,10 +109,11 @@ describe('plannerLoad', () => {
         asg('m1', 'u1', 'draft'),
         asg('m2', 'u1', 'committed'),
         asg('m3', 'u1', 'declined'),
+        asg('m4', 'u1', 'proposed'),
         asg('b1', 'u1', 'committed'),
       ],
     };
-    expect(plannerLoad(grid, grid.planners[0]!)).toEqual({ taken: 2, offered: 3 });
+    expect(plannerLoad(grid, grid.planners[0]!)).toEqual({ taken: 3, offered: 3 });
   });
 
   it('is null when the planner has not submitted', () => {

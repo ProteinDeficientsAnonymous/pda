@@ -55,9 +55,10 @@ export default function PlanningScreen() {
   const canManage = useHasPermission(Permission.ManageEventPlanning);
 
   const rawTab = params.get('tab');
+  const urlTab = TAB_OPTIONS.some((o) => o.value === rawTab) ? rawTab : null;
   const hasWaiting = mySlots.data?.some((r) => r.status === 'proposed') ?? false;
-  const defaultSettled = !canManage || rawTab !== null || !mySlots.isPending;
-  const resolved = resolveTab(rawTab, hasWaiting);
+  const defaultSettled = !canManage || urlTab !== null || !mySlots.isPending;
+  const resolved = resolveTab(urlTab, hasWaiting);
   const tab: PlanningTab = canManage ? resolved : 'mine';
 
   const pickTab = useCallback(
@@ -76,8 +77,8 @@ export default function PlanningScreen() {
 
   // persist the resolved default so answering a proposal doesn't flip the tab
   useEffect(() => {
-    if (canManage && rawTab === null && defaultSettled) pickTab(resolved);
-  }, [canManage, rawTab, defaultSettled, resolved, pickTab]);
+    if (canManage && urlTab === null && defaultSettled) pickTab(resolved);
+  }, [canManage, urlTab, defaultSettled, resolved, pickTab]);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load planning years — try refreshing" />;
@@ -115,7 +116,7 @@ export default function PlanningScreen() {
           name="planning-tab"
           ariaLabel="planning view"
           options={TAB_OPTIONS}
-          value={tab}
+          value={defaultSettled ? tab : null}
           onChange={pickTab}
           className="mb-6"
         />
