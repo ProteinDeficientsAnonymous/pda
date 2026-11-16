@@ -1,3 +1,10 @@
+# [0.244.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.243.0...v0.244.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - planning screen redesign ([#2500](https://github.com/ProteinDeficientsAnonymous/pda/issues/2500)) ([d02bb60](https://github.com/ProteinDeficientsAnonymous/pda/commit/d02bb6007dd8a3334957cfa77d9e18d77a92d59e))
+
 # [0.243.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.242.0...v0.243.0) (2026-11-16)
 
 
