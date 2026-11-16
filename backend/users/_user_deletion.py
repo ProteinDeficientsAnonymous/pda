@@ -6,7 +6,7 @@ from config.auth import gated_jwt
 from django.db.models import ProtectedError
 from ninja.responses import Status
 
-from users._archive import archive_user
+from users._archive_user import archive_user
 from users._management import require_manage_users
 from users._management import router as management_router
 from users.helpers import is_last_admin

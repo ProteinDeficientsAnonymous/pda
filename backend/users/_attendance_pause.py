@@ -123,26 +123,27 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
 
 
 @transaction.atomic
-def release_held_events(request, user: User, pause: MembershipStatus) -> tuple[PauseImpact, dict]:
+def release_held_events(request, user: User, status: MembershipStatus) -> tuple[PauseImpact, dict]:
     """Release the user's upcoming RSVPs and host spots and strip their elevated roles.
 
     param(request): the triggering request, for promoted-member email logging
-    param(user): the member being paused
-    param(pause): the pause being applied, which decides whether official/club RSVPs stay
+    param(user): the member being paused or archived
+    param(status): the pause or archive being applied; ATTENDANCE_PAUSED keeps official/club RSVPs
     return(tuple[PauseImpact, dict]): the impact and its audit details
     """
     if user.is_archived:
         # Archiving already released them; a pause now must not draft their solo-hosted events.
         return PauseImpact(), {}
-    impact = pause_impact(user, pause)
+    impact = pause_impact(user, status)
     drafted_ids = [e.pk for e in impact.drafted_events]
     for event in impact.drafted_events:
         _move_to_draft(event, user)
     # A kept RSVP on a draft stays as-is; releasing it would promote that draft's waitlist.
     release_q = ~Q(pk__in=drafted_ids)
-    if _keeps_official_rsvps(pause):
+    if _keeps_official_rsvps(status):
         release_q &= ~KEPT_RSVP_EVENT_Q
-    release_upcoming_rsvps(request, user, CancelReason.PAUSE, release_q)
+    reason = CancelReason.ARCHIVE if status == MembershipStatus.ARCHIVED else CancelReason.PAUSE
+    release_upcoming_rsvps(request, user, reason, release_q)
     step_down_as_cohost(user, impact.removed_hosting)
     _pending_cohost_invites(user).update(
         status=CoHostInviteStatus.RESCINDED, decided_at=timezone.now()

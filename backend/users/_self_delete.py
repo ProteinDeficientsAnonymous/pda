@@ -10,7 +10,7 @@ from ninja import Router
 from ninja.responses import Status
 from notifications.service import create_account_deleted_notifications
 
-from users._archive import archive_user
+from users._archive_user import archive_user
 from users.helpers import is_last_admin
 from users.refresh_cookie import clear_refresh_cookie
 from users.schemas import DeleteAccountIn, ErrorOut
