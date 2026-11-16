@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { usePlanningGrid } from '@/api/planning';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
-import { draftCount } from './gridCell';
 import { summaryCounts } from './gridSummary';
 import { MonthPanel } from './MonthPanel';
 import { ScheduleGrid } from './ScheduleGrid';
@@ -51,7 +50,7 @@ export function ScheduleTab({ year }: { year: number }) {
             }}
           />
         ) : null}
-        <SendProposalsBar send={send} drafts={draftCount(grid)} />
+        <SendProposalsBar grid={grid} send={send} act={act} busy={busy} />
       </div>
       {confirmElement}
     </>
