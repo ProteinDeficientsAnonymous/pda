@@ -8,65 +8,79 @@ import { renderWithProviders } from '@/test/render';
 
 import { GuidelinesTab } from './GuidelinesTab';
 
-let checklist: { isPending: boolean; isError: boolean; data?: unknown[] };
+const update = vi.fn();
+let page: {
+  isPending: boolean;
+  isError: boolean;
+  data?: { contentHtml: string; contentPm: string };
+};
+let savedWith: ((pm: string) => Promise<void>) | undefined;
 
-vi.mock('@/api/planningChecklist', () => ({
-  PLANNING_GUIDELINES_SLUG: 'planning-guidelines',
-  useChecklist: () => checklist,
-}));
-
-vi.mock('./ChecklistEditor', () => ({
-  ChecklistEditor: () => <div>checklist editor</div>,
-}));
+vi.mock('@/api/planningChecklist', () => ({ PLANNING_GUIDELINES_SLUG: 'planning-guidelines' }));
 
 vi.mock('@/api/content', () => ({
-  useEditablePage: () => ({
-    isPending: false,
-    isError: false,
-    data: { contentHtml: '<h2>hosting</h2><ul><li>arrive early!</li></ul>', contentPm: '{}' },
-  }),
-  useUpdateEditablePage: () => ({ mutateAsync: vi.fn() }),
+  useEditablePage: () => page,
+  useUpdateEditablePage: () => ({ mutateAsync: update }),
+}));
+
+vi.mock('@/components/EditableHtmlBlock', () => ({
+  EditableHtmlBlock: ({
+    canEdit,
+    contentHtml,
+    onSave,
+  }: {
+    canEdit: boolean;
+    contentHtml: string;
+    onSave: (pm: string) => Promise<void>;
+  }) => {
+    savedWith = onSave;
+    return <div>{`${contentHtml}${canEdit ? ' (editable)' : ''}`}</div>;
+  },
 }));
 
 beforeEach(() => {
-  checklist = {
+  page = {
     isPending: false,
     isError: false,
-    data: [
-      { id: 'i1', text: 'secure venue', detail: '' },
-      { id: 'i2', text: 'add the questionnaire', detail: 'all are required' },
-    ],
+    data: { contentHtml: 'arrive early!', contentPm: '{}' },
   };
+  update.mockReset().mockResolvedValue({});
+  savedWith = undefined;
   setAuthed(makeUserWithPermissions([Permission.ViewEventPlanning]));
 });
 
 describe('GuidelinesTab', () => {
-  it('shows the checklist in order with details, then the guidelines', () => {
+  it('shows the guidelines read-only to planners', () => {
     renderWithProviders(<GuidelinesTab />);
-    const items = screen.getAllByRole('listitem');
-    expect(items[0]).toHaveTextContent('secure venue');
-    expect(items[1]).toHaveTextContent('add the questionnaireall are required');
     expect(screen.getByText('arrive early!')).toBeInTheDocument();
   });
 
-  it('only lets coordinators edit the guidelines and checklist', () => {
-    const { unmount } = renderWithProviders(<GuidelinesTab />);
-    expect(screen.queryByRole('button', { name: 'edit' })).not.toBeInTheDocument();
-    expect(screen.queryByText('checklist editor')).not.toBeInTheDocument();
-    unmount();
+  it('lets coordinators edit and saves the new content', async () => {
     setAuthed(makeUserWithPermissions([Permission.ManageEventPlanning]));
     renderWithProviders(<GuidelinesTab />);
-    expect(screen.getByRole('button', { name: 'edit' })).toBeInTheDocument();
-    expect(screen.getByText('checklist editor')).toBeInTheDocument();
+    expect(screen.getByText('arrive early! (editable)')).toBeInTheDocument();
+    await savedWith?.('{"type":"doc"}');
+    expect(update).toHaveBeenCalledWith({ contentPm: '{"type":"doc"}' });
   });
 
-  it('shows an empty state and a load error', () => {
-    checklist = { isPending: false, isError: false, data: [] };
-    const { unmount } = renderWithProviders(<GuidelinesTab />);
-    expect(screen.getByText('no checklist items yet 🌿')).toBeInTheDocument();
-    unmount();
-    checklist = { isPending: false, isError: true };
+  it('shows loading until the page arrives', () => {
+    page = { isPending: true, isError: false };
     renderWithProviders(<GuidelinesTab />);
-    expect(screen.getByText("couldn't load the checklist — try refreshing")).toBeInTheDocument();
+    expect(screen.getByText('loading…')).toBeInTheDocument();
+  });
+
+  it('shows a load error when there is no content', () => {
+    page = { isPending: false, isError: true };
+    renderWithProviders(<GuidelinesTab />);
+    expect(screen.getByText("couldn't load the guidelines — try refreshing")).toBeInTheDocument();
+  });
+
+  it('keeps showing loaded guidelines when a refetch fails', () => {
+    page = { ...page, isError: true };
+    renderWithProviders(<GuidelinesTab />);
+    expect(screen.getByText('arrive early!')).toBeInTheDocument();
+    expect(
+      screen.queryByText("couldn't load the guidelines — try refreshing"),
+    ).not.toBeInTheDocument();
   });
 });
