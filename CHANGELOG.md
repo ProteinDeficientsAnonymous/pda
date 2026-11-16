@@ -1,3 +1,10 @@
+# [0.241.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.240.1...v0.241.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - batch planning proposals and reminders into one email per planner ([#2495](https://github.com/ProteinDeficientsAnonymous/pda/issues/2495)) ([9f06bfe](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f06bfef57347b354499b3144f5d1fa932b7d457))
+
 ## [0.240.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.240.0...v0.240.1) (2026-11-16)
 
 
