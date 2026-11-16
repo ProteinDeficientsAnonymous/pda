@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 import type { Assignment, PlannerColumn, PlanningGrid } from '@/api/planning';
 import { Button } from '@/components/ui/Button';
 
@@ -15,7 +17,6 @@ import type { usePlanningActions } from './usePlanningActions';
 interface MonthPanelProps {
   grid: PlanningGrid;
   slotId: string;
-  year: number;
   today: Date;
   act: ReturnType<typeof usePlanningActions>['act'];
   busy: boolean;
@@ -25,7 +26,7 @@ interface MonthPanelProps {
 const TAG: Record<Coverage['kind'], string> = {
   in: 'covered',
   sent: 'waiting',
-  draft: 'waiting',
+  draft: 'not sent yet',
   free: 'needs a planner',
   past: 'past',
 };
@@ -89,7 +90,11 @@ function loadText(grid: PlanningGrid, planner: PlannerColumn): string {
   return load ? `${String(load.taken)} of ${String(load.offered)} monthlies taken` : '';
 }
 
-export function MonthPanel({ grid, slotId, year, today, act, busy, onClose }: MonthPanelProps) {
+export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPanelProps) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView({ block: 'nearest' });
+  }, [slotId]);
   const slot = grid.slots.find((s) => s.id === slotId);
   if (!slot) return null;
   const onIt: PanelRow[] = [];
@@ -108,6 +113,7 @@ export function MonthPanel({ grid, slotId, year, today, act, busy, onClose }: Mo
 
   return (
     <section
+      ref={ref}
       aria-labelledby="month-panel-heading"
       className="border-border rounded-md border p-3 text-sm md:w-72 md:shrink-0"
     >
@@ -117,11 +123,11 @@ export function MonthPanel({ grid, slotId, year, today, act, busy, onClose }: Mo
             {slot.label}
           </h2>
           <p className="text-muted text-xs">{TAG[slotCoverage(grid, slotId, today).kind]}</p>
-          <SlotEventLink slot={slot} year={year} canCreate={slotHasCommitted(grid, slotId)} />
+          <SlotEventLink slot={slot} year={grid.year} canCreate={slotHasCommitted(grid, slotId)} />
         </div>
         <Button
           variant="ghost"
-          className="h-8 px-2"
+          className="h-10 min-w-10 px-2"
           aria-label={`close ${slot.label}`}
           onClick={onClose}
         >

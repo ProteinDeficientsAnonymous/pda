@@ -46,7 +46,6 @@ function renderPanel(grid: PlanningGrid, { busy = false, onClose = vi.fn(), act 
     <MonthPanel
       grid={grid}
       slotId="s1"
-      year={grid.year}
       today={new Date(2026, 10, 15)}
       act={act}
       busy={busy}
@@ -62,13 +61,13 @@ describe('MonthPanel', () => {
   it.each([
     [[on('ada', 'committed')], 2999, 'covered'],
     [[on('ada', 'proposed')], 2999, 'waiting'],
-    [[on('ada', 'draft')], 2999, 'waiting'],
+    [[on('ada', 'draft')], 2999, 'not sent yet'],
     [[], 2999, 'needs a planner'],
     [[], 2000, 'past'],
   ] as const)('tags %j in %i as %s', (assignments, year, tag) => {
     renderPanel(makeGrid([...assignments], { year }));
     expect(screen.getByRole('heading', { name: 'january' })).toBeInTheDocument();
-    expect(screen.getByText(tag)).toBeInTheDocument();
+    expect(screen.getAllByText(tag)[0]).toBeInTheDocument();
   });
 
   it('offers create event once someone is in', () => {
@@ -113,6 +112,20 @@ describe('MonthPanel', () => {
       expect(within(r).getByRole('button')).toBeDisabled();
     }
     expect(screen.getByRole('button', { name: 'close january' })).toBeEnabled();
+  });
+
+  it('links to the event once one exists', () => {
+    const withEvent = makeSlot({
+      id: 's1',
+      label: 'january',
+      month: 1,
+      order: 1,
+      eventId: 'e1',
+      eventSlug: 'jan-potluck',
+      eventStatus: 'active',
+    });
+    renderPanel(makeGrid([on('ada', 'committed')], { slots: [withEvent] }));
+    expect(screen.getByRole('link', { name: 'view event' })).toBeInTheDocument();
   });
 
   it('closes', async () => {
