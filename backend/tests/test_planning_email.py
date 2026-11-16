@@ -37,9 +37,10 @@ def _send(labels: tuple[str, ...], variant=PlanningEmailVariant.PROPOSED) -> dic
 
 def test_one_slot_names_it_without_a_list():
     sent = _send(("March",))
-    assert sent["subject"] == "can you plan March?"
+    assert sent["subject"] == "can you plan march?"
     assert "you've been asked to plan march on pda" in sent["text"]
     assert "<li>" not in sent["html"]
+    assert "on pda.\n\nlet the coordinators" in sent["text"]
 
 
 def test_several_slots_go_in_one_email_listing_each():
@@ -48,3 +49,4 @@ def test_several_slots_go_in_one_email_listing_each():
     for label in ("march", "april", "may", "june"):
         assert f"- {label}" in sent["text"]
         assert f"<li>{label}</li>" in sent["html"]
+    assert "- june\n\nlet the coordinators" in sent["text"]

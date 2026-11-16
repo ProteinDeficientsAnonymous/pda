@@ -4,7 +4,6 @@ hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 {% if slot_labels|length > 1 %}
 {% for label in slot_labels %}- {{ label|lower }}
 {% endfor %}{% endif %}
-
 {% if variant == "upcoming" %}create the event from the planning page so it's on the calendar:{% else %}let the coordinators know whether you're in:{% endif %}
 
 {{ planning_url }}

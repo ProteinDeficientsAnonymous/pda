@@ -50,7 +50,7 @@ def send_planning_email(
     text = render_to_string("emails/planning_slot.txt", context)
     return sender.send(
         to=details.to,
-        subject=_PLANNING_SUBJECTS[details.variant].format(label=summary),
+        subject=_PLANNING_SUBJECTS[details.variant].format(label=summary.lower()),
         html=html,
         text=text,
     )
