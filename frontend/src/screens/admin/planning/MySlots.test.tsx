@@ -101,6 +101,12 @@ describe('MySlots', () => {
     );
   });
 
+  it('says when nobody else is on the slot yet', () => {
+    state.data = [mine('a2', 'committed')];
+    renderWithProviders(<MySlots />);
+    expect(screen.getByText('just you so far')).toBeInTheDocument();
+  });
+
   it('puts create event next to back out', () => {
     state.data = [mine('a2', 'committed')];
     renderWithProviders(<MySlots />);

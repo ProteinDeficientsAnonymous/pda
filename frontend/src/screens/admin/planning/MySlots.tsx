@@ -24,11 +24,11 @@ function SlotRow({
         <p className="text-sm font-medium">
           {showYear ? `${String(row.year)} · ${slot.label}` : slot.label}
         </p>
-        {teammates.length > 0 ? (
-          <p className="text-muted text-xs">
-            with {teammates.map((t) => `${t.name} (${t.status})`).join(', ')}
-          </p>
-        ) : null}
+        <p className="text-muted text-xs">
+          {teammates.length > 0
+            ? `with ${teammates.map((t) => `${t.name} (${t.status})`).join(', ')}`
+            : 'just you so far'}
+        </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <SlotEventLink
