@@ -6,7 +6,6 @@ import { ContentError, ContentLoading } from '@/screens/public/ContentContainer'
 import { draftCount } from './gridCell';
 import { summaryCounts } from './gridSummary';
 import { MonthPanel } from './MonthPanel';
-import { PlanningGrid } from './PlanningGrid';
 import { ScheduleGrid } from './ScheduleGrid';
 import { SendProposalsBar } from './SendProposalsBar';
 import { SummaryPills } from './SummaryPills';
@@ -55,7 +54,6 @@ export function ScheduleTab({ year }: { year: number }) {
         ) : null}
       </div>
       {confirmElement}
-      <PlanningGrid year={year} />
     </>
   );
 }

@@ -41,10 +41,6 @@ vi.mock('@/api/planning', () => ({
   useSendProposals: () => mutation,
 }));
 
-vi.mock('./PlanningGrid', () => ({
-  PlanningGrid: ({ year }: { year: number }) => <div>old table for {year}</div>,
-}));
-
 describe('ScheduleTab', () => {
   beforeEach(() => {
     shown = grid;
@@ -69,13 +65,6 @@ describe('ScheduleTab', () => {
     expect(screen.queryByRole('heading', { name: 'january' })).not.toBeInTheDocument();
   });
 
-  it('keeps the old table below the new grid', () => {
-    renderWithProviders(<ScheduleTab year={2999} />);
-    const january = screen.getByRole('button', { name: 'january' });
-    const old = screen.getByText('old table for 2999');
-    expect(january.compareDocumentPosition(old) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
   it('shows the send bar while drafts wait', () => {
     shown = { ...grid, assignments: [{ id: 'a1', slotId: 's1', userId: 'u1', status: 'draft' }] };
     renderWithProviders(<ScheduleTab year={2999} />);
@@ -93,14 +82,12 @@ describe('ScheduleTab', () => {
     expect(screen.getByText('no planners yet 🌿')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'january' })).not.toBeInTheDocument();
     expect(screen.queryByText('need a planner')).not.toBeInTheDocument();
-    expect(screen.queryByText('old table for 2999')).not.toBeInTheDocument();
   });
 
   it('shows loading while the grid loads', () => {
     status = { isPending: true, isError: false };
     renderWithProviders(<ScheduleTab year={2999} />);
     expect(screen.getByText('loading…')).toBeInTheDocument();
-    expect(screen.queryByText('old table for 2999')).not.toBeInTheDocument();
   });
 
   it('shows an error when the grid fails to load', () => {
@@ -109,6 +96,5 @@ describe('ScheduleTab', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       "couldn't load the planning grid — try refreshing",
     );
-    expect(screen.queryByText('old table for 2999')).not.toBeInTheDocument();
   });
 });
