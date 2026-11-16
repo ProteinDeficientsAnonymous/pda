@@ -21,9 +21,32 @@ const INTEREST_OPTIONS: { value: BiannualInterest; label: string }[] = [
   { value: 'no', label: 'no' },
 ];
 
+const MAX_MONTHLIES = 12;
+
 function parseCount(raw: string): number | null {
   const n = Number(raw);
-  return raw.trim() !== '' && Number.isInteger(n) && n >= 0 && n <= 12 ? n : null;
+  return raw.trim() !== '' && Number.isInteger(n) && n >= 0 && n <= MAX_MONTHLIES ? n : null;
+}
+
+interface StepButtonProps {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+  children: string;
+}
+
+function StepButton({ label, disabled, onClick, children }: StepButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="text-foreground hover:bg-surface-dim flex size-8 items-center justify-center rounded-full text-lg leading-none disabled:opacity-40"
+    >
+      {children}
+    </button>
+  );
 }
 
 export function AvailabilityForm({ year }: { year: number }) {
@@ -47,6 +70,11 @@ function FormFields({ year, slots, initial }: { year: number; slots: Slots; init
   const [count, setCount] = useState(String(initial.monthlyCount));
 
   const countValid = parseCount(count) !== null;
+  const currentCount = parseCount(count) ?? 0;
+
+  function step(by: number) {
+    setCount(String(Math.min(MAX_MONTHLIES, Math.max(0, currentCount + by))));
+  }
   const monthlies = slots.filter((s) => s.kind === 'monthly');
   const extras = slots.filter((s) => s.kind !== 'monthly');
 
@@ -98,7 +126,15 @@ function FormFields({ year, slots, initial }: { year: number; slots: Slots; init
             {monthlies.map(renderToggle)}
           </div>
         )}
-        {extras.map(renderToggle)}
+        {extras.length > 0 && (
+          <div data-testid="extra-slots" className="grid grid-cols-2 gap-x-6 gap-y-2">
+            {extras.map((s) => (
+              <div key={s.id} className="col-start-1">
+                {renderToggle(s)}
+              </div>
+            ))}
+          </div>
+        )}
       </fieldset>
 
       <div className="flex flex-col gap-2">
@@ -117,13 +153,37 @@ function FormFields({ year, slots, initial }: { year: number; slots: Slots; init
           label="how many monthlies will you plan?"
           type="number"
           min={0}
-          max={12}
+          max={MAX_MONTHLIES}
           step={1}
+          inputMode="numeric"
+          className="[appearance:textfield] pr-20 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           error={countValid ? undefined : 'enter a whole number from 0 to 12'}
           value={count}
           onChange={(e) => {
             setCount(e.target.value);
           }}
+          rightAdornment={
+            <div className="flex gap-1">
+              <StepButton
+                label="one fewer monthly"
+                disabled={currentCount <= 0}
+                onClick={() => {
+                  step(-1);
+                }}
+              >
+                −
+              </StepButton>
+              <StepButton
+                label="one more monthly"
+                disabled={currentCount >= MAX_MONTHLIES}
+                onClick={() => {
+                  step(1);
+                }}
+              >
+                +
+              </StepButton>
+            </div>
+          }
         />
       </div>
 
