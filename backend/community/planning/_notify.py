@@ -63,10 +63,11 @@ def notify_proposed(user: User, slots: list[PlanningSlot], proposed_by: User) ->
     _notify_many(
         [user.pk],
         NotificationType.PLANNING_PROPOSED,
-        f"you've been asked to plan {summary} — tap to respond",
+        f"any chance you could plan {summary}? 🌱 tap to answer",
         proposed_by,
     )
-    email_planner(user, slots, PlanningEmailVariant.PROPOSED)
+    # A rolled-back send must not leave an email out for proposals that are still drafts.
+    transaction.on_commit(lambda: email_planner(user, slots, PlanningEmailVariant.PROPOSED))
 
 
 def notify_upcoming(assignment: SlotAssignment) -> None:
