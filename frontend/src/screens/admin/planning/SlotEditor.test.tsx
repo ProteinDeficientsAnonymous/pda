@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -27,7 +27,7 @@ vi.mock('@/api/planning', () => ({
     isError: false,
     data: [
       { id: 's1', label: 'january', month: 1, kind: 'monthly', order: 1 },
-      { id: 's2', label: 'spring biannual', month: 4, kind: 'biannual', order: 2 },
+      { id: 's2', label: 'june anniversary', month: 6, kind: 'biannual', order: 2 },
     ],
   }),
   useUpdateSlot: () => ({ mutateAsync: updateSlot, isPending: updatePending }),
@@ -43,17 +43,38 @@ beforeEach(() => {
   createSlot.mockReset().mockResolvedValue(undefined);
 });
 
+async function openRow(user: ReturnType<typeof userEvent.setup>, label: string) {
+  await user.click(screen.getByRole('button', { name: `edit ${label}` }));
+}
+
 describe('SlotEditor', () => {
-  it('renders a row per slot', () => {
+  it('renders collapsed rows with a muted kind and month note for non-monthly slots', () => {
     renderWithProviders(<SlotEditor year={2027} />);
-    expect(screen.getByLabelText('label for january')).toHaveValue('january');
-    expect(screen.getByLabelText('month for spring biannual')).toHaveValue('4');
-    expect(screen.getByLabelText('kind for spring biannual')).toHaveValue('biannual');
+    expect(screen.getByRole('heading', { name: 'slots' })).toBeInTheDocument();
+    const list = within(screen.getByRole('list'));
+    expect(list.getByText('january')).toBeInTheDocument();
+    expect(list.getByText('june anniversary')).toBeInTheDocument();
+    expect(list.getByText('biannual · june')).toBeInTheDocument();
+    expect(list.queryByText(/monthly ·/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('label for june anniversary')).not.toBeInTheDocument();
+  });
+
+  it('reveals the controls when a row is expanded', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SlotEditor year={2027} />);
+    const edit = screen.getByRole('button', { name: 'edit june anniversary' });
+    expect(edit).toHaveAttribute('aria-expanded', 'false');
+    await user.click(edit);
+    expect(edit).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByLabelText('label for june anniversary')).toHaveValue('june anniversary');
+    expect(screen.getByLabelText('month for june anniversary')).toHaveValue('6');
+    expect(screen.getByLabelText('kind for june anniversary')).toHaveValue('biannual');
   });
 
   it('patches the trimmed label on blur and shows the trimmed value', async () => {
     const user = userEvent.setup();
     renderWithProviders(<SlotEditor year={2027} />);
+    await openRow(user, 'january');
     const input = screen.getByLabelText('label for january');
     await user.clear(input);
     await user.type(input, '  jan  ');
@@ -62,8 +83,10 @@ describe('SlotEditor', () => {
     expect(input).toHaveValue('jan');
   });
 
-  it('caps slot labels at the backend limit', () => {
+  it('caps slot labels at the backend limit', async () => {
+    const user = userEvent.setup();
     renderWithProviders(<SlotEditor year={2027} />);
+    await openRow(user, 'january');
     expect(screen.getByLabelText('label for january')).toHaveAttribute('maxlength', '100');
     expect(screen.getByLabelText('new slot label')).toHaveAttribute('maxlength', '100');
   });
@@ -71,6 +94,7 @@ describe('SlotEditor', () => {
   it('does not patch when the label is unchanged', async () => {
     const user = userEvent.setup();
     renderWithProviders(<SlotEditor year={2027} />);
+    await openRow(user, 'january');
     await user.click(screen.getByLabelText('label for january'));
     await user.tab();
     expect(updateSlot).not.toHaveBeenCalled();
@@ -79,6 +103,7 @@ describe('SlotEditor', () => {
   it('reverts an emptied label without patching', async () => {
     const user = userEvent.setup();
     renderWithProviders(<SlotEditor year={2027} />);
+    await openRow(user, 'january');
     const input = screen.getByLabelText('label for january');
     await user.clear(input);
     await user.tab();
@@ -90,6 +115,7 @@ describe('SlotEditor', () => {
     updateSlot.mockRejectedValue(new Error('boom'));
     const user = userEvent.setup();
     renderWithProviders(<SlotEditor year={2027} />);
+    await openRow(user, 'january');
     const input = screen.getByLabelText('label for january');
     await user.clear(input);
     await user.type(input, 'jan');
@@ -103,6 +129,7 @@ describe('SlotEditor', () => {
   it('patches the month and kind when changed', async () => {
     const user = userEvent.setup();
     renderWithProviders(<SlotEditor year={2027} />);
+    await openRow(user, 'january');
     await user.selectOptions(screen.getByLabelText('month for january'), '3');
     expect(updateSlot).toHaveBeenCalledWith({ id: 's1', patch: { month: 3 } });
     await user.selectOptions(screen.getByLabelText('kind for january'), 'biannual');
@@ -112,6 +139,7 @@ describe('SlotEditor', () => {
   it('asks to confirm before deleting', async () => {
     const user = userEvent.setup();
     renderWithProviders(<SlotEditor year={2027} />);
+    await openRow(user, 'january');
     await user.click(screen.getByRole('button', { name: 'delete january' }));
     expect(
       screen.getByText('delete this slot? anyone proposed or committed to it is dropped'),
@@ -123,9 +151,11 @@ describe('SlotEditor', () => {
     });
   });
 
-  it('disables delete while an update is pending', () => {
+  it('disables delete while an update is pending', async () => {
+    const user = userEvent.setup();
     updatePending = true;
     renderWithProviders(<SlotEditor year={2027} />);
+    await openRow(user, 'january');
     expect(screen.getByRole('button', { name: 'delete january' })).toBeDisabled();
   });
 

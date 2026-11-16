@@ -29,6 +29,8 @@ function SlotRow({ slot }: { slot: PlanningSlot }) {
   const remove = useDeleteSlot();
   const { confirm, element } = useConfirm();
   const [label, setLabel] = useState(slot.label);
+  const [open, setOpen] = useState(false);
+  const controlsId = `slot-${slot.id}-controls`;
 
   function patch(change: { label?: string; month?: number; kind?: SlotKind }) {
     return toastOnError(update.mutateAsync({ id: slot.id, patch: change }), SAVE_FAILED);
@@ -51,44 +53,70 @@ function SlotRow({ slot }: { slot: PlanningSlot }) {
   }
 
   return (
-    <li className="flex flex-wrap items-end gap-2">
-      <div className="min-w-40 flex-1">
-        <TextField
-          id={`slot-${slot.id}-label`}
-          label={`label for ${slot.label}`}
-          hideLabel
-          maxLength={LABEL_MAX}
-          value={label}
-          onChange={(e) => {
-            setLabel(e.target.value);
+    <li className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <span>
+          {slot.label}
+          {slot.kind !== 'monthly' && (
+            <span className="text-foreground-secondary text-sm">
+              {' '}
+              {slot.kind} · {MONTH_OPTIONS[slot.month - 1]?.label}
+            </span>
+          )}
+        </span>
+        <Button
+          variant="secondary"
+          aria-label={`edit ${slot.label}`}
+          aria-expanded={open}
+          aria-controls={controlsId}
+          onClick={() => {
+            setOpen((o) => !o);
           }}
-          onBlur={() => void saveLabel()}
-        />
+        >
+          edit
+        </Button>
       </div>
-      <Select
-        id={`slot-${slot.id}-month`}
-        label={`month for ${slot.label}`}
-        hideLabel
-        value={String(slot.month)}
-        options={MONTH_OPTIONS}
-        onChange={(e) => void patch({ month: Number(e.target.value) })}
-      />
-      <Select
-        id={`slot-${slot.id}-kind`}
-        label={`kind for ${slot.label}`}
-        hideLabel
-        value={slot.kind}
-        options={KIND_OPTIONS}
-        onChange={(e) => void patch({ kind: e.target.value as SlotKind })}
-      />
-      <Button
-        variant="destructive"
-        aria-label={`delete ${slot.label}`}
-        disabled={remove.isPending || update.isPending}
-        onClick={() => void onDelete()}
-      >
-        delete
-      </Button>
+      {open && (
+        <div id={controlsId} className="flex flex-wrap items-end gap-2">
+          <div className="min-w-40 flex-1">
+            <TextField
+              id={`slot-${slot.id}-label`}
+              label={`label for ${slot.label}`}
+              hideLabel
+              maxLength={LABEL_MAX}
+              value={label}
+              onChange={(e) => {
+                setLabel(e.target.value);
+              }}
+              onBlur={() => void saveLabel()}
+            />
+          </div>
+          <Select
+            id={`slot-${slot.id}-month`}
+            label={`month for ${slot.label}`}
+            hideLabel
+            value={String(slot.month)}
+            options={MONTH_OPTIONS}
+            onChange={(e) => void patch({ month: Number(e.target.value) })}
+          />
+          <Select
+            id={`slot-${slot.id}-kind`}
+            label={`kind for ${slot.label}`}
+            hideLabel
+            value={slot.kind}
+            options={KIND_OPTIONS}
+            onChange={(e) => void patch({ kind: e.target.value as SlotKind })}
+          />
+          <Button
+            variant="destructive"
+            aria-label={`delete ${slot.label}`}
+            disabled={remove.isPending || update.isPending}
+            onClick={() => void onDelete()}
+          >
+            delete
+          </Button>
+        </div>
+      )}
       {element}
     </li>
   );
@@ -153,7 +181,7 @@ export function SlotEditor({ year }: { year: number }) {
 
   return (
     <section className="mt-10 flex flex-col gap-4">
-      <h2 className="text-lg font-medium">manage slots</h2>
+      <h2 className="text-lg font-medium">slots</h2>
       <ul className="flex flex-col gap-3">
         {slots.data.map((s) => (
           <SlotRow key={s.id} slot={s} />
