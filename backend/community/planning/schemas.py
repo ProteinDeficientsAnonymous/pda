@@ -31,7 +31,7 @@ class PlanningYearIn(BaseModel):
 def _not_blank(value: str) -> str:
     trimmed = value.strip()
     if not trimmed:
-        raise ValueError("required")
+        raise ValueError("must not be blank")
     return trimmed
 
 
