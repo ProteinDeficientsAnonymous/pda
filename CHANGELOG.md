@@ -1,3 +1,10 @@
+# [0.251.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.250.1...v0.251.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - show queued drafts in the send proposals bar ([#2550](https://github.com/ProteinDeficientsAnonymous/pda/issues/2550)) ([575ffda](https://github.com/ProteinDeficientsAnonymous/pda/commit/575ffda4c8a749488c336c6cf650e59870230770))
+
 ## [0.250.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.250.0...v0.250.1) (2026-11-16)
 
 
