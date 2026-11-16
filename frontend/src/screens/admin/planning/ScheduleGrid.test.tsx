@@ -60,16 +60,29 @@ describe('ScheduleGrid', () => {
     );
   });
 
+  it('sets the grid size vars, larger from md, on the wrapper around grid and key', () => {
+    const { container } = renderGrid();
+    expect(container.firstElementChild).toHaveClass(
+      '[--pg-col:17px]',
+      'md:[--pg-col:30px]',
+      'md:[--pg-name:150px]',
+      'md:[--pg-row:34px]',
+      'md:[--pg-tile:24px]',
+    );
+  });
+
   it.each([
-    [[true, false, true], '22px 22px 1px 22px 22px 1px 22px'],
-    [[true, true], '22px 22px 1px 22px 22px'],
-    [[false, false], '22px 22px 1px 22px 22px'],
+    [[true, false, true], 'r r 1px r r 1px r'],
+    [[true, true], 'r r 1px r r'],
+    [[false, false], 'r r 1px r r'],
   ])('draws the dividers for submitted %o as 1px rows', (flags, rows) => {
     const planners = flags.map((submitted, i) =>
       planner(`p${String(i)}`, `p${String(i)}`, { submitted }),
     );
     const { container } = renderGrid({ grid: { ...grid, planners } });
-    expect(container.querySelector<HTMLElement>('.grid')?.style.gridTemplateRows).toBe(rows);
+    expect(container.querySelector<HTMLElement>('.grid')?.style.gridTemplateRows).toBe(
+      rows.replaceAll('r', 'var(--pg-row)'),
+    );
   });
 
   it('marks each month with its coverage', () => {

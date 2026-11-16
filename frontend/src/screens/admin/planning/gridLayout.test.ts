@@ -2,12 +2,18 @@ import { describe, expect, it } from 'vitest';
 
 import { makeSlot } from '@/test/fixtures';
 
-import { gridTemplate, loadTrack, slotColumns } from './gridLayout';
+import { GRID_SIZE_CLASS, gridTemplate, loadTrack, slotColumns } from './gridLayout';
 
 const monthly = (month: number, label = `m${String(month)}`) =>
   makeSlot({ id: label, label, month, order: month });
 const extra = (id: string, month: number, order = 0) =>
   makeSlot({ id, label: id, month, order, kind: 'biannual' });
+
+const vars = (names: string) =>
+  names
+    .split(' ')
+    .map((name) => `var(--pg-${name})`)
+    .join(' ');
 
 const NAMED: Record<number, string> = { 0: 'january', 3: 'april', 11: 'december' };
 
@@ -46,7 +52,7 @@ describe('slotColumns', () => {
     const extras = Array.from({ length: 6 }, (_, i) => extra(`e${String(i)}`, 6, i));
     const cols = slotColumns(extras);
     expect(cols.map((c) => c.header)).toEqual(['★', '◆', '▲', '●', '5', '6']);
-    expect(gridTemplate(cols)).toBe('54px 17px 17px 17px 17px 17px 17px 26px');
+    expect(gridTemplate(cols)).toBe(vars('name col col col col col col load'));
   });
 
   it('keeps two june slots adjacent with the same header', () => {
@@ -58,14 +64,28 @@ describe('slotColumns', () => {
 
 describe('gridTemplate', () => {
   it('lays out name, columns, gaps and load tracks', () => {
+    const quarter = 'col col col';
     expect(gridTemplate(slotColumns(defaultYear()))).toBe(
-      '54px 17px 17px 17px 5px 17px 17px 17px 5px 17px 17px 17px 5px 17px 17px 17px 8px 17px 17px 26px',
+      vars(`name ${quarter} qgap ${quarter} qgap ${quarter} qgap ${quarter} xgap col col load`),
     );
   });
 
   it('omits the extras gap when there are no extras', () => {
     const template = gridTemplate(slotColumns([monthly(1), monthly(2)]));
-    expect(template).toBe('54px 17px 17px 26px');
-    expect(template).not.toContain('8px');
+    expect(template).toBe(vars('name col col load'));
+    expect(template).not.toContain('xgap');
+  });
+});
+
+describe('GRID_SIZE_CLASS', () => {
+  it('keeps phone sizes and scales every track up from md', () => {
+    const classes = GRID_SIZE_CLASS.split(' ');
+    expect(classes).toEqual(
+      expect.arrayContaining(['[--pg-name:54px]', '[--pg-col:17px]', '[--pg-row:22px]']),
+    );
+    for (const name of ['name', 'col', 'row', 'tile', 'qgap', 'xgap', 'load']) {
+      expect(classes.filter((c) => c.startsWith(`[--pg-${name}:`))).toHaveLength(1);
+      expect(classes.filter((c) => c.startsWith(`md:[--pg-${name}:`))).toHaveLength(1);
+    }
   });
 });

@@ -25,7 +25,7 @@ export function ScheduleTab({ year }: { year: number }) {
     <>
       <SendProposalsBar send={send} drafts={draftCount(grid)} />
       <SummaryPills counts={summaryCounts(grid, today)} />
-      <div className="flex flex-col gap-4 md:flex-row md:items-start">
+      <div className="flex flex-col gap-4">
         <div className="min-w-0 flex-1">
           <ScheduleGrid
             grid={grid}

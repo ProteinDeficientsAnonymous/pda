@@ -8,7 +8,7 @@ import type { plannerLoad } from './gridSummary';
 function Flag({ mark, words }: { mark: string; words: string }) {
   return (
     <>
-      <span aria-hidden="true" className="text-muted shrink-0 text-[9px]">
+      <span aria-hidden="true" className="text-muted shrink-0 text-[9px] md:text-[11px]">
         {mark}
       </span>
       <span className="sr-only">{words}</span>
@@ -22,7 +22,7 @@ export function NameCell({ planner, style }: { planner: PlannerColumn; style: CS
       style={style}
       title={planner.name}
       className={cn(
-        'flex min-w-0 items-center gap-0.5 pr-1 text-xs',
+        'flex min-w-0 items-center gap-0.5 pr-1 text-xs md:gap-1 md:pr-2 md:text-sm',
         (!planner.isPlanner || !planner.submitted) && 'text-muted',
         !planner.submitted && 'italic',
       )}
@@ -42,7 +42,10 @@ export function LoadCell({
   style: CSSProperties;
 }) {
   return (
-    <div style={style} className="flex items-center justify-end text-[10px] tabular-nums">
+    <div
+      style={style}
+      className="flex items-center justify-end text-[10px] tabular-nums md:text-xs"
+    >
       {load ? (
         <>
           <span aria-hidden="true" className={cn(load.taken > load.offered && 'font-semibold')}>
