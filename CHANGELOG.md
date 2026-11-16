@@ -1,3 +1,10 @@
+# [0.254.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.253.0...v0.254.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - show planners the schedule and let them put themselves in ([#2563](https://github.com/ProteinDeficientsAnonymous/pda/issues/2563)) ([f40328e](https://github.com/ProteinDeficientsAnonymous/pda/commit/f40328eeec12fa978416c46fefac1ac2832dd525))
+
 # [0.253.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.252.0...v0.253.0) (2026-11-16)
 
 
