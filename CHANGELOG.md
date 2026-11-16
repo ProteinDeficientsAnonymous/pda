@@ -1,3 +1,10 @@
+## [0.245.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.0...v0.245.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - start the year after the latest planning year ([#2529](https://github.com/ProteinDeficientsAnonymous/pda/issues/2529)) ([1caecfc](https://github.com/ProteinDeficientsAnonymous/pda/commit/1caecfcf7d023d4bac4db16f15742da0c3976311))
+
 # [0.245.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.244.1...v0.245.0) (2026-11-16)
 
 
