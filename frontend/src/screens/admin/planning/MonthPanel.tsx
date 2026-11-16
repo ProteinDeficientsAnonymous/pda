@@ -148,7 +148,7 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
     <section
       ref={ref}
       aria-labelledby="month-panel-heading"
-      className="border-border rounded-md border p-3 text-sm lg:w-72 lg:shrink-0"
+      className="border-border rounded-md border p-3 text-sm"
     >
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
