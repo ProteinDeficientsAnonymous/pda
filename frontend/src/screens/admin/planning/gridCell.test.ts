@@ -52,7 +52,7 @@ describe('cellState', () => {
     );
   });
 
-  it('ranks draft above declined and below proposed', () => {
+  it('shows a draft row as draft', () => {
     expect(cellState('s1', 'u1', makeGrid([{ status: 'draft' }], ['s1']), early)).toBe('draft');
   });
 

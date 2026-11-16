@@ -7,6 +7,7 @@ import {
   type PlanningSlot,
   usePlanningGrid,
   usePropose,
+  useSendProposals,
   useWithdraw,
 } from '@/api/planning';
 import { useConfirm } from '@/components/ui/useConfirm';
@@ -61,6 +62,7 @@ export function PlanningGrid({ year }: { year: number }) {
   const [today] = useState(() => new Date());
   const propose = usePropose();
   const withdraw = useWithdraw();
+  const send = useSendProposals(year);
   const { confirm, element } = useConfirm();
 
   if (isPending) return <ContentLoading />;
@@ -103,7 +105,7 @@ export function PlanningGrid({ year }: { year: number }) {
   return (
     <section className="mt-8">
       <h2 className="mb-3 text-lg font-medium">planning grid</h2>
-      <SendProposalsBar year={year} drafts={draftCount(grid)} />
+      <SendProposalsBar send={send} drafts={draftCount(grid)} />
       {/* relative: the cells' sr-only labels are absolute and would otherwise widen the page on phones */}
       <div className="border-border relative overflow-x-auto rounded-lg border">
         <table aria-label="planning grid" className="w-full border-collapse text-sm">
@@ -128,7 +130,7 @@ export function PlanningGrid({ year }: { year: number }) {
                     planner={p}
                     state={cellState(slot.id, p.userId, grid, today)}
                     assignment={findAssignment(grid, slot.id, p.userId)}
-                    disabled={propose.isPending || withdraw.isPending}
+                    disabled={propose.isPending || withdraw.isPending || send.isPending}
                     onAct={(state, assignment) => void act(slot, p, state, assignment)}
                   />
                 ))}

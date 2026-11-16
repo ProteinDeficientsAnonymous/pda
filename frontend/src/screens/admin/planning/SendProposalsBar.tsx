@@ -1,14 +1,18 @@
 import { toast } from 'sonner';
 
-import { useSendProposals } from '@/api/planning';
+import type { useSendProposals } from '@/api/planning';
 import { Button } from '@/components/ui/Button';
 
 import { toastOnError } from './toastOnError';
 
 const plural = (n: number, word: string) => `${String(n)} ${word}${n === 1 ? '' : 's'}`;
 
-export function SendProposalsBar({ year, drafts }: { year: number; drafts: number }) {
-  const send = useSendProposals(year);
+interface SendProposalsBarProps {
+  send: ReturnType<typeof useSendProposals>;
+  drafts: number;
+}
+
+export function SendProposalsBar({ send, drafts }: SendProposalsBarProps) {
   if (drafts === 0) return null;
 
   async function sendAll() {

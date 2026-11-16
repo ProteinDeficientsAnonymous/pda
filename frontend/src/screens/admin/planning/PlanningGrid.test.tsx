@@ -33,6 +33,7 @@ let grid: Grid;
 const propose = vi.fn();
 const withdraw = vi.fn();
 const sendProposals = vi.fn();
+let sending = false;
 const toastError = vi.fn();
 const toastSuccess = vi.fn();
 
@@ -51,10 +52,11 @@ vi.mock('@/api/planning', () => ({
   usePlanningGrid: () => ({ isPending: false, isError: false, data: grid }),
   usePropose: () => ({ mutateAsync: propose, isPending: false }),
   useWithdraw: () => ({ mutateAsync: withdraw, isPending: false }),
-  useSendProposals: () => ({ mutateAsync: sendProposals, isPending: false }),
+  useSendProposals: () => ({ mutateAsync: sendProposals, isPending: sending }),
 }));
 
 beforeEach(() => {
+  sending = false;
   propose.mockReset().mockResolvedValue(undefined);
   withdraw.mockReset().mockResolvedValue(undefined);
   sendProposals.mockReset().mockResolvedValue({ planners_notified: 3, proposals_sent: 5 });
@@ -204,6 +206,13 @@ describe('PlanningGrid', () => {
     await userEvent.click(cell);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(withdraw).toHaveBeenCalledWith('a1');
+  });
+
+  it('locks the cells while proposals are sending', () => {
+    grid = interactiveGrid('draft');
+    sending = true;
+    renderWithProviders(<PlanningGrid year={2999} />);
+    expect(screen.getByRole('button', { name: 'remove draft ada for january' })).toBeDisabled();
   });
 
   it('hides send proposals without drafts', () => {
