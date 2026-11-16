@@ -72,7 +72,14 @@ describe('AvailabilityForm', () => {
     expect(monthly.getByRole('switch', { name: 'january' })).toBeInTheDocument();
     expect(monthly.getByRole('switch', { name: 'february' })).toBeInTheDocument();
     expect(monthly.queryByRole('switch', { name: 'spring biannual' })).not.toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: 'spring biannual' })).toBeInTheDocument();
+  });
+
+  it('keeps extra slots in the first column, under the monthlies', () => {
+    renderWithProviders(<AvailabilityForm year={2027} />);
+    const extras = screen.getByTestId('extra-slots');
+    expect(extras).toHaveClass('grid-cols-2');
+    const toggle = within(extras).getByRole('switch', { name: 'spring biannual' });
+    expect(toggle.closest('.col-start-1')).not.toBeNull();
   });
 
   it('submits selected slot ids, interest and monthly count', async () => {

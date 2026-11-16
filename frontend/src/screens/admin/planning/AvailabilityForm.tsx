@@ -98,7 +98,15 @@ function FormFields({ year, slots, initial }: { year: number; slots: Slots; init
             {monthlies.map(renderToggle)}
           </div>
         )}
-        {extras.map(renderToggle)}
+        {extras.length > 0 && (
+          <div data-testid="extra-slots" className="grid grid-cols-2 gap-x-6 gap-y-2">
+            {extras.map((s) => (
+              <div key={s.id} className="col-start-1">
+                {renderToggle(s)}
+              </div>
+            ))}
+          </div>
+        )}
       </fieldset>
 
       <div className="flex flex-col gap-2">
