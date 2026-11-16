@@ -1,3 +1,10 @@
+## [0.248.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.2...v0.248.3) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - add someone is a secondary button ([#2546](https://github.com/ProteinDeficientsAnonymous/pda/issues/2546)) ([e5d1d52](https://github.com/ProteinDeficientsAnonymous/pda/commit/e5d1d5206df4d86b2ff9ffb3161bcd3648bf66fd))
+
 ## [0.248.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.1...v0.248.2) (2026-11-16)
 
 
