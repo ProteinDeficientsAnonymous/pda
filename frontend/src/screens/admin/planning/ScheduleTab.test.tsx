@@ -31,6 +31,7 @@ let status = { isPending: false, isError: false };
 const mutation = { mutateAsync: vi.fn(), isPending: false };
 const commitMutation = { mutateAsync: vi.fn(), isPending: false };
 const toastMock = vi.fn();
+const TAP_TOAST = { id: 'planning-read-only-tap' };
 
 vi.mock('sonner', () => ({
   toast: Object.assign(
@@ -68,7 +69,7 @@ describe('ScheduleTab', () => {
     shown = { ...grid, assignments: [makeAssignment({ status: 'committed' })] };
     renderWithProviders(<ScheduleTab year={2999} />);
     await userEvent.click(screen.getByRole('button', { name: 'ada, january' }));
-    expect(toastMock).toHaveBeenCalledWith('you can only change your own row', undefined);
+    expect(toastMock).toHaveBeenCalledWith('you can only change your own row', TAP_TOAST);
     expect(mutation.mutateAsync).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: 'january' }));
     expect(screen.getByRole('heading', { name: 'january' })).toBeInTheDocument();
@@ -91,7 +92,7 @@ describe('ScheduleTab', () => {
     await userEvent.click(screen.getByRole('button', { name: 'ada, january' }));
     expect(toastMock).toHaveBeenCalledWith(
       "you can only put yourself in for months you've been proposed for",
-      undefined,
+      TAP_TOAST,
     );
     expect(commitMutation.mutateAsync).not.toHaveBeenCalled();
   });
@@ -102,6 +103,7 @@ describe('ScheduleTab', () => {
     renderWithProviders(<ScheduleTab year={2999} />);
     await userEvent.click(screen.getByRole('button', { name: 'ada, january' }));
     expect(toastMock).toHaveBeenCalledWith('add your availability so you can be proposed months', {
+      ...TAP_TOAST,
       action: { label: 'my availability', onClick: expect.any(Function) },
     });
   });
@@ -131,7 +133,7 @@ describe('ScheduleTab', () => {
     expect(tile).toBeEnabled();
     expect(tile).toHaveAttribute('title', 'no longer a planner');
     await userEvent.click(tile);
-    expect(toastMock).toHaveBeenCalledWith('you can only change your own row', undefined);
+    expect(toastMock).toHaveBeenCalledWith('you can only change your own row', TAP_TOAST);
   });
 
   it('toggles the open month on repeat taps', async () => {

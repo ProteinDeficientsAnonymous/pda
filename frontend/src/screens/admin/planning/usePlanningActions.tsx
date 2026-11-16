@@ -16,8 +16,11 @@ import { useAuthStore } from '@/auth/store';
 import { useConfirm } from '@/components/ui/useConfirm';
 
 import { cellActionLabel, type CellState, isWithdrawable } from './gridCell';
+import type { PlanningTab } from './planningTab';
 import { readOnlyTapNotice } from './readOnlyTap';
 import { toastOnError } from './toastOnError';
+
+const READ_ONLY_TAP_TOAST = 'planning-read-only-tap';
 
 type Act = (
   slot: PlanningSlot,
@@ -106,7 +109,7 @@ export function usePlanningActions(year: number): PlanningActions {
     setParams(
       (prev) => {
         const p = new URLSearchParams(prev);
-        p.set('tab', 'availability');
+        p.set('tab', 'availability' satisfies PlanningTab);
         return p;
       },
       { replace: true },
@@ -117,12 +120,12 @@ export function usePlanningActions(year: number): PlanningActions {
     const self = planner.userId === meId;
     const notice = readOnlyTapNotice(state, self, planner.submitted, slot.label);
     if (notice) {
-      toast(
-        notice.message,
-        notice.toAvailability
-          ? { action: { label: 'my availability', onClick: openAvailability } }
-          : undefined,
-      );
+      toast(notice.message, {
+        id: READ_ONLY_TAP_TOAST,
+        ...(notice.toAvailability && {
+          action: { label: 'my availability', onClick: openAvailability },
+        }),
+      });
       return;
     }
     if (!assignment) return;
