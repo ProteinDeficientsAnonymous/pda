@@ -80,6 +80,7 @@ describe('SlotEditor', () => {
     await user.click(edit);
     expect(edit).toHaveAttribute('aria-controls');
     expect(edit).toHaveTextContent('done');
+    expect(edit).toHaveAccessibleName('done june anniversary');
     await user.click(edit);
     expect(edit).toHaveAttribute('aria-expanded', 'false');
     expect(edit).not.toHaveAttribute('aria-controls');

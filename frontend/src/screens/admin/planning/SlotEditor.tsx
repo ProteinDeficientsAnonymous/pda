@@ -66,7 +66,7 @@ function SlotRow({ slot }: { slot: PlanningSlot }) {
         </span>
         <Button
           variant="secondary"
-          aria-label={`edit ${slot.label}`}
+          aria-label={`${open ? 'done' : 'edit'} ${slot.label}`}
           aria-expanded={open}
           aria-controls={open ? controlsId : undefined}
           onClick={() => {
@@ -180,7 +180,7 @@ export function SlotEditor({ year }: { year: number }) {
   if (slots.isError) return <p className="text-destructive text-sm">couldn't load slots</p>;
 
   return (
-    <section className="mt-10 flex flex-col gap-4">
+    <section className="flex flex-col gap-4">
       <h2 className="text-lg font-medium">slots</h2>
       <ul className="flex flex-col gap-3">
         {slots.data.map((s) => (
