@@ -75,6 +75,11 @@ describe('MonthPanel', () => {
     expect(screen.getByRole('link', { name: 'create event' })).toBeInTheDocument();
   });
 
+  it('offers no create event while the slot is only proposed', () => {
+    renderPanel(makeGrid([on('ada', 'proposed')]));
+    expect(screen.queryByRole('link', { name: 'create event' })).not.toBeInTheDocument();
+  });
+
   it('proposes a free planner', async () => {
     const grid = makeGrid([]);
     const { act } = renderPanel(grid);

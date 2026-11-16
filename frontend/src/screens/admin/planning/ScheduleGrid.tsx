@@ -74,7 +74,7 @@ export function ScheduleGrid({
 
   return (
     <div>
-      <div className="relative overflow-x-auto py-0.5">
+      <div className="relative overflow-x-auto overflow-y-hidden py-0.5">
         <div
           className="mx-auto grid w-max"
           style={{
@@ -84,6 +84,9 @@ export function ScheduleGrid({
         >
           <span style={at(2, 1)} className="text-muted self-center text-xs">
             month
+          </span>
+          <span style={at(1, loadColumn)} className="text-muted self-center text-right text-[10px]">
+            load
           </span>
           {columns.map(({ slot, header, track }) => {
             const open = slot.id === openSlotId;
