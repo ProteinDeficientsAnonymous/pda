@@ -46,7 +46,6 @@ function renderPanel(grid: PlanningGrid, { busy = false, onClose = vi.fn(), act 
     <MonthPanel
       grid={grid}
       slotId="s1"
-      year={grid.year}
       today={new Date(2026, 10, 15)}
       act={act}
       busy={busy}
@@ -62,13 +61,13 @@ describe('MonthPanel', () => {
   it.each([
     [[on('ada', 'committed')], 2999, 'covered'],
     [[on('ada', 'proposed')], 2999, 'waiting'],
-    [[on('ada', 'draft')], 2999, 'waiting'],
+    [[on('ada', 'draft')], 2999, 'not sent yet'],
     [[], 2999, 'needs a planner'],
     [[], 2000, 'past'],
   ] as const)('tags %j in %i as %s', (assignments, year, tag) => {
     renderPanel(makeGrid([...assignments], { year }));
     expect(screen.getByRole('heading', { name: 'january' })).toBeInTheDocument();
-    expect(screen.getByText(tag)).toBeInTheDocument();
+    expect(screen.getAllByText(tag)[0]).toBeInTheDocument();
   });
 
   it('offers create event once someone is in', () => {
@@ -80,7 +79,7 @@ describe('MonthPanel', () => {
     const grid = makeGrid([]);
     const { act } = renderPanel(grid);
     expect(within(row('ada')).getByText('0 of 2 monthlies taken')).toBeInTheDocument();
-    await userEvent.click(within(row('ada')).getByRole('button', { name: 'propose' }));
+    await userEvent.click(within(row('ada')).getByRole('button', { name: 'propose ada' }));
     expect(act).toHaveBeenCalledWith(slot, grid.planners[0], 'available', undefined);
   });
 
@@ -94,9 +93,9 @@ describe('MonthPanel', () => {
       ]),
     );
     expect(within(row('ada')).getByText('not sent yet')).toBeInTheDocument();
-    expect(within(row('ada')).getByRole('button', { name: 'undo' })).toBeInTheDocument();
-    expect(within(row('bo')).getByRole('button', { name: 'propose again' })).toBeInTheDocument();
-    expect(within(row('cy')).getByRole('button', { name: 'withdraw' })).toBeInTheDocument();
+    expect(within(row('ada')).getByRole('button', { name: 'undo ada' })).toBeInTheDocument();
+    expect(within(row('bo')).getByRole('button', { name: 'propose again bo' })).toBeInTheDocument();
+    expect(within(row('cy')).getByRole('button', { name: 'withdraw cy' })).toBeInTheDocument();
     expect(within(row('dee')).getByText('in')).toBeInTheDocument();
   });
 
@@ -108,13 +107,13 @@ describe('MonthPanel', () => {
   it('offers withdraw when a started month has no answer', () => {
     renderPanel(makeGrid([on('ada', 'proposed')], { year: 2000 }));
     expect(within(row('ada')).getByText('no answer')).toBeInTheDocument();
-    expect(within(row('ada')).getByRole('button', { name: 'withdraw' })).toBeInTheDocument();
+    expect(within(row('ada')).getByRole('button', { name: 'withdraw ada' })).toBeInTheDocument();
   });
 
   it('proposes a decliner again', async () => {
     const grid = makeGrid([on('bo', 'declined')]);
     const { act } = renderPanel(grid);
-    await userEvent.click(within(row('bo')).getByRole('button', { name: 'propose again' }));
+    await userEvent.click(within(row('bo')).getByRole('button', { name: 'propose again bo' }));
     expect(act).toHaveBeenCalledWith(slot, grid.planners[1], 'declined', grid.assignments[0]);
   });
 
@@ -124,14 +123,14 @@ describe('MonthPanel', () => {
         planners: [planner('bo', { isPlanner: false }), planner('cy', { isPlanner: false })],
       }),
     );
-    expect(within(row('bo')).getByRole('button', { name: 'propose again' })).toBeDisabled();
-    expect(within(row('cy')).getByRole('button', { name: 'withdraw' })).toBeEnabled();
+    expect(within(row('bo')).getByRole('button', { name: 'propose again bo' })).toBeDisabled();
+    expect(within(row('cy')).getByRole('button', { name: 'withdraw cy' })).toBeEnabled();
   });
 
   it('passes the assignment when withdrawing', async () => {
     const grid = makeGrid([on('ada', 'committed')]);
     const { act } = renderPanel(grid);
-    await userEvent.click(within(row('ada')).getByRole('button', { name: 'withdraw' }));
+    await userEvent.click(within(row('ada')).getByRole('button', { name: 'withdraw ada' }));
     expect(act).toHaveBeenCalledWith(slot, grid.planners[0], 'committed', grid.assignments[0]);
   });
 
@@ -143,6 +142,20 @@ describe('MonthPanel', () => {
     expect(screen.getByRole('button', { name: 'close january' })).toBeEnabled();
   });
 
+  it('links to the event once one exists', () => {
+    const withEvent = makeSlot({
+      id: 's1',
+      label: 'january',
+      month: 1,
+      order: 1,
+      eventId: 'e1',
+      eventSlug: 'jan-potluck',
+      eventStatus: 'active',
+    });
+    renderPanel(makeGrid([on('ada', 'committed')], { slots: [withEvent] }));
+    expect(screen.getByRole('link', { name: 'view event' })).toBeInTheDocument();
+  });
+
   it('closes', async () => {
     const { onClose } = renderPanel(makeGrid([]));
     await userEvent.click(screen.getByRole('button', { name: 'close january' }));
@@ -151,7 +164,7 @@ describe('MonthPanel', () => {
 
   it('will not propose someone who is not a planner', () => {
     renderPanel(makeGrid([], { planners: [planner('ada', { isPlanner: false })] }));
-    expect(within(row('ada')).getByRole('button', { name: 'propose' })).toBeDisabled();
+    expect(within(row('ada')).getByRole('button', { name: 'propose ada' })).toBeDisabled();
   });
 
   describe('everyone else', () => {
@@ -180,8 +193,26 @@ describe('MonthPanel', () => {
       expect(add).toHaveAttribute('aria-expanded', 'false');
       await userEvent.click(add);
       expect(add).toHaveAttribute('aria-expanded', 'true');
-      await userEvent.click(within(row('dan')).getByRole('button', { name: 'propose' }));
+      await userEvent.click(within(row('dan')).getByRole('button', { name: 'propose dan' }));
       expect(act).toHaveBeenCalledWith(slot, grid.planners[1], 'blank', undefined);
+    });
+
+    it('leaves ex-planners out of add someone', async () => {
+      renderPanel(
+        makeGrid([], {
+          planners: [planner('ada'), planner('ex', { isPlanner: false, availableSlotIds: [] })],
+        }),
+      );
+      expect(screen.queryByRole('button', { name: 'add someone' })).not.toBeInTheDocument();
+      expect(screen.queryByText(/not free/)).not.toBeInTheDocument();
+    });
+
+    it('splits not free from no form once expanded and offers hide', async () => {
+      renderPanel(gridWithOthers());
+      await userEvent.click(screen.getByRole('button', { name: 'add someone' }));
+      expect(screen.getByRole('heading', { name: 'not free' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'no form' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'hide' })).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('has no add someone when everyone is free', () => {
