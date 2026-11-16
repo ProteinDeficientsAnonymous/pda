@@ -57,16 +57,29 @@ describe('ScheduleGrid', () => {
     expect(container.querySelector('.overflow-x-auto')).toHaveClass('relative');
   });
 
-  it('draws the dividers as 1px rows', () => {
-    const { container } = renderGrid();
-    expect(container.querySelector<HTMLElement>('.grid')?.style.gridTemplateRows).toBe(
-      '22px 22px 1px 22px 22px 1px 22px',
+  it.each([
+    [[true, false, true], '22px 22px 1px 22px 22px 1px 22px'],
+    [[true, true], '22px 22px 1px 22px 22px'],
+    [[false, false], '22px 22px 1px 22px 22px'],
+  ])('draws the dividers for submitted %o as 1px rows', (flags, rows) => {
+    const planners = flags.map((submitted, i) =>
+      planner(`p${String(i)}`, `p${String(i)}`, { submitted }),
     );
+    const { container } = renderGrid({ grid: { ...grid, planners } });
+    expect(container.querySelector<HTMLElement>('.grid')?.style.gridTemplateRows).toBe(rows);
+  });
+
+  it('marks each month with its coverage', () => {
+    renderGrid();
+    const coverage = (label: string) => screen.getByText(`${label}:`).parentElement;
+    expect(coverage('january')).toHaveTextContent(/in$/);
+    expect(coverage('february')).toHaveTextContent(/not sent yet$/);
+    expect(coverage('spring biannual')).toHaveTextContent(/0 free$/);
   });
 
   it('toggles a month from its header', async () => {
     const { onToggleSlot } = renderGrid();
-    await userEvent.click(screen.getByRole('button', { name: 'open january' }));
+    await userEvent.click(screen.getByRole('button', { name: 'january' }));
     expect(onToggleSlot).toHaveBeenCalledWith('s1');
   });
 
@@ -74,8 +87,8 @@ describe('ScheduleGrid', () => {
     renderGrid({ openSlotId: 's1' });
     const pressed = (name: string) =>
       screen.getByRole('button', { name }).getAttribute('aria-pressed');
-    expect(pressed('open january')).toBe('true');
-    expect(pressed('open february')).toBe('false');
+    expect(pressed('january')).toBe('true');
+    expect(pressed('february')).toBe('false');
   });
 
   it('proposes a free planner from their tile', async () => {
