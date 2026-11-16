@@ -41,6 +41,7 @@ interface GridTileProps {
   plannerName: string;
   slotLabel: string;
   isPlanner: boolean;
+  self?: boolean;
   disabled: boolean;
   onAct: () => void;
 }
@@ -50,6 +51,7 @@ export function GridTile({
   plannerName,
   slotLabel,
   isPlanner,
+  self = false,
   disabled,
   onAct,
 }: GridTileProps) {
@@ -58,7 +60,7 @@ export function GridTile({
   return (
     <button
       type="button"
-      aria-label={cellActionLabel(state, plannerName, slotLabel)}
+      aria-label={cellActionLabel(state, plannerName, slotLabel, self)}
       aria-describedby={textId}
       title={blockedReason ?? undefined}
       disabled={disabled || blockedReason !== null}

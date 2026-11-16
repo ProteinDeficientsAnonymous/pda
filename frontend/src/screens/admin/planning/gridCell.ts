@@ -64,7 +64,13 @@ export const STATE_TEXT: Record<CellState, string> = {
   blank: 'not free',
 };
 
-export function cellActionLabel(state: CellState, plannerName: string, slotLabel: string): string {
+export function cellActionLabel(
+  state: CellState,
+  plannerName: string,
+  slotLabel: string,
+  self = false,
+): string {
+  if (self && state !== 'committed') return `put yourself in for ${slotLabel}`;
   if (state === 'draft') return `remove draft ${plannerName} for ${slotLabel}`;
   if (isWithdrawable(state)) return `withdraw ${plannerName} from ${slotLabel}`;
   return `propose ${plannerName} for ${slotLabel}`;

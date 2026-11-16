@@ -24,6 +24,7 @@ vi.mock('@/api/planning', () => ({
   }),
   usePropose: () => mutation,
   useWithdraw: () => mutation,
+  useConfirmPlanner: () => mutation,
   useSendProposals: () => mutation,
 }));
 
