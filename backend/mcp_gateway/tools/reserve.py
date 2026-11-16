@@ -2,6 +2,7 @@ from datetime import date
 from typing import Annotated, Any
 from uuid import UUID
 
+from community.models import ReserveEntryKind
 from community.reserve.manage import create_reserve_entry as create_view
 from community.reserve.manage import delete_reserve_entry as delete_view
 from community.reserve.manage import update_reserve_entry as update_view
@@ -23,6 +24,10 @@ class ReserveEntryFields(BaseModel):
     label: Annotated[str | None, Field(description="e.g. '9/12 hudson river walk + peacefood'")] = (
         None
     )
+    kind: Annotated[
+        ReserveEntryKind | None,
+        Field(description="event (default), cost or donation; the table lists them in that order"),
+    ] = None
     occurred_on: Annotated[date | None, Field(description="event or payment date")] = None
     collected: Amount = None
     paid_out: Amount = None

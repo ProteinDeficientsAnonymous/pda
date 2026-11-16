@@ -31,12 +31,18 @@ def entry(db):
 @pytest.mark.django_db
 class TestCreateReserveEntry:
     def test_create_reserve_entry(self, api_client, editor_headers):
-        payload = {"label": "stickers", "occurred_on": "2026-11-15", "paid_out": "103.65"}
+        payload = {
+            "label": "stickers",
+            "kind": "cost",
+            "occurred_on": "2026-11-15",
+            "paid_out": "103.65",
+        }
 
         response = api_client.post(URL, payload, content_type="application/json", **editor_headers)
 
         assert response.status_code == 201
         assert response.json()["left_over"] == "-103.65"
+        assert response.json()["kind"] == "cost"
         assert ReserveEntry.objects.get().label == "stickers"
 
     def test_create_reserve_entry_rejects_negative(self, api_client, editor_headers):

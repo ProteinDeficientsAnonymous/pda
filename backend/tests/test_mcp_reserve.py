@@ -39,10 +39,16 @@ class TestReserveTools:
         result = run_tool(
             editor,
             "save_reserve_entry",
-            fields={"label": "stickers", "occurred_on": "2026-11-15", "paid_out": "103.65"},
+            fields={
+                "label": "stickers",
+                "kind": "cost",
+                "occurred_on": "2026-11-15",
+                "paid_out": "103.65",
+            },
         )
 
         assert result["left_over"] == "-103.65"
+        assert result["kind"] == "cost"
         assert ReserveEntry.objects.get().paid_out == Decimal("103.65")
 
     def test_save_new_needs_label_and_date(self, editor):

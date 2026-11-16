@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from community.models import ReserveEntry
+from community.models import ReserveEntry, ReserveEntryKind
 
 
 @pytest.mark.django_db
@@ -36,3 +36,19 @@ class TestGetReserve:
 
         assert response.status_code == 200
         assert response.json() == {"entries": [], "updated_at": None}
+
+    def test_get_reserve_groups_events_then_costs_then_donations(self, api_client):
+        def make(label, kind, day):
+            ReserveEntry.objects.create(label=label, kind=kind, occurred_on=date(2026, 5, day))
+
+        make("donation", ReserveEntryKind.DONATION, 1)
+        make("stickers", ReserveEntryKind.COST, 2)
+        make("late walk", ReserveEntryKind.EVENT, 30)
+        make("early walk", ReserveEntryKind.EVENT, 3)
+
+        response = api_client.get("/api/community/reserve/")
+
+        assert response.status_code == 200
+        entries = response.json()["entries"]
+        assert [e["label"] for e in entries] == ["early walk", "late walk", "stickers", "donation"]
+        assert entries[-1]["kind"] == "donation"
