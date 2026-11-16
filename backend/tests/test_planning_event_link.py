@@ -16,7 +16,7 @@ from users.permissions import PermissionKey
 from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from tests._events import make_event
-from tests._planning import assign, respond, send
+from tests._planning import assign, headers_for, respond, send
 from tests._users import grant, make_attendance_paused, make_user
 
 VIEW = PermissionKey.VIEW_EVENT_PLANNING
@@ -230,7 +230,7 @@ class TestRescindOnBackOut:
             respond(api_client, assignment, "decline", planner)
         else:
             url = f"/api/community/planning/assignments/{assignment.id}/"
-            send(api_client, "delete", url, headers=auth_headers_for(make_user(MANAGE)))
+            send(api_client, "delete", url, headers=headers_for(MANAGE))
         assert invite_for(event, planner).status == CoHostInviteStatus.PENDING
 
     def test_withdraw_rescinds_pending_invite(self, api_client, slot, planner):
