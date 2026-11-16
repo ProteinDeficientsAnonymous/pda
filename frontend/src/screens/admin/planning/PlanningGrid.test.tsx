@@ -32,18 +32,13 @@ const planner = (userId: string, name: string, extra: object = {}) => ({
 let grid: Grid;
 const propose = vi.fn();
 const withdraw = vi.fn();
-const sendProposals = vi.fn();
 let sending = false;
 const toastError = vi.fn();
-const toastSuccess = vi.fn();
 
 vi.mock('sonner', () => ({
   toast: {
     error: (m: string) => {
       toastError(m);
-    },
-    success: (m: string) => {
-      toastSuccess(m);
     },
   },
 }));
@@ -52,16 +47,14 @@ vi.mock('@/api/planning', () => ({
   usePlanningGrid: () => ({ isPending: false, isError: false, data: grid }),
   usePropose: () => ({ mutateAsync: propose, isPending: false }),
   useWithdraw: () => ({ mutateAsync: withdraw, isPending: false }),
-  useSendProposals: () => ({ mutateAsync: sendProposals, isPending: sending }),
+  useSendProposals: () => ({ mutateAsync: vi.fn(), isPending: sending }),
 }));
 
 beforeEach(() => {
   sending = false;
   propose.mockReset().mockResolvedValue(undefined);
   withdraw.mockReset().mockResolvedValue(undefined);
-  sendProposals.mockReset().mockResolvedValue({ planners_notified: 3, proposals_sent: 5 });
   toastError.mockReset();
-  toastSuccess.mockReset();
 });
 
 function interactiveGrid(status?: 'draft' | 'proposed' | 'committed' | 'declined'): Grid {
@@ -213,46 +206,5 @@ describe('PlanningGrid', () => {
     sending = true;
     renderWithProviders(<PlanningGrid year={2999} />);
     expect(screen.getByRole('button', { name: 'remove draft ada for january' })).toBeDisabled();
-  });
-
-  it('hides send proposals without drafts', () => {
-    grid = interactiveGrid('proposed');
-    renderWithProviders(<PlanningGrid year={2999} />);
-    expect(screen.queryByRole('button', { name: /^send/ })).not.toBeInTheDocument();
-  });
-
-  it.each([
-    [1, 'send 1 proposal'],
-    [2, 'send 2 proposals'],
-  ])('labels send for %i drafts', (count, label) => {
-    grid = {
-      ...interactiveGrid(),
-      assignments: Array.from({ length: count }, (_, i) => ({
-        id: `a${String(i)}`,
-        slotId: 's1',
-        userId: `u${String(i)}`,
-        status: 'draft' as const,
-      })),
-    };
-    renderWithProviders(<PlanningGrid year={2999} />);
-    expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
-    expect(screen.getByText("drafts aren't sent until you hit send")).toBeInTheDocument();
-  });
-
-  it('sends the drafts and toasts who was notified', async () => {
-    grid = interactiveGrid('draft');
-    renderWithProviders(<PlanningGrid year={2999} />);
-    await userEvent.click(screen.getByRole('button', { name: 'send 1 proposal' }));
-    expect(sendProposals).toHaveBeenCalled();
-    expect(toastSuccess).toHaveBeenCalledWith('sent to 3 planners 🌱');
-  });
-
-  it('toasts when sending fails', async () => {
-    sendProposals.mockRejectedValue(new Error('nope'));
-    grid = interactiveGrid('draft');
-    renderWithProviders(<PlanningGrid year={2999} />);
-    await userEvent.click(screen.getByRole('button', { name: 'send 1 proposal' }));
-    expect(toastError).toHaveBeenCalledWith("couldn't send proposals — try again");
-    expect(toastSuccess).not.toHaveBeenCalled();
   });
 });

@@ -2,18 +2,21 @@ import { useState } from 'react';
 
 import { usePlanningGrid } from '@/api/planning';
 
+import { draftCount } from './gridCell';
 import { PlanningGrid } from './PlanningGrid';
 import { ScheduleGrid } from './ScheduleGrid';
+import { SendProposalsBar } from './SendProposalsBar';
 import { usePlanningActions } from './usePlanningActions';
 
 export function ScheduleTab({ year }: { year: number }) {
   const { data: grid } = usePlanningGrid(year);
   const [today] = useState(() => new Date());
   const [openSlotId, setOpenSlotId] = useState<string | null>(null);
-  const { act, busy, confirmElement } = usePlanningActions(year);
+  const { act, busy, send, confirmElement } = usePlanningActions(year);
 
   return (
     <>
+      {grid ? <SendProposalsBar send={send} drafts={draftCount(grid)} /> : null}
       {grid && grid.planners.length > 0 ? (
         <ScheduleGrid
           grid={grid}

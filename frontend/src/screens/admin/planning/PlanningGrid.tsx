@@ -8,15 +8,8 @@ import {
 } from '@/api/planning';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
-import {
-  cellState,
-  draftCount,
-  findAssignment,
-  slotHasCommitted,
-  slotNeedsPlanner,
-} from './gridCell';
+import { cellState, findAssignment, slotHasCommitted, slotNeedsPlanner } from './gridCell';
 import { GridCell } from './PlanningGridCell';
-import { SendProposalsBar } from './SendProposalsBar';
 import { SlotEventLink } from './SlotEventLink';
 import { usePlanningActions } from './usePlanningActions';
 
@@ -53,7 +46,7 @@ function SlotHeader({ slot, year, grid }: { slot: PlanningSlot; year: number; gr
 export function PlanningGrid({ year }: { year: number }) {
   const { data: grid, isPending, isError } = usePlanningGrid(year);
   const [today] = useState(() => new Date());
-  const { act, busy, send, confirmElement } = usePlanningActions(year);
+  const { act, busy, confirmElement } = usePlanningActions(year);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the planning grid — try refreshing" />;
@@ -62,7 +55,6 @@ export function PlanningGrid({ year }: { year: number }) {
   return (
     <section className="mt-8">
       <h2 className="mb-3 text-lg font-medium">planning grid</h2>
-      <SendProposalsBar send={send} drafts={draftCount(grid)} />
       {/* relative: the cells' sr-only labels are absolute and would otherwise widen the page on phones */}
       <div className="border-border relative overflow-x-auto rounded-lg border">
         <table aria-label="planning grid" className="w-full border-collapse text-sm">
