@@ -41,8 +41,8 @@ vi.mock('./AvailabilityForm', () => ({
   AvailabilityForm: ({ year }: { year: number }) => <div>form for {year}</div>,
 }));
 
-vi.mock('./PlanningGrid', () => ({
-  PlanningGrid: ({ year }: { year: number }) => <div>grid for {year}</div>,
+vi.mock('./ScheduleTab', () => ({
+  ScheduleTab: ({ year }: { year: number }) => <div>grid for {year}</div>,
 }));
 
 vi.mock('./SlotEditor', () => ({
@@ -125,10 +125,9 @@ describe('PlanningScreen', () => {
       renderWithProviders(<PlanningScreen />);
       expect(screen.queryByRole('button', { name: /^start / })).not.toBeInTheDocument();
       await userEvent.click(screen.getByRole('radio', { name: 'slots' }));
-      expect(screen.getByText(`editor for ${String(current)}`)).toBeInTheDocument();
-      expect(
-        screen.getByRole('button', { name: `start ${String(current + 1)}` }),
-      ).toBeInTheDocument();
+      const editor = screen.getByText(`editor for ${String(current)}`);
+      const start = screen.getByRole('button', { name: `start ${String(current + 1)}` });
+      expect(editor.compareDocumentPosition(start) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
     it('keeps mine selected after the waiting slot is answered', () => {
