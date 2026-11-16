@@ -59,7 +59,11 @@ class TestProposalReminders:
         assert send_proposal_reminders(start) == 0
 
     def test_not_proposed_statuses_skipped(self, proposed, fake_email_sender):
-        for status in (AssignmentStatus.COMMITTED, AssignmentStatus.DECLINED):
+        for status in (
+            AssignmentStatus.COMMITTED,
+            AssignmentStatus.DECLINED,
+            AssignmentStatus.DRAFT,
+        ):
             SlotAssignment.objects.filter(pk=proposed.pk).update(status=status)
             assert send_proposal_reminders(PROPOSED_AT + 3 * DAY) == 0
 

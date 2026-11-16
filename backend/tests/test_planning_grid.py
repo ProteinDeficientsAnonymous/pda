@@ -91,6 +91,13 @@ class TestGrid:
         data = get_grid(api_client, headers_for(MANAGE)).json()
         assert [a["id"] for a in data["assignments"]] == [str(kept.id)]
 
+    def test_assignments_include_draft(self, api_client, year):
+        draft = SlotAssignment.objects.create(
+            slot=year.slots.first(), user=make_user(VIEW), status=AssignmentStatus.DRAFT
+        )
+        data = get_grid(api_client, headers_for(MANAGE)).json()
+        assert [(a["id"], a["status"]) for a in data["assignments"]] == [(str(draft.id), "draft")]
+
     def test_query_count_does_not_grow_with_planners(
         self, api_client, year, django_assert_max_num_queries
     ):
