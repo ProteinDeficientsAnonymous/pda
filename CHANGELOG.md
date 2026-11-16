@@ -1,3 +1,11 @@
+## [0.244.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.244.0...v0.244.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - availability form: toggle alignment and monthly stepper ([#2518](https://github.com/ProteinDeficientsAnonymous/pda/issues/2518)) ([52edda8](https://github.com/ProteinDeficientsAnonymous/pda/commit/52edda86c7f63a2d8c3e253014f5e0f216a6c800))
+* 2121 - bigger planning grid on desktop ([#2519](https://github.com/ProteinDeficientsAnonymous/pda/issues/2519)) ([39a48a6](https://github.com/ProteinDeficientsAnonymous/pda/commit/39a48a66ae49b0cbacac84827816d5d0784f7d76))
+
 # [0.244.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.243.0...v0.244.0) (2026-11-16)
 
 
