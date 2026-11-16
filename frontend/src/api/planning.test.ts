@@ -19,6 +19,7 @@ import {
   usePlanningYears,
   usePropose,
   useSaveAvailability,
+  useSendProposals,
   useUpdateSlot,
   useWithdraw,
 } from './planning';
@@ -215,6 +216,17 @@ describe('planning writes', () => {
     await renderMutation(useHook).run('a1');
     expect(apiClient.post).toHaveBeenCalledWith(
       `/api/community/planning/assignments/a1/${action}/`,
+    );
+  });
+
+  it("sends the year's draft proposals", async () => {
+    const sent = { planners_notified: 2, proposals_sent: 3 };
+    vi.mocked(apiClient.post).mockResolvedValue({ data: sent });
+    await expect(renderMutation(() => useSendProposals(2027)).run(undefined)).resolves.toEqual(
+      sent,
+    );
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/community/planning/years/2027/proposals/send/',
     );
   });
 

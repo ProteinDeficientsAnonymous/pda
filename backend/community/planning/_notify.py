@@ -7,6 +7,7 @@ from notifications.models import Notification, NotificationType
 from notifications.planning_email import (
     PlanningEmailDetails,
     PlanningEmailVariant,
+    describe_slots,
     send_planning_email,
 )
 from notifications.service import notify_users
@@ -57,14 +58,16 @@ def email_planner(user: User, slots: list[PlanningSlot], variant: PlanningEmailV
     )
 
 
-def notify_proposed(assignment: SlotAssignment) -> None:
-    _notify(
-        assignment,
+def notify_proposed(user: User, slots: list[PlanningSlot], proposed_by: User) -> None:
+    summary = describe_slots(tuple(slot.label for slot in slots))
+    _notify_many(
+        [user.pk],
         NotificationType.PLANNING_PROPOSED,
-        f"you've been asked to plan {assignment.slot.label} — tap to respond",
-        assignment.proposed_by,
+        f"any chance you could plan {summary}? 🌱 tap to answer",
+        proposed_by,
     )
-    email_planner(assignment.user, [assignment.slot], PlanningEmailVariant.PROPOSED)
+    # A rolled-back send must not leave an email out for proposals that are still drafts.
+    transaction.on_commit(lambda: email_planner(user, slots, PlanningEmailVariant.PROPOSED))
 
 
 def notify_upcoming(assignment: SlotAssignment) -> None:

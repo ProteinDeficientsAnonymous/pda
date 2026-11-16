@@ -16,11 +16,6 @@ VIEW = PermissionKey.VIEW_EVENT_PLANNING
 MANAGE = PermissionKey.MANAGE_EVENT_PLANNING
 
 
-@pytest.fixture
-def coordinator(db):
-    return make_user(MANAGE)
-
-
 def propose(api_client, slot, user, actor):
     url = f"/api/community/planning/slots/{slot.id}/assignments/"
     return send(api_client, "post", url, {"user_id": str(user.id)}, auth_headers_for(actor))

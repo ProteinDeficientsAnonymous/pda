@@ -104,7 +104,7 @@ describe('MySlots', () => {
     renderWithProviders(<MySlots />);
     await userEvent.click(screen.getByRole('button', { name: 'back out of label a2' }));
     expect(
-      screen.getByText('back out of label a2? the coordinator will be told'),
+      screen.getByText("back out of label a2? no worries — we'll pass it along"),
     ).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'cancel' }));
     expect(decline).not.toHaveBeenCalled();

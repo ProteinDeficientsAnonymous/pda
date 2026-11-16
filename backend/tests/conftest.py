@@ -301,3 +301,8 @@ def slot(year):
 @pytest.fixture
 def planner(db):
     return make_user(PermissionKey.VIEW_EVENT_PLANNING)
+
+
+@pytest.fixture
+def coordinator(db):
+    return make_user(PermissionKey.MANAGE_EVENT_PLANNING)
