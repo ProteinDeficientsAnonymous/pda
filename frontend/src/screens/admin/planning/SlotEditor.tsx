@@ -68,7 +68,7 @@ function SlotRow({ slot }: { slot: PlanningSlot }) {
           variant="secondary"
           aria-label={`edit ${slot.label}`}
           aria-expanded={open}
-          aria-controls={controlsId}
+          aria-controls={open ? controlsId : undefined}
           onClick={() => {
             setOpen((o) => !o);
           }}

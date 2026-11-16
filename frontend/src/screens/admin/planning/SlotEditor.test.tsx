@@ -71,6 +71,19 @@ describe('SlotEditor', () => {
     expect(screen.getByLabelText('kind for june anniversary')).toHaveValue('biannual');
   });
 
+  it('collapses the row when edit is clicked again', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SlotEditor year={2027} />);
+    const edit = screen.getByRole('button', { name: 'edit june anniversary' });
+    expect(edit).not.toHaveAttribute('aria-controls');
+    await user.click(edit);
+    expect(edit).toHaveAttribute('aria-controls');
+    await user.click(edit);
+    expect(edit).toHaveAttribute('aria-expanded', 'false');
+    expect(edit).not.toHaveAttribute('aria-controls');
+    expect(screen.queryByLabelText('label for june anniversary')).not.toBeInTheDocument();
+  });
+
   it('patches the trimmed label on blur and shows the trimmed value', async () => {
     const user = userEvent.setup();
     renderWithProviders(<SlotEditor year={2027} />);
