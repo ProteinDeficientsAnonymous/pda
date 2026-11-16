@@ -1,3 +1,10 @@
+## [0.248.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.1...v0.248.2) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - create event is a primary button in my events ([#2545](https://github.com/ProteinDeficientsAnonymous/pda/issues/2545)) ([2b03a96](https://github.com/ProteinDeficientsAnonymous/pda/commit/2b03a9613ad0b99ec738c1611db34710f4c4c57f))
+
 ## [0.248.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.0...v0.248.1) (2026-11-16)
 
 
