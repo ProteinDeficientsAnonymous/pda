@@ -52,7 +52,7 @@ export function LoadCell({
             {`${String(load.taken)}/${String(load.offered)}`}
           </span>
           <span className="sr-only">
-            {`${String(load.taken)} of ${String(load.offered)} taken${load.taken > load.offered ? ', over' : ''}`}
+            {`${String(load.taken)} in, ${String(load.offered)} offered on their form${load.taken > load.offered ? ', over' : ''}`}
           </span>
         </>
       ) : (

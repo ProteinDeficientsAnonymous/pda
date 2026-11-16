@@ -116,8 +116,10 @@ describe('ScheduleGrid', () => {
     expect(cells).toEqual(['ada', '0/2', 'bo', '2/1', 'cy', '–', '–']);
   });
 
-  it('labels the monthlies and biannual columns, short on phones', () => {
+  it('labels the monthlies and biannual columns as their form, short on phones', () => {
     renderGrid();
+    expect(screen.getByText('form')).toHaveClass('md:hidden');
+    expect(screen.getByText('their form')).toHaveClass('hidden', 'md:inline');
     for (const word of ['mo', 'bi']) expect(screen.getByText(word)).toHaveClass('md:hidden');
     for (const word of ['monthlies', 'biannual']) {
       expect(screen.getByText(word)).toHaveClass('hidden', 'md:inline');

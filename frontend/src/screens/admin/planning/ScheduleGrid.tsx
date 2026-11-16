@@ -90,13 +90,19 @@ export function ScheduleGrid({
           <span style={at(2, 1)} className="text-muted self-center text-xs md:text-sm">
             month
           </span>
+          <span
+            style={at(1, `${String(loadColumn)} / span 2`)}
+            className="text-muted self-end text-center text-[10px] whitespace-nowrap md:text-xs"
+          >
+            <PhoneShort short="form" long="their form" />
+          </span>
           {[
             { column: loadColumn, short: 'mo', long: 'monthlies' },
             { column: biColumn, short: 'bi', long: 'biannual' },
           ].map(({ column, short, long }) => (
             <span
               key={long}
-              style={at(1, column)}
+              style={at(2, column)}
               className="text-muted self-center text-right text-[10px] md:text-xs"
             >
               <PhoneShort short={short} long={long} />

@@ -37,6 +37,7 @@ describe('GridKey', () => {
     for (const words of Object.values(STATE_TEXT)) {
       expect(screen.getByText(words)).toBeInTheDocument();
     }
+    expect(screen.getByText('monthlies: in / offered on their form')).toBeInTheDocument();
     expect(screen.queryByText(/★/)).not.toBeInTheDocument();
     expect(screen.queryByText(/^month row: /)).not.toBeInTheDocument();
   });

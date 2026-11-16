@@ -36,8 +36,8 @@ describe('NameCell', () => {
 
 describe('LoadCell', () => {
   it.each([
-    [{ taken: 2, offered: 1 }, '2/1', true, '2 of 1 taken, over'],
-    [{ taken: 1, offered: 2 }, '1/2', false, '1 of 2 taken'],
+    [{ taken: 2, offered: 1 }, '2/1', true, '2 in, 1 offered on their form, over'],
+    [{ taken: 1, offered: 2 }, '1/2', false, '1 in, 2 offered on their form'],
   ])('shows %o as %s, bold %s', (load, text, bold, words) => {
     render(<LoadCell load={load} style={{}} />);
     expect(screen.getByText(text).classList.contains('font-semibold')).toBe(bold);
