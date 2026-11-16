@@ -84,7 +84,7 @@ Planners see their own availability and assignments, plus teammates' names and s
 
 ## Ops
 
-The daily job is a new management command, `send_planning_reminders`, needing a new Railway cron service (`cron-*`, with `${{pda.VAR}}` references). Leah sets that up after the reminders PR merges.
+The daily job is the management command `send_planning_reminders`, run by `scripts/cron_daily.sh` on the `cron-daily` service (12:00 UTC).
 
 ## Delivery
 
