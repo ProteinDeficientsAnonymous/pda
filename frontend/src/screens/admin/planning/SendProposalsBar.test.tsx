@@ -78,7 +78,7 @@ describe('SendProposalsBar', () => {
   async function openDrop() {
     renderBar(1);
     await userEvent.click(screen.getByRole('button', { name: /not sent yet/ }));
-    await userEvent.click(screen.getByRole('button', { name: 'remove draft ada for march' }));
+    await userEvent.click(screen.getByRole('button', { name: 'drop draft ada for march' }));
     expect(
       screen.getByText("ada won't get a proposal for march — you can draft it again from the grid"),
     ).toBeInTheDocument();
@@ -102,11 +102,14 @@ describe('SendProposalsBar', () => {
     expect(act).not.toHaveBeenCalled();
   });
 
-  it('sends the drafts and toasts who was notified', async () => {
+  it('sends the drafts, toasts who was notified and collapses the queue', async () => {
     renderBar(1);
+    const toggle = screen.getByRole('button', { name: /not sent yet/ });
+    await userEvent.click(toggle);
     await userEvent.click(screen.getByRole('button', { name: 'send proposals' }));
     expect(mutateAsync).toHaveBeenCalled();
     expect(toastSuccess).toHaveBeenCalledWith('sent to 3 planners 🌱');
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('toasts when sending fails', async () => {

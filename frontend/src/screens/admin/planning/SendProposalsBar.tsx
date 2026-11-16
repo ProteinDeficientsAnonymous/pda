@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { Chevron } from '@/components/ui/Chevron';
 import { useConfirm } from '@/components/ui/useConfirm';
 
-import { cellActionLabel, draftCount, draftsByPlanner } from './gridCell';
+import { draftCount, draftsByPlanner } from './gridCell';
 import { toastOnError } from './toastOnError';
 import type { usePlanningActions } from './usePlanningActions';
 
@@ -38,6 +38,7 @@ export function SendProposalsBar({ grid, send, act, busy }: SendProposalsBarProp
     const sending = send.mutateAsync();
     if (await toastOnError(sending, "couldn't send proposals — try again")) {
       const { planners_notified } = await sending;
+      setOpen(false);
       toast.success(`sent to ${plural(planners_notified, 'planner')} 🌱`);
     }
   }
@@ -85,7 +86,7 @@ export function SendProposalsBar({ grid, send, act, busy }: SendProposalsBarProp
                   key={assignment.id}
                   type="button"
                   disabled={busy}
-                  aria-label={cellActionLabel('draft', planner.name, slot.label)}
+                  aria-label={`drop draft ${planner.name} for ${slot.label}`}
                   onClick={() => void drop(slot, planner, assignment)}
                   className="border-brand-on/40 hover:bg-brand-700 focus-visible:ring-brand-200 inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 text-xs focus-visible:ring-2 focus-visible:outline-none disabled:opacity-60"
                 >
