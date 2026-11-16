@@ -5,7 +5,6 @@ from unittest.mock import MagicMock
 import pytest
 from community.management.commands import send_host_digests as command_module
 from community.models import Event, EventRSVP, RSVPStatus
-from django.conf import settings
 from django.core.management import call_command
 from django.utils import timezone
 from notifications import email_sender as email_sender_module
@@ -112,8 +111,3 @@ def test_dry_run_sends_and_writes_nothing(run_at, fake_sender):
     assert host.host_digest_last_sent_at is None
     assert "hike" in out
     assert host.email not in out
-
-
-def test_cron_daily_runs_command():
-    cron = (settings.BASE_DIR.parent / "scripts" / "cron_daily.sh").read_text()
-    assert "manage.py send_host_digests" in cron

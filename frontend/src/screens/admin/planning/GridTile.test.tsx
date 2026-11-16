@@ -32,7 +32,6 @@ describe('GridTile', () => {
   it.each([
     ['committed', '✓', 'rounded-[3px]'],
     ['proposed', '?', 'rounded-full'],
-    ['no_answer', '!', 'rounded-full'],
     ['draft', '', 'rounded-[3px]'],
     ['declined', '✕', 'rounded-[3px]'],
     ['available', '', 'rounded-[3px]'],

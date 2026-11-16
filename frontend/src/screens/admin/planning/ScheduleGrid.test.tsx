@@ -2,25 +2,15 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { PlanningGrid } from '@/api/planning';
-import { makeSlot } from '@/test/fixtures';
+import type { PlannerColumn } from '@/api/planning';
+import { makeAssignment, makePlanner, makePlanningGrid, makeSlot } from '@/test/fixtures';
 
 import { ScheduleGrid } from './ScheduleGrid';
 
-const planner = (userId: string, name: string, extra: object = {}) => ({
-  userId,
-  name,
-  isPlanner: true,
-  hasEmail: true,
-  submitted: true,
-  biannualInterest: 'yes' as const,
-  monthlyCount: 2,
-  availableSlotIds: [] as string[],
-  ...extra,
-});
+const planner = (userId: string, name: string, extra: Partial<PlannerColumn> = {}) =>
+  makePlanner({ userId, name, biannualInterest: 'yes', monthlyCount: 2, ...extra });
 
-const grid: PlanningGrid = {
-  year: 2999,
+const grid = makePlanningGrid({
   slots: [
     makeSlot({ id: 's3', label: 'spring biannual', month: 4, kind: 'biannual', order: 1 }),
     makeSlot({ id: 's1', label: 'january', month: 1, order: 1 }),
@@ -32,10 +22,10 @@ const grid: PlanningGrid = {
     planner('u2', 'bo', { isPlanner: false, monthlyCount: 1, biannualInterest: 'maybe' }),
   ],
   assignments: [
-    { id: 'a1', slotId: 's1', userId: 'u2', status: 'committed' },
-    { id: 'a2', slotId: 's2', userId: 'u2', status: 'draft' },
+    makeAssignment({ userId: 'u2', status: 'committed' }),
+    makeAssignment({ id: 'a2', slotId: 's2', userId: 'u2' }),
   ],
-};
+});
 
 function renderGrid(overrides: Partial<Parameters<typeof ScheduleGrid>[0]> = {}) {
   const props = {

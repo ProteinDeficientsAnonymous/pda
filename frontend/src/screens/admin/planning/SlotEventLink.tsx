@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom';
 
 import type { PlanningSlot } from '@/api/planning';
+import { buttonClass } from '@/components/ui/buttonClass';
 import { eventPath } from '@/models/event';
 
 interface Props {
   slot: PlanningSlot;
   year: number;
   canCreate: boolean;
+  asButton?: boolean;
 }
 
 const STATUS_TEXT: Record<NonNullable<PlanningSlot['eventStatus']>, string> = {
@@ -16,7 +18,7 @@ const STATUS_TEXT: Record<NonNullable<PlanningSlot['eventStatus']>, string> = {
   deleted: 'deleted',
 };
 
-export function SlotEventLink({ slot, year, canCreate }: Props) {
+export function SlotEventLink({ slot, year, canCreate, asButton = false }: Props) {
   if (slot.eventId) {
     return (
       <span className="text-xs">
@@ -33,7 +35,7 @@ export function SlotEventLink({ slot, year, canCreate }: Props) {
   if (!canCreate) return null;
   return (
     <Link
-      className="text-xs underline"
+      className={asButton ? buttonClass('secondary') : 'text-xs underline'}
       to={`/events/add?planningSlot=${slot.id}&year=${String(year)}`}
     >
       create event

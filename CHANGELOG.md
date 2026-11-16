@@ -1,3 +1,24 @@
+# [0.246.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.3...v0.246.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - split planning into my events and my availability tabs ([#2528](https://github.com/ProteinDeficientsAnonymous/pda/issues/2528)) ([df5aff3](https://github.com/ProteinDeficientsAnonymous/pda/commit/df5aff306cb3000405ca66e2741ebce2fd862a1f))
+
+## [0.245.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.2...v0.245.3) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - send proposals bar under the grid; awaiting answer label ([#2527](https://github.com/ProteinDeficientsAnonymous/pda/issues/2527)) ([19dff2a](https://github.com/ProteinDeficientsAnonymous/pda/commit/19dff2a071ce2b9f69864895b7fda6bd212bea66))
+
+## [0.245.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.1...v0.245.2) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - run planning reminders in the daily cron ([#2526](https://github.com/ProteinDeficientsAnonymous/pda/issues/2526)) ([a7eb132](https://github.com/ProteinDeficientsAnonymous/pda/commit/a7eb132973a4cb2ae0f3fbf05b0bc66264e8654d))
+
 ## [0.245.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.0...v0.245.1) (2026-11-16)
 
 

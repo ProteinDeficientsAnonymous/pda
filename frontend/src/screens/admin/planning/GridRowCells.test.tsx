@@ -1,19 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import type { PlannerColumn } from '@/api/planning';
+import { makePlanner } from '@/test/fixtures';
+
 import { BiCell, LoadCell, NameCell } from './GridRowCells';
 
-const planner = (extra: object = {}) => ({
-  userId: 'u1',
-  name: 'ada lovelace',
-  isPlanner: true,
-  hasEmail: true,
-  submitted: true,
-  biannualInterest: null,
-  monthlyCount: 1,
-  availableSlotIds: [],
-  ...extra,
-});
+const planner = (extra: Partial<PlannerColumn> = {}) =>
+  makePlanner({ name: 'ada lovelace', ...extra });
 
 describe('NameCell', () => {
   it.each([

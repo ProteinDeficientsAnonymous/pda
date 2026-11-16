@@ -54,7 +54,7 @@ Creating a year pre-fills 12 monthly slots and the two biannuals (june anniversa
 
 **Answering.** The planner commits or declines from the tab. Both notify every `manage_event_planning` holder in-app. A decline returns the slot to the coordinator: the cell shows "declined" and the slot is flagged as needing a planner. A committed planner can back out later, which acts as a decline.
 
-**Reminders.** A daily job emails every planner with a `proposed` assignment every 3 days until they answer, with no cap, stopping once the slot's month has started. Each planner gets one reminder email listing all their unanswered slots, not one per slot. A proposal never answered stays `proposed`; the grid shows it as "no answer" once the month has started. Reminders go only to active members who still hold `view_event_planning`.
+**Reminders.** A daily job emails every planner with a `proposed` assignment every 3 days until they answer, with no cap, stopping once the slot's month has started. Each planner gets one reminder email listing all their unanswered slots, not one per slot. A proposal never answered stays `proposed` and keeps showing as sent. Reminders go only to active members who still hold `view_event_planning`.
 
 **Availability reminders.** The same daily job emails every planner who hasn't submitted availability for an opened year, once a week (first one a week after opening), until they submit. It stops on january 1st of that year: by then proposals are out and the grid shows them under "no form". The year is stamped in `availability_reminded_at` under a row lock before sending, so a rerun doesn't double-send; a failed email waits for next week.
 
@@ -70,14 +70,14 @@ Creating a year pre-fills 12 monthly slots and the two biannuals (june anniversa
 
 - **Admin hub tile "event planning"**, visible with either permission.
 - **Header** for everyone: title and year select.
-- **Planner view** (`view_event_planning`), the coordinator's **mine** tab: "waiting on you" list of proposals with commit / decline; "your slots" list showing month, teammates (others proposed or committed on that slot, with their status), and the create-event button or event link; then the availability form, with a toggle per slot (monthlies in two columns, extra slots below).
-- **Coordinator view** (`manage_event_planning`): tabs **schedule** (default), **mine** and **slots**, kept in `?tab=`; with no tab set, a coordinator with an unanswered proposal of their own lands on mine. Planners without manage get the mine content with no tabs. Logged-out visitors are sent to login and back.
-  - **schedule**: the send proposals bar at the top (shown while drafts wait, so it's visible on a phone without scrolling past the grid); summary pills below it (slots needing a planner, not counting months that have ended; proposals waiting; planners with no form); the grid; the month panel.
-  - **The grid** is turned on its side so it fits a phone: planners down (no-form planners below a divider), slots across at fixed widths (monthlies in month order with a gap per quarter, then extra slots with ★ / ◆ markers explained in a key), plus a "month" summary row, a monthlies column (taken/offered) and a biannual column (yes/maybe/no). Each cell is a 15px tile in the app's greens where shape carries the state: in ✓ square, sent ? circle, no answer ! circle, not sent yet (draft) dashed square, declined ✕, free dotted pale square, blank. Tapping a cell drafts, removes a draft, or confirms a withdraw, as in Proposing.
+- **Planner tabs** (`view_event_planning`): **my events** and **my availability**, kept in `?tab=` (the old `?tab=mine` opens my events). My events has a "waiting on you" list of proposals with commit / decline, then "events you're planning": month, teammates (others proposed or committed on that slot, with their status), and the create-event button or event link next to back out. My availability is the form, with a toggle per slot (monthlies in two columns, extra slots below).
+- **Coordinator view** (`manage_event_planning`): tabs **schedule** (default), **my events**, **my availability** and **slots**; with no tab set, a coordinator with an unanswered proposal of their own lands on my events. Planners without manage get only the two planner tabs, opening on my events. Logged-out visitors are sent to login and back.
+  - **schedule**: summary pills (slots needing a planner, not counting months that have ended; proposals waiting; planners with no form); the grid; the month panel; the send proposals bar at the bottom, shown while drafts wait, so showing it shifts nothing above.
+  - **The grid** is turned on its side so it fits a phone: planners down (no-form planners below a divider), slots across at fixed widths (monthlies in month order with a gap per quarter, then extra slots with ★ / ◆ markers explained in a key), plus a "month" summary row, a monthlies column (taken/offered) and a biannual column (yes/maybe/no). Each cell is a 15px tile in the app's greens where shape carries the state: in ✓ square, sent ? circle, not sent yet (draft) dashed square, declined ✕, free dotted pale square, blank. Tapping a cell drafts, removes a draft, or confirms a withdraw, as in Proposing.
   - **The month panel** opens when a month letter is tapped (under the grid): the slot's status and event link, who's free with their load and a propose button, who's been asked in what state (decliners included), and "add someone" for everyone else. It's the large-button way to do everything the small cells do.
   - **slots**: "ask planners for availability" above the slots (once sent, it shows when instead); one compact row per slot with "edit" opening the label / month / kind / delete controls; add a slot; start the year after the latest one.
 
-Grid states by priority: committed > proposed (no answer once the month starts) > draft > declined > available > blank. Never colour alone; no red/green.
+Grid states by priority: committed > proposed > draft > declined > available > blank. Never colour alone; no red/green.
 
 All text lowercase.
 
@@ -87,7 +87,7 @@ Planners see their own availability and assignments, plus teammates' names and s
 
 ## Ops
 
-The daily job is a new management command, `send_planning_reminders`, needing a new Railway cron service (`cron-*`, with `${{pda.VAR}}` references). Leah sets that up after the reminders PR merges.
+The daily job is a management command, `send_planning_reminders`, run from `scripts/cron_daily.sh` by the existing `cron-daily` service.
 
 ## Delivery
 

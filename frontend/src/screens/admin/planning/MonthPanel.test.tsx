@@ -3,43 +3,26 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Assignment, PlannerColumn, PlanningGrid } from '@/api/planning';
-import { makeSlot } from '@/test/fixtures';
+import { makeAssignment, makePlanner, makePlanningGrid, makeSlot } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { MonthPanel } from './MonthPanel';
 
 const slot = makeSlot({ id: 's1', label: 'january', month: 1, order: 1 });
 
-function planner(userId: string, overrides: Partial<PlannerColumn> = {}): PlannerColumn {
-  return {
-    userId,
-    name: userId,
-    isPlanner: true,
-    hasEmail: true,
-    submitted: true,
-    biannualInterest: null,
-    monthlyCount: 2,
-    availableSlotIds: ['s1'],
-    ...overrides,
-  };
-}
+const planner = (userId: string, overrides: Partial<PlannerColumn> = {}) =>
+  makePlanner({ userId, name: userId, monthlyCount: 2, availableSlotIds: ['s1'], ...overrides });
 
-const on = (userId: string, status: Assignment['status']): Assignment => ({
-  id: `a-${userId}`,
-  slotId: 's1',
-  userId,
-  status,
-});
+const on = (userId: string, status: Assignment['status']) =>
+  makeAssignment({ id: `a-${userId}`, userId, status });
 
-function makeGrid(assignments: Assignment[], overrides: Partial<PlanningGrid> = {}): PlanningGrid {
-  return {
-    year: 2999,
+const makeGrid = (assignments: Assignment[], overrides: Partial<PlanningGrid> = {}) =>
+  makePlanningGrid({
     slots: [slot],
     planners: [planner('ada'), planner('bo'), planner('cy'), planner('dee')],
     assignments,
     ...overrides,
-  };
-}
+  });
 
 function renderPanel(grid: PlanningGrid, { busy = false, onClose = vi.fn(), act = vi.fn() } = {}) {
   renderWithProviders(
@@ -110,9 +93,9 @@ describe('MonthPanel', () => {
     expect(within(row('ada')).getByText('sent')).toBeInTheDocument();
   });
 
-  it('offers withdraw when a started month has no answer', () => {
+  it('keeps a proposal as sent after its month has started', () => {
     renderPanel(makeGrid([on('ada', 'proposed')], { year: 2000 }));
-    expect(within(row('ada')).getByText('no answer')).toBeInTheDocument();
+    expect(within(row('ada')).getByText('sent')).toBeInTheDocument();
     expect(within(row('ada')).getByRole('button', { name: 'withdraw ada' })).toBeInTheDocument();
   });
 

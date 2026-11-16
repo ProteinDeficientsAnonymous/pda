@@ -45,7 +45,9 @@ beforeEach(() => {
 describe('MySlots', () => {
   it('shows the empty state', () => {
     renderWithProviders(<MySlots />);
-    expect(screen.getByText('nothing assigned yet 🌿')).toBeInTheDocument();
+    expect(
+      screen.getByText('nothing yet — add your availability so you can be proposed some months 🌿'),
+    ).toBeInTheDocument();
   });
 
   it('commits a proposed slot with "i\'m in"', async () => {
@@ -76,7 +78,7 @@ describe('MySlots', () => {
       },
     ];
     renderWithProviders(<MySlots />);
-    const section = screen.getByRole('region', { name: 'your slots' });
+    const section = screen.getByRole('region', { name: "events you're planning" });
     expect(within(section).getByText('label a2')).toBeInTheDocument();
     expect(within(section).getByText('with bea (committed), cy (proposed)')).toBeInTheDocument();
     expect(within(section).getByRole('link', { name: 'view event' })).toHaveAttribute(
@@ -92,11 +94,19 @@ describe('MySlots', () => {
     renderWithProviders(<MySlots />);
     const waiting = screen.getByRole('region', { name: 'waiting on you' });
     expect(within(waiting).queryByRole('link')).not.toBeInTheDocument();
-    const yours = screen.getByRole('region', { name: 'your slots' });
+    const yours = screen.getByRole('region', { name: "events you're planning" });
     expect(within(yours).getByRole('link', { name: 'create event' })).toHaveAttribute(
       'href',
       '/events/add?planningSlot=slot-a2&year=2027',
     );
+  });
+
+  it('puts create event next to back out', () => {
+    state.data = [mine('a2', 'committed')];
+    renderWithProviders(<MySlots />);
+    const create = screen.getByRole('link', { name: 'create event' });
+    const backOut = screen.getByRole('button', { name: 'back out of label a2' });
+    expect(create.parentElement).toBe(backOut.parentElement);
   });
 
   it('backs out only after confirming', async () => {
@@ -135,6 +145,6 @@ describe('MySlots', () => {
   it('shows an error state', () => {
     state = { isPending: false, isError: true, data: undefined };
     renderWithProviders(<MySlots />);
-    expect(screen.getByText("couldn't load your slots — try refreshing")).toBeInTheDocument();
+    expect(screen.getByText("couldn't load your events — try refreshing")).toBeInTheDocument();
   });
 });
