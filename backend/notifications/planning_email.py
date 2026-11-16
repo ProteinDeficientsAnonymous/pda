@@ -54,3 +54,35 @@ def send_planning_email(
         html=html,
         text=text,
     )
+
+
+class AvailabilityEmailVariant(StrEnum):
+    OPEN = "open"
+    REMINDER = "reminder"
+
+
+_AVAILABILITY_SUBJECTS = {
+    AvailabilityEmailVariant.OPEN: "when can you plan in {year}?",
+    AvailabilityEmailVariant.REMINDER: "still need your {year} planning availability",
+}
+
+
+@dataclass(frozen=True)
+class AvailabilityEmailDetails:
+    to: str
+    display_name: str
+    year: int
+    availability_url: str
+    variant: AvailabilityEmailVariant
+
+
+def send_availability_email(
+    *, sender: EmailSender, details: AvailabilityEmailDetails
+) -> SendResult:
+    context = asdict(details)
+    return sender.send(
+        to=details.to,
+        subject=_AVAILABILITY_SUBJECTS[details.variant].format(year=details.year),
+        html=render_to_string("emails/planning_availability.html", context),
+        text=render_to_string("emails/planning_availability.txt", context),
+    )

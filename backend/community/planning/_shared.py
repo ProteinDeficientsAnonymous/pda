@@ -17,7 +17,7 @@ from community.models import (
     PlanningYear,
     SlotAssignment,
 )
-from community.planning.schemas import AssignmentOut, PlanningSlotOut
+from community.planning.schemas import AssignmentOut, PlanningSlotOut, PlanningYearOut
 from community.validation import Code, ValidationException, raise_validation
 
 logger = logging.getLogger("pda.community.planning_event_link")
@@ -32,6 +32,14 @@ def get_year_or_404(year: int) -> PlanningYear:
         return PlanningYear.objects.get(year=year)
     except PlanningYear.DoesNotExist:
         raise_validation(Code.Planning.YEAR_NOT_FOUND, status_code=404)
+
+
+def year_out(planning_year: PlanningYear) -> PlanningYearOut:
+    return PlanningYearOut(
+        id=str(planning_year.id),
+        year=planning_year.year,
+        availability_opened_at=planning_year.availability_opened_at,
+    )
 
 
 def get_slot_or_404(slot_id: UUID) -> PlanningSlot:

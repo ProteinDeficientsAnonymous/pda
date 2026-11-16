@@ -48,6 +48,7 @@ class TestYears:
         response = send(api_client, "get", f"{BASE}/years/", headers=headers_for(VIEW))
         assert response.status_code == 200
         assert [y["year"] for y in response.json()] == [2027]
+        assert response.json()[0]["availability_opened_at"] is None
 
     def test_create_year_seeds_default_slots(self, api_client):
         response = send(api_client, "post", f"{BASE}/years/", {"year": 2028}, headers_for(MANAGE))

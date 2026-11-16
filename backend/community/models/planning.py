@@ -27,6 +27,8 @@ _BIANNUALS = (("june anniversary", 6), ("dec holiday", 12))
 class PlanningYear(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     year = models.PositiveSmallIntegerField(unique=True)
+    availability_opened_at = models.DateTimeField(null=True, blank=True)
+    availability_reminded_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     if TYPE_CHECKING:
         slots: "Manager[PlanningSlot]"
