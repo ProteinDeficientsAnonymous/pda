@@ -34,7 +34,7 @@ export function ReserveTable() {
   return (
     <section className="mt-10" aria-labelledby="reserve-heading">
       <h2 id="reserve-heading" className="mb-2 text-lg font-medium">
-        where our reserve comes from
+        financial breakdown
       </h2>
       <p className="text-muted mb-4 text-sm">
         events collect a per-person share for food and pay the restaurant — leftover mostly comes
