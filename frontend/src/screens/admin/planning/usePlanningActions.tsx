@@ -10,7 +10,7 @@ import {
 } from '@/api/planning';
 import { useConfirm } from '@/components/ui/useConfirm';
 
-import { type CellState, isWithdrawable } from './gridCell';
+import { cellActionLabel, type CellState, isWithdrawable } from './gridCell';
 import { toastOnError } from './toastOnError';
 
 interface PlanningActions {
@@ -52,7 +52,7 @@ export function usePlanningActions(year: number): PlanningActions {
       return;
     }
     const ok = await confirm({
-      message: `withdraw ${planner.name} from ${slot.label}?`,
+      message: `${cellActionLabel(state, planner.name, slot.label)}?`,
       confirmLabel: 'withdraw',
       destructive: true,
     });
