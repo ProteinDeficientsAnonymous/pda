@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { usePlanningGrid } from '@/api/planning';
 
 import { draftCount } from './gridCell';
+import { summaryCounts } from './gridSummary';
 import { PlanningGrid } from './PlanningGrid';
 import { ScheduleGrid } from './ScheduleGrid';
 import { SendProposalsBar } from './SendProposalsBar';
+import { SummaryPills } from './SummaryPills';
 import { usePlanningActions } from './usePlanningActions';
 
 export function ScheduleTab({ year }: { year: number }) {
@@ -18,16 +20,19 @@ export function ScheduleTab({ year }: { year: number }) {
     <>
       {grid ? <SendProposalsBar send={send} drafts={draftCount(grid)} /> : null}
       {grid && grid.planners.length > 0 ? (
-        <ScheduleGrid
-          grid={grid}
-          today={today}
-          openSlotId={openSlotId}
-          onToggleSlot={(slotId) => {
-            setOpenSlotId((open) => (open === slotId ? null : slotId));
-          }}
-          act={act}
-          busy={busy}
-        />
+        <>
+          <SummaryPills counts={summaryCounts(grid, today)} />
+          <ScheduleGrid
+            grid={grid}
+            today={today}
+            openSlotId={openSlotId}
+            onToggleSlot={(slotId) => {
+              setOpenSlotId((open) => (open === slotId ? null : slotId));
+            }}
+            act={act}
+            busy={busy}
+          />
+        </>
       ) : null}
       {confirmElement}
       <PlanningGrid year={year} />
