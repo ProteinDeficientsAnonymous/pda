@@ -88,6 +88,29 @@ describe('ScheduleTab', () => {
     expect(screen.getByText('1 not sent yet')).toBeInTheDocument();
   });
 
+  it.each(['committed', 'proposed'] as const)(
+    'confirms before withdrawing a %s tile',
+    async (status) => {
+      shown = { ...grid, assignments: [{ id: 'a1', slotId: 's1', userId: 'u1', status }] };
+      renderWithProviders(<ScheduleTab year={2999} />);
+      await userEvent.click(screen.getByRole('button', { name: 'withdraw ada from january' }));
+      expect(screen.getByText('withdraw ada from january?')).toBeInTheDocument();
+      expect(mutation.mutateAsync).not.toHaveBeenCalled();
+    },
+  );
+
+  it('proposes straight from an available tile', async () => {
+    renderWithProviders(<ScheduleTab year={2999} />);
+    await userEvent.click(screen.getByRole('button', { name: 'propose ada for january' }));
+    expect(mutation.mutateAsync).toHaveBeenCalledWith({ slotId: 's1', userId: 'u1' });
+  });
+
+  it('disables the tiles while a change is pending', () => {
+    mutation.isPending = true;
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByRole('button', { name: 'propose ada for january' })).toBeDisabled();
+  });
+
   it('shows the summary pills with the grid', () => {
     renderWithProviders(<ScheduleTab year={2999} />);
     expect(screen.getByText('need a planner').parentElement).toHaveTextContent('1 need a planner');
