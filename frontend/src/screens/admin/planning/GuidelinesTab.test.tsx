@@ -15,6 +15,10 @@ vi.mock('@/api/planningChecklist', () => ({
   useChecklist: () => checklist,
 }));
 
+vi.mock('./ChecklistEditor', () => ({
+  ChecklistEditor: () => <div>checklist editor</div>,
+}));
+
 vi.mock('@/api/content', () => ({
   useEditablePage: () => ({
     isPending: false,
@@ -45,13 +49,15 @@ describe('GuidelinesTab', () => {
     expect(screen.getByText('arrive early!')).toBeInTheDocument();
   });
 
-  it('only lets coordinators edit the guidelines', () => {
+  it('only lets coordinators edit the guidelines and checklist', () => {
     const { unmount } = renderWithProviders(<GuidelinesTab />);
     expect(screen.queryByRole('button', { name: 'edit' })).not.toBeInTheDocument();
+    expect(screen.queryByText('checklist editor')).not.toBeInTheDocument();
     unmount();
     setAuthed(makeUserWithPermissions([Permission.ManageEventPlanning]));
     renderWithProviders(<GuidelinesTab />);
     expect(screen.getByRole('button', { name: 'edit' })).toBeInTheDocument();
+    expect(screen.getByText('checklist editor')).toBeInTheDocument();
   });
 
   it('shows an empty state and a load error', () => {

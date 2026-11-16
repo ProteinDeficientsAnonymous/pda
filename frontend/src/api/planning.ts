@@ -176,7 +176,9 @@ export function useMyAvailability(year: number) {
 }
 
 // everything under ['planning'] — the grid, my slots and availability all derive from the same rows
-function usePlanningMutation<TVars, TData = void>(mutationFn: (vars: TVars) => Promise<TData>) {
+export function usePlanningMutation<TVars, TData = void>(
+  mutationFn: (vars: TVars) => Promise<TData>,
+) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn,
