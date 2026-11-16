@@ -3,6 +3,12 @@
 from django.db import models
 
 
+class ReserveEntryKind(models.TextChoices):
+    EVENT = "event", "Event"
+    COST = "cost", "Cost"
+    DONATION = "donation", "Donation"
+
+
 class PageVisibility(models.TextChoices):
     PUBLIC = "public", "Public"
     MEMBERS_ONLY = "members_only", "Members only"

@@ -5,12 +5,13 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 from community.field_limits import FieldLimit
-from community.models import ReserveEntry
+from community.models import ReserveEntry, ReserveEntryKind
 
 
 class ReserveEntryOut(BaseModel):
     id: str
     label: str
+    kind: ReserveEntryKind
     occurred_on: date
     collected: Decimal
     paid_out: Decimal
@@ -27,6 +28,7 @@ def entry_out(entry: ReserveEntry) -> ReserveEntryOut:
     return ReserveEntryOut(
         id=str(entry.id),
         label=entry.label,
+        kind=ReserveEntryKind(entry.kind),
         occurred_on=entry.occurred_on,
         collected=entry.collected,
         paid_out=entry.paid_out,
@@ -40,6 +42,7 @@ Money = Annotated[Decimal, Field(ge=0, max_digits=10, decimal_places=2)]
 
 class ReserveEntryIn(BaseModel):
     label: str = Field(min_length=1, max_length=FieldLimit.TITLE)
+    kind: ReserveEntryKind = ReserveEntryKind.EVENT
     occurred_on: date
     collected: Money = Decimal("0")
     paid_out: Money = Decimal("0")
@@ -48,6 +51,7 @@ class ReserveEntryIn(BaseModel):
 
 class ReserveEntryPatchIn(BaseModel):
     label: str | None = Field(default=None, min_length=1, max_length=FieldLimit.TITLE)
+    kind: ReserveEntryKind | None = None
     occurred_on: date | None = None
     collected: Money | None = None
     paid_out: Money | None = None

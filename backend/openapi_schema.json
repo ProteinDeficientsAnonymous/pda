@@ -7137,6 +7137,14 @@
             "default": "0",
             "title": "Facilitator Drinks"
           },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReserveEntryKind"
+              }
+            ],
+            "default": "event"
+          },
           "label": {
             "maxLength": 200,
             "minLength": 1,
@@ -7170,6 +7178,15 @@
         "title": "ReserveEntryIn",
         "type": "object"
       },
+      "ReserveEntryKind": {
+        "enum": [
+          "event",
+          "cost",
+          "donation"
+        ],
+        "title": "ReserveEntryKind",
+        "type": "string"
+      },
       "ReserveEntryOut": {
         "properties": {
           "collected": {
@@ -7185,6 +7202,9 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ReserveEntryKind"
           },
           "label": {
             "title": "Label",
@@ -7209,6 +7229,7 @@
         "required": [
           "id",
           "label",
+          "kind",
           "occurred_on",
           "collected",
           "paid_out",
@@ -7251,6 +7272,16 @@
               }
             ],
             "title": "Facilitator Drinks"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReserveEntryKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "label": {
             "anyOf": [

@@ -5850,6 +5850,8 @@ export interface components {
              * @default 0
              */
             facilitator_drinks: number | string;
+            /** @default event */
+            kind: components["schemas"]["ReserveEntryKind"];
             /** Label */
             label: string;
             /**
@@ -5863,6 +5865,11 @@ export interface components {
              */
             paid_out: number | string;
         };
+        /**
+         * ReserveEntryKind
+         * @enum {string}
+         */
+        ReserveEntryKind: "event" | "cost" | "donation";
         /** ReserveEntryOut */
         ReserveEntryOut: {
             /** Collected */
@@ -5871,6 +5878,7 @@ export interface components {
             facilitator_drinks: string;
             /** Id */
             id: string;
+            kind: components["schemas"]["ReserveEntryKind"];
             /** Label */
             label: string;
             /** Left Over */
@@ -5889,6 +5897,7 @@ export interface components {
             collected?: number | string | null;
             /** Facilitator Drinks */
             facilitator_drinks?: number | string | null;
+            kind?: components["schemas"]["ReserveEntryKind"] | null;
             /** Label */
             label?: string | null;
             /** Occurred On */
