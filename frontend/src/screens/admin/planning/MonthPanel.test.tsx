@@ -94,7 +94,7 @@ describe('MonthPanel', () => {
 
   it('lists committed planners under planning, apart from asked', () => {
     renderPanel(makeGrid([on('ada', 'committed'), on('bo', 'proposed')]));
-    const [planning, asked] = screen.getAllByRole('list');
+    const [planning, asked] = screen.getAllByRole('list') as [HTMLElement, HTMLElement];
     expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
       'planning',
       'asked',
