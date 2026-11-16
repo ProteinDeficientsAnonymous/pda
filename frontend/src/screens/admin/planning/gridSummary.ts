@@ -44,10 +44,13 @@ export function plannerLoad(
   return { taken, offered: planner.monthlyCount };
 }
 
-export function summaryCounts(
-  grid: PlanningGrid,
-  today: Date,
-): { needPlanner: number; waiting: number; noForm: number } {
+export interface SummaryCounts {
+  needPlanner: number;
+  waiting: number;
+  noForm: number;
+}
+
+export function summaryCounts(grid: PlanningGrid, today: Date): SummaryCounts {
   return {
     needPlanner: grid.slots.filter((s) => needsPlanner(grid, s.id, today)).length,
     waiting: grid.assignments.filter((a) => a.status === 'proposed').length,
