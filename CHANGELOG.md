@@ -1,3 +1,10 @@
+## [0.248.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.3...v0.248.4) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - drop the month row line from the grid key ([#2547](https://github.com/ProteinDeficientsAnonymous/pda/issues/2547)) ([8a55b03](https://github.com/ProteinDeficientsAnonymous/pda/commit/8a55b03d6ea7b71fbc325f4a04f6fc5104619243))
+
 ## [0.248.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.2...v0.248.3) (2026-11-16)
 
 
