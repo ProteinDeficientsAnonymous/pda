@@ -1,3 +1,5 @@
+import type { ReactElement } from 'react';
+
 import { cn } from '@/utils/cn';
 
 import { type CellState, STATE_TEXT } from './gridCell';
@@ -5,39 +7,46 @@ import type { SlotColumn } from './gridLayout';
 import type { Coverage } from './gridSummary';
 import { TileFace } from './GridTile';
 
-const COVERAGE_TILE: Partial<Record<Coverage['kind'], CellState>> = {
-  in: 'committed',
-  sent: 'proposed',
-  draft: 'draft',
-};
+const COVERAGE_TILE = { in: 'committed', sent: 'proposed', draft: 'draft' } as const;
 
 function coverageText(coverage: Coverage): string {
-  if (coverage.kind === 'free') return `${String(coverage.count)} free`;
-  const tile = COVERAGE_TILE[coverage.kind];
-  return tile ? STATE_TEXT[tile] : 'past';
+  switch (coverage.kind) {
+    case 'in':
+    case 'sent':
+    case 'draft':
+      return STATE_TEXT[COVERAGE_TILE[coverage.kind]];
+    case 'past':
+      return 'past';
+    case 'free':
+      return `${String(coverage.count)} free`;
+  }
 }
 
-function CoverageFace({ coverage }: { coverage: Coverage }) {
-  const tile = COVERAGE_TILE[coverage.kind];
-  if (tile) return <TileFace state={tile} />;
-  if (coverage.kind !== 'free') {
-    return (
-      <span aria-hidden="true" className="text-muted font-normal">
-        –
-      </span>
-    );
+function CoverageFace({ coverage }: { coverage: Coverage }): ReactElement {
+  switch (coverage.kind) {
+    case 'in':
+    case 'sent':
+    case 'draft':
+      return <TileFace state={COVERAGE_TILE[coverage.kind]} />;
+    case 'past':
+      return (
+        <span aria-hidden="true" className="text-muted font-normal">
+          –
+        </span>
+      );
+    case 'free':
+      return (
+        <span
+          aria-hidden="true"
+          className={cn(
+            'flex h-[15px] min-w-[15px] items-center justify-center rounded-[3px]',
+            coverage.count === 0 && 'bg-plan-ink text-plan-ink-fg',
+          )}
+        >
+          {coverage.count}
+        </span>
+      );
   }
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'flex h-[15px] min-w-[15px] items-center justify-center rounded-[3px]',
-        coverage.count === 0 && 'bg-plan-ink text-plan-ink-fg',
-      )}
-    >
-      {coverage.count}
-    </span>
-  );
 }
 
 export function CoverageMark({ coverage }: { coverage: Coverage }) {
@@ -61,6 +70,7 @@ export function GridKey({ columns }: { columns: SlotColumn[] }) {
           </li>
         ))}
       </ul>
+      <p className="mt-1">month row: 3 = people free · 0 = nobody · – = past</p>
       {extras.length > 0 ? (
         <p className="mt-1">{extras.map((c) => `${c.header} ${c.slot.label}`).join(' · ')}</p>
       ) : null}

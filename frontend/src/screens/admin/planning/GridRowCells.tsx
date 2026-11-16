@@ -5,6 +5,17 @@ import { cn } from '@/utils/cn';
 
 import type { plannerLoad } from './gridSummary';
 
+function Flag({ mark, words }: { mark: string; words: string }) {
+  return (
+    <>
+      <span aria-hidden="true" className="text-muted shrink-0 text-[9px]">
+        {mark}
+      </span>
+      <span className="sr-only">{words}</span>
+    </>
+  );
+}
+
 export function NameCell({ planner, style }: { planner: PlannerColumn; style: CSSProperties }) {
   return (
     <div
@@ -17,14 +28,8 @@ export function NameCell({ planner, style }: { planner: PlannerColumn; style: CS
       )}
     >
       <span className="truncate">{planner.name}</span>
-      {planner.hasEmail ? null : (
-        <>
-          <span aria-hidden="true" className="text-muted shrink-0 text-[9px]">
-            ✉✕
-          </span>
-          <span className="sr-only">no email</span>
-        </>
-      )}
+      {planner.isPlanner ? null : <Flag mark="(left)" words="no longer a planner" />}
+      {planner.hasEmail ? null : <Flag mark="✉✕" words="no email" />}
     </div>
   );
 }
@@ -39,11 +44,21 @@ export function LoadCell({
   return (
     <div style={style} className="flex items-center justify-end text-[10px] tabular-nums">
       {load ? (
-        <span className={cn(load.taken > load.offered && 'font-semibold')}>
-          {`${String(load.taken)}/${String(load.offered)}`}
-        </span>
+        <>
+          <span aria-hidden="true" className={cn(load.taken > load.offered && 'font-semibold')}>
+            {`${String(load.taken)}/${String(load.offered)}`}
+          </span>
+          <span className="sr-only">
+            {`${String(load.taken)} of ${String(load.offered)} taken${load.taken > load.offered ? ', over' : ''}`}
+          </span>
+        </>
       ) : (
-        <span className="text-muted">–</span>
+        <>
+          <span aria-hidden="true" className="text-muted">
+            –
+          </span>
+          <span className="sr-only">no form</span>
+        </>
       )}
     </div>
   );
