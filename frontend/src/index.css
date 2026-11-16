@@ -69,6 +69,18 @@
   --color-evt-cancelled-fg: #72796f;
   --color-evt-cancelled-border: #8c9388;
 
+  --color-plan-in: #245024;
+  --color-plan-in-fg: #ffffff;
+  --color-plan-sent: #a1d39a;
+  --color-plan-sent-fg: #0a390f;
+  --color-plan-draft: #3c6939;
+  --color-plan-free: #eef6ea;
+  --color-plan-free-edge: #b9d4b4;
+  --color-plan-free-dot: #5a9a55;
+  --color-plan-blank: #f1f4ec;
+  --color-plan-ink: #191d17;
+  --color-plan-ink-fg: #ffffff;
+
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 20px;
@@ -121,6 +133,17 @@
   /* In dark mode brand-600 is light sage — pair it with a very dark green
      foreground so white-on-sage contrast failures don't ship. */
   --color-brand-on: #0a390f;
+  --color-plan-in: #82b87c;
+  --color-plan-in-fg: #0a1a0b;
+  --color-plan-sent: #245024;
+  --color-plan-sent-fg: #d4f0cf;
+  --color-plan-draft: #a1d39a;
+  --color-plan-free: #1a241a;
+  --color-plan-free-edge: #3c5a39;
+  --color-plan-free-dot: #82b87c;
+  --color-plan-blank: #1d221b;
+  --color-plan-ink: #e0e4db;
+  --color-plan-ink-fg: #10140f;
   --color-evt-community-bg: #103028;
   --color-evt-community-fg: #a8e0d8;
   --color-evt-official-bg: #1a3050;

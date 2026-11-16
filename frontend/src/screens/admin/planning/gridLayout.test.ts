@@ -1,0 +1,69 @@
+import { describe, expect, it } from 'vitest';
+
+import { makeSlot } from '@/test/fixtures';
+
+import { gridTemplate, loadTrack, slotColumns } from './gridLayout';
+
+const monthly = (month: number, label = `m${String(month)}`) =>
+  makeSlot({ id: label, label, month, order: month });
+const extra = (id: string, month: number, order = 0) =>
+  makeSlot({ id, label: id, month, order, kind: 'biannual' });
+
+const defaultYear = () => [
+  ...Array.from({ length: 12 }, (_, i) =>
+    monthly(i + 1, ['january', 'april', 'december'][[0, 3, 11].indexOf(i)] ?? `m${String(i + 1)}`),
+  ),
+  extra('june anniversary', 6),
+  extra('dec holiday', 12),
+];
+
+describe('slotColumns', () => {
+  it('headers: month initials then extra markers', () => {
+    expect(slotColumns(defaultYear()).map((c) => c.header)).toEqual([
+      ...'jfmamjjasond'.split(''),
+      '★',
+      '◆',
+    ]);
+  });
+
+  it('tracks skip quarter and extra gap tracks', () => {
+    const cols = slotColumns(defaultYear());
+    const track = (id: string) => cols.find((c) => c.slot.id === id)?.track;
+    expect(track('january')).toBe(2);
+    expect(track('april')).toBe(6);
+    expect(track('december')).toBe(16);
+    expect(track('june anniversary')).toBe(18);
+    expect(track('dec holiday')).toBe(19);
+    expect(loadTrack(cols)).toBe(20);
+  });
+
+  it('sorts input by month then order', () => {
+    const cols = slotColumns([extra('b', 12), monthly(3, 'mar'), extra('a', 6), monthly(1, 'jan')]);
+    expect(cols.map((c) => c.slot.id)).toEqual(['jan', 'mar', 'a', 'b']);
+  });
+
+  it('numbers extras past four', () => {
+    const extras = Array.from({ length: 6 }, (_, i) => extra(`e${String(i)}`, 6, i));
+    expect(slotColumns(extras).map((c) => c.header)).toEqual(['★', '◆', '▲', '●', '5', '6']);
+  });
+
+  it('keeps two june slots adjacent with the same header', () => {
+    const cols = slotColumns([monthly(6, 'j1'), monthly(6, 'j2')]);
+    expect(cols.map((c) => c.header)).toEqual(['j', 'j']);
+    expect(cols.map((c) => c.track)).toEqual([2, 3]);
+  });
+});
+
+describe('gridTemplate', () => {
+  it('lays out name, columns, gaps and load tracks', () => {
+    expect(gridTemplate(slotColumns(defaultYear()))).toBe(
+      '54px 17px 17px 17px 5px 17px 17px 17px 5px 17px 17px 17px 5px 17px 17px 17px 8px 17px 17px 26px',
+    );
+  });
+
+  it('omits the extras gap when there are no extras', () => {
+    const template = gridTemplate(slotColumns([monthly(1), monthly(2)]));
+    expect(template).toBe('54px 17px 17px 26px');
+    expect(template).not.toContain('8px');
+  });
+});
