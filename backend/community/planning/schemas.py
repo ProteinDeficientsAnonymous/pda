@@ -80,6 +80,11 @@ class AssignmentOut(BaseModel):
     responded_at: datetime | None
 
 
+class ProposalsSentOut(BaseModel):
+    planners_notified: int
+    proposals_sent: int
+
+
 class PlannerColumnOut(BaseModel):
     user_id: str
     name: str

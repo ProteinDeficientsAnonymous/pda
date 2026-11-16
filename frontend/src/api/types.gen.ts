@@ -2056,6 +2056,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/planning/years/{year}/proposals/send/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send Proposals */
+        post: operations["community_planning_proposals_send_proposals"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/planning/years/{year}/slots/": {
         parameters: {
             query?: never;
@@ -2816,7 +2833,7 @@ export interface components {
          * AssignmentStatus
          * @enum {string}
          */
-        AssignmentStatus: "proposed" | "committed" | "declined" | "withdrawn";
+        AssignmentStatus: "draft" | "proposed" | "committed" | "declined" | "withdrawn";
         /** AttendanceImportCommitIn */
         AttendanceImportCommitIn: {
             /** Event Date */
@@ -5463,6 +5480,13 @@ export interface components {
             status_changed_at?: string | null;
             /** Status Changed By Name */
             status_changed_by_name?: string | null;
+        };
+        /** ProposalsSentOut */
+        ProposalsSentOut: {
+            /** Planners Notified */
+            planners_notified: number;
+            /** Proposals Sent */
+            proposals_sent: number;
         };
         /** ProposeIn */
         ProposeIn: {
@@ -12715,6 +12739,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GridOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_proposals_send_proposals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalsSentOut"];
                 };
             };
             /** @description Forbidden */

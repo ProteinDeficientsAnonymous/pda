@@ -23,6 +23,8 @@ from community.validation import Code, ValidationException, raise_validation
 logger = logging.getLogger("pda.community.planning_event_link")
 
 ACTIVE_STATUSES = (AssignmentStatus.PROPOSED, AssignmentStatus.COMMITTED)
+# Drafts hold a cell for the coordinator but stay invisible to the planner until sent.
+HELD_STATUSES = (AssignmentStatus.DRAFT, *ACTIVE_STATUSES)
 
 
 def get_year_or_404(year: int) -> PlanningYear:

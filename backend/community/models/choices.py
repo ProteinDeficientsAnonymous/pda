@@ -43,6 +43,7 @@ class BiannualInterest(models.TextChoices):
 
 
 class AssignmentStatus(models.TextChoices):
+    DRAFT = "draft", "Draft"
     PROPOSED = "proposed", "Proposed"
     COMMITTED = "committed", "Committed"
     DECLINED = "declined", "Declined"
