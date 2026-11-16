@@ -31,7 +31,7 @@ function CoverageFace({ coverage }: { coverage: Coverage }) {
     <span
       aria-hidden="true"
       className={cn(
-        'flex h-[15px] min-w-[15px] items-center justify-center rounded-sm',
+        'flex h-[15px] min-w-[15px] items-center justify-center rounded-[3px]',
         coverage.count === 0 && 'bg-plan-ink text-plan-ink-fg',
       )}
     >
