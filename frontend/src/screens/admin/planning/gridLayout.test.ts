@@ -9,10 +9,10 @@ const monthly = (month: number, label = `m${String(month)}`) =>
 const extra = (id: string, month: number, order = 0) =>
   makeSlot({ id, label: id, month, order, kind: 'biannual' });
 
+const NAMED: Record<number, string> = { 0: 'january', 3: 'april', 11: 'december' };
+
 const defaultYear = () => [
-  ...Array.from({ length: 12 }, (_, i) =>
-    monthly(i + 1, ['january', 'april', 'december'][[0, 3, 11].indexOf(i)] ?? `m${String(i + 1)}`),
-  ),
+  ...Array.from({ length: 12 }, (_, i) => monthly(i + 1, NAMED[i] ?? `m${String(i + 1)}`)),
   extra('june anniversary', 6),
   extra('dec holiday', 12),
 ];
@@ -44,7 +44,9 @@ describe('slotColumns', () => {
 
   it('numbers extras past four', () => {
     const extras = Array.from({ length: 6 }, (_, i) => extra(`e${String(i)}`, 6, i));
-    expect(slotColumns(extras).map((c) => c.header)).toEqual(['★', '◆', '▲', '●', '5', '6']);
+    const cols = slotColumns(extras);
+    expect(cols.map((c) => c.header)).toEqual(['★', '◆', '▲', '●', '5', '6']);
+    expect(gridTemplate(cols)).toBe('54px 17px 17px 17px 17px 17px 17px 26px');
   });
 
   it('keeps two june slots adjacent with the same header', () => {

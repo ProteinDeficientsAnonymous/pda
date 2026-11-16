@@ -5,13 +5,13 @@ import { cn } from '@/utils/cn';
 import { cellActionLabel, type CellState, isWithdrawable, STATE_TEXT } from './gridCell';
 
 const TILE_CLASS: Record<CellState, string> = {
-  committed: 'rounded-sm bg-plan-in text-plan-in-fg',
+  committed: 'rounded-[3px] bg-plan-in text-plan-in-fg',
   proposed: 'rounded-full bg-plan-sent text-plan-sent-fg',
   no_answer: 'rounded-full bg-plan-sent text-plan-sent-fg',
-  draft: 'rounded-sm border border-dashed border-plan-draft bg-surface',
-  declined: 'rounded-sm bg-plan-blank text-plan-ink',
-  available: 'rounded-sm border border-plan-free-edge bg-plan-free',
-  blank: 'rounded-sm bg-plan-blank',
+  draft: 'rounded-[3px] border border-dashed border-plan-draft bg-surface',
+  declined: 'rounded-[3px] bg-plan-blank text-muted',
+  available: 'rounded-[3px] border border-plan-free-edge bg-plan-free',
+  blank: 'rounded-[3px] bg-plan-blank',
 };
 
 const GLYPH: Partial<Record<CellState, string>> = {
@@ -63,7 +63,7 @@ export function GridTile({
       title={blockedReason ?? undefined}
       disabled={disabled || blockedReason !== null}
       onClick={onAct}
-      className="focus-visible:outline-plan-ink relative inline-flex h-[22px] w-[17px] items-center justify-center rounded focus-visible:outline-2 disabled:opacity-50"
+      className="focus-visible:outline-plan-ink enabled:hover:bg-surface-dim relative inline-flex h-[22px] w-[17px] items-center justify-center rounded focus-visible:z-10 focus-visible:outline-2 disabled:opacity-50"
     >
       <TileFace state={state} />
       <span id={textId} className="sr-only">
