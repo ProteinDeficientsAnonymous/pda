@@ -16,6 +16,7 @@ import {
 } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { buttonClass } from '@/components/ui/buttonClass';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
 import { useConfirm } from '@/components/ui/useConfirm';
@@ -291,10 +292,7 @@ function MemberMagicLinkSection({ member }: { member: Member }) {
             <Button type="button" variant="secondary" onClick={() => void onCopy()}>
               {copied ? 'copied ✓' : 'copy link'}
             </Button>
-            <a
-              href={smsHref}
-              className="focus-visible:ring-brand-200 bg-surface text-foreground border-border-strong hover:bg-background inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            >
+            <a href={smsHref} className={buttonClass('secondary')}>
               send welcome message
             </a>
           </div>
