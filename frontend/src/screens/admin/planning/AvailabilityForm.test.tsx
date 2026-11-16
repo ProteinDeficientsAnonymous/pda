@@ -134,6 +134,25 @@ describe('AvailabilityForm', () => {
     expect(mutateAsync).not.toHaveBeenCalled();
   });
 
+  it('steps the monthly count with − and + within 0 to 12', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AvailabilityForm year={2027} />);
+    const field = screen.getByLabelText('how many monthlies will you plan?');
+    const fewer = screen.getByRole('button', { name: 'one fewer monthly' });
+    const more = screen.getByRole('button', { name: 'one more monthly' });
+
+    expect(fewer).toBeDisabled();
+    await user.click(more);
+    await user.click(more);
+    expect(field).toHaveValue(2);
+    await user.click(fewer);
+    expect(field).toHaveValue(1);
+
+    await user.clear(field);
+    await user.type(field, '12');
+    expect(more).toBeDisabled();
+  });
+
   it('prefills a saved answer', () => {
     saved = {
       submitted: true,
