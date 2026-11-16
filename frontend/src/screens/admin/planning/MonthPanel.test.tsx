@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -41,18 +41,22 @@ function makeGrid(assignments: Assignment[], overrides: Partial<PlanningGrid> = 
   };
 }
 
-function renderPanel(grid: PlanningGrid, onClose = vi.fn()) {
+function renderPanel(grid: PlanningGrid, { busy = false, onClose = vi.fn(), act = vi.fn() } = {}) {
   renderWithProviders(
     <MonthPanel
       grid={grid}
       slotId="s1"
       year={grid.year}
       today={new Date(2026, 10, 15)}
+      act={act}
+      busy={busy}
       onClose={onClose}
     />,
   );
-  return { onClose };
+  return { act, onClose };
 }
+
+const row = (name: string) => screen.getByText(name).closest('li') as HTMLElement;
 
 describe('MonthPanel', () => {
   it.each([
@@ -72,9 +76,53 @@ describe('MonthPanel', () => {
     expect(screen.getByRole('link', { name: 'create event' })).toBeInTheDocument();
   });
 
+  it('proposes a free planner', async () => {
+    const grid = makeGrid([]);
+    const { act } = renderPanel(grid);
+    expect(within(row('ada')).getByText('0 of 2 monthlies taken')).toBeInTheDocument();
+    await userEvent.click(within(row('ada')).getByRole('button', { name: 'propose' }));
+    expect(act).toHaveBeenCalledWith(slot, grid.planners[0], 'available', undefined);
+  });
+
+  it('labels each assignment and its action', () => {
+    renderPanel(
+      makeGrid([
+        on('ada', 'draft'),
+        on('bo', 'declined'),
+        on('cy', 'proposed'),
+        on('dee', 'committed'),
+      ]),
+    );
+    expect(within(row('ada')).getByText('not sent yet')).toBeInTheDocument();
+    expect(within(row('ada')).getByRole('button', { name: 'undo' })).toBeInTheDocument();
+    expect(within(row('bo')).getByRole('button', { name: 'propose again' })).toBeInTheDocument();
+    expect(within(row('cy')).getByRole('button', { name: 'withdraw' })).toBeInTheDocument();
+    expect(within(row('dee')).getByText('in')).toBeInTheDocument();
+  });
+
+  it('passes the assignment when withdrawing', async () => {
+    const grid = makeGrid([on('ada', 'committed')]);
+    const { act } = renderPanel(grid);
+    await userEvent.click(within(row('ada')).getByRole('button', { name: 'withdraw' }));
+    expect(act).toHaveBeenCalledWith(slot, grid.planners[0], 'committed', grid.assignments[0]);
+  });
+
+  it('disables every row button while busy', () => {
+    renderPanel(makeGrid([on('ada', 'draft'), on('bo', 'declined')]), { busy: true });
+    for (const r of screen.getAllByRole('listitem')) {
+      expect(within(r).getByRole('button')).toBeDisabled();
+    }
+    expect(screen.getByRole('button', { name: 'close january' })).toBeEnabled();
+  });
+
   it('closes', async () => {
     const { onClose } = renderPanel(makeGrid([]));
     await userEvent.click(screen.getByRole('button', { name: 'close january' }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('will not propose someone who is not a planner', () => {
+    renderPanel(makeGrid([], { planners: [planner('ada', { isPlanner: false })] }));
+    expect(within(row('ada')).getByRole('button', { name: 'propose' })).toBeDisabled();
   });
 });

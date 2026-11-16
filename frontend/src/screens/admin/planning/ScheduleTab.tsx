@@ -42,6 +42,8 @@ export function ScheduleTab({ year }: { year: number }) {
                 slotId={openSlotId}
                 year={year}
                 today={today}
+                act={act}
+                busy={busy}
                 onClose={() => {
                   setOpenSlotId(null);
                 }}
