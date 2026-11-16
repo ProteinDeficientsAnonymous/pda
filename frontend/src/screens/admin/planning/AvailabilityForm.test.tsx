@@ -66,7 +66,9 @@ describe('AvailabilityForm', () => {
 
   it('lays monthlies out in two columns and extras below', () => {
     renderWithProviders(<AvailabilityForm year={2027} />);
-    const monthly = within(screen.getByTestId('monthly-slots'));
+    const grid = screen.getByTestId('monthly-slots');
+    expect(grid.style.gridTemplateRows).toBe('repeat(1, auto)');
+    const monthly = within(grid);
     expect(monthly.getByRole('switch', { name: 'january' })).toBeInTheDocument();
     expect(monthly.getByRole('switch', { name: 'february' })).toBeInTheDocument();
     expect(monthly.queryByRole('switch', { name: 'spring biannual' })).not.toBeInTheDocument();

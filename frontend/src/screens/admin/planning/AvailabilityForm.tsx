@@ -92,7 +92,7 @@ function FormFields({ year, slots, initial }: { year: number; slots: Slots; init
         {monthlies.length > 0 && (
           <div
             data-testid="monthly-slots"
-            className="grid grid-flow-col gap-x-6"
+            className="grid grid-flow-col grid-cols-2 gap-x-6 gap-y-2"
             style={{ gridTemplateRows: `repeat(${String(Math.ceil(monthlies.length / 2))}, auto)` }}
           >
             {monthlies.map(renderToggle)}
