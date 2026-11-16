@@ -9,7 +9,7 @@ const TILE_CLASS: Record<CellState, string> = {
   proposed: 'rounded-full bg-plan-sent text-plan-sent-fg',
   no_answer: 'rounded-full bg-plan-sent text-plan-sent-fg',
   draft: 'rounded-sm border border-dashed border-plan-draft bg-surface',
-  declined: 'rounded-sm bg-plan-blank text-muted-foreground',
+  declined: 'rounded-sm bg-plan-blank text-plan-ink',
   available: 'rounded-sm border border-plan-free-edge bg-plan-free',
   blank: 'rounded-sm bg-plan-blank',
 };
@@ -48,7 +48,7 @@ export function GridTile({
       title={blockedReason ?? undefined}
       disabled={disabled || blockedReason !== null}
       onClick={onAct}
-      className="relative inline-flex size-9 items-center justify-center rounded disabled:opacity-50"
+      className="focus-visible:outline-plan-ink relative inline-flex h-[22px] w-[17px] items-center justify-center rounded focus-visible:outline-2 disabled:opacity-50"
     >
       <span
         aria-hidden="true"

@@ -51,6 +51,11 @@ describe('GridTile', () => {
     expect(screen.getByRole('button')).toBeDisabled();
   });
 
+  it('fits the fixed grid cell footprint', () => {
+    renderTile();
+    expect(screen.getByRole('button')).toHaveClass('h-[22px]', 'w-[17px]', 'relative');
+  });
+
   it('calls onAct on click', async () => {
     const onAct = renderTile();
     await userEvent.click(screen.getByRole('button'));
