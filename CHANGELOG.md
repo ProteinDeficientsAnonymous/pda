@@ -1,3 +1,10 @@
+# [0.243.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.242.0...v0.243.0) (2026-11-16)
+
+
+### Features
+
+* **reserve:** reserve breakdown on the donate page, editable via mcp ([#2490](https://github.com/ProteinDeficientsAnonymous/pda/issues/2490)) ([51eedea](https://github.com/ProteinDeficientsAnonymous/pda/commit/51eedeac74af04a1cf726f07d19483dafddd513e))
+
 # [0.242.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.241.0...v0.242.0) (2026-11-16)
 
 
