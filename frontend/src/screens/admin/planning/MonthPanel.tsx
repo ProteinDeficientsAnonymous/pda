@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { Assignment, PlannerColumn, PlanningGrid } from '@/api/planning';
 import { Button } from '@/components/ui/Button';
@@ -7,6 +7,7 @@ import {
   type CellState,
   cellState,
   findAssignment,
+  isWithdrawable,
   slotHasCommitted,
   STATE_TEXT,
 } from './gridCell';
@@ -44,6 +45,7 @@ interface PanelRow {
   detail: string;
   text: string;
   disabled?: boolean;
+  notes?: string[];
 }
 
 function Section({
@@ -65,7 +67,14 @@ function Section({
         {rows.map((row) => (
           <li key={row.planner.userId} className="flex items-center gap-2">
             <span className="min-w-0 flex-1">
-              <span className="block truncate">{row.planner.name}</span>
+              <span className="flex flex-wrap items-baseline gap-x-2">
+                <span className="truncate">{row.planner.name}</span>
+                {row.notes?.map((note) => (
+                  <span key={note} className="text-muted text-xs">
+                    {note}
+                  </span>
+                ))}
+              </span>
               <span className="text-muted block text-xs">{row.detail}</span>
             </span>
             <Button
@@ -91,25 +100,48 @@ function loadText(grid: PlanningGrid, planner: PlannerColumn): string {
   return load ? `${String(load.taken)} of ${String(load.offered)} monthlies taken` : '';
 }
 
+function plannerNotes(planner: PlannerColumn, extraSlot: boolean): string[] {
+  const notes: string[] = [];
+  if (extraSlot && planner.biannualInterest) notes.push(`biannual: ${planner.biannualInterest}`);
+  if (!planner.hasEmail) notes.push('no email');
+  if (!planner.isPlanner) notes.push('no longer a planner');
+  return notes;
+}
+
 export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPanelProps) {
+  const [adding, setAdding] = useState(false);
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     ref.current?.scrollIntoView({ block: 'nearest' });
   }, [slotId]);
   const slot = grid.slots.find((s) => s.id === slotId);
   if (!slot) return null;
-  const onIt: PanelRow[] = [];
+  const extraSlot = slot.kind !== 'monthly';
+  const asked: PanelRow[] = [];
   const free: PanelRow[] = [];
+  const others: PanelRow[] = [];
   for (const planner of grid.planners) {
     const state = cellState(slotId, planner.userId, grid, today);
     const assignment = findAssignment(grid, slotId, planner.userId);
+    const notes = plannerNotes(planner, extraSlot);
     if (assignment) {
-      onIt.push({ planner, state, assignment, detail: STATE_TEXT[state], text: actionText(state) });
-    } else if (state === 'available') {
-      const detail = loadText(grid, planner);
-      free.push({ planner, state, detail, text: 'propose', disabled: !planner.isPlanner });
+      const detail = STATE_TEXT[state];
+      const disabled = !isWithdrawable(state) && !planner.isPlanner;
+      asked.push({ planner, state, assignment, detail, text: actionText(state), disabled, notes });
+    } else {
+      const disabled = !planner.isPlanner;
+      if (state === 'available') {
+        const detail = loadText(grid, planner);
+        free.push({ planner, state, detail, text: 'propose', disabled, notes });
+      } else if (planner.isPlanner) {
+        const detail = planner.submitted ? STATE_TEXT[state] : 'no form';
+        others.push({ planner, state, detail, text: 'propose', disabled, notes });
+      }
     }
   }
+  const names = (rows: PanelRow[]) => rows.map((r) => r.planner.name).join(', ');
+  const notFree = others.filter((r) => r.planner.submitted);
+  const noForm = others.filter((r) => !r.planner.submitted);
   const onAct = (row: PanelRow) => void act(slot, row.planner, row.state, row.assignment);
 
   return (
@@ -135,8 +167,31 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
           ×
         </Button>
       </div>
-      <Section title="on it" rows={onIt} busy={busy} onAct={onAct} />
+      <Section title="asked" rows={asked} busy={busy} onAct={onAct} />
       <Section title="free" rows={free} busy={busy} onAct={onAct} />
+      {adding ? (
+        <>
+          <Section title="not free" rows={notFree} busy={busy} onAct={onAct} />
+          <Section title="no form" rows={noForm} busy={busy} onAct={onAct} />
+        </>
+      ) : (
+        <div className="text-muted mt-3 space-y-0.5 text-xs">
+          {notFree.length > 0 && <p>{`not free · ${names(notFree)}`}</p>}
+          {noForm.length > 0 && <p>{`no form · ${names(noForm)}`}</p>}
+        </div>
+      )}
+      {others.length > 0 && (
+        <Button
+          variant="ghost"
+          className="mt-2 h-8 px-2"
+          aria-expanded={adding}
+          onClick={() => {
+            setAdding(!adding);
+          }}
+        >
+          {adding ? 'hide' : 'add someone'}
+        </Button>
+      )}
     </section>
   );
 }
