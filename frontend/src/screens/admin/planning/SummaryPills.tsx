@@ -1,12 +1,12 @@
-import type { summaryCounts } from './gridSummary';
+import type { SummaryCounts } from './gridSummary';
 
-const PILLS: { key: keyof ReturnType<typeof summaryCounts>; label: string }[] = [
+const PILLS: { key: keyof SummaryCounts; label: string }[] = [
   { key: 'needPlanner', label: 'need a planner' },
   { key: 'waiting', label: 'waiting' },
   { key: 'noForm', label: 'no form' },
 ];
 
-export function SummaryPills({ counts }: { counts: ReturnType<typeof summaryCounts> }) {
+export function SummaryPills({ counts }: { counts: SummaryCounts }) {
   return (
     <div className="mb-3 flex flex-wrap gap-2">
       {PILLS.map(({ key, label }) => (

@@ -68,10 +68,16 @@ describe('ScheduleTab', () => {
     expect(screen.getByText('1 not sent yet')).toBeInTheDocument();
   });
 
+  it('shows the summary pills with the grid', () => {
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByText('need a planner').parentElement).toHaveTextContent('1 need a planner');
+  });
+
   it('skips the grid without planners', () => {
     shown = { ...grid, planners: [] };
     renderWithProviders(<ScheduleTab year={2999} />);
     expect(screen.queryByRole('button', { name: 'january' })).not.toBeInTheDocument();
+    expect(screen.queryByText('need a planner')).not.toBeInTheDocument();
     expect(screen.getByText('old table for 2999')).toBeInTheDocument();
   });
 });
