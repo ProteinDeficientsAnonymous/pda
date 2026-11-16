@@ -55,7 +55,7 @@ function SlotRow({ slot }: { slot: PlanningSlot }) {
   return (
     <li className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        <span>
+        <span className="min-w-0 break-words">
           {slot.label}
           {slot.kind !== 'monthly' && (
             <span className="text-foreground-secondary text-sm">
@@ -73,7 +73,7 @@ function SlotRow({ slot }: { slot: PlanningSlot }) {
             setOpen((o) => !o);
           }}
         >
-          edit
+          {open ? 'done' : 'edit'}
         </Button>
       </div>
       {open && (

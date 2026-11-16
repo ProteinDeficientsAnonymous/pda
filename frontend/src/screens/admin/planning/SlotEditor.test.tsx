@@ -76,8 +76,10 @@ describe('SlotEditor', () => {
     renderWithProviders(<SlotEditor year={2027} />);
     const edit = screen.getByRole('button', { name: 'edit june anniversary' });
     expect(edit).not.toHaveAttribute('aria-controls');
+    expect(edit).toHaveTextContent('edit');
     await user.click(edit);
     expect(edit).toHaveAttribute('aria-controls');
+    expect(edit).toHaveTextContent('done');
     await user.click(edit);
     expect(edit).toHaveAttribute('aria-expanded', 'false');
     expect(edit).not.toHaveAttribute('aria-controls');
