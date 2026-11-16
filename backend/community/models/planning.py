@@ -187,3 +187,41 @@ class SlotAssignment(models.Model):
 
     def __str__(self) -> str:
         return f"SlotAssignment({self.slot}, {self.user_id}, {self.status})"
+
+
+class PlanningChecklistItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    text = models.CharField(max_length=300)
+    detail = models.TextField(blank=True, default="", max_length=2000)
+    order = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        app_label = "community"
+        ordering = ["order", "created_at"]
+
+    def __str__(self) -> str:
+        return self.text
+
+
+class SlotChecklistTick(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    slot = models.ForeignKey(PlanningSlot, on_delete=models.CASCADE, related_name="checklist_ticks")
+    item = models.ForeignKey(PlanningChecklistItem, on_delete=models.CASCADE, related_name="ticks")
+    done_by = models.ForeignKey(
+        "users.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    done_at = models.DateTimeField(default=timezone.now)
+    if TYPE_CHECKING:
+        slot_id: uuid.UUID
+        item_id: uuid.UUID
+
+    class Meta:
+        app_label = "community"
+        ordering = ["done_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["slot", "item"], name="unique_slot_checklist_tick"),
+        ]
+
+    def __str__(self) -> str:
+        return f"SlotChecklistTick({self.slot_id}, {self.item_id})"

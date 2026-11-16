@@ -66,9 +66,11 @@ from community.models.join_form import JoinFormQuestion, JoinRequest
 from community.models.login_reminder import LoginReminder
 from community.models.planning import (
     PlanningAvailability,
+    PlanningChecklistItem,
     PlanningSlot,
     PlanningYear,
     SlotAssignment,
+    SlotChecklistTick,
 )
 from community.models.poll import EventPoll, PollOption, PollVote
 from community.models.reserve import ReserveEntry
@@ -103,6 +105,7 @@ __all__ = [
     "EventFormat",
     "PageVisibility",
     "PlanningAvailability",
+    "PlanningChecklistItem",
     "PlanningSlot",
     "PlanningSlotKind",
     "PlanningYear",
@@ -154,6 +157,7 @@ __all__ = [
     "EventPoll",
     "PollOption",
     "SlotAssignment",
+    "SlotChecklistTick",
     "PollVote",
     "EventSpeech",
     "SpeechTemplate",
