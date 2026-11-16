@@ -26,24 +26,25 @@ const grid: PlanningGrid = {
   assignments: [],
 };
 
-let shown: PlanningGrid | undefined = grid;
+let shown = grid;
+let status = { isPending: false, isError: false };
 
 const mutation = { mutateAsync: vi.fn(), isPending: false };
 
 vi.mock('@/api/planning', () => ({
-  usePlanningGrid: () => ({ isPending: false, isError: false, data: shown }),
+  usePlanningGrid: () => ({
+    ...status,
+    data: status.isPending || status.isError ? undefined : shown,
+  }),
   usePropose: () => mutation,
   useWithdraw: () => mutation,
   useSendProposals: () => mutation,
 }));
 
-vi.mock('./PlanningGrid', () => ({
-  PlanningGrid: ({ year }: { year: number }) => <div>old table for {year}</div>,
-}));
-
 describe('ScheduleTab', () => {
   beforeEach(() => {
     shown = grid;
+    status = { isPending: false, isError: false };
   });
 
   it('toggles the open month on repeat taps', async () => {
@@ -55,11 +56,31 @@ describe('ScheduleTab', () => {
     expect(january).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('keeps the old table below the new grid', () => {
+  it('opens the month panel and closes it from the panel', async () => {
     renderWithProviders(<ScheduleTab year={2999} />);
-    const january = screen.getByRole('button', { name: 'january' });
-    const old = screen.getByText('old table for 2999');
-    expect(january.compareDocumentPosition(old) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'january' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'january' }));
+    expect(screen.getByRole('heading', { name: 'january' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'close january' }));
+    expect(screen.queryByRole('heading', { name: 'january' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'january' })).toHaveFocus();
+  });
+
+  it('collapses add someone when another month opens', async () => {
+    shown = {
+      ...grid,
+      slots: [...grid.slots, makeSlot({ id: 's2', label: 'february', month: 2, order: 2 })],
+    };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    await userEvent.click(screen.getByRole('button', { name: 'february' }));
+    await userEvent.click(screen.getByRole('button', { name: 'add someone' }));
+    expect(screen.getByRole('button', { name: 'hide' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'january' }));
+    await userEvent.click(screen.getByRole('button', { name: 'february' }));
+    expect(screen.getByRole('button', { name: 'add someone' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
   });
 
   it('shows the send bar while drafts wait', () => {
@@ -68,18 +89,53 @@ describe('ScheduleTab', () => {
     expect(screen.getByText('1 not sent yet')).toBeInTheDocument();
   });
 
-  it('renders only the old table while the grid loads', () => {
-    shown = undefined;
+  it.each(['committed', 'proposed'] as const)(
+    'confirms before withdrawing a %s tile',
+    async (status) => {
+      shown = { ...grid, assignments: [{ id: 'a1', slotId: 's1', userId: 'u1', status }] };
+      renderWithProviders(<ScheduleTab year={2999} />);
+      await userEvent.click(screen.getByRole('button', { name: 'withdraw ada from january' }));
+      expect(screen.getByText('withdraw ada from january?')).toBeInTheDocument();
+      expect(mutation.mutateAsync).not.toHaveBeenCalled();
+    },
+  );
+
+  it('proposes straight from an available tile', async () => {
     renderWithProviders(<ScheduleTab year={2999} />);
-    expect(screen.queryByText(/not sent yet/)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'january' })).not.toBeInTheDocument();
-    expect(screen.getByText('old table for 2999')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'propose ada for january' }));
+    expect(mutation.mutateAsync).toHaveBeenCalledWith({ slotId: 's1', userId: 'u1' });
   });
 
-  it('skips the grid without planners', () => {
+  it('disables the tiles while a change is pending', () => {
+    mutation.isPending = true;
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByRole('button', { name: 'propose ada for january' })).toBeDisabled();
+  });
+
+  it('shows the summary pills with the grid', () => {
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByText('need a planner').parentElement).toHaveTextContent('1 need a planner');
+  });
+
+  it('says so when there are no planners yet', () => {
     shown = { ...grid, planners: [] };
     renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByText('no planners yet 🌿')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'january' })).not.toBeInTheDocument();
-    expect(screen.getByText('old table for 2999')).toBeInTheDocument();
+    expect(screen.queryByText('need a planner')).not.toBeInTheDocument();
+  });
+
+  it('shows loading while the grid loads', () => {
+    status = { isPending: true, isError: false };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByText('loading…')).toBeInTheDocument();
+  });
+
+  it('shows an error when the grid fails to load', () => {
+    status = { isPending: false, isError: true };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "couldn't load the planning grid — try refreshing",
+    );
   });
 });

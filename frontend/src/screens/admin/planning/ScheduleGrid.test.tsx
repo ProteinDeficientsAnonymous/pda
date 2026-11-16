@@ -54,7 +54,10 @@ function renderGrid(overrides: Partial<Parameters<typeof ScheduleGrid>[0]> = {})
 describe('ScheduleGrid', () => {
   it('scrolls inside its own relative wrapper', () => {
     const { container } = renderGrid();
-    expect(container.querySelector('.overflow-x-auto')).toHaveClass('relative');
+    expect(container.querySelector('.overflow-x-auto')).toHaveClass(
+      'relative',
+      'overflow-y-hidden',
+    );
   });
 
   it.each([
@@ -108,6 +111,11 @@ describe('ScheduleGrid', () => {
     renderGrid();
     const cells = screen.getAllByText(/^(ada|bo|cy|–|\d+\/\d+)$/).map((el) => el.textContent);
     expect(cells).toEqual(['ada', '0/2', 'bo', '2/1', 'cy', '–']);
+  });
+
+  it('labels the load column', () => {
+    renderGrid();
+    expect(screen.getByText('load')).toBeInTheDocument();
   });
 
   it('spells out the extra slot markers in the key', () => {
