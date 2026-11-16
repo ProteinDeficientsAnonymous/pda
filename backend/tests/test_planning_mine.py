@@ -31,6 +31,7 @@ class TestMySlots:
         assign(s[2], me, S.DECLINED)
         assign(s[3], me, S.WITHDRAWN)
         assign(s[4], make_user(VIEW))
+        assign(year.slots.get(order=6), me, S.DRAFT)
         data = get_mine(api_client, auth_headers_for(me)).json()
         assert [(r["assignment_id"], r["status"]) for r in data] == [
             (str(proposed.id), S.PROPOSED),
@@ -62,6 +63,7 @@ class TestMySlots:
         assign(slot, make_user(VIEW, first_name="cy"))
         assign(slot, make_user(VIEW, first_name="dropped"), S.DECLINED)
         assign(slot, make_user(VIEW, first_name="gone"), S.WITHDRAWN)
+        assign(slot, make_user(VIEW, first_name="staged"), S.DRAFT)
         (row,) = get_mine(api_client, auth_headers_for(me)).json()
         assert sorted((t["name"], t["status"]) for t in row["teammates"]) == [
             ("bea", S.COMMITTED),

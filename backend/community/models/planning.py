@@ -148,9 +148,15 @@ class SlotAssignment(models.Model):
             models.UniqueConstraint(fields=["slot", "user"], name="unique_slot_assignment"),
         ]
 
+    def stage(self, by) -> None:
+        self._open(AssignmentStatus.DRAFT, by)
+
     def propose(self, by) -> None:
+        self._open(AssignmentStatus.PROPOSED, by)
+
+    def _open(self, status: AssignmentStatus, by) -> None:
         with transaction.atomic():
-            self.status = AssignmentStatus.PROPOSED
+            self.status = status
             self.proposed_by = by
             self.proposed_at = timezone.now()
             self.responded_at = None

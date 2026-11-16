@@ -3,9 +3,7 @@ import uuid
 import pytest
 from community.models import AssignmentStatus, SlotAssignment
 from community.validation import Code
-from django.conf import settings
 from django.utils import timezone
-from notifications.email_sender import SendResult
 from notifications.models import Notification, NotificationType
 from users.permissions import PermissionKey
 
@@ -16,11 +14,6 @@ from tests._users import grant, make_attendance_paused, make_user
 
 VIEW = PermissionKey.VIEW_EVENT_PLANNING
 MANAGE = PermissionKey.MANAGE_EVENT_PLANNING
-
-
-@pytest.fixture
-def coordinator(db):
-    return make_user(MANAGE)
 
 
 def propose(api_client, slot, user, actor):
@@ -35,12 +28,12 @@ def withdraw(api_client, assignment, actor):
 
 @pytest.mark.django_db
 class TestPropose:
-    def test_creates_proposed_assignment(self, api_client, slot, coordinator):
+    def test_creates_draft_assignment(self, api_client, slot, coordinator):
         planner = make_user(VIEW)
         response = propose(api_client, slot, planner, coordinator)
         assert response.status_code == 201
         data = response.json()
-        assert data["status"] == AssignmentStatus.PROPOSED
+        assert data["status"] == AssignmentStatus.DRAFT
         assert data["user_id"] == str(planner.id)
         assignment = SlotAssignment.objects.get(slot=slot, user=planner)
         assert assignment.proposed_by == coordinator
@@ -75,7 +68,9 @@ class TestPropose:
         assert response.status_code == 400
         assert_error_code(response, Code.Planning.NOT_A_PLANNER)
 
-    @pytest.mark.parametrize("status", [AssignmentStatus.PROPOSED, AssignmentStatus.COMMITTED])
+    @pytest.mark.parametrize(
+        "status", [AssignmentStatus.DRAFT, AssignmentStatus.PROPOSED, AssignmentStatus.COMMITTED]
+    )
     def test_rejects_already_assigned(self, api_client, slot, coordinator, status):
         planner = make_user(VIEW)
         SlotAssignment.objects.create(slot=slot, user=planner, status=status)
@@ -107,10 +102,10 @@ class TestPropose:
 
         assert response.status_code == 201
         assert response.json()["id"] == str(old.id)
-        assert response.json()["status"] == AssignmentStatus.PROPOSED
+        assert response.json()["status"] == AssignmentStatus.DRAFT
         old.refresh_from_db()
         assert SlotAssignment.objects.filter(slot=slot, user=planner).count() == 1
-        assert old.status == AssignmentStatus.PROPOSED
+        assert old.status == AssignmentStatus.DRAFT
         assert old.responded_at is None
         assert old.reminder_count == 0
         assert old.last_reminded_at is None
@@ -147,42 +142,24 @@ class TestWithdraw:
 
 @pytest.mark.django_db
 class TestNotifications:
-    def test_propose_notifies_and_emails(self, api_client, slot, coordinator, fake_email_sender):
-        planner = make_user(VIEW, email="planner@example.com")
-        propose(api_client, slot, planner, coordinator)
-        notification = Notification.objects.get(recipient=planner)
-        assert notification.notification_type == NotificationType.PLANNING_PROPOSED
-        assert notification.message == f"you've been asked to plan {slot.label} — tap to respond"
-        assert notification.related_user == coordinator
-        kwargs = fake_email_sender.send.call_args.kwargs
-        assert kwargs["to"] == "planner@example.com"
-        assert kwargs["subject"] == f"can you plan {slot.label}?"
-        assert f"{settings.FRONTEND_BASE_URL}/admin/planning" in kwargs["text"]
-
-    def test_repropose_notifies_again(self, api_client, slot, coordinator, fake_email_sender):
+    @pytest.mark.parametrize("prior", [None, AssignmentStatus.DECLINED])
+    def test_propose_is_silent(self, api_client, slot, coordinator, fake_email_sender, prior):
         planner = make_user(VIEW)
-        SlotAssignment.objects.create(slot=slot, user=planner, status=AssignmentStatus.DECLINED)
-        propose(api_client, slot, planner, coordinator)
-        assert Notification.objects.filter(recipient=planner).count() == 1
-        fake_email_sender.send.assert_called_once()
-
-    def test_no_email_address_skips_email(self, api_client, slot, coordinator, fake_email_sender):
-        planner = make_user(VIEW, email="")
+        if prior:
+            SlotAssignment.objects.create(slot=slot, user=planner, status=prior)
         assert propose(api_client, slot, planner, coordinator).status_code == 201
-        assert Notification.objects.filter(recipient=planner).exists()
+        assert not Notification.objects.exists()
         fake_email_sender.send.assert_not_called()
 
-    @pytest.mark.parametrize("failure", ["raises", "unsuccessful"])
-    def test_send_failure_does_not_fail_request(
-        self, api_client, slot, coordinator, fake_email_sender, failure
-    ):
-        if failure == "raises":
-            fake_email_sender.send.side_effect = RuntimeError("boom")
-        else:
-            fake_email_sender.send.return_value = SendResult(success=False, error="nope")
-        planner = make_user(VIEW)
-        assert propose(api_client, slot, planner, coordinator).status_code == 201
-        assert Notification.objects.filter(recipient=planner).exists()
+    def test_withdrawing_a_draft_is_silent(self, api_client, slot, coordinator, fake_email_sender):
+        assignment = SlotAssignment.objects.create(
+            slot=slot, user=make_user(VIEW), status=AssignmentStatus.DRAFT
+        )
+        assert withdraw(api_client, assignment, coordinator).status_code == 204
+        assignment.refresh_from_db()
+        assert assignment.status == AssignmentStatus.WITHDRAWN
+        assert not Notification.objects.exists()
+        fake_email_sender.send.assert_not_called()
 
     def test_withdraw_notifies_without_email(
         self, api_client, slot, coordinator, fake_email_sender
