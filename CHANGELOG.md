@@ -1,3 +1,10 @@
+## [0.248.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.0...v0.248.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - show "just you so far" when a slot has no teammates ([#2544](https://github.com/ProteinDeficientsAnonymous/pda/issues/2544)) ([68fbbda](https://github.com/ProteinDeficientsAnonymous/pda/commit/68fbbda97b2d14508d867cad1ba862bd880c1406))
+
 # [0.248.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.247.0...v0.248.0) (2026-11-16)
 
 
