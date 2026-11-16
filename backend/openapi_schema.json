@@ -6371,6 +6371,24 @@
         "title": "PreviousRejectionOut",
         "type": "object"
       },
+      "ProposalsSentOut": {
+        "properties": {
+          "planners_notified": {
+            "title": "Planners Notified",
+            "type": "integer"
+          },
+          "proposals_sent": {
+            "title": "Proposals Sent",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "planners_notified",
+          "proposals_sent"
+        ],
+        "title": "ProposalsSentOut",
+        "type": "object"
+      },
       "ProposeIn": {
         "properties": {
           "user_id": {
@@ -17874,6 +17892,63 @@
           }
         ],
         "summary": "Get Grid",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/years/{year}/proposals/send/": {
+      "post": {
+        "operationId": "community_planning_proposals_send_proposals",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalsSentOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Send Proposals",
         "tags": [
           "community"
         ]
