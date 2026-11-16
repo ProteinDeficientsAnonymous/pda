@@ -10,7 +10,7 @@ import { renderWithProviders } from '@/test/render';
 import PlanningScreen from './PlanningScreen';
 
 let years: { id: string; year: number }[] = [];
-let mySlots: { data?: { status: string }[] } = { data: [] };
+let mySlots: { isPending?: boolean; data?: { status: string }[] } = { data: [] };
 
 const createYear = vi.fn();
 const toastError = vi.fn();
@@ -131,13 +131,44 @@ describe('PlanningScreen', () => {
       ).toBeInTheDocument();
     });
 
-    it('skips the tabs for planners who cannot manage', () => {
-      years = [{ id: 'y1', year: 2027 }];
-      renderWithProviders(<PlanningScreen />);
-      expect(screen.queryByRole('radiogroup', { name: 'planning view' })).not.toBeInTheDocument();
-      expect(screen.getByText('my slots')).toBeInTheDocument();
-      expect(screen.getByText('form for 2027')).toBeInTheDocument();
+    it('keeps mine selected after the waiting slot is answered', () => {
+      manage();
+      mySlots = { data: [{ status: 'proposed' }] };
+      const { rerender } = renderWithProviders(<PlanningScreen />);
+      mySlots = { data: [{ status: 'committed' }] };
+      rerender(<PlanningScreen />);
+      expect(screen.getByRole('radio', { name: 'mine' })).toBeChecked();
+      expect(screen.queryByText('grid for 2027')).not.toBeInTheDocument();
     });
+
+    it('waits for my slots before picking a default tab', () => {
+      manage();
+      mySlots = { isPending: true };
+      renderWithProviders(<PlanningScreen />);
+      expect(screen.queryByText('grid for 2027')).not.toBeInTheDocument();
+      expect(screen.queryByText('form for 2027')).not.toBeInTheDocument();
+      expect(screen.queryByText('editor for 2027')).not.toBeInTheDocument();
+    });
+
+    it('does not wait for my slots when the tab is explicit', () => {
+      manage();
+      mySlots = { isPending: true };
+      renderWithProviders(<PlanningScreen />, { route: '/?tab=schedule' });
+      expect(screen.getByText('grid for 2027')).toBeInTheDocument();
+    });
+
+    it.each(['/', '/?tab=slots', '/?tab=schedule'])(
+      'shows planners who cannot manage only the mine content at %s',
+      (route) => {
+        years = [{ id: 'y1', year: 2027 }];
+        renderWithProviders(<PlanningScreen />, { route });
+        expect(screen.queryByRole('radiogroup', { name: 'planning view' })).not.toBeInTheDocument();
+        expect(screen.getByText('my slots')).toBeInTheDocument();
+        expect(screen.getByText('form for 2027')).toBeInTheDocument();
+        expect(screen.queryByText('grid for 2027')).not.toBeInTheDocument();
+        expect(screen.queryByText('editor for 2027')).not.toBeInTheDocument();
+      },
+    );
   });
 
   describe('start next year', () => {

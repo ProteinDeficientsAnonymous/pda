@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { type PlanningYear, useCreateYear, useMySlots, usePlanningYears } from '@/api/planning';
@@ -54,6 +54,31 @@ export default function PlanningScreen() {
   const [nextYear] = useState(() => new Date().getFullYear() + 1);
   const canManage = useHasPermission(Permission.ManageEventPlanning);
 
+  const rawTab = params.get('tab');
+  const hasWaiting = mySlots.data?.some((r) => r.status === 'proposed') ?? false;
+  const defaultSettled = !canManage || rawTab !== null || !mySlots.isPending;
+  const resolved = resolveTab(rawTab, hasWaiting);
+  const tab: PlanningTab = canManage ? resolved : 'mine';
+
+  const pickTab = useCallback(
+    (next: PlanningTab) => {
+      setParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          p.set('tab', next);
+          return p;
+        },
+        { replace: true },
+      );
+    },
+    [setParams],
+  );
+
+  // persist the resolved default so answering a proposal doesn't flip the tab
+  useEffect(() => {
+    if (canManage && rawTab === null && defaultSettled) pickTab(resolved);
+  }, [canManage, rawTab, defaultSettled, resolved, pickTab]);
+
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load planning years — try refreshing" />;
 
@@ -70,22 +95,6 @@ export default function PlanningScreen() {
   }
 
   const year = picked ?? defaultYear(years);
-  const rawTab = params.get('tab');
-  const hasWaiting = mySlots.data?.some((r) => r.status === 'proposed') ?? false;
-  const tab = resolveTab(rawTab, hasWaiting);
-  const awaitingDefault = canManage && rawTab === null && mySlots.isPending;
-
-  function pickTab(next: PlanningTab) {
-    setParams(
-      (prev) => {
-        const p = new URLSearchParams(prev);
-        p.set('tab', next);
-        return p;
-      },
-      { replace: true },
-    );
-  }
-
   return (
     <ContentContainer>
       <h1 className="mb-6 text-2xl font-medium tracking-tight">event planning</h1>
@@ -100,9 +109,6 @@ export default function PlanningScreen() {
             options={years.map((y) => ({ value: String(y.year), label: String(y.year) }))}
           />
         </div>
-        {canManage && tab === 'slots' && canStartNext ? (
-          <StartYearButton year={nextYear} onStarted={setPicked} />
-        ) : null}
       </div>
       {canManage ? (
         <SegmentedControl
@@ -114,11 +120,19 @@ export default function PlanningScreen() {
           className="mb-6"
         />
       ) : null}
-      {!canManage ? <MineTab year={year} /> : null}
-      {canManage && awaitingDefault ? <ContentLoading /> : null}
-      {canManage && !awaitingDefault && tab === 'schedule' ? <PlanningGrid year={year} /> : null}
-      {canManage && !awaitingDefault && tab === 'mine' ? <MineTab year={year} /> : null}
-      {canManage && !awaitingDefault && tab === 'slots' ? <SlotEditor year={year} /> : null}
+      {!defaultSettled ? <ContentLoading /> : null}
+      {defaultSettled && tab === 'schedule' ? <PlanningGrid year={year} /> : null}
+      {defaultSettled && tab === 'mine' ? <MineTab year={year} /> : null}
+      {defaultSettled && tab === 'slots' ? (
+        <>
+          {canStartNext ? (
+            <div className="mb-4">
+              <StartYearButton year={nextYear} onStarted={setPicked} />
+            </div>
+          ) : null}
+          <SlotEditor year={year} />
+        </>
+      ) : null}
     </ContentContainer>
   );
 }
