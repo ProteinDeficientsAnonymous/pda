@@ -148,6 +148,7 @@
       },
       "AssignmentStatus": {
         "enum": [
+          "draft",
           "proposed",
           "committed",
           "declined",

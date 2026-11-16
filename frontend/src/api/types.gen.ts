@@ -2816,7 +2816,7 @@ export interface components {
          * AssignmentStatus
          * @enum {string}
          */
-        AssignmentStatus: "proposed" | "committed" | "declined" | "withdrawn";
+        AssignmentStatus: "draft" | "proposed" | "committed" | "declined" | "withdrawn";
         /** AttendanceImportCommitIn */
         AttendanceImportCommitIn: {
             /** Event Date */

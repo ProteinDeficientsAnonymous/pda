@@ -6,10 +6,11 @@ from ninja.responses import Status
 
 from community.models import AssignmentStatus, SlotAssignment
 from community.planning._access import require_manage
-from community.planning._notify import notify_proposed, notify_withdrawn
+from community.planning._notify import notify_withdrawn
 from community.planning._planners import planner_users
 from community.planning._shared import (
     ACTIVE_STATUSES,
+    HELD_STATUSES,
     assignment_out,
     get_assignment_or_404,
     get_slot_or_404,
@@ -34,13 +35,14 @@ def propose_assignment(request, slot_id: UUID, payload: ProposeIn):
     if user is None:
         raise_validation(Code.Planning.NOT_A_PLANNER, field="user_id", status_code=400)
     assignment, created = SlotAssignment.objects.get_or_create(
-        slot=slot, user=user, defaults={"proposed_by": request.auth}
+        slot=slot,
+        user=user,
+        defaults={"proposed_by": request.auth, "status": AssignmentStatus.DRAFT},
     )
     if not created:
-        if assignment.status in ACTIVE_STATUSES:
+        if assignment.status in HELD_STATUSES:
             raise_validation(Code.Planning.ALREADY_ASSIGNED, field="user_id", status_code=400)
-        assignment.propose(request.auth)
-    notify_proposed(assignment)
+        assignment.stage(request.auth)
     return Status(201, assignment_out(assignment))
 
 
@@ -52,7 +54,9 @@ def propose_assignment(request, slot_id: UUID, payload: ProposeIn):
 def withdraw_assignment(request, assignment_id: UUID):
     require_manage(request, "withdraw_planning_assignment")
     assignment = get_assignment_or_404(assignment_id)
-    if assignment.status in ACTIVE_STATUSES:
+    if assignment.status == AssignmentStatus.DRAFT:
+        assignment.withdraw()
+    elif assignment.status in ACTIVE_STATUSES:
         was_committed = assignment.status == AssignmentStatus.COMMITTED
         assignment.withdraw()
         notify_withdrawn(assignment, request.auth)
