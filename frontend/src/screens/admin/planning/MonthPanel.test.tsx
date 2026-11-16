@@ -125,4 +125,56 @@ describe('MonthPanel', () => {
     renderPanel(makeGrid([], { planners: [planner('ada', { isPlanner: false })] }));
     expect(within(row('ada')).getByRole('button', { name: 'propose' })).toBeDisabled();
   });
+
+  describe('everyone else', () => {
+    const gridWithOthers = (slotOverrides: Partial<PlanningGrid['slots'][number]> = {}) =>
+      makeGrid([], {
+        slots: [{ ...slot, ...slotOverrides }],
+        planners: [
+          planner('ada'),
+          planner('dan', { availableSlotIds: [] }),
+          planner('duncan', { availableSlotIds: [] }),
+          planner('mo', { submitted: false, availableSlotIds: [] }),
+          planner('jo', { submitted: false, availableSlotIds: [] }),
+        ],
+      });
+
+    it('lists them on muted lines', () => {
+      renderPanel(gridWithOthers());
+      expect(screen.getByText('not free · dan, duncan')).toBeInTheDocument();
+      expect(screen.getByText('no form: mo, jo')).toBeInTheDocument();
+    });
+
+    it('proposes someone who is not free after add someone', async () => {
+      const grid = gridWithOthers();
+      const { act } = renderPanel(grid);
+      const add = screen.getByRole('button', { name: 'add someone' });
+      expect(add).toHaveAttribute('aria-expanded', 'false');
+      await userEvent.click(add);
+      expect(add).toHaveAttribute('aria-expanded', 'true');
+      await userEvent.click(within(row('dan')).getByRole('button', { name: 'propose' }));
+      expect(act).toHaveBeenCalledWith(slot, grid.planners[1], 'blank', undefined);
+    });
+
+    it('has no add someone when everyone is free', () => {
+      renderPanel(makeGrid([]));
+      expect(screen.queryByRole('button', { name: 'add someone' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('shows biannual interest only on an extra slot', () => {
+    const planners = [planner('ada', { biannualInterest: 'maybe' })];
+    renderPanel(makeGrid([], { planners, slots: [{ ...slot, kind: 'biannual' }] }));
+    expect(within(row('ada')).getByText('biannual: maybe')).toBeInTheDocument();
+  });
+
+  it('hides biannual interest on a monthly slot', () => {
+    renderPanel(makeGrid([], { planners: [planner('ada', { biannualInterest: 'maybe' })] }));
+    expect(screen.queryByText('biannual: maybe')).not.toBeInTheDocument();
+  });
+
+  it('flags planners with no email', () => {
+    renderPanel(makeGrid([], { planners: [planner('ada', { hasEmail: false })] }));
+    expect(within(row('ada')).getByText('no email')).toBeInTheDocument();
+  });
 });
