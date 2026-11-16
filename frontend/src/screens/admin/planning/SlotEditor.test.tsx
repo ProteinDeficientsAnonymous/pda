@@ -33,6 +33,8 @@ vi.mock('@/api/planning', () => ({
   useUpdateSlot: () => ({ mutateAsync: updateSlot, isPending: updatePending }),
   useCreateSlot: () => ({ mutateAsync: createSlot, isPending: false }),
   useDeleteSlot: () => ({ mutateAsync: deleteSlot, isPending: false }),
+  usePlanningYears: () => ({ data: undefined }),
+  useOpenAvailability: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 beforeEach(() => {

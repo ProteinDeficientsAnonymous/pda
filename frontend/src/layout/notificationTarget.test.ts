@@ -58,4 +58,9 @@ describe('notificationTarget', () => {
   ])('sends %s to the planning screen', (notificationType) => {
     expect(notificationTarget(notification({ notificationType }))).toBe('/admin/planning');
   });
+
+  it('sends the availability ask to the availability tab', () => {
+    const n = notification({ notificationType: NotificationType.PlanningAvailability });
+    expect(notificationTarget(n)).toBe('/admin/planning?tab=availability');
+  });
 });
