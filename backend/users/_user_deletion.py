@@ -37,7 +37,7 @@ def delete_user(request, user_id: str):
         raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
     if user.archived_at is not None:
         raise_validation(Code.User.ALREADY_ARCHIVED, status_code=400)
-    removed_role_ids = archive_user(request, user)
+    released = archive_user(request, user)
     audit_log(
         logging.WARNING,
         "user_archived",
@@ -45,7 +45,7 @@ def delete_user(request, user_id: str):
         target=AuditTarget(
             type=AuditTargetType.USER,
             id=user_id,
-            details={"full_name": user.full_name, "removed_role_ids": removed_role_ids},
+            details={"full_name": user.full_name, **released},
         ),
     )
     return Status(204, None)

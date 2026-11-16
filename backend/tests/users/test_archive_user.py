@@ -41,7 +41,7 @@ class TestArchiveUser:
         member_role, _ = Role.objects.get_or_create(name="member", is_default=True)
         vettor = Role.objects.create(name="vettor")
         member.roles.add(member_role, vettor)
-        assert archive_user(rf.get("/"), member) == [str(vettor.pk)]
+        assert archive_user(rf.get("/"), member)["removed_role_ids"] == [str(vettor.pk)]
         assert list(member.roles.all()) == [member_role]
 
     def test_releases_upcoming_rsvp_and_promotes_waitlist(self, rf, member, other_user):
@@ -108,7 +108,8 @@ class TestArchiveUser:
         solo = _event(member)
         EventRSVP.objects.create(event=solo, user=other_user, status=RSVPStatus.ATTENDING)
         with django_capture_on_commit_callbacks(execute=True):
-            archive_user(rf.get("/"), member)
+            released = archive_user(rf.get("/"), member)
+        assert released["drafted_event_ids"] == [str(solo.pk)]
         solo.refresh_from_db()
         assert solo.status == EventStatus.DRAFT
         assert not solo.co_hosts.exists()

@@ -6,12 +6,12 @@ from users._attendance_pause import release_held_events
 from users.models import MembershipStatus, User
 
 
-def archive_user(request, user: User) -> list[str]:
+def archive_user(request, user: User) -> dict:
     """Archive user and release what they hold on upcoming events, as a guidelines pause does.
 
     param(request): the triggering request, for promoted-member email logging
     param(user): the member to archive
-    return(list[str]): ids of the elevated roles that were stripped
+    return(dict): audit details of the stripped roles and released RSVPs, host spots and drafts
     """
     with transaction.atomic():
         close_tentative_requests(request, user)
@@ -30,4 +30,4 @@ def archive_user(request, user: User) -> list[str]:
                 ),
             ]
         )
-    return released["removed_role_ids"]
+    return released

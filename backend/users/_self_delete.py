@@ -27,7 +27,7 @@ def delete_me(request, payload: DeleteAccountIn, response: HttpResponse):
     if is_last_admin(user):
         raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
     with transaction.atomic():
-        removed_role_ids = archive_user(request, user)
+        released = archive_user(request, user)
         create_account_deleted_notifications(user)
     audit_log(
         logging.WARNING,
@@ -36,7 +36,7 @@ def delete_me(request, payload: DeleteAccountIn, response: HttpResponse):
         target=AuditTarget(
             type=AuditTargetType.USER,
             id=str(user.pk),
-            details={"full_name": user.full_name, "removed_role_ids": removed_role_ids},
+            details={"full_name": user.full_name, **released},
         ),
     )
     clear_refresh_cookie(response)
