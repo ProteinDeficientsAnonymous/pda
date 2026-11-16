@@ -22,6 +22,7 @@ vi.mock('@/api/planning', () => ({
   usePropose: () => ({ mutateAsync: propose, isPending: pending.propose }),
   useWithdraw: () => ({ mutateAsync: withdraw, isPending: pending.withdraw }),
   useConfirmPlanner: () => ({ mutateAsync: confirmPlanner, isPending: pending.confirm }),
+  useCommit: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useSendProposals: () => ({ mutateAsync: vi.fn(), isPending: pending.send }),
 }));
 

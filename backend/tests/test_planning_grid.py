@@ -30,8 +30,8 @@ def availability(year, user, slots=(), interest=BiannualInterest.YES, count=2):
 
 @pytest.mark.django_db
 class TestGrid:
-    def test_requires_manage(self, api_client, year):
-        assert get_grid(api_client, headers_for(VIEW)).status_code == 403
+    def test_requires_view(self, api_client, year):
+        assert get_grid(api_client, headers_for(VIEW)).status_code == 200
         assert get_grid(api_client, headers_for()).status_code == 403
 
     def test_unknown_year_404(self, api_client, db):
@@ -107,6 +107,17 @@ class TestGrid:
         )
         data = get_grid(api_client, headers_for(MANAGE)).json()
         assert [(a["id"], a["status"]) for a in data["assignments"]] == [(str(draft.id), "draft")]
+
+    def test_viewer_does_not_see_drafts(self, api_client, year):
+        planner = make_user(VIEW)
+        SlotAssignment.objects.create(
+            slot=year.slots.first(), user=planner, status=AssignmentStatus.DRAFT
+        )
+        sent = SlotAssignment.objects.create(
+            slot=year.slots.last(), user=planner, status=AssignmentStatus.PROPOSED
+        )
+        data = get_grid(api_client, headers_for(VIEW)).json()
+        assert [a["id"] for a in data["assignments"]] == [str(sent.id)]
 
     def test_query_count_does_not_grow_with_planners(
         self, api_client, year, django_assert_max_num_queries
