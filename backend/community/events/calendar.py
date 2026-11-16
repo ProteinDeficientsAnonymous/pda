@@ -24,6 +24,7 @@ from community.models import (
     EventStatus,
     PageVisibility,
     RSVPStatus,
+    parse_event_ref,
 )
 from community.shared import authenticated_user, gated, optional_jwt
 from community.validation import ValidationException
@@ -160,16 +161,16 @@ def calendar_feed(request, token: str = ""):
     return response
 
 
-# Intentionally public ("add to calendar"), but the optional JWT lets an
-# authenticated member receive full member-only data while anon callers get
-# only the public subset.
+# Intentionally public ("add to calendar"); a signed-in viewer gets the same
+# fields as on the event page, so limited users get the visitor view outside
+# official/club.
 @router.get("/events/{event_id}/ics/", auth=optional_jwt)
 def single_event_ics(request, event_id: str):
     try:
         event = (
             Event.objects.select_related("created_by")
             .prefetch_related("co_hosts", "invited_users")
-            .get(id=event_id)
+            .get(parse_event_ref(event_id).as_q())
         )
     except Event.DoesNotExist:
         return HttpResponse("Event not found.", status=404, content_type="text/plain")

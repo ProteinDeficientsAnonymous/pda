@@ -285,6 +285,16 @@ class TestLimitedEventIcs:
         assert "123 Sprout Lane" in body
         assert "WhatsApp: https://chat.whatsapp.com/abc" in body
 
+    def test_draft_host_keeps_full_details(self, api_client, tentative_user):
+        event = _event(
+            "Draft", EventType.COMMUNITY, PageVisibility.MEMBERS_ONLY, host=tentative_user
+        )
+        event.status = EventStatus.DRAFT
+        event.save(update_fields=["status"])
+        status, body = _ics(api_client, event, tentative_user)
+        assert status == 200
+        assert "123 Sprout Lane" in body
+
     def test_member_sees_members_only_community_details(self, api_client, test_user, host):
         event = _event("Private", EventType.COMMUNITY, PageVisibility.MEMBERS_ONLY, host=host)
         status, body = _ics(api_client, event, test_user)
