@@ -1,7 +1,7 @@
 import type { Assignment, PlannerColumn, PlanningSlot } from '@/api/planning';
 import { cn } from '@/utils/cn';
 
-import { type CellState, isWithdrawable } from './gridCell';
+import { cellActionLabel, type CellState, isWithdrawable } from './gridCell';
 
 const CELL_TEXT: Record<CellState, string> = {
   committed: 'committed',
@@ -26,12 +26,7 @@ export function GridCell({ slot, planner, state, assignment, disabled, onAct }: 
   const textId = `cell-${slot.id}-${planner.userId}`;
   const withdrawable = isWithdrawable(state);
   const blockedReason = !withdrawable && !planner.isPlanner ? 'no longer a planner' : null;
-  const label =
-    state === 'draft'
-      ? `remove draft ${planner.name} for ${slot.label}`
-      : withdrawable
-        ? `withdraw ${planner.name} from ${slot.label}`
-        : `propose ${planner.name} for ${slot.label}`;
+  const label = cellActionLabel(state, planner.name, slot.label);
   return (
     <td className="px-1 py-1">
       <button

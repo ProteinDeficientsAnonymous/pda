@@ -61,3 +61,19 @@ const WITHDRAWABLE: CellState[] = ['committed', 'proposed', 'no_answer', 'draft'
 export function isWithdrawable(state: CellState): boolean {
   return WITHDRAWABLE.includes(state);
 }
+
+export const STATE_TEXT: Record<CellState, string> = {
+  committed: 'in',
+  proposed: 'sent',
+  no_answer: 'no answer',
+  draft: 'not sent yet',
+  declined: 'declined',
+  available: 'free',
+  blank: 'not free',
+};
+
+export function cellActionLabel(state: CellState, plannerName: string, slotLabel: string): string {
+  if (state === 'draft') return `remove draft ${plannerName} for ${slotLabel}`;
+  if (isWithdrawable(state)) return `withdraw ${plannerName} from ${slotLabel}`;
+  return `propose ${plannerName} for ${slotLabel}`;
+}

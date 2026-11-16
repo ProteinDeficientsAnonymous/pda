@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 import type { Assignment, PlanningGrid } from '@/api/planning';
 import { makeSlot } from '@/test/fixtures';
 
-import { type CellState, cellState, findAssignment, isWithdrawable } from './gridCell';
+import {
+  cellActionLabel,
+  type CellState,
+  cellState,
+  findAssignment,
+  isWithdrawable,
+} from './gridCell';
 
 const slot = (id: string, month: number) => makeSlot({ id, label: id, month, order: month });
 
@@ -96,5 +102,15 @@ describe('isWithdrawable', () => {
     ['blank', false],
   ])('%s -> %s', (state, expected) => {
     expect(isWithdrawable(state)).toBe(expected);
+  });
+});
+
+describe('cellActionLabel', () => {
+  it.each<[CellState, string]>([
+    ['draft', 'remove draft ada for january'],
+    ['committed', 'withdraw ada from january'],
+    ['available', 'propose ada for january'],
+  ])('%s -> %s', (state, expected) => {
+    expect(cellActionLabel(state, 'ada', 'january')).toBe(expected);
   });
 });
