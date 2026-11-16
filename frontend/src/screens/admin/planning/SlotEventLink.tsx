@@ -35,7 +35,7 @@ export function SlotEventLink({ slot, year, canCreate, asButton = false }: Props
   if (!canCreate) return null;
   return (
     <Link
-      className={asButton ? buttonClass('secondary') : 'text-xs underline'}
+      className={asButton ? buttonClass() : 'text-xs underline'}
       to={`/events/add?planningSlot=${slot.id}&year=${String(year)}`}
     >
       create event
