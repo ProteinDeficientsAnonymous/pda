@@ -85,6 +85,9 @@ export function ScheduleGrid({
           <span style={at(2, 1)} className="text-muted self-center text-xs">
             month
           </span>
+          <span style={at(1, loadColumn)} className="text-muted self-center text-right text-[10px]">
+            load
+          </span>
           {columns.map(({ slot, header, track }) => {
             const open = slot.id === openSlotId;
             return (

@@ -27,11 +27,15 @@ const grid: PlanningGrid = {
 };
 
 let shown = grid;
+let status = { isPending: false, isError: false };
 
 const mutation = { mutateAsync: vi.fn(), isPending: false };
 
 vi.mock('@/api/planning', () => ({
-  usePlanningGrid: () => ({ isPending: false, isError: false, data: shown }),
+  usePlanningGrid: () => ({
+    ...status,
+    data: status.isPending || status.isError ? undefined : shown,
+  }),
   usePropose: () => mutation,
   useWithdraw: () => mutation,
   useSendProposals: () => mutation,
@@ -44,6 +48,7 @@ vi.mock('./PlanningGrid', () => ({
 describe('ScheduleTab', () => {
   beforeEach(() => {
     shown = grid;
+    status = { isPending: false, isError: false };
   });
 
   it('toggles the open month on repeat taps', async () => {
@@ -82,11 +87,28 @@ describe('ScheduleTab', () => {
     expect(screen.getByText('need a planner').parentElement).toHaveTextContent('1 need a planner');
   });
 
-  it('skips the grid without planners', () => {
+  it('says so when there are no planners yet', () => {
     shown = { ...grid, planners: [] };
     renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByText('no planners yet 🌿')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'january' })).not.toBeInTheDocument();
     expect(screen.queryByText('need a planner')).not.toBeInTheDocument();
-    expect(screen.getByText('old table for 2999')).toBeInTheDocument();
+    expect(screen.queryByText('old table for 2999')).not.toBeInTheDocument();
+  });
+
+  it('shows loading while the grid loads', () => {
+    status = { isPending: true, isError: false };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByText('loading…')).toBeInTheDocument();
+    expect(screen.queryByText('old table for 2999')).not.toBeInTheDocument();
+  });
+
+  it('shows an error when the grid fails to load', () => {
+    status = { isPending: false, isError: true };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "couldn't load the planning grid — try refreshing",
+    );
+    expect(screen.queryByText('old table for 2999')).not.toBeInTheDocument();
   });
 });

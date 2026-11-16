@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { usePlanningGrid } from '@/api/planning';
+import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { draftCount } from './gridCell';
 import { summaryCounts } from './gridSummary';
@@ -12,47 +13,47 @@ import { SummaryPills } from './SummaryPills';
 import { usePlanningActions } from './usePlanningActions';
 
 export function ScheduleTab({ year }: { year: number }) {
-  const { data: grid } = usePlanningGrid(year);
+  const { data: grid, isPending, isError } = usePlanningGrid(year);
   const [today] = useState(() => new Date());
   const [openSlotId, setOpenSlotId] = useState<string | null>(null);
   const { act, busy, send, confirmElement } = usePlanningActions(year);
 
+  if (isPending) return <ContentLoading />;
+  if (isError) return <ContentError message="couldn't load the planning grid — try refreshing" />;
+  if (grid.planners.length === 0) return <p className="text-muted text-sm">no planners yet 🌿</p>;
+
   return (
     <>
-      {grid ? <SendProposalsBar send={send} drafts={draftCount(grid)} /> : null}
-      {grid && grid.planners.length > 0 ? (
-        <>
-          <SummaryPills counts={summaryCounts(grid, today)} />
-          <div className="flex flex-col gap-4 md:flex-row md:items-start">
-            <div className="min-w-0 flex-1">
-              <ScheduleGrid
-                grid={grid}
-                today={today}
-                openSlotId={openSlotId}
-                onToggleSlot={(slotId) => {
-                  setOpenSlotId((open) => (open === slotId ? null : slotId));
-                }}
-                act={act}
-                busy={busy}
-              />
-            </div>
-            {openSlotId ? (
-              <MonthPanel
-                key={openSlotId}
-                grid={grid}
-                slotId={openSlotId}
-                year={year}
-                today={today}
-                act={act}
-                busy={busy}
-                onClose={() => {
-                  setOpenSlotId(null);
-                }}
-              />
-            ) : null}
-          </div>
-        </>
-      ) : null}
+      <SendProposalsBar send={send} drafts={draftCount(grid)} />
+      <SummaryPills counts={summaryCounts(grid, today)} />
+      <div className="flex flex-col gap-4 md:flex-row md:items-start">
+        <div className="min-w-0 flex-1">
+          <ScheduleGrid
+            grid={grid}
+            today={today}
+            openSlotId={openSlotId}
+            onToggleSlot={(slotId) => {
+              setOpenSlotId((open) => (open === slotId ? null : slotId));
+            }}
+            act={act}
+            busy={busy}
+          />
+        </div>
+        {openSlotId ? (
+          <MonthPanel
+            key={openSlotId}
+            grid={grid}
+            slotId={openSlotId}
+            year={year}
+            today={today}
+            act={act}
+            busy={busy}
+            onClose={() => {
+              setOpenSlotId(null);
+            }}
+          />
+        ) : null}
+      </div>
       {confirmElement}
       <PlanningGrid year={year} />
     </>

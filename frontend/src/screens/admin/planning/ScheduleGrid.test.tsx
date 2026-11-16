@@ -110,6 +110,11 @@ describe('ScheduleGrid', () => {
     expect(cells).toEqual(['ada', '0/2', 'bo', '2/1', 'cy', '–']);
   });
 
+  it('labels the load column', () => {
+    renderGrid();
+    expect(screen.getByText('load')).toBeInTheDocument();
+  });
+
   it('spells out the extra slot markers in the key', () => {
     renderGrid();
     expect(screen.getByText('★ spring biannual')).toBeInTheDocument();
