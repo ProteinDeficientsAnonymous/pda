@@ -16,6 +16,7 @@ from users.models import CalendarFeedScope
 from users.models import User as UserModel
 
 from community.events.helpers import can_see_invite_only
+from community.events.limited_access import event_viewer_for
 from community.events.read_visibility import enforce_event_read_visibility
 from community.models import (
     DEFAULT_EVENT_DURATION,
@@ -173,20 +174,19 @@ def single_event_ics(request, event_id: str):
     except Event.DoesNotExist:
         return HttpResponse("Event not found.", status=404, content_type="text/plain")
 
-    auth_user = authenticated_user(request.auth)
-    is_authed = auth_user is not None
+    viewer = event_viewer_for(authenticated_user(request.auth), event)
 
     # Apply the canonical event-read visibility rules so the ICS gate stays in
     # lockstep with the main get_event endpoint. This covers deleted (404),
     # draft (403), members-only-non-official-for-anon (404), and invite-only
     # (403) — not just the invite-only tier.
     try:
-        enforce_event_read_visibility(event, auth_user)
+        enforce_event_read_visibility(event, viewer)
     except ValidationException as exc:
         return HttpResponse("Event not found.", status=exc.status_code, content_type="text/plain")
 
     cal = _new_calendar()
-    cal.add_component(_build_vevent(event, request, is_authed=is_authed))
+    cal.add_component(_build_vevent(event, request, is_authed=viewer is not None))
     cal.add_missing_timezones()
 
     response = HttpResponse(cal.to_ical(), content_type="text/calendar")
