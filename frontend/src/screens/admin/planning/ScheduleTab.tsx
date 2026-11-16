@@ -4,6 +4,7 @@ import { usePlanningGrid } from '@/api/planning';
 
 import { draftCount } from './gridCell';
 import { summaryCounts } from './gridSummary';
+import { MonthPanel } from './MonthPanel';
 import { PlanningGrid } from './PlanningGrid';
 import { ScheduleGrid } from './ScheduleGrid';
 import { SendProposalsBar } from './SendProposalsBar';
@@ -22,16 +23,31 @@ export function ScheduleTab({ year }: { year: number }) {
       {grid && grid.planners.length > 0 ? (
         <>
           <SummaryPills counts={summaryCounts(grid, today)} />
-          <ScheduleGrid
-            grid={grid}
-            today={today}
-            openSlotId={openSlotId}
-            onToggleSlot={(slotId) => {
-              setOpenSlotId((open) => (open === slotId ? null : slotId));
-            }}
-            act={act}
-            busy={busy}
-          />
+          <div className="flex flex-col gap-4 md:flex-row md:items-start">
+            <div className="min-w-0 flex-1">
+              <ScheduleGrid
+                grid={grid}
+                today={today}
+                openSlotId={openSlotId}
+                onToggleSlot={(slotId) => {
+                  setOpenSlotId((open) => (open === slotId ? null : slotId));
+                }}
+                act={act}
+                busy={busy}
+              />
+            </div>
+            {openSlotId ? (
+              <MonthPanel
+                grid={grid}
+                slotId={openSlotId}
+                year={year}
+                today={today}
+                onClose={() => {
+                  setOpenSlotId(null);
+                }}
+              />
+            ) : null}
+          </div>
         </>
       ) : null}
       {confirmElement}

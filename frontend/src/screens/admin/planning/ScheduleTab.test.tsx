@@ -55,6 +55,15 @@ describe('ScheduleTab', () => {
     expect(january).toHaveAttribute('aria-pressed', 'false');
   });
 
+  it('opens the month panel and closes it from the panel', async () => {
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.queryByRole('heading', { name: 'january' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'january' }));
+    expect(screen.getByRole('heading', { name: 'january' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'close january' }));
+    expect(screen.queryByRole('heading', { name: 'january' })).not.toBeInTheDocument();
+  });
+
   it('keeps the old table below the new grid', () => {
     renderWithProviders(<ScheduleTab year={2999} />);
     const january = screen.getByRole('button', { name: 'january' });
