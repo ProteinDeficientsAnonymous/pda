@@ -57,7 +57,7 @@ function MemberDetailView({ member }: { member: Member }) {
       title: 'archive member',
       message: tentative
         ? `archive ${name}? this closes their tentative join request, so checking in won't approve them. they can apply to join again later.`
-        : `archive ${name}? they'll lose access immediately — you can restore them later by approving a new join request.`,
+        : `archive ${name}? they'll lose access immediately, and events they host alone go back to draft with their guests told. you can restore them later by approving a new join request.`,
       confirmLabel: 'archive',
       destructive: true,
     });
