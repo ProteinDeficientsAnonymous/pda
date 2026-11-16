@@ -47,6 +47,7 @@ export interface MySlot {
   year: number;
   slot: PlanningSlot;
   teammates: { name: string; status: AssignmentStatus }[];
+  checklistDoneIds: string[];
 }
 
 export interface PlannerColumn {
@@ -93,6 +94,7 @@ function mapMySlot(w: WireMySlot): MySlot {
     year: w.year,
     slot: mapSlot(w.slot),
     teammates: w.teammates,
+    checklistDoneIds: w.checklist_done_ids,
   };
 }
 

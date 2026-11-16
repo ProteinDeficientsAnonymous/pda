@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { SlotChecklist } from './SlotChecklist';
 import { SlotEventLink } from './SlotEventLink';
 import { toastOnError } from './toastOnError';
 
@@ -39,6 +40,9 @@ function SlotRow({
         />
         {children}
       </div>
+      {row.status === 'committed' ? (
+        <SlotChecklist slotId={slot.id} label={slot.label} doneIds={row.checklistDoneIds} />
+      ) : null}
     </li>
   );
 }
