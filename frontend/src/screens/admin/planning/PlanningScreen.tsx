@@ -51,7 +51,7 @@ export default function PlanningScreen() {
   const mySlots = useMySlots();
   const [params, setParams] = useSearchParams();
   const [picked, setPicked] = useState<number | null>(null);
-  const [nextYear] = useState(() => new Date().getFullYear() + 1);
+  const [thisYear] = useState(() => new Date().getFullYear());
   const canManage = useHasPermission(Permission.ManageEventPlanning);
 
   const rawTab = params.get('tab');
@@ -83,14 +83,14 @@ export default function PlanningScreen() {
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load planning years — try refreshing" />;
 
-  const canStartNext = canManage && !years.some((y) => y.year === nextYear);
+  const nextYear = years.length > 0 ? defaultYear(years) + 1 : thisYear + 1;
 
   if (years.length === 0) {
     return (
       <ContentContainer>
         <h1 className="mb-6 text-2xl font-medium tracking-tight">event planning</h1>
         <p className="text-muted mb-4 text-sm">no planning year yet 🌿</p>
-        {canStartNext ? <StartYearButton year={nextYear} onStarted={setPicked} /> : null}
+        {canManage ? <StartYearButton year={nextYear} onStarted={setPicked} /> : null}
       </ContentContainer>
     );
   }
@@ -127,11 +127,9 @@ export default function PlanningScreen() {
       {defaultSettled && tab === 'slots' ? (
         <>
           <SlotEditor year={year} />
-          {canStartNext ? (
-            <div className="mt-6">
-              <StartYearButton year={nextYear} onStarted={setPicked} />
-            </div>
-          ) : null}
+          <div className="mt-6">
+            <StartYearButton year={nextYear} onStarted={setPicked} />
+          </div>
         </>
       ) : null}
     </ContentContainer>

@@ -72,7 +72,7 @@ Creating a year pre-fills 12 monthly slots and the two biannuals (june anniversa
   - **schedule**: the send proposals bar at the top (shown while drafts wait, so it's visible on a phone without scrolling past the grid); summary pills below it (slots needing a planner, not counting months that have ended; proposals waiting; planners with no form); the grid; the month panel.
   - **The grid** is turned on its side so it fits a phone: planners down (no-form planners below a divider), slots across at fixed widths (monthlies in month order with a gap per quarter, then extra slots with ★ / ◆ markers explained in a key), plus a "month" summary row, a monthlies column (taken/offered) and a biannual column (yes/maybe/no). Each cell is a 15px tile in the app's greens where shape carries the state: in ✓ square, sent ? circle, no answer ! circle, not sent yet (draft) dashed square, declined ✕, free dotted pale square, blank. Tapping a cell drafts, removes a draft, or confirms a withdraw, as in Proposing.
   - **The month panel** opens when a month letter is tapped (under the grid): the slot's status and event link, who's free with their load and a propose button, who's been asked in what state (decliners included), and "add someone" for everyone else. It's the large-button way to do everything the small cells do.
-  - **slots**: one compact row per slot with "edit" opening the label / month / kind / delete controls; add a slot; start next year.
+  - **slots**: one compact row per slot with "edit" opening the label / month / kind / delete controls; add a slot; start the year after the latest one.
 
 Grid states by priority: committed > proposed (no answer once the month starts) > draft > declined > available > blank. Never colour alone; no red/green.
 
