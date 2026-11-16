@@ -8,6 +8,7 @@ from ninja import Router
 
 from community.models import AssignmentStatus, SlotAssignment
 from community.planning._access import require_view
+from community.planning._audit import audit_transition
 from community.planning._notify import notify_coordinators
 from community.planning._shared import (
     assignment_out,
@@ -36,8 +37,10 @@ def _respond(
         assignment = get_assignment_or_404(assignment_id, request.auth, lock=True)
         if assignment.status not in allowed:
             raise_validation(Code.Planning.NOT_PENDING, status_code=400)
-        was_committed = assignment.status == AssignmentStatus.COMMITTED
+        before = assignment.status
+        was_committed = before == AssignmentStatus.COMMITTED
         apply(assignment)
+        audit_transition(request, assignment.status, assignment, before)
     committed = assignment.status == AssignmentStatus.COMMITTED
     notify_coordinators(assignment)
     event = assignment.slot.live_event
