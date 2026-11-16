@@ -25,6 +25,16 @@ let status = { isPending: false, isError: false };
 
 const mutation = { mutateAsync: vi.fn(), isPending: false };
 const commitMutation = { mutateAsync: vi.fn(), isPending: false };
+const toastMock = vi.fn();
+
+vi.mock('sonner', () => ({
+  toast: Object.assign(
+    (...args: unknown[]) => {
+      toastMock(...args);
+    },
+    { error: vi.fn() },
+  ),
+}));
 
 vi.mock('@/api/planning', () => ({
   usePlanningGrid: () => ({
@@ -45,14 +55,16 @@ describe('ScheduleTab', () => {
     setAuthed(makeUserWithPermissions([Permission.ManageEventPlanning]));
     mutation.mutateAsync.mockClear();
     commitMutation.mutateAsync.mockClear();
+    toastMock.mockClear();
   });
 
   it('shows planners who cannot manage a read-only grid and panel', async () => {
     setAuthed(makeUserWithPermissions([Permission.ViewEventPlanning]));
     shown = { ...grid, assignments: [makeAssignment({ status: 'committed' })] };
     renderWithProviders(<ScheduleTab year={2999} />);
-    expect(screen.getByText('ada, january: in')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /ada/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'ada, january' }));
+    expect(toastMock).toHaveBeenCalledWith('you can only change your own row', undefined);
+    expect(mutation.mutateAsync).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: 'january' }));
     expect(screen.getByRole('heading', { name: 'january' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /withdraw|add someone/ })).not.toBeInTheDocument();
@@ -68,18 +80,25 @@ describe('ScheduleTab', () => {
     expect(mutation.mutateAsync).not.toHaveBeenCalled();
   });
 
-  it('keeps a planner who cannot manage from putting themselves in unproposed', () => {
+  it('explains why an unproposed own tile does nothing', async () => {
     setAuthed(makeUserWithPermissions([Permission.ViewEventPlanning], { id: 'u1' }));
     renderWithProviders(<ScheduleTab year={2999} />);
-    expect(screen.getByText('ada, january: free')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /put yourself in/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'ada, january' }));
+    expect(toastMock).toHaveBeenCalledWith(
+      "you can only put yourself in for months you've been proposed for",
+      undefined,
+    );
+    expect(commitMutation.mutateAsync).not.toHaveBeenCalled();
   });
 
-  it('keeps a planner who cannot manage from withdrawing their own ✓', () => {
+  it('points a planner with no availability to the availability tab', async () => {
     setAuthed(makeUserWithPermissions([Permission.ViewEventPlanning], { id: 'u1' }));
-    shown = { ...grid, assignments: [makeAssignment({ status: 'committed' })] };
+    shown = { ...grid, planners: [makePlanner({ submitted: false, availableSlotIds: [] })] };
     renderWithProviders(<ScheduleTab year={2999} />);
-    expect(screen.queryByRole('button', { name: /ada/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'ada, january' }));
+    expect(toastMock).toHaveBeenCalledWith('add your availability so you can be proposed months', {
+      action: { label: 'my availability', onClick: expect.any(Function) },
+    });
   });
 
   it('toggles the open month on repeat taps', async () => {

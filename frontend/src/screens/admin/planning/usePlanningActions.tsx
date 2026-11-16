@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import {
   type Assignment,
@@ -14,6 +16,7 @@ import { useAuthStore } from '@/auth/store';
 import { useConfirm } from '@/components/ui/useConfirm';
 
 import { cellActionLabel, type CellState, isWithdrawable } from './gridCell';
+import { readOnlyTapNotice } from './readOnlyTap';
 import { toastOnError } from './toastOnError';
 
 type Act = (
@@ -26,7 +29,7 @@ type Act = (
 interface PlanningActions {
   act: Act;
   tap: Act;
-  commitOwn: Act;
+  readOnlyTap: Act;
   busy: boolean;
   send: ReturnType<typeof useSendProposals>;
   confirmElement: ReactNode;
@@ -38,6 +41,7 @@ export function usePlanningActions(year: number): PlanningActions {
   const confirmPlanner = useConfirmPlanner();
   const commit = useCommit();
   const meId = useAuthStore((s) => s.user?.id);
+  const [, setParams] = useSearchParams();
   const send = useSendProposals(year);
   const { confirm, element } = useConfirm();
 
@@ -98,7 +102,29 @@ export function usePlanningActions(year: number): PlanningActions {
     );
   }
 
-  async function commitOwn(...[, , , assignment]: Parameters<Act>) {
+  function openAvailability() {
+    setParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        p.set('tab', 'availability');
+        return p;
+      },
+      { replace: true },
+    );
+  }
+
+  async function readOnlyTap(...[slot, planner, state, assignment]: Parameters<Act>) {
+    const self = planner.userId === meId;
+    const notice = readOnlyTapNotice(state, self, planner.submitted, slot.label);
+    if (notice) {
+      toast(
+        notice.message,
+        notice.toAvailability
+          ? { action: { label: 'my availability', onClick: openAvailability } }
+          : undefined,
+      );
+      return;
+    }
     if (!assignment) return;
     await toastOnError(commit.mutateAsync(assignment.id), "couldn't put you in — try again");
   }
@@ -106,7 +132,7 @@ export function usePlanningActions(year: number): PlanningActions {
   return {
     act,
     tap,
-    commitOwn,
+    readOnlyTap,
     busy:
       propose.isPending ||
       withdraw.isPending ||

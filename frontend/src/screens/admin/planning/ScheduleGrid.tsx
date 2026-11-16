@@ -61,7 +61,7 @@ export function ScheduleGrid({
         const state = cellState(slot.id, planner.userId, grid);
         const assignment = findAssignment(grid, slot.id, planner.userId);
         const self = planner.userId === meId;
-        const canAct = !readOnly || (self && state === 'proposed');
+        const viewOnly = readOnly && !(self && state === 'proposed');
         return (
           <div key={slot.id} style={at(row, track)}>
             <GridTile
@@ -70,8 +70,9 @@ export function ScheduleGrid({
               slotLabel={slot.label}
               isPlanner={planner.isPlanner}
               self={self}
+              actionLabel={viewOnly ? `${planner.name}, ${slot.label}` : undefined}
               disabled={busy}
-              onAct={canAct ? () => void act(slot, planner, state, assignment) : undefined}
+              onAct={() => void act(slot, planner, state, assignment)}
             />
           </div>
         );
