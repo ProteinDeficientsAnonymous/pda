@@ -38,8 +38,8 @@ class TestPropose:
         assignment = SlotAssignment.objects.get(slot=slot, user=planner)
         assert assignment.proposed_by == coordinator
 
-    def test_manager_only_user_can_be_proposed(self, api_client, slot, coordinator):
-        assert propose(api_client, slot, make_user(MANAGE), coordinator).status_code == 201
+    def test_manager_without_view_cannot_be_proposed(self, api_client, slot, coordinator):
+        assert propose(api_client, slot, make_user(MANAGE), coordinator).status_code == 400
 
     def test_unauthenticated(self, api_client, slot):
         url = f"/api/community/planning/slots/{slot.id}/assignments/"
