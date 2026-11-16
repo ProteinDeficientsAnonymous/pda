@@ -71,6 +71,7 @@ function Section({
             <Button
               variant="secondary"
               className="h-8 px-3"
+              aria-label={`${row.text} ${row.planner.name}`}
               disabled={busy || row.disabled}
               onClick={() => {
                 onAct(row);

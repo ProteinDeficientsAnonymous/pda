@@ -79,7 +79,7 @@ describe('MonthPanel', () => {
     const grid = makeGrid([]);
     const { act } = renderPanel(grid);
     expect(within(row('ada')).getByText('0 of 2 monthlies taken')).toBeInTheDocument();
-    await userEvent.click(within(row('ada')).getByRole('button', { name: 'propose' }));
+    await userEvent.click(within(row('ada')).getByRole('button', { name: 'propose ada' }));
     expect(act).toHaveBeenCalledWith(slot, grid.planners[0], 'available', undefined);
   });
 
@@ -93,16 +93,16 @@ describe('MonthPanel', () => {
       ]),
     );
     expect(within(row('ada')).getByText('not sent yet')).toBeInTheDocument();
-    expect(within(row('ada')).getByRole('button', { name: 'undo' })).toBeInTheDocument();
-    expect(within(row('bo')).getByRole('button', { name: 'propose again' })).toBeInTheDocument();
-    expect(within(row('cy')).getByRole('button', { name: 'withdraw' })).toBeInTheDocument();
+    expect(within(row('ada')).getByRole('button', { name: 'undo ada' })).toBeInTheDocument();
+    expect(within(row('bo')).getByRole('button', { name: 'propose again bo' })).toBeInTheDocument();
+    expect(within(row('cy')).getByRole('button', { name: 'withdraw cy' })).toBeInTheDocument();
     expect(within(row('dee')).getByText('in')).toBeInTheDocument();
   });
 
   it('passes the assignment when withdrawing', async () => {
     const grid = makeGrid([on('ada', 'committed')]);
     const { act } = renderPanel(grid);
-    await userEvent.click(within(row('ada')).getByRole('button', { name: 'withdraw' }));
+    await userEvent.click(within(row('ada')).getByRole('button', { name: 'withdraw ada' }));
     expect(act).toHaveBeenCalledWith(slot, grid.planners[0], 'committed', grid.assignments[0]);
   });
 
@@ -136,6 +136,6 @@ describe('MonthPanel', () => {
 
   it('will not propose someone who is not a planner', () => {
     renderPanel(makeGrid([], { planners: [planner('ada', { isPlanner: false })] }));
-    expect(within(row('ada')).getByRole('button', { name: 'propose' })).toBeDisabled();
+    expect(within(row('ada')).getByRole('button', { name: 'propose ada' })).toBeDisabled();
   });
 });
