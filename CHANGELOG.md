@@ -1,3 +1,10 @@
+## [0.250.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.250.0...v0.250.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2422 - draft solo-hosted events and rescind co-host invites on archive ([#2537](https://github.com/ProteinDeficientsAnonymous/pda/issues/2537)) ([e066c81](https://github.com/ProteinDeficientsAnonymous/pda/commit/e066c8161509d412bb104307b4da92d36802af41))
+
 # [0.250.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.249.0...v0.250.0) (2026-11-16)
 
 
