@@ -108,6 +108,18 @@ class TestProposalReminders:
         sent_to = {c.kwargs["to"] for c in fake_email_sender.send.call_args_list}
         assert sent_to == {"planner@example.com", "other@example.com"}
 
+    def test_failed_send_restores_each_slots_earlier_stamp(self, proposed, slot, fake_email_sender):
+        first_run = PROPOSED_AT + 3 * DAY
+        send_proposal_reminders(first_run)
+        later = slot.planning_year.slots.get(label="april")
+        newer = SlotAssignment.objects.create(slot=later, user=proposed.user, proposed_at=first_run)
+        fake_email_sender.send.return_value = SendResult(success=False, error="nope")
+        assert send_proposal_reminders(first_run + 3 * DAY) == 0
+        proposed.refresh_from_db()
+        newer.refresh_from_db()
+        assert (proposed.reminder_count, proposed.last_reminded_at) == (1, first_run)
+        assert (newer.reminder_count, newer.last_reminded_at) == (0, None)
+
 
 @pytest.fixture
 def committed(slot):

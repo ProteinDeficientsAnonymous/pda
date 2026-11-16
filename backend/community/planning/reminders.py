@@ -72,7 +72,7 @@ def _claim_planner(now: datetime, user_id: UUID) -> list[SlotAssignment]:
         )
         if not _due_reminders(now).filter(user_id=user_id).exists():
             return []
-        _pending_reminders(now, user_id).update(
+        SlotAssignment.objects.filter(pk__in=[a.pk for a in pending]).update(
             last_reminded_at=now, reminder_count=F("reminder_count") + 1
         )
         return pending
@@ -94,10 +94,7 @@ def send_proposal_reminders(now: datetime) -> int:
         if email_planner(claimed[0].user, slots, PlanningEmailVariant.REMINDER):
             sent += 1
             continue
-        for a in claimed:
-            SlotAssignment.objects.filter(pk=a.pk).update(
-                last_reminded_at=a.last_reminded_at, reminder_count=a.reminder_count
-            )
+        SlotAssignment.objects.bulk_update(claimed, ["last_reminded_at", "reminder_count"])
     return sent
 
 
