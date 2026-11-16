@@ -1,3 +1,10 @@
+# [0.248.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.247.0...v0.248.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - 🥳 june and 🎄 december markers on the planning grid ([#2542](https://github.com/ProteinDeficientsAnonymous/pda/issues/2542)) ([bb34369](https://github.com/ProteinDeficientsAnonymous/pda/commit/bb34369fe50311c1b145278a4b1988af5f38780f))
+
 # [0.247.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.246.1...v0.247.0) (2026-11-16)
 
 
