@@ -41,8 +41,8 @@ vi.mock('./AvailabilityForm', () => ({
   AvailabilityForm: ({ year }: { year: number }) => <div>form for {year}</div>,
 }));
 
-vi.mock('./PlanningGrid', () => ({
-  PlanningGrid: ({ year }: { year: number }) => <div>grid for {year}</div>,
+vi.mock('./ScheduleTab', () => ({
+  ScheduleTab: ({ year }: { year: number }) => <div>grid for {year}</div>,
 }));
 
 vi.mock('./SlotEditor', () => ({

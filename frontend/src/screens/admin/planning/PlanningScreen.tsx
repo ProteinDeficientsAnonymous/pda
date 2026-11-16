@@ -11,8 +11,8 @@ import { ContentContainer, ContentError, ContentLoading } from '@/screens/public
 
 import { AvailabilityForm } from './AvailabilityForm';
 import { MySlots } from './MySlots';
-import { PlanningGrid } from './PlanningGrid';
 import { type PlanningTab, resolveTab, TAB_OPTIONS } from './planningTab';
+import { ScheduleTab } from './ScheduleTab';
 import { SlotEditor } from './SlotEditor';
 import { toastOnError } from './toastOnError';
 
@@ -121,7 +121,7 @@ export default function PlanningScreen() {
         />
       ) : null}
       {!defaultSettled ? <ContentLoading /> : null}
-      {defaultSettled && tab === 'schedule' ? <PlanningGrid year={year} /> : null}
+      {defaultSettled && tab === 'schedule' ? <ScheduleTab year={year} /> : null}
       {defaultSettled && tab === 'mine' ? <MineTab year={year} /> : null}
       {defaultSettled && tab === 'slots' ? (
         <>
