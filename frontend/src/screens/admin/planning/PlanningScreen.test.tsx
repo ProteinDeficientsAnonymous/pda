@@ -150,6 +150,21 @@ describe('PlanningScreen', () => {
       expect(screen.queryByText('editor for 2027')).not.toBeInTheDocument();
     });
 
+    it('settles a bogus ?tab= on the default and keeps it after the slot is answered', () => {
+      manage();
+      mySlots = { isPending: true };
+      const { rerender } = renderWithProviders(<PlanningScreen />, { route: '/?tab=bogus' });
+      expect(screen.queryByText('grid for 2027')).not.toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: 'schedule' })).not.toBeChecked();
+      mySlots = { data: [{ status: 'proposed' }] };
+      rerender(<PlanningScreen />);
+      expect(screen.getByRole('radio', { name: 'mine' })).toBeChecked();
+      mySlots = { data: [{ status: 'committed' }] };
+      rerender(<PlanningScreen />);
+      expect(screen.getByRole('radio', { name: 'mine' })).toBeChecked();
+      expect(screen.queryByText('grid for 2027')).not.toBeInTheDocument();
+    });
+
     it('does not wait for my slots when the tab is explicit', () => {
       manage();
       mySlots = { isPending: true };
