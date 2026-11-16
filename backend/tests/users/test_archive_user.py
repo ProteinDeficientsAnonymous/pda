@@ -14,7 +14,7 @@ from community.models import (
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from users._archive_user import archive_user
-from users.models import User
+from users.models import MembershipStatus, User
 from users.roles import Role
 
 
@@ -43,6 +43,12 @@ class TestArchiveUser:
         member.roles.add(member_role, vettor)
         assert archive_user(rf.get("/"), member)["removed_role_ids"] == [str(vettor.pk)]
         assert list(member.roles.all()) == [member_role]
+
+    def test_archiving_twice_keeps_the_prior_status(self, rf, member):
+        archive_user(rf.get("/"), member)
+        assert archive_user(rf.get("/"), member) == {}
+        member.refresh_from_db()
+        assert member.status_before_archive == MembershipStatus.ACTIVE_MEMBER
 
     def test_releases_upcoming_rsvp_and_promotes_waitlist(self, rf, member, other_user):
         event = _event(other_user, max_attendees=1)
