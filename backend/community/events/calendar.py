@@ -16,6 +16,7 @@ from users.models import CalendarFeedScope
 from users.models import User as UserModel
 
 from community.events.helpers import can_see_invite_only
+from community.events.limited_access import event_viewer_for, is_limited, limited_access_event_q
 from community.events.read_visibility import enforce_event_read_visibility
 from community.models import (
     DEFAULT_EVENT_DURATION,
@@ -72,7 +73,7 @@ def generate_calendar_token(request):
 
 
 def _feed_events(user: UserModel):
-    """Events for a member's subscription feed, after scope and type filters.
+    """Events for a subscription feed, after scope, type and limited-access filters.
 
     user(UserModel): the feed's subscriber
     return(QuerySet): active, non-TBD events from the last 30 days onward
@@ -117,6 +118,9 @@ def _feed_events(user: UserModel):
     if user.calendar_feed_scope == CalendarFeedScope.MINE:
         events = events.filter(mine).distinct()
 
+    if is_limited(user):
+        events = events.filter(limited_access_event_q())
+
     return events
 
 
@@ -149,9 +153,8 @@ def calendar_feed(request, token: str = ""):
             invited_user_ids = {str(u.id) for u in event.invited_users.all()}
             if not can_see_invite_only(user, co_host_ids, invited_user_ids, event.created_by_id):
                 continue
-        # The feed is authenticated via the per-user calendar token, so the
-        # subscriber is a known member and gets full member-only data.
-        cal.add_component(_build_vevent(event, request, is_authed=True))
+        is_authed = event_viewer_for(user, event) is not None
+        cal.add_component(_build_vevent(event, request, is_authed=is_authed))
     cal.add_missing_timezones()
 
     response = HttpResponse(cal.to_ical(), content_type="text/calendar")
