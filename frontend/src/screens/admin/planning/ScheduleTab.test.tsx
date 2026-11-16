@@ -58,12 +58,12 @@ describe('ScheduleTab', () => {
       slots: [...grid.slots, makeSlot({ id: 's2', label: 'february', month: 2, order: 2 })],
     };
     renderWithProviders(<ScheduleTab year={2999} />);
-    await userEvent.click(screen.getByRole('button', { name: 'february' }));
-    await userEvent.click(screen.getByRole('button', { name: 'add someone' }));
-    expect(screen.getByRole('button', { name: 'hide' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'january' }));
+    await userEvent.click(screen.getByRole('button', { name: /^add someone/ }));
+    expect(screen.getByRole('button', { name: 'hide' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'february' }));
-    expect(screen.getByRole('button', { name: 'add someone' })).toHaveAttribute(
+    await userEvent.click(screen.getByRole('button', { name: 'january' }));
+    expect(screen.getByRole('button', { name: /^add someone/ })).toHaveAttribute(
       'aria-expanded',
       'false',
     );
