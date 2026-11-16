@@ -68,7 +68,7 @@ def pause_impact(user: User, pause: MembershipStatus) -> PauseImpact:
     """Sort the user's upcoming RSVPs and host spots into what a pause keeps, removes or drafts.
 
     param(user): the member who would be paused
-    param(pause): ATTENDANCE_PAUSED keeps official/club RSVPs; GUIDELINES_PAUSED releases them too
+    param(pause): ATTENDANCE_PAUSED keeps official/club RSVPs; GUIDELINES_PAUSED and ARCHIVED release them too
     return(PauseImpact): events per bucket, soonest first; empty for an archived user
     """
     impact = PauseImpact()
@@ -153,6 +153,7 @@ def release_held_events(request, user: User, status: MembershipStatus) -> tuple[
         "removed_rsvp_event_ids": [str(e.pk) for e in impact.removed_rsvps],
         "removed_hosting_event_ids": [str(e.pk) for e in impact.removed_hosting],
         "drafted_event_ids": [str(e.pk) for e in impact.drafted_events],
+        "rescinded_invite_event_ids": [str(e.pk) for e in impact.rescinded_invites],
     }
     return impact, details
 

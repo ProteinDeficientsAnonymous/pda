@@ -125,7 +125,8 @@ class TestArchiveUser:
     def test_rescinds_pending_cohost_invites(self, rf, member, other_user):
         upcoming = EventCoHostInvite.objects.create(event=_event(other_user), user=member)
         past = EventCoHostInvite.objects.create(event=_event(other_user, days=-3), user=member)
-        archive_user(rf.get("/"), member)
+        released = archive_user(rf.get("/"), member)
+        assert released["rescinded_invite_event_ids"] == [str(upcoming.event_id)]
         upcoming.refresh_from_db()
         past.refresh_from_db()
         assert upcoming.status == CoHostInviteStatus.RESCINDED
