@@ -1,3 +1,16 @@
+# [0.245.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.244.1...v0.245.0) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - only people granted planning view are planners ([#2523](https://github.com/ProteinDeficientsAnonymous/pda/issues/2523)) ([02f3541](https://github.com/ProteinDeficientsAnonymous/pda/commit/02f3541bfcddb3de5aa4ce99f7100d2686ff37e0))
+
+
+### Features
+
+* 2121 - show monthlies and biannual sign-up on the planning grid ([#2524](https://github.com/ProteinDeficientsAnonymous/pda/issues/2524)) ([725e219](https://github.com/ProteinDeficientsAnonymous/pda/commit/725e219ed8a41573b800adad8106b58ec7498f30))
+* **reserve:** group reserve entries by kind ([#2521](https://github.com/ProteinDeficientsAnonymous/pda/issues/2521)) ([eb3d74f](https://github.com/ProteinDeficientsAnonymous/pda/commit/eb3d74fde783b0d72e96cf83f9cfd756cb3e26a3))
+
 ## [0.244.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.244.0...v0.244.1) (2026-11-16)
 
 
