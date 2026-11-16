@@ -26,7 +26,7 @@ const grid: PlanningGrid = {
   assignments: [],
 };
 
-let shown = grid;
+let shown: PlanningGrid | undefined = grid;
 
 const mutation = { mutateAsync: vi.fn(), isPending: false };
 
@@ -71,6 +71,14 @@ describe('ScheduleTab', () => {
   it('shows the summary pills with the grid', () => {
     renderWithProviders(<ScheduleTab year={2999} />);
     expect(screen.getByText('need a planner').parentElement).toHaveTextContent('1 need a planner');
+  });
+
+  it('renders only the old table while the grid loads', () => {
+    shown = undefined;
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.queryByText(/not sent yet/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'january' })).not.toBeInTheDocument();
+    expect(screen.getByText('old table for 2999')).toBeInTheDocument();
   });
 
   it('skips the grid without planners', () => {
