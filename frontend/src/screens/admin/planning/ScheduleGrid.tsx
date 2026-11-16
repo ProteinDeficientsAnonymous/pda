@@ -26,8 +26,8 @@ const ROW = '22px';
 
 function rowTemplate(submitted: number, notSubmitted: number): string {
   const rows = [ROW, ROW, '1px', ...Array<string>(submitted).fill(ROW)];
-  if (notSubmitted > 0) rows.push('1px', ...Array<string>(notSubmitted).fill(ROW));
-  return rows.join(' ');
+  if (submitted > 0 && notSubmitted > 0) rows.push('1px');
+  return [...rows, ...Array<string>(notSubmitted).fill(ROW)].join(' ');
 }
 
 function Divider({ row }: { row: number }) {
@@ -46,7 +46,8 @@ export function ScheduleGrid({
   const loadColumn = loadTrack(columns);
   const submitted = grid.planners.filter((p) => p.submitted);
   const notSubmitted = grid.planners.filter((p) => !p.submitted);
-  const laterStart = 5 + submitted.length;
+  const split = submitted.length > 0 && notSubmitted.length > 0;
+  const laterStart = 4 + submitted.length + (split ? 1 : 0);
 
   const plannerRow = (planner: PlannerColumn, row: number) => (
     <Fragment key={planner.userId}>
@@ -73,7 +74,7 @@ export function ScheduleGrid({
 
   return (
     <div>
-      <div className="relative overflow-x-auto">
+      <div className="relative overflow-x-auto py-0.5">
         <div
           className="mx-auto grid w-max"
           style={{
@@ -91,7 +92,7 @@ export function ScheduleGrid({
                 <button
                   type="button"
                   style={at(1, track)}
-                  aria-label={`open ${slot.label}`}
+                  aria-label={slot.label}
                   aria-pressed={open}
                   onClick={() => {
                     onToggleSlot(slot.id);
@@ -115,7 +116,7 @@ export function ScheduleGrid({
           })}
           <Divider row={3} />
           {submitted.map((p, i) => plannerRow(p, 4 + i))}
-          {notSubmitted.length > 0 ? <Divider row={laterStart - 1} /> : null}
+          {split ? <Divider row={laterStart - 1} /> : null}
           {notSubmitted.map((p, i) => plannerRow(p, laterStart + i))}
         </div>
       </div>

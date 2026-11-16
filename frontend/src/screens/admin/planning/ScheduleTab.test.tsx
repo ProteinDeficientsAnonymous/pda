@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PlanningGrid } from '@/api/planning';
 import { makeSlot } from '@/test/fixtures';
@@ -26,10 +26,12 @@ const grid: PlanningGrid = {
   assignments: [],
 };
 
+let shown = grid;
+
 const mutation = { mutateAsync: vi.fn(), isPending: false };
 
 vi.mock('@/api/planning', () => ({
-  usePlanningGrid: () => ({ isPending: false, isError: false, data: grid }),
+  usePlanningGrid: () => ({ isPending: false, isError: false, data: shown }),
   usePropose: () => mutation,
   useWithdraw: () => mutation,
   useSendProposals: () => mutation,
@@ -40,9 +42,13 @@ vi.mock('./PlanningGrid', () => ({
 }));
 
 describe('ScheduleTab', () => {
+  beforeEach(() => {
+    shown = grid;
+  });
+
   it('toggles the open month on repeat taps', async () => {
     renderWithProviders(<ScheduleTab year={2999} />);
-    const january = screen.getByRole('button', { name: 'open january' });
+    const january = screen.getByRole('button', { name: 'january' });
     await userEvent.click(january);
     expect(january).toHaveAttribute('aria-pressed', 'true');
     await userEvent.click(january);
@@ -51,8 +57,15 @@ describe('ScheduleTab', () => {
 
   it('keeps the old table below the new grid', () => {
     renderWithProviders(<ScheduleTab year={2999} />);
-    const january = screen.getByRole('button', { name: 'open january' });
+    const january = screen.getByRole('button', { name: 'january' });
     const old = screen.getByText('old table for 2999');
     expect(january.compareDocumentPosition(old) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('skips the grid without planners', () => {
+    shown = { ...grid, planners: [] };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.queryByRole('button', { name: 'january' })).not.toBeInTheDocument();
+    expect(screen.getByText('old table for 2999')).toBeInTheDocument();
   });
 });

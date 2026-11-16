@@ -28,6 +28,12 @@ describe('NameCell', () => {
     expect(screen.queryByText('no email')).not.toBeInTheDocument();
   });
 
+  it('marks a planner who left in words', () => {
+    render(<NameCell planner={planner({ isPlanner: false })} style={{}} />);
+    expect(screen.getByText('(left)')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText('no longer a planner')).toHaveClass('sr-only');
+  });
+
   it('flags a missing email', () => {
     render(<NameCell planner={planner({ hasEmail: false })} style={{}} />);
     expect(screen.getByText('no email')).toHaveClass('sr-only');
@@ -45,6 +51,7 @@ describe('LoadCell', () => {
 
   it('shows – without a form', () => {
     render(<LoadCell load={null} style={{}} />);
-    expect(screen.getByText('–')).toBeInTheDocument();
+    expect(screen.getByText('–')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText('no form')).toHaveClass('sr-only');
   });
 });
