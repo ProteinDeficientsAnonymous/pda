@@ -19,6 +19,7 @@ interface ScheduleGridProps {
   onToggleSlot: (slotId: string) => void;
   act: ReturnType<typeof usePlanningActions>['act'];
   busy: boolean;
+  readOnly?: boolean;
 }
 
 const at = (row: number, column: number | string) => ({ gridRow: row, gridColumn: column });
@@ -42,6 +43,7 @@ export function ScheduleGrid({
   onToggleSlot,
   act,
   busy,
+  readOnly = false,
 }: ScheduleGridProps) {
   const meId = useAuthStore((s) => s.user?.id);
   const columns = slotColumns(grid.slots);
@@ -58,6 +60,8 @@ export function ScheduleGrid({
       {columns.map(({ slot, track }) => {
         const state = cellState(slot.id, planner.userId, grid);
         const assignment = findAssignment(grid, slot.id, planner.userId);
+        const self = planner.userId === meId;
+        const canAct = !readOnly || (self && state === 'proposed');
         return (
           <div key={slot.id} style={at(row, track)}>
             <GridTile
@@ -65,9 +69,9 @@ export function ScheduleGrid({
               plannerName={planner.name}
               slotLabel={slot.label}
               isPlanner={planner.isPlanner}
-              self={planner.userId === meId}
+              self={self}
               disabled={busy}
-              onAct={() => void act(slot, planner, state, assignment)}
+              onAct={canAct ? () => void act(slot, planner, state, assignment) : undefined}
             />
           </div>
         );

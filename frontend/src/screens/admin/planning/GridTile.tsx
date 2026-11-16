@@ -43,7 +43,7 @@ interface GridTileProps {
   isPlanner: boolean;
   self?: boolean;
   disabled: boolean;
-  onAct: () => void;
+  onAct?: (() => void) | undefined;
 }
 
 export function GridTile({
@@ -57,6 +57,14 @@ export function GridTile({
 }: GridTileProps) {
   const textId = useId();
   const blockedReason = !isWithdrawable(state) && !isPlanner ? 'no longer a planner' : null;
+  if (!onAct) {
+    return (
+      <span className="inline-flex h-[var(--pg-row)] w-[var(--pg-col)] items-center justify-center">
+        <TileFace state={state} />
+        <span className="sr-only">{`${plannerName}, ${slotLabel}: ${STATE_TEXT[state]}`}</span>
+      </span>
+    );
+  }
   return (
     <button
       type="button"

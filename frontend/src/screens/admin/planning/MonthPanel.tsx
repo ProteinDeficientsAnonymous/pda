@@ -21,6 +21,7 @@ interface MonthPanelProps {
   today: Date;
   act: ReturnType<typeof usePlanningActions>['act'];
   busy: boolean;
+  readOnly?: boolean;
   onClose: () => void;
 }
 
@@ -104,7 +105,7 @@ function plannerNotes(planner: PlannerColumn, extraSlot: boolean): string[] {
 
 type Act = MonthPanelProps['act'];
 
-function panelRows(grid: PlanningGrid, slot: PlanningGrid['slots'][number], act: Act) {
+function panelRows(grid: PlanningGrid, slot: PlanningGrid['slots'][number], act?: Act) {
   const planning: PanelRow[] = [];
   const asked: PanelRow[] = [];
   const free: PanelRow[] = [];
@@ -113,21 +114,18 @@ function panelRows(grid: PlanningGrid, slot: PlanningGrid['slots'][number], act:
     const state = cellState(slot.id, planner.userId, grid);
     const assignment = findAssignment(grid, slot.id, planner.userId);
     const notes = plannerNotes(planner, slot.kind !== 'monthly');
-    const action = (text: string, disabled: boolean): RowAction => ({
-      text,
-      disabled,
-      run: () => void act(slot, planner, state, assignment),
-    });
+    const action = (text: string, disabled: boolean): RowAction[] =>
+      act ? [{ text, disabled, run: () => void act(slot, planner, state, assignment) }] : [];
     if (assignment) {
       const disabled = !isWithdrawable(state) && !planner.isPlanner;
-      const row = { planner, notes, actions: [action(actionText(state), disabled)] };
+      const row = { planner, notes, actions: action(actionText(state), disabled) };
       if (state === 'committed') planning.push(row);
       else asked.push({ ...row, detail: STATE_TEXT[state] });
     } else if (state === 'available') {
       const detail = loadText(grid, planner);
-      free.push({ planner, notes, detail, actions: [action('propose', !planner.isPlanner)] });
+      free.push({ planner, notes, detail, actions: action('propose', !planner.isPlanner) });
     } else if (planner.isPlanner && !planner.submitted) {
-      noForm.push({ planner, notes, actions: [action('propose', false)] });
+      noForm.push({ planner, notes, actions: action('propose', false) });
     }
   }
   return { planning, asked, free, noForm };
@@ -138,7 +136,15 @@ function addText(adding: boolean, freeCount: number): string {
   return freeCount > 0 ? `add someone · ${String(freeCount)} free` : 'add someone';
 }
 
-export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPanelProps) {
+export function MonthPanel({
+  grid,
+  slotId,
+  today,
+  act,
+  busy,
+  readOnly = false,
+  onClose,
+}: MonthPanelProps) {
   const [adding, setAdding] = useState(false);
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -146,7 +152,7 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
   }, [slotId]);
   const slot = grid.slots.find((s) => s.id === slotId);
   if (!slot) return null;
-  const { planning, asked, free, noForm } = panelRows(grid, slot, act);
+  const { planning, asked, free, noForm } = panelRows(grid, slot, readOnly ? undefined : act);
 
   return (
     <section
@@ -160,7 +166,11 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
             {slot.label}
           </h2>
           <p className="text-muted text-xs">{TAG[slotCoverage(grid, slotId, today).kind]}</p>
-          <SlotEventLink slot={slot} year={grid.year} canCreate={slotHasCommitted(grid, slotId)} />
+          <SlotEventLink
+            slot={slot}
+            year={grid.year}
+            canCreate={!readOnly && slotHasCommitted(grid, slotId)}
+          />
         </div>
         <Button
           variant="ghost"
@@ -179,7 +189,7 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
           <Section title="no form" rows={noForm} busy={busy} />
         </>
       )}
-      {free.length + noForm.length > 0 && (
+      {!readOnly && free.length + noForm.length > 0 && (
         <Button
           variant="secondary"
           className="mt-3 h-8 px-3"

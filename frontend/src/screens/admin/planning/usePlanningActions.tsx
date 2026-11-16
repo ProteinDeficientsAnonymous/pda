@@ -4,6 +4,7 @@ import {
   type Assignment,
   type PlannerColumn,
   type PlanningSlot,
+  useCommit,
   useConfirmPlanner,
   usePropose,
   useSendProposals,
@@ -25,6 +26,7 @@ type Act = (
 interface PlanningActions {
   act: Act;
   tap: Act;
+  commitOwn: Act;
   busy: boolean;
   send: ReturnType<typeof useSendProposals>;
   confirmElement: ReactNode;
@@ -34,6 +36,7 @@ export function usePlanningActions(year: number): PlanningActions {
   const propose = usePropose();
   const withdraw = useWithdraw();
   const confirmPlanner = useConfirmPlanner();
+  const commit = useCommit();
   const meId = useAuthStore((s) => s.user?.id);
   const send = useSendProposals(year);
   const { confirm, element } = useConfirm();
@@ -95,10 +98,21 @@ export function usePlanningActions(year: number): PlanningActions {
     );
   }
 
+  async function commitOwn(...[, , , assignment]: Parameters<Act>) {
+    if (!assignment) return;
+    await toastOnError(commit.mutateAsync(assignment.id), "couldn't put you in — try again");
+  }
+
   return {
     act,
     tap,
-    busy: propose.isPending || withdraw.isPending || confirmPlanner.isPending || send.isPending,
+    commitOwn,
+    busy:
+      propose.isPending ||
+      withdraw.isPending ||
+      confirmPlanner.isPending ||
+      commit.isPending ||
+      send.isPending,
     send,
     confirmElement: element,
   };
