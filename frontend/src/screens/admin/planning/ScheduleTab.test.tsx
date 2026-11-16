@@ -129,6 +129,7 @@ describe('ScheduleTab', () => {
     renderWithProviders(<ScheduleTab year={2999} />);
     const tile = screen.getByRole('button', { name: 'ada, january' });
     expect(tile).toBeEnabled();
+    expect(tile).toHaveAttribute('title', 'no longer a planner');
     await userEvent.click(tile);
     expect(toastMock).toHaveBeenCalledWith('you can only change your own row', undefined);
   });

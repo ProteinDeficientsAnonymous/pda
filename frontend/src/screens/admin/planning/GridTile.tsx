@@ -58,8 +58,7 @@ export function GridTile({
   onAct,
 }: GridTileProps) {
   const textId = useId();
-  const blockedReason =
-    !viewOnly && !isWithdrawable(state) && !isPlanner ? 'no longer a planner' : null;
+  const blockedReason = !isWithdrawable(state) && !isPlanner ? 'no longer a planner' : null;
   return (
     <button
       type="button"
@@ -70,9 +69,12 @@ export function GridTile({
       }
       aria-describedby={textId}
       title={blockedReason ?? undefined}
-      disabled={disabled || blockedReason !== null}
+      disabled={disabled || (!viewOnly && blockedReason !== null)}
       onClick={onAct}
-      className="focus-visible:outline-plan-ink enabled:hover:bg-surface-dim relative inline-flex h-[var(--pg-row)] w-[var(--pg-col)] items-center justify-center rounded focus-visible:z-10 focus-visible:outline-2 disabled:opacity-50"
+      className={cn(
+        'focus-visible:outline-plan-ink enabled:hover:bg-surface-dim relative inline-flex h-[var(--pg-row)] w-[var(--pg-col)] items-center justify-center rounded focus-visible:z-10 focus-visible:outline-2 disabled:opacity-50',
+        viewOnly && blockedReason && 'opacity-50',
+      )}
     >
       <TileFace state={state} />
       <span id={textId} className="sr-only">
