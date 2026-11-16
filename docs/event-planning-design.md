@@ -79,6 +79,19 @@ Creating a year pre-fills 12 monthly slots and the two biannuals (june anniversa
   - **The month panel** opens when a month letter is tapped (under the grid): the slot's status and event link, "planning" for who's committed (with withdraw), "asked" for drafts, sent proposals and decliners, then "add someone" (with a count of who's free) that expands to who's free with their load, then who has no form. People who said they're not free aren't listed; a grid tap can still draft them. It's the large-button way to do everything the small cells do.
   - **slots**: "ask planners for availability" above the slots (once sent, it shows when instead); one compact row per slot with "edit" opening the label / month / kind / delete controls; add a slot; start the year after the latest one.
 
+## Checklist and guidelines
+
+Leah's planner guide (restaurant and active meetup guidelines, hosting tips, and a "quick checklist" of steps per event) lives in a doc today. This moves it into the planning section so planners can see what they've done and what's left for each event.
+
+- **Guidelines** are one rich-text `EditablePage` (slug `planning-guidelines`), seeded with Leah's text the first time it's read. Reading needs `view_event_planning` or `manage_event_planning`; editing needs `manage_event_planning` (not `edit_guidelines`).
+- **The checklist** is one shared list of items (`PlanningChecklistItem`: `text`, optional `detail`, `order`), not tied to a year. Coordinators add, reword, reorder and delete items; planners don't change them. A data migration seeds Leah's items. Deleting an item drops its ticks.
+- **Ticks are per slot** (`SlotChecklistTick`: one per (slot, item), with `done_by` and `done_at`), not per event, since "secure venue" comes before the event exists. Committed planners on the slot and coordinators can tick and untick.
+- **Where it shows:** under each committed slot in **my events**, a "n/m done" count that expands to the items, open ones first. A **guidelines** tab (planners and coordinators) shows the guidelines, then the checklist items; coordinators edit both there.
+
+Approaches considered: a shared list with per-slot ticks (chosen: rewording an item updates every slot, and progress compares across months); a copy of the list per slot that its planners could edit (more flexible, but slots drift apart, and Leah said planners only tick); the checklist as rich text with no ticks (cheapest, but nobody can see what's done).
+
+The feedback-survey steps from the original doc are left out: surveys go out automatically now.
+
 Grid states by priority: committed > proposed > draft > declined > available > blank. Never colour alone; no red/green.
 
 All text lowercase.
