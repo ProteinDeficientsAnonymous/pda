@@ -54,7 +54,7 @@ export function ScheduleGrid({
     <Fragment key={planner.userId}>
       <NameCell planner={planner} style={at(row, 1)} />
       {columns.map(({ slot, track }) => {
-        const state = cellState(slot.id, planner.userId, grid, today);
+        const state = cellState(slot.id, planner.userId, grid);
         const assignment = findAssignment(grid, slot.id, planner.userId);
         return (
           <div key={slot.id} style={at(row, track)}>

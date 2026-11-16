@@ -28,47 +28,30 @@ function makeGrid(
   });
 }
 
-const early = new Date(2027, 0, 15);
-
 describe('cellState', () => {
   it('is blank with no availability and no assignment', () => {
-    expect(cellState('s1', 'u1', makeGrid(), early)).toBe('blank');
+    expect(cellState('s1', 'u1', makeGrid())).toBe('blank');
   });
 
   it('is available when the planner offered the slot', () => {
-    expect(cellState('s1', 'u1', makeGrid([], ['s1']), early)).toBe('available');
+    expect(cellState('s1', 'u1', makeGrid([], ['s1']))).toBe('available');
   });
 
   it('ranks declined above available', () => {
-    expect(cellState('s1', 'u1', makeGrid([{ status: 'declined' }], ['s1']), early)).toBe(
-      'declined',
-    );
+    expect(cellState('s1', 'u1', makeGrid([{ status: 'declined' }], ['s1']))).toBe('declined');
   });
 
   it('shows a draft row as draft', () => {
-    expect(cellState('s1', 'u1', makeGrid([{ status: 'draft' }], ['s1']), early)).toBe('draft');
+    expect(cellState('s1', 'u1', makeGrid([{ status: 'draft' }], ['s1']))).toBe('draft');
   });
 
   it('ranks proposed above declined and available', () => {
-    expect(cellState('s1', 'u1', makeGrid([{ status: 'proposed' }], ['s1']), early)).toBe(
-      'proposed',
-    );
+    expect(cellState('s1', 'u1', makeGrid([{ status: 'proposed' }], ['s1']))).toBe('proposed');
   });
 
   it('ranks committed above everything', () => {
     const grid = makeGrid([{ status: 'committed' }], ['s1']);
-    expect(cellState('s1', 'u1', grid, early)).toBe('committed');
-  });
-
-  it('turns proposed into no_answer once the slot month has started', () => {
-    const grid = makeGrid([{ status: 'proposed' }]);
-    expect(cellState('s1', 'u1', grid, new Date(2027, 1, 28))).toBe('proposed');
-    expect(cellState('s1', 'u1', grid, new Date(2027, 2, 1))).toBe('no_answer');
-  });
-
-  it('keeps committed after the slot month has started', () => {
-    const grid = makeGrid([{ status: 'committed' }]);
-    expect(cellState('s1', 'u1', grid, new Date(2027, 5, 1))).toBe('committed');
+    expect(cellState('s1', 'u1', grid)).toBe('committed');
   });
 
   it('finds the assignment for a slot and user', () => {
@@ -82,7 +65,6 @@ describe('isWithdrawable', () => {
   it.each<[CellState, boolean]>([
     ['committed', true],
     ['proposed', true],
-    ['no_answer', true],
     ['draft', true],
     ['declined', false],
     ['available', false],

@@ -1,13 +1,6 @@
 import type { Assignment, PlanningGrid } from '@/api/planning';
 
-export type CellState =
-  | 'committed'
-  | 'proposed'
-  | 'no_answer'
-  | 'draft'
-  | 'declined'
-  | 'available'
-  | 'blank';
+export type CellState = 'committed' | 'proposed' | 'draft' | 'declined' | 'available' | 'blank';
 
 export function findAssignment(
   grid: PlanningGrid,
@@ -17,19 +10,10 @@ export function findAssignment(
   return grid.assignments.find((a) => a.slotId === slotId && a.userId === userId);
 }
 
-export function cellState(
-  slotId: string,
-  userId: string,
-  grid: PlanningGrid,
-  today: Date,
-): CellState {
+export function cellState(slotId: string, userId: string, grid: PlanningGrid): CellState {
   const status = findAssignment(grid, slotId, userId)?.status;
   if (status === 'committed') return 'committed';
-  if (status === 'proposed') {
-    const slot = grid.slots.find((s) => s.id === slotId);
-    const started = slot !== undefined && today >= new Date(grid.year, slot.month - 1, 1);
-    return started ? 'no_answer' : 'proposed';
-  }
+  if (status === 'proposed') return 'proposed';
   if (status === 'draft') return 'draft';
   if (status === 'declined') return 'declined';
   const planner = grid.planners.find((p) => p.userId === userId);
@@ -48,7 +32,7 @@ export function draftCount(grid: PlanningGrid): number {
   return grid.assignments.filter((a) => a.status === 'draft').length;
 }
 
-const WITHDRAWABLE: CellState[] = ['committed', 'proposed', 'no_answer', 'draft'];
+const WITHDRAWABLE: CellState[] = ['committed', 'proposed', 'draft'];
 
 export function isWithdrawable(state: CellState): boolean {
   return WITHDRAWABLE.includes(state);
@@ -57,7 +41,6 @@ export function isWithdrawable(state: CellState): boolean {
 export const STATE_TEXT: Record<CellState, string> = {
   committed: 'in',
   proposed: 'sent',
-  no_answer: 'awaiting answer',
   draft: 'not sent yet',
   declined: 'declined',
   available: 'free',
