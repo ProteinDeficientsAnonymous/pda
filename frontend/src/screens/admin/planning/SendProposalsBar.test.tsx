@@ -75,16 +75,31 @@ describe('SendProposalsBar', () => {
     expect(rows).toEqual(['ada·january✕march✕', 'bo·january✕']);
   });
 
-  it('removes a queued draft', async () => {
+  async function openDrop() {
     renderBar(1);
     await userEvent.click(screen.getByRole('button', { name: /not sent yet/ }));
     await userEvent.click(screen.getByRole('button', { name: 'remove draft ada for march' }));
+    expect(
+      screen.getByText("ada won't get a proposal for march — you can draft it again from the grid"),
+    ).toBeInTheDocument();
+  }
+
+  it('drops a queued draft once confirmed', async () => {
+    await openDrop();
+    expect(act).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'drop draft' }));
     expect(act).toHaveBeenCalledWith(
       march,
       ada,
       'draft',
       makeAssignment({ id: 'a1', slotId: 's3' }),
     );
+  });
+
+  it('keeps the draft when the drop is cancelled', async () => {
+    await openDrop();
+    await userEvent.click(screen.getByRole('button', { name: 'cancel' }));
+    expect(act).not.toHaveBeenCalled();
   });
 
   it('sends the drafts and toasts who was notified', async () => {

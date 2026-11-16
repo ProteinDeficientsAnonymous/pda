@@ -1,9 +1,16 @@
 import { useId, useState } from 'react';
 import { toast } from 'sonner';
 
-import type { PlanningGrid, useSendProposals } from '@/api/planning';
+import type {
+  Assignment,
+  PlannerColumn,
+  PlanningGrid,
+  PlanningSlot,
+  useSendProposals,
+} from '@/api/planning';
 import { Button } from '@/components/ui/Button';
 import { Chevron } from '@/components/ui/Chevron';
+import { useConfirm } from '@/components/ui/useConfirm';
 
 import { cellActionLabel, draftCount, draftsByPlanner } from './gridCell';
 import { toastOnError } from './toastOnError';
@@ -23,6 +30,7 @@ interface SendProposalsBarProps {
 export function SendProposalsBar({ grid, send, act, busy }: SendProposalsBarProps) {
   const [open, setOpen] = useState(false);
   const listId = useId();
+  const { confirm, element } = useConfirm();
   const drafts = draftCount(grid);
   if (drafts === 0) return null;
 
@@ -32,6 +40,15 @@ export function SendProposalsBar({ grid, send, act, busy }: SendProposalsBarProp
       const { planners_notified } = await sending;
       toast.success(`sent to ${plural(planners_notified, 'planner')} 🌱`);
     }
+  }
+
+  async function drop(slot: PlanningSlot, planner: PlannerColumn, assignment: Assignment) {
+    const ok = await confirm({
+      title: 'drop this draft?',
+      message: `${planner.name} won't get a proposal for ${slot.label} — you can draft it again from the grid`,
+      confirmLabel: 'drop draft',
+    });
+    if (ok) await act(slot, planner, 'draft', assignment);
   }
 
   return (
@@ -69,7 +86,7 @@ export function SendProposalsBar({ grid, send, act, busy }: SendProposalsBarProp
                   type="button"
                   disabled={busy}
                   aria-label={cellActionLabel('draft', planner.name, slot.label)}
-                  onClick={() => void act(slot, planner, 'draft', assignment)}
+                  onClick={() => void drop(slot, planner, assignment)}
                   className="border-brand-on/40 hover:bg-brand-700 focus-visible:ring-brand-200 inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 text-xs focus-visible:ring-2 focus-visible:outline-none disabled:opacity-60"
                 >
                   {slot.label}
@@ -80,6 +97,7 @@ export function SendProposalsBar({ grid, send, act, busy }: SendProposalsBarProp
           ))}
         </ul>
       ) : null}
+      {element}
     </div>
   );
 }
