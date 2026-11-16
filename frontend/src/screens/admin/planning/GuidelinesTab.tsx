@@ -5,13 +5,14 @@ import { EditableHtmlBlock } from '@/components/EditableHtmlBlock';
 import { Permission } from '@/models/permissions';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { ChecklistEditor } from './ChecklistEditor';
 import { ChecklistList } from './ChecklistList';
 
-function Checklist() {
+function Checklist({ canEdit }: { canEdit: boolean }) {
   const { data, isPending, isError } = useChecklist();
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the checklist — try refreshing" />;
-  return <ChecklistList items={data} />;
+  return canEdit ? <ChecklistEditor items={data} /> : <ChecklistList items={data} />;
 }
 
 export function GuidelinesTab() {
@@ -26,7 +27,7 @@ export function GuidelinesTab() {
         <p className="text-foreground-secondary mb-3 text-sm">
           tick these off for each of your events under my events
         </p>
-        <Checklist />
+        <Checklist canEdit={canEdit} />
       </section>
       <section>
         <h2 className="mb-3 text-lg font-medium">guidelines</h2>
