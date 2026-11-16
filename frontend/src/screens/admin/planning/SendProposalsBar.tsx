@@ -24,12 +24,12 @@ export function SendProposalsBar({ send, drafts }: SendProposalsBarProps) {
   }
 
   return (
-    <div className="bg-brand-600 text-brand-on mb-3 flex flex-wrap items-center justify-between gap-3 rounded-full py-2 pr-2 pl-5">
-      <p className="text-sm font-medium">{`${String(drafts)} not sent yet`}</p>
+    <div className="bg-brand-600 text-brand-on mb-3 flex items-center justify-between gap-3 rounded-full py-2 pr-2 pl-5">
+      <p className="min-w-0 truncate text-sm font-medium">{`${String(drafts)} not sent yet`}</p>
       <Button
         disabled={send.isPending}
         onClick={() => void sendAll()}
-        className="text-brand-700 bg-white hover:bg-white/90"
+        className="bg-brand-on text-brand-600 hover:bg-brand-on/90 shrink-0"
       >
         send proposals
       </Button>
