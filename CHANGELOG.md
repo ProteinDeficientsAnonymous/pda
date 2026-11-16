@@ -1,3 +1,10 @@
+## [0.240.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.240.0...v0.240.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - stop the planning grid widening the page on phones ([#2494](https://github.com/ProteinDeficientsAnonymous/pda/issues/2494)) ([694e2e3](https://github.com/ProteinDeficientsAnonymous/pda/commit/694e2e3afa7fb2657aa7d35f629c733ed8e6c9b0))
+
 # [0.240.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.239.1...v0.240.0) (2026-11-16)
 
 
