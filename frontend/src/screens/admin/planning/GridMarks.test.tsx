@@ -38,7 +38,7 @@ describe('GridKey', () => {
       expect(screen.getByText(words)).toBeInTheDocument();
     }
     expect(screen.queryByText(/★/)).not.toBeInTheDocument();
-    expect(screen.getByText(/^month row: /)).toBeInTheDocument();
+    expect(screen.queryByText(/^month row: /)).not.toBeInTheDocument();
   });
 
   it('spells out the extra slot markers', () => {

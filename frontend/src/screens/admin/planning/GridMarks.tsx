@@ -70,7 +70,6 @@ export function GridKey({ columns }: { columns: SlotColumn[] }) {
           </li>
         ))}
       </ul>
-      <p className="mt-1">month row: 3 = people free · 0 = nobody · – = past</p>
       {extras.length > 0 ? (
         <p className="mt-1">{extras.map((c) => `${c.header} ${c.slot.label}`).join(' · ')}</p>
       ) : null}
