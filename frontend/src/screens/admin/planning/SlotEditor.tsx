@@ -14,6 +14,7 @@ import { TextField } from '@/components/ui/TextField';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { MONTH_OPTIONS } from '@/utils/datetime';
 
+import { AvailabilityAsk } from './AvailabilityAsk';
 import { toastOnError } from './toastOnError';
 
 const KIND_OPTIONS: { value: SlotKind; label: string }[] = [
@@ -182,6 +183,7 @@ export function SlotEditor({ year }: { year: number }) {
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-lg font-medium">slots</h2>
+      <AvailabilityAsk year={year} />
       <ul className="flex flex-col gap-3">
         {slots.data.map((s) => (
           <SlotRow key={s.id} slot={s} />

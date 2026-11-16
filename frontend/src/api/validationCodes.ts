@@ -725,6 +725,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'you need to be a host of that event to link it';
     case Code.Planning.SlotHasEvent:
       return 'that slot already has an event';
+    case Code.Planning.AvailabilityAlreadyOpen:
+      return 'planners were already asked for their availability';
     case Code.Planning.EventAlreadyLinked:
       return 'that event is already linked to another slot';
 

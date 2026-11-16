@@ -338,6 +338,7 @@ class Code:
         NOT_PENDING = "planning.not_pending"
         NOT_EVENT_HOST = "planning.not_event_host"
         SLOT_HAS_EVENT = "planning.slot_has_event"
+        AVAILABILITY_ALREADY_OPEN = "planning.availability_already_open"
         EVENT_ALREADY_LINKED = "planning.event_already_linked"
 
 

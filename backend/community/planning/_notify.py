@@ -5,17 +5,20 @@ from django.db import transaction
 from notifications.email_sender import get_email_sender, send_best_effort
 from notifications.models import Notification, NotificationType
 from notifications.planning_email import (
+    AvailabilityEmailDetails,
+    AvailabilityEmailVariant,
     PlanningEmailDetails,
     PlanningEmailVariant,
     describe_slots,
+    send_availability_email,
     send_planning_email,
 )
 from notifications.service import notify_users
 from users.helpers import visible_display_name
 from users.models import User
 
-from community.models import AssignmentStatus, PlanningSlot, SlotAssignment
-from community.planning._planners import coordinator_users
+from community.models import AssignmentStatus, PlanningSlot, PlanningYear, SlotAssignment
+from community.planning._planners import coordinator_users, planner_users
 
 
 def _notify_many(
@@ -56,6 +59,39 @@ def email_planner(user: User, slots: list[PlanningSlot], variant: PlanningEmailV
         lambda: send_planning_email(sender=get_email_sender(), details=details),
         f"planning_{variant}_email",
     )
+
+
+def email_availability(user: User, year: int, variant: AvailabilityEmailVariant) -> bool:
+    if not user.email:
+        return False
+    details = AvailabilityEmailDetails(
+        to=user.email,
+        display_name=user.full_name or "",
+        year=year,
+        availability_url=f"{planning_url()}?tab=availability",
+        variant=variant,
+    )
+    return send_best_effort(
+        lambda: send_availability_email(sender=get_email_sender(), details=details),
+        f"planning_availability_{variant}_email",
+    )
+
+
+def notify_availability_open(planning_year: PlanningYear, opened_by: User) -> None:
+    year = planning_year.year
+    planners = list(planner_users())
+    _notify_many(
+        [p.pk for p in planners],
+        NotificationType.PLANNING_AVAILABILITY,
+        f"when can you plan in {year}? 🌱 tap to fill in your availability",
+        opened_by,
+    )
+
+    def email_all() -> None:
+        for planner in planners:
+            email_availability(planner, year, AvailabilityEmailVariant.OPEN)
+
+    transaction.on_commit(email_all)
 
 
 def notify_proposed(user: User, slots: list[PlanningSlot], proposed_by: User) -> None:

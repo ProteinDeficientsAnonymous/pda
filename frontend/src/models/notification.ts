@@ -27,6 +27,7 @@ export const NotificationType = {
   PlanningCommitted: 'planning_committed',
   PlanningDeclined: 'planning_declined',
   PlanningUpcoming: 'planning_upcoming',
+  PlanningAvailability: 'planning_availability',
   AccountDeleted: 'account_deleted',
 } as const;
 
