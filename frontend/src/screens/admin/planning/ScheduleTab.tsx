@@ -49,6 +49,7 @@ export function ScheduleTab({ year }: { year: number }) {
             busy={busy}
             onClose={() => {
               setOpenSlotId(null);
+              document.getElementById(`month-${openSlotId}`)?.focus();
             }}
           />
         ) : null}
