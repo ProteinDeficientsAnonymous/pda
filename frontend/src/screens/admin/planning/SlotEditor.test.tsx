@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { makeSlot } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { SlotEditor } from './SlotEditor';
@@ -26,8 +27,8 @@ vi.mock('@/api/planning', () => ({
     isPending: false,
     isError: false,
     data: [
-      { id: 's1', label: 'january', month: 1, kind: 'monthly', order: 1 },
-      { id: 's2', label: 'june anniversary', month: 6, kind: 'biannual', order: 2 },
+      makeSlot({ id: 's1', label: 'january', month: 1, order: 1 }),
+      makeSlot({ id: 's2', label: 'june anniversary', month: 6, kind: 'biannual', order: 2 }),
     ],
   }),
   useUpdateSlot: () => ({ mutateAsync: updateSlot, isPending: updatePending }),

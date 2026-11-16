@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Assignment, PlanningGrid } from '@/api/planning';
-import { makeSlot } from '@/test/fixtures';
+import { makeAssignment, makePlanner, makePlanningGrid, makeSlot } from '@/test/fixtures';
 
 import {
   cellActionLabel,
@@ -18,28 +18,14 @@ function makeGrid(
   assignments: Pick<Assignment, 'status'>[] = [],
   availableSlotIds: string[] = [],
 ): PlanningGrid {
-  return {
+  return makePlanningGrid({
     year: 2027,
     slots: [slot('s1', 3)],
-    planners: [
-      {
-        userId: 'u1',
-        name: 'ada',
-        isPlanner: true,
-        hasEmail: true,
-        submitted: true,
-        biannualInterest: 'yes',
-        monthlyCount: 1,
-        availableSlotIds,
-      },
-    ],
-    assignments: assignments.map((a, i) => ({
-      id: `a${String(i)}`,
-      slotId: 's1',
-      userId: 'u1',
-      status: a.status,
-    })),
-  };
+    planners: [makePlanner({ biannualInterest: 'yes', availableSlotIds })],
+    assignments: assignments.map((a, i) =>
+      makeAssignment({ id: `a${String(i)}`, status: a.status }),
+    ),
+  });
 }
 
 const early = new Date(2027, 0, 15);

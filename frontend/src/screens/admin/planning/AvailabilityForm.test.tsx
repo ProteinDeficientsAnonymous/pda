@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { makeSlot } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { AvailabilityForm } from './AvailabilityForm';
@@ -41,9 +42,9 @@ vi.mock('@/api/planning', () => ({
     isPending: false,
     isError: false,
     data: [
-      { id: 's1', label: 'january', month: 1, kind: 'monthly', order: 1 },
-      { id: 's2', label: 'february', month: 2, kind: 'monthly', order: 2 },
-      { id: 's3', label: 'spring biannual', month: 4, kind: 'biannual', order: 3 },
+      makeSlot({ id: 's1', label: 'january', month: 1, order: 1 }),
+      makeSlot({ id: 's2', label: 'february', month: 2, order: 2 }),
+      makeSlot({ id: 's3', label: 'spring biannual', month: 4, kind: 'biannual', order: 3 }),
     ],
   }),
   useMyAvailability: () => ({ isPending: false, isError: false, data: saved }),
