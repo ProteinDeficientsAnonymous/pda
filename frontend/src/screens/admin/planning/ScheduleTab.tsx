@@ -14,7 +14,7 @@ export function ScheduleTab({ year }: { year: number }) {
   const { data: grid, isPending, isError } = usePlanningGrid(year);
   const [today] = useState(() => new Date());
   const [openSlotId, setOpenSlotId] = useState<string | null>(null);
-  const { act, busy, send, confirmElement } = usePlanningActions(year);
+  const { act, tap, busy, send, confirmElement } = usePlanningActions(year);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the planning grid — try refreshing" />;
@@ -32,7 +32,7 @@ export function ScheduleTab({ year }: { year: number }) {
             onToggleSlot={(slotId) => {
               setOpenSlotId((open) => (open === slotId ? null : slotId));
             }}
-            act={act}
+            act={tap}
             busy={busy}
           />
         </div>

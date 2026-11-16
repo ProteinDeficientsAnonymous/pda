@@ -254,6 +254,13 @@ export function usePropose() {
   });
 }
 
+export function useConfirmPlanner() {
+  return usePlanningMutation(async ({ slotId, userId }: { slotId: string; userId: string }) => {
+    const body: components['schemas']['ProposeIn'] = { user_id: userId };
+    await apiClient.post(`/api/community/planning/slots/${slotId}/assignments/confirm/`, body);
+  });
+}
+
 export function useWithdraw() {
   return usePlanningMutation(async (assignmentId: string) => {
     await apiClient.delete(`/api/community/planning/assignments/${assignmentId}/`);

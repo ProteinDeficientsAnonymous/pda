@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 
 import type { PlannerColumn, PlanningGrid } from '@/api/planning';
+import { useAuthStore } from '@/auth/store';
 import { cn } from '@/utils/cn';
 
 import { cellState, findAssignment } from './gridCell';
@@ -42,6 +43,7 @@ export function ScheduleGrid({
   act,
   busy,
 }: ScheduleGridProps) {
+  const meId = useAuthStore((s) => s.user?.id);
   const columns = slotColumns(grid.slots);
   const loadColumn = loadTrack(columns);
   const biColumn = biTrack(columns);
@@ -63,6 +65,7 @@ export function ScheduleGrid({
               plannerName={planner.name}
               slotLabel={slot.label}
               isPlanner={planner.isPlanner}
+              self={planner.userId === meId}
               disabled={busy}
               onAct={() => void act(slot, planner, state, assignment)}
             />
