@@ -36,8 +36,12 @@ describe('ChecklistEditor', () => {
     const add = screen.getByRole('button', { name: 'add item' });
     expect(add).toBeDisabled();
     await user.type(screen.getByLabelText('item'), 'book the room');
+    await user.type(screen.getByLabelText(/details/), ' ask for the back room ');
     await user.click(add);
-    expect(createItem).toHaveBeenCalledWith({ text: 'book the room', detail: '' });
+    expect(createItem).toHaveBeenCalledWith({
+      text: 'book the room',
+      detail: 'ask for the back room',
+    });
     await waitFor(() => {
       expect(screen.getByLabelText('item')).toHaveValue('');
     });

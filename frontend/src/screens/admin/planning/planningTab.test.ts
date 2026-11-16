@@ -7,6 +7,7 @@ describe('tabOptions', () => {
     expect(tabOptions(false).map((o) => o.label)).toEqual([
       'my events',
       'my availability',
+      'checklist',
       'guidelines',
     ]);
     expect(tabOptions(true).map((o) => o.value)).toEqual([
@@ -14,6 +15,7 @@ describe('tabOptions', () => {
       'events',
       'availability',
       'slots',
+      'checklist',
       'guidelines',
     ]);
   });
