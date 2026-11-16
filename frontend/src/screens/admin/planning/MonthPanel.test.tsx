@@ -97,6 +97,7 @@ describe('MonthPanel', () => {
         on('dee', 'committed'),
       ]),
     );
+    expect(screen.getByRole('heading', { name: 'asked' })).toBeInTheDocument();
     expect(within(row('ada')).getByText('not sent yet')).toBeInTheDocument();
     expect(within(row('ada')).getByRole('button', { name: 'undo ada' })).toBeInTheDocument();
     expect(within(row('bo')).getByRole('button', { name: 'propose again bo' })).toBeInTheDocument();
@@ -170,6 +171,7 @@ describe('MonthPanel', () => {
   it('will not propose someone who is not a planner', () => {
     renderPanel(makeGrid([], { planners: [planner('ada', { isPlanner: false })] }));
     expect(within(row('ada')).getByRole('button', { name: 'propose ada' })).toBeDisabled();
+    expect(within(row('ada')).getByText('no longer a planner')).toBeInTheDocument();
   });
 
   describe('everyone else', () => {
@@ -188,7 +190,7 @@ describe('MonthPanel', () => {
     it('lists them on muted lines', () => {
       renderPanel(gridWithOthers());
       expect(screen.getByText('not free · dan, duncan')).toBeInTheDocument();
-      expect(screen.getByText('no form: mo, jo')).toBeInTheDocument();
+      expect(screen.getByText('no form · mo, jo')).toBeInTheDocument();
     });
 
     it('proposes someone who is not free after add someone', async () => {

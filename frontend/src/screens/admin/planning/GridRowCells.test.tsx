@@ -42,11 +42,12 @@ describe('NameCell', () => {
 
 describe('LoadCell', () => {
   it.each([
-    [{ taken: 2, offered: 1 }, '2/1', true],
-    [{ taken: 1, offered: 2 }, '1/2', false],
-  ])('shows %o as %s, bold %s', (load, text, bold) => {
+    [{ taken: 2, offered: 1 }, '2/1', true, '2 of 1 taken, over'],
+    [{ taken: 1, offered: 2 }, '1/2', false, '1 of 2 taken'],
+  ])('shows %o as %s, bold %s', (load, text, bold, words) => {
     render(<LoadCell load={load} style={{}} />);
     expect(screen.getByText(text).classList.contains('font-semibold')).toBe(bold);
+    expect(screen.getByText(words)).toHaveClass('sr-only');
   });
 
   it('shows – without a form', () => {

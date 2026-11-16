@@ -104,6 +104,7 @@ function plannerNotes(planner: PlannerColumn, extraSlot: boolean): string[] {
   const notes: string[] = [];
   if (extraSlot && planner.biannualInterest) notes.push(`biannual: ${planner.biannualInterest}`);
   if (!planner.hasEmail) notes.push('no email');
+  if (!planner.isPlanner) notes.push('no longer a planner');
   return notes;
 }
 
@@ -116,7 +117,7 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
   const slot = grid.slots.find((s) => s.id === slotId);
   if (!slot) return null;
   const extraSlot = slot.kind !== 'monthly';
-  const onIt: PanelRow[] = [];
+  const asked: PanelRow[] = [];
   const free: PanelRow[] = [];
   const others: PanelRow[] = [];
   for (const planner of grid.planners) {
@@ -126,7 +127,7 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
     if (assignment) {
       const detail = STATE_TEXT[state];
       const disabled = !isWithdrawable(state) && !planner.isPlanner;
-      onIt.push({ planner, state, assignment, detail, text: actionText(state), disabled, notes });
+      asked.push({ planner, state, assignment, detail, text: actionText(state), disabled, notes });
     } else {
       const disabled = !planner.isPlanner;
       if (state === 'available') {
@@ -166,7 +167,7 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
           ×
         </Button>
       </div>
-      <Section title="on it" rows={onIt} busy={busy} onAct={onAct} />
+      <Section title="asked" rows={asked} busy={busy} onAct={onAct} />
       <Section title="free" rows={free} busy={busy} onAct={onAct} />
       {adding ? (
         <>
@@ -176,7 +177,7 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
       ) : (
         <div className="text-muted mt-3 space-y-0.5 text-xs">
           {notFree.length > 0 && <p>{`not free · ${names(notFree)}`}</p>}
-          {noForm.length > 0 && <p>{`no form: ${names(noForm)}`}</p>}
+          {noForm.length > 0 && <p>{`no form · ${names(noForm)}`}</p>}
         </div>
       )}
       {others.length > 0 && (

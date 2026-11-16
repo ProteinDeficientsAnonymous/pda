@@ -54,7 +54,7 @@ function renderGrid(overrides: Partial<Parameters<typeof ScheduleGrid>[0]> = {})
 describe('ScheduleGrid', () => {
   it('scrolls inside its own relative wrapper', () => {
     const { container } = renderGrid();
-    expect(container.querySelector('.overflow-x-auto')).toHaveClass('relative');
+    expect(container.querySelector('.overflow-x-auto')).toHaveClass('relative', 'overflow-y-hidden');
   });
 
   it.each([
