@@ -41,7 +41,6 @@ export function ScheduleTab({ year }: { year: number }) {
                 key={openSlotId}
                 grid={grid}
                 slotId={openSlotId}
-                year={year}
                 today={today}
                 act={act}
                 busy={busy}

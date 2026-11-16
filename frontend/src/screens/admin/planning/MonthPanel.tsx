@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { Assignment, PlannerColumn, PlanningGrid } from '@/api/planning';
 import { Button } from '@/components/ui/Button';
@@ -18,7 +18,6 @@ import type { usePlanningActions } from './usePlanningActions';
 interface MonthPanelProps {
   grid: PlanningGrid;
   slotId: string;
-  year: number;
   today: Date;
   act: ReturnType<typeof usePlanningActions>['act'];
   busy: boolean;
@@ -28,7 +27,7 @@ interface MonthPanelProps {
 const TAG: Record<Coverage['kind'], string> = {
   in: 'covered',
   sent: 'waiting',
-  draft: 'waiting',
+  draft: 'not sent yet',
   free: 'needs a planner',
   past: 'past',
 };
@@ -81,6 +80,7 @@ function Section({
             <Button
               variant="secondary"
               className="h-8 px-3"
+              aria-label={`${row.text} ${row.planner.name}`}
               disabled={busy || row.disabled}
               onClick={() => {
                 onAct(row);
@@ -107,8 +107,12 @@ function plannerNotes(planner: PlannerColumn, extraSlot: boolean): string[] {
   return notes;
 }
 
-export function MonthPanel({ grid, slotId, year, today, act, busy, onClose }: MonthPanelProps) {
+export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPanelProps) {
   const [adding, setAdding] = useState(false);
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView({ block: 'nearest' });
+  }, [slotId]);
   const slot = grid.slots.find((s) => s.id === slotId);
   if (!slot) return null;
   const extraSlot = slot.kind !== 'monthly';
@@ -128,7 +132,7 @@ export function MonthPanel({ grid, slotId, year, today, act, busy, onClose }: Mo
       if (state === 'available') {
         const detail = loadText(grid, planner);
         free.push({ planner, state, detail, text: 'propose', disabled, notes });
-      } else {
+      } else if (planner.isPlanner) {
         const detail = planner.submitted ? STATE_TEXT[state] : 'no form';
         others.push({ planner, state, detail, text: 'propose', disabled, notes });
       }
@@ -141,6 +145,7 @@ export function MonthPanel({ grid, slotId, year, today, act, busy, onClose }: Mo
 
   return (
     <section
+      ref={ref}
       aria-labelledby="month-panel-heading"
       className="border-border rounded-md border p-3 text-sm md:w-72 md:shrink-0"
     >
@@ -150,11 +155,11 @@ export function MonthPanel({ grid, slotId, year, today, act, busy, onClose }: Mo
             {slot.label}
           </h2>
           <p className="text-muted text-xs">{TAG[slotCoverage(grid, slotId, today).kind]}</p>
-          <SlotEventLink slot={slot} year={year} canCreate={slotHasCommitted(grid, slotId)} />
+          <SlotEventLink slot={slot} year={grid.year} canCreate={slotHasCommitted(grid, slotId)} />
         </div>
         <Button
           variant="ghost"
-          className="h-8 px-2"
+          className="h-10 min-w-10 px-2"
           aria-label={`close ${slot.label}`}
           onClick={onClose}
         >
@@ -164,7 +169,10 @@ export function MonthPanel({ grid, slotId, year, today, act, busy, onClose }: Mo
       <Section title="on it" rows={onIt} busy={busy} onAct={onAct} />
       <Section title="free" rows={free} busy={busy} onAct={onAct} />
       {adding ? (
-        <Section title="not free" rows={others} busy={busy} onAct={onAct} />
+        <>
+          <Section title="not free" rows={notFree} busy={busy} onAct={onAct} />
+          <Section title="no form" rows={noForm} busy={busy} onAct={onAct} />
+        </>
       ) : (
         <div className="text-muted mt-3 space-y-0.5 text-xs">
           {notFree.length > 0 && <p>{`not free · ${names(notFree)}`}</p>}
@@ -180,7 +188,7 @@ export function MonthPanel({ grid, slotId, year, today, act, busy, onClose }: Mo
             setAdding(!adding);
           }}
         >
-          add someone
+          {adding ? 'hide' : 'add someone'}
         </Button>
       )}
     </section>
