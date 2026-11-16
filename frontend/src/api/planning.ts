@@ -207,6 +207,15 @@ export function useCreateYear() {
   });
 }
 
+export function useOpenAvailability(year: number) {
+  return usePlanningMutation(async () => {
+    const { data } = await apiClient.post<PlanningYear>(
+      `/api/community/planning/years/${String(year)}/availability/open/`,
+    );
+    return data;
+  });
+}
+
 interface SlotInput {
   label: string;
   month: number;
