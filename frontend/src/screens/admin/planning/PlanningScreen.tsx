@@ -126,12 +126,12 @@ export default function PlanningScreen() {
       {defaultSettled && tab === 'mine' ? <MineTab year={year} /> : null}
       {defaultSettled && tab === 'slots' ? (
         <>
+          <SlotEditor year={year} />
           {canStartNext ? (
-            <div className="mb-4">
+            <div className="mt-6">
               <StartYearButton year={nextYear} onStarted={setPicked} />
             </div>
           ) : null}
-          <SlotEditor year={year} />
         </>
       ) : null}
     </ContentContainer>
