@@ -1,38 +1,104 @@
+import { useId, useState } from 'react';
 import { toast } from 'sonner';
 
-import type { useSendProposals } from '@/api/planning';
+import type {
+  Assignment,
+  PlannerColumn,
+  PlanningGrid,
+  PlanningSlot,
+  useSendProposals,
+} from '@/api/planning';
 import { Button } from '@/components/ui/Button';
+import { Chevron } from '@/components/ui/Chevron';
+import { useConfirm } from '@/components/ui/useConfirm';
 
+import { draftCount, draftsByPlanner } from './gridCell';
 import { toastOnError } from './toastOnError';
+import type { usePlanningActions } from './usePlanningActions';
+
+type Act = ReturnType<typeof usePlanningActions>['act'];
 
 const plural = (n: number, word: string) => `${String(n)} ${word}${n === 1 ? '' : 's'}`;
 
 interface SendProposalsBarProps {
+  grid: PlanningGrid;
   send: ReturnType<typeof useSendProposals>;
-  drafts: number;
+  act: Act;
+  busy: boolean;
 }
 
-export function SendProposalsBar({ send, drafts }: SendProposalsBarProps) {
+export function SendProposalsBar({ grid, send, act, busy }: SendProposalsBarProps) {
+  const [open, setOpen] = useState(false);
+  const listId = useId();
+  const { confirm, element } = useConfirm();
+  const drafts = draftCount(grid);
   if (drafts === 0) return null;
 
   async function sendAll() {
     const sending = send.mutateAsync();
     if (await toastOnError(sending, "couldn't send proposals — try again")) {
       const { planners_notified } = await sending;
+      setOpen(false);
       toast.success(`sent to ${plural(planners_notified, 'planner')} 🌱`);
     }
   }
 
+  async function drop(slot: PlanningSlot, planner: PlannerColumn, assignment: Assignment) {
+    const ok = await confirm({
+      title: 'drop this draft?',
+      message: `${planner.name} won't get a proposal for ${slot.label} — you can draft it again from the grid`,
+      confirmLabel: 'drop draft',
+    });
+    if (ok) await act(slot, planner, 'draft', assignment);
+  }
+
   return (
-    <div className="bg-brand-600 text-brand-on flex items-center justify-between gap-3 rounded-full py-2 pr-2 pl-5">
-      <p className="min-w-0 truncate text-sm font-medium">{`${String(drafts)} not sent yet`}</p>
-      <Button
-        disabled={send.isPending}
-        onClick={() => void sendAll()}
-        className="bg-brand-on text-brand-600 hover:bg-brand-on/90 disabled:bg-brand-on/70 shrink-0"
-      >
-        send proposals
-      </Button>
+    <div className="bg-brand-600 text-brand-on rounded-lg p-2">
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={listId}
+          onClick={() => {
+            setOpen((o) => !o);
+          }}
+          className="hover:bg-brand-700 focus-visible:ring-brand-200 flex h-10 min-w-0 items-center gap-1 rounded-md px-3 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
+        >
+          <span className="truncate">{`${String(drafts)} not sent yet`}</span>
+          <Chevron open={open} />
+        </button>
+        <Button
+          disabled={send.isPending}
+          onClick={() => void sendAll()}
+          className="bg-brand-on text-brand-600 hover:bg-brand-on/90 disabled:bg-brand-on/70 shrink-0"
+        >
+          send proposals
+        </Button>
+      </div>
+      {open ? (
+        <ul id={listId} className="flex flex-col gap-2 px-3 pt-1 pb-2 text-sm">
+          {draftsByPlanner(grid).map(({ planner, drafts: queued }) => (
+            <li key={planner.userId} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="font-medium">{planner.name}</span>
+              <span aria-hidden="true">·</span>
+              {queued.map(({ slot, assignment }) => (
+                <button
+                  key={assignment.id}
+                  type="button"
+                  disabled={busy}
+                  aria-label={`drop draft ${planner.name} for ${slot.label}`}
+                  onClick={() => void drop(slot, planner, assignment)}
+                  className="border-brand-on/40 hover:bg-brand-700 focus-visible:ring-brand-200 inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 text-xs focus-visible:ring-2 focus-visible:outline-none disabled:opacity-60"
+                >
+                  {slot.label}
+                  <span aria-hidden="true">✕</span>
+                </button>
+              ))}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {element}
     </div>
   );
 }
