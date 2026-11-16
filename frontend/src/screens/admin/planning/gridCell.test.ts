@@ -52,6 +52,10 @@ describe('cellState', () => {
     );
   });
 
+  it('ranks draft above declined and below proposed', () => {
+    expect(cellState('s1', 'u1', makeGrid([{ status: 'draft' }], ['s1']), early)).toBe('draft');
+  });
+
   it('ranks proposed above declined and available', () => {
     expect(cellState('s1', 'u1', makeGrid([{ status: 'proposed' }], ['s1']), early)).toBe(
       'proposed',
@@ -86,6 +90,7 @@ describe('isWithdrawable', () => {
     ['committed', true],
     ['proposed', true],
     ['no_answer', true],
+    ['draft', true],
     ['declined', false],
     ['available', false],
     ['blank', false],

@@ -1,6 +1,13 @@
 import type { Assignment, PlanningGrid } from '@/api/planning';
 
-export type CellState = 'committed' | 'proposed' | 'no_answer' | 'declined' | 'available' | 'blank';
+export type CellState =
+  | 'committed'
+  | 'proposed'
+  | 'no_answer'
+  | 'draft'
+  | 'declined'
+  | 'available'
+  | 'blank';
 
 export function findAssignment(
   grid: PlanningGrid,
@@ -23,6 +30,7 @@ export function cellState(
     const started = slot !== undefined && today >= new Date(grid.year, slot.month - 1, 1);
     return started ? 'no_answer' : 'proposed';
   }
+  if (status === 'draft') return 'draft';
   if (status === 'declined') return 'declined';
   const planner = grid.planners.find((p) => p.userId === userId);
   return planner?.availableSlotIds.includes(slotId) ? 'available' : 'blank';
@@ -36,14 +44,19 @@ export function slotHasCommitted(grid: PlanningGrid, slotId: string): boolean {
   return slotStatuses(grid, slotId).includes('committed');
 }
 
+// a staged draft means the coordinator already picked a replacement
+const COVERING: Assignment['status'][] = ['draft', 'proposed', 'committed'];
+
 export function slotNeedsPlanner(grid: PlanningGrid, slotId: string): boolean {
   const statuses = slotStatuses(grid, slotId);
-  return (
-    statuses.includes('declined') && !statuses.some((s) => s === 'proposed' || s === 'committed')
-  );
+  return statuses.includes('declined') && !statuses.some((s) => COVERING.includes(s));
 }
 
-const WITHDRAWABLE: CellState[] = ['committed', 'proposed', 'no_answer'];
+export function draftCount(grid: PlanningGrid): number {
+  return grid.assignments.filter((a) => a.status === 'draft').length;
+}
+
+const WITHDRAWABLE: CellState[] = ['committed', 'proposed', 'no_answer', 'draft'];
 
 export function isWithdrawable(state: CellState): boolean {
   return WITHDRAWABLE.includes(state);

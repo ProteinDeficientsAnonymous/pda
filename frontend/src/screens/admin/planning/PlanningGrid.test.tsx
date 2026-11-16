@@ -32,12 +32,17 @@ const planner = (userId: string, name: string, extra: object = {}) => ({
 let grid: Grid;
 const propose = vi.fn();
 const withdraw = vi.fn();
+const sendProposals = vi.fn();
 const toastError = vi.fn();
+const toastSuccess = vi.fn();
 
 vi.mock('sonner', () => ({
   toast: {
     error: (m: string) => {
       toastError(m);
+    },
+    success: (m: string) => {
+      toastSuccess(m);
     },
   },
 }));
@@ -46,15 +51,18 @@ vi.mock('@/api/planning', () => ({
   usePlanningGrid: () => ({ isPending: false, isError: false, data: grid }),
   usePropose: () => ({ mutateAsync: propose, isPending: false }),
   useWithdraw: () => ({ mutateAsync: withdraw, isPending: false }),
+  useSendProposals: () => ({ mutateAsync: sendProposals, isPending: false }),
 }));
 
 beforeEach(() => {
   propose.mockReset().mockResolvedValue(undefined);
   withdraw.mockReset().mockResolvedValue(undefined);
+  sendProposals.mockReset().mockResolvedValue({ planners_notified: 3, proposals_sent: 5 });
   toastError.mockReset();
+  toastSuccess.mockReset();
 });
 
-function interactiveGrid(status?: 'proposed' | 'committed' | 'declined'): Grid {
+function interactiveGrid(status?: 'draft' | 'proposed' | 'committed' | 'declined'): Grid {
   return {
     year: 2999,
     slots: [slot('s1', 'january', 1)],
@@ -114,6 +122,7 @@ describe('PlanningGrid', () => {
     ['only declines', ['declined'], true],
     ['a decline and a proposal', ['declined', 'proposed'], false],
     ['a decline and a commit', ['declined', 'committed'], false],
+    ['a decline and a draft', ['declined', 'draft'], false],
     ['no assignments', [], false],
   ] as const)('flags needs a planner with %s: %s', (_name, statuses, flagged) => {
     grid = {
@@ -185,5 +194,56 @@ describe('PlanningGrid', () => {
     expect(proposeButton).toBeDisabled();
     expect(proposeButton).toHaveAccessibleDescription(/no longer a planner/);
     expect(screen.getByRole('button', { name: 'withdraw ada from february' })).toBeEnabled();
+  });
+
+  it('removes a draft straight away without confirming', async () => {
+    grid = interactiveGrid('draft');
+    renderWithProviders(<PlanningGrid year={2999} />);
+    const cell = screen.getByRole('button', { name: 'remove draft ada for january' });
+    expect(cell).toHaveAccessibleDescription('draft');
+    await userEvent.click(cell);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(withdraw).toHaveBeenCalledWith('a1');
+  });
+
+  it('hides send proposals without drafts', () => {
+    grid = interactiveGrid('proposed');
+    renderWithProviders(<PlanningGrid year={2999} />);
+    expect(screen.queryByRole('button', { name: /^send/ })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [1, 'send 1 proposal'],
+    [2, 'send 2 proposals'],
+  ])('labels send for %i drafts', (count, label) => {
+    grid = {
+      ...interactiveGrid(),
+      assignments: Array.from({ length: count }, (_, i) => ({
+        id: `a${String(i)}`,
+        slotId: 's1',
+        userId: `u${String(i)}`,
+        status: 'draft' as const,
+      })),
+    };
+    renderWithProviders(<PlanningGrid year={2999} />);
+    expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
+    expect(screen.getByText("drafts aren't sent until you hit send")).toBeInTheDocument();
+  });
+
+  it('sends the drafts and toasts who was notified', async () => {
+    grid = interactiveGrid('draft');
+    renderWithProviders(<PlanningGrid year={2999} />);
+    await userEvent.click(screen.getByRole('button', { name: 'send 1 proposal' }));
+    expect(sendProposals).toHaveBeenCalled();
+    expect(toastSuccess).toHaveBeenCalledWith('sent to 3 planners 🌱');
+  });
+
+  it('toasts when sending fails', async () => {
+    sendProposals.mockRejectedValue(new Error('nope'));
+    grid = interactiveGrid('draft');
+    renderWithProviders(<PlanningGrid year={2999} />);
+    await userEvent.click(screen.getByRole('button', { name: 'send 1 proposal' }));
+    expect(toastError).toHaveBeenCalledWith("couldn't send proposals — try again");
+    expect(toastSuccess).not.toHaveBeenCalled();
   });
 });

@@ -251,6 +251,17 @@ export function useWithdraw() {
   });
 }
 
+type ProposalsSent = components['schemas']['ProposalsSentOut'];
+
+export function useSendProposals(year: number) {
+  return usePlanningMutation(async () => {
+    const { data } = await apiClient.post<ProposalsSent>(
+      `/api/community/planning/years/${String(year)}/proposals/send/`,
+    );
+    return data;
+  });
+}
+
 export function useMySlots() {
   return useQuery({
     queryKey: ['planning', 'me'],

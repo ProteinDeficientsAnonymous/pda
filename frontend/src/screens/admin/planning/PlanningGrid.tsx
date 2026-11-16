@@ -15,12 +15,14 @@ import { ContentError, ContentLoading } from '@/screens/public/ContentContainer'
 import {
   type CellState,
   cellState,
+  draftCount,
   findAssignment,
   isWithdrawable,
   slotHasCommitted,
   slotNeedsPlanner,
 } from './gridCell';
 import { GridCell } from './PlanningGridCell';
+import { SendProposalsBar } from './SendProposalsBar';
 import { SlotEventLink } from './SlotEventLink';
 import { toastOnError } from './toastOnError';
 
@@ -71,6 +73,13 @@ export function PlanningGrid({ year }: { year: number }) {
     state: CellState,
     assignment: Assignment | undefined,
   ) {
+    if (state === 'draft' && assignment) {
+      await toastOnError(
+        withdraw.mutateAsync(assignment.id),
+        "couldn't remove that draft — try again",
+      );
+      return;
+    }
     if (!isWithdrawable(state)) {
       await toastOnError(
         propose.mutateAsync({ slotId: slot.id, userId: planner.userId }),
@@ -94,6 +103,7 @@ export function PlanningGrid({ year }: { year: number }) {
   return (
     <section className="mt-8">
       <h2 className="mb-3 text-lg font-medium">planning grid</h2>
+      <SendProposalsBar year={year} drafts={draftCount(grid)} />
       {/* relative: the cells' sr-only labels are absolute and would otherwise widen the page on phones */}
       <div className="border-border relative overflow-x-auto rounded-lg border">
         <table aria-label="planning grid" className="w-full border-collapse text-sm">
