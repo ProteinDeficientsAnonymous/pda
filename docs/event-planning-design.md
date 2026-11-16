@@ -47,7 +47,7 @@ Creating a year pre-fills 12 monthly slots and the two biannuals (june anniversa
 
 ## Flows
 
-**Availability.** A planner opens the planning tab, picks the year, and submits: slots they could plan (checkboxes), biannual interest, and how many monthlies they'll take. Editable any time.
+**Availability.** A planner opens the planning tab, picks the year, and submits: slots they could plan (toggles), biannual interest, and how many monthlies they'll take. Editable any time.
 
 **Proposing.** The coordinator clicks a cell to stage that planner for that slot, including planners who didn't mark it available. Several planners can be staged on one slot. A staged proposal is a `draft`: nobody is notified, and clicking it again removes it silently. When done, the coordinator hits **send proposals**, which turns every draft in the year into `proposed` and sends each planner one in-app notification and one email listing all their new slots. The coordinator can withdraw a sent proposal or remove a committed planner; the planner is notified.
 
@@ -66,8 +66,15 @@ Creating a year pre-fills 12 monthly slots and the two biannuals (june anniversa
 ## Screens
 
 - **Admin hub tile "event planning"**, visible with either permission.
-- **Planner view** (`view_event_planning`): availability form; "waiting on you" list of proposals with commit / decline; "your slots" list showing month, teammates (others proposed or committed on that slot, with their status), and the create-event button or event link.
-- **Coordinator view** (`manage_event_planning`): year switcher and "new year"; slot editor; the grid (slots down, planners across, cell = committed > proposed > declined > available > blank), with per-planner biannual interest and monthly count in the header like the spreadsheet's top rows, and "submitted / not yet" per planner.
+- **Header** for everyone: title and year select.
+- **Planner view** (`view_event_planning`), the coordinator's **mine** tab: "waiting on you" list of proposals with commit / decline; "your slots" list showing month, teammates (others proposed or committed on that slot, with their status), and the create-event button or event link; then the availability form, with a toggle per slot (monthlies in two columns, extra slots below).
+- **Coordinator view** (`manage_event_planning`): tabs **schedule** (default), **mine** and **slots**, kept in `?tab=`; with no tab set, a coordinator with an unanswered proposal of their own lands on mine. Planners without manage get the mine content with no tabs. Logged-out visitors are sent to login and back.
+  - **schedule**: summary pills (slots needing a planner, not counting months that have ended; proposals waiting; planners with no form); the grid; the month panel; the send proposals bar.
+  - **The grid** is turned on its side so it fits a phone: planners down (no-form planners below a divider), slots across at fixed widths (monthlies in month order with a gap per quarter, then extra slots with ★ / ◆ markers explained in a key), plus a "month" summary row and a taken/offered load column. Each cell is a 15px tile in the app's greens where shape carries the state: in ✓ square, sent ? circle, no answer ! circle, not sent yet (draft) dashed square, declined ✕, free dotted pale square, blank. Tapping a cell drafts, removes a draft, or confirms a withdraw, as in Proposing.
+  - **The month panel** opens when a month letter is tapped (beside the grid on wide screens, under it on phones): the slot's status and event link, who's free with their load and a propose button, who's on it in what state, and "add someone" for everyone else. It's the large-button way to do everything the small cells do.
+  - **slots**: one compact row per slot with "edit" opening the label / month / kind / delete controls; add a slot; start next year.
+
+Grid states by priority: committed > proposed (no answer once the month starts) > draft > declined > available > blank. Never colour alone; no red/green.
 
 All text lowercase.
 
