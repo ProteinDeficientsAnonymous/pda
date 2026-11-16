@@ -41,7 +41,7 @@ Two new keys in `PermissionKey`, mirrored in `frontend/src/models/permissions.ts
 - **PlanningYear**: `year` (unique int), `created_at`.
 - **PlanningSlot**: `planning_year` FK, `label` (e.g. "march", "june anniversary"), `month` (1–12), `kind` (`monthly` | `biannual`), `event` FK nullable (`SET_NULL`), `order`.
 - **PlanningAvailability**: one per (year, user): `biannual_interest` (`yes` | `maybe` | `no`), `monthly_count` (int), `available_slots` M2M to PlanningSlot, `updated_at`.
-- **SlotAssignment**: one per (slot, user): `status` (`proposed` | `committed` | `declined` | `withdrawn`), `proposed_by`, `proposed_at`, `responded_at`, `last_reminded_at`, `reminder_count`, `upcoming_notified_at`.
+- **SlotAssignment**: one per (slot, user): `status` (`draft` | `proposed` | `committed` | `declined` | `withdrawn`), `proposed_by`, `proposed_at`, `responded_at`, `last_reminded_at`, `reminder_count`, `upcoming_notified_at`.
 
 Creating a year pre-fills 12 monthly slots and the two biannuals (june anniversary, dec holiday); the coordinator can rename, add or remove slots.
 
@@ -49,11 +49,11 @@ Creating a year pre-fills 12 monthly slots and the two biannuals (june anniversa
 
 **Availability.** A planner opens the planning tab, picks the year, and submits: slots they could plan (checkboxes), biannual interest, and how many monthlies they'll take. Editable any time.
 
-**Proposing.** The coordinator clicks a cell to propose that planner for that slot, including planners who didn't mark it available. Several planners can be proposed to one slot. Proposing sends an in-app notification and an email linking to the planning tab. The coordinator can withdraw a proposal or remove a committed planner; the planner is notified.
+**Proposing.** The coordinator clicks a cell to stage that planner for that slot, including planners who didn't mark it available. Several planners can be staged on one slot. A staged proposal is a `draft`: nobody is notified, and clicking it again removes it silently. When done, the coordinator hits **send proposals**, which turns every draft in the year into `proposed` and sends each planner one in-app notification and one email listing all their new slots. The coordinator can withdraw a sent proposal or remove a committed planner; the planner is notified.
 
 **Answering.** The planner commits or declines from the tab. Both notify every `manage_event_planning` holder in-app. A decline returns the slot to the coordinator: the cell shows "declined" and the slot is flagged as needing a planner. A committed planner can back out later, which acts as a decline.
 
-**Reminders.** A daily job emails every planner with a `proposed` assignment every 3 days until they answer, with no cap, stopping once the slot's month has started. A proposal never answered stays `proposed`; the grid shows it as "no answer" once the month has started. Reminders go only to active members who still hold `view_event_planning`.
+**Reminders.** A daily job emails every planner with a `proposed` assignment every 3 days until they answer, with no cap, stopping once the slot's month has started. Each planner gets one reminder email listing all their unanswered slots, not one per slot. A proposal never answered stays `proposed`; the grid shows it as "no answer" once the month has started. Reminders go only to active members who still hold `view_event_planning`.
 
 **Upcoming notice.** The same daily job sends committed planners one email and in-app notification once the slot is within 6 weeks of the 1st of its month (so a late commit gets it on the next run), stamped in `upcoming_notified_at`, and skipped if the slot already has an event.
 

@@ -1,6 +1,9 @@
 hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
-{% if variant == "upcoming" %}{{ slot_label|lower }} is coming up and you're planning it.{% else %}you've been asked to plan {{ slot_label|lower }} on pda.{% endif %}
+{% if variant == "upcoming" %}{{ summary|lower }} is coming up and you're planning it.{% else %}you've been asked to plan {{ summary|lower }} on pda.{% endif %}
+{% if slot_labels|length > 1 %}
+{% for label in slot_labels %}- {{ label|lower }}
+{% endfor %}{% endif %}
 
 {% if variant == "upcoming" %}create the event from the planning page so it's on the calendar:{% else %}let the coordinators know whether you're in:{% endif %}
 

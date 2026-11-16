@@ -67,7 +67,7 @@ def send_proposal_reminders(now: datetime) -> int:
         )
         if claimed is None:
             continue
-        if email_planner(claimed, PlanningEmailVariant.REMINDER):
+        if email_planner(claimed.user, [claimed.slot], PlanningEmailVariant.REMINDER):
             sent += 1
             continue
         SlotAssignment.objects.filter(pk=claimed.pk).update(
