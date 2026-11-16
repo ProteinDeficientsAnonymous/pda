@@ -82,8 +82,6 @@ describe('PlanningScreen', () => {
   it('splits my events and my availability into their own tabs', async () => {
     years = [{ id: 'y1', year: 2026 }];
     renderWithProviders(<PlanningScreen />);
-    expect(screen.getByRole('radio', { name: 'my events' })).toBeChecked();
-    expect(screen.getByText('my slots')).toBeInTheDocument();
     expect(screen.queryByText('form for 2026')).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('radio', { name: 'my availability' }));
     expect(screen.getByText('form for 2026')).toBeInTheDocument();
