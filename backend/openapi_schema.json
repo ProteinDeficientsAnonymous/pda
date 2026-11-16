@@ -6223,6 +6223,18 @@
       },
       "PlanningYearOut": {
         "properties": {
+          "availability_opened_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Availability Opened At"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -6234,7 +6246,8 @@
         },
         "required": [
           "id",
-          "year"
+          "year",
+          "availability_opened_at"
         ],
         "title": "PlanningYearOut",
         "type": "object"
@@ -18085,6 +18098,73 @@
           }
         ],
         "summary": "Put My Availability",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/years/{year}/availability/open/": {
+      "post": {
+        "operationId": "community_planning_availability_open_availability",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningYearOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Open Availability",
         "tags": [
           "community"
         ]

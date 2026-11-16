@@ -1402,6 +1402,11 @@
         "params": []
       },
       {
+        "name": "AVAILABILITY_ALREADY_OPEN",
+        "value": "planning.availability_already_open",
+        "params": []
+      },
+      {
         "name": "EVENT_ALREADY_LINKED",
         "value": "planning.event_already_linked",
         "params": []

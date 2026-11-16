@@ -2039,6 +2039,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/planning/years/{year}/availability/open/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Open Availability */
+        post: operations["community_planning_availability_open_availability"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/planning/years/{year}/grid/": {
         parameters: {
             query?: never;
@@ -5475,6 +5492,8 @@ export interface components {
         };
         /** PlanningYearOut */
         PlanningYearOut: {
+            /** Availability Opened At */
+            availability_opened_at: string | null;
             /** Id */
             id: string;
             /** Year */
@@ -12816,6 +12835,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AvailabilityOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_availability_open_availability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningYearOut"];
                 };
             };
             /** @description Bad Request */

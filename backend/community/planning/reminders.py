@@ -5,11 +5,11 @@ from uuid import UUID
 from django.conf import settings
 from django.db import transaction
 from django.db.models import F, Q, QuerySet
-from notifications.planning_email import PlanningEmailVariant
+from notifications.planning_email import AvailabilityEmailVariant, PlanningEmailVariant
 from users.models import HAS_EMAIL
 
-from community.models import AssignmentStatus, SlotAssignment
-from community.planning._notify import email_planner, notify_upcoming
+from community.models import AssignmentStatus, PlanningYear, SlotAssignment
+from community.planning._notify import email_availability, email_planner, notify_upcoming
 from community.planning._planners import planner_users
 
 logger = logging.getLogger(__name__)
@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 # An hour under the cadence so a daily cron that drifts early still sends, but a rerun doesn't.
 _REMINDER_GAP = timedelta(days=3) - timedelta(hours=1)
 _UPCOMING_LEAD = timedelta(days=42)
+_AVAILABILITY_GAP = timedelta(days=7) - timedelta(hours=1)
 
 
 def _month_not_started(now: datetime) -> Q:
@@ -136,4 +137,37 @@ def send_upcoming_notices(now: datetime) -> int:
             SlotAssignment.objects.filter(pk=claimed.pk).update(upcoming_notified_at=None)
             continue
         sent += 1
+    return sent
+
+
+def _due_availability_years(now: datetime) -> QuerySet[PlanningYear]:
+    cutoff = now - _AVAILABILITY_GAP
+    today = now.astimezone(settings.COMMUNITY_TZ).date()
+    return PlanningYear.objects.filter(
+        Q(availability_reminded_at__isnull=True) | Q(availability_reminded_at__lte=cutoff),
+        availability_opened_at__lte=cutoff,
+        year__gt=today.year,
+    )
+
+
+def send_availability_reminders(now: datetime) -> int:
+    """Weekly, email each planner who hasn't filled in an open year's availability, until that
+    year starts; the year is stamped under a row lock first so a rerun doesn't double-send.
+
+    return(int): number of reminder emails sent
+    """
+    sent = 0
+    for pk in list(_due_availability_years(now).values_list("pk", flat=True)):
+        with transaction.atomic():
+            claimed = _due_availability_years(now).select_for_update().filter(pk=pk).first()
+            if claimed is None:
+                continue
+            PlanningYear.objects.filter(pk=pk).update(availability_reminded_at=now)
+        waiting = (
+            planner_users()
+            .filter(HAS_EMAIL)
+            .exclude(planning_availabilities__planning_year=claimed)
+        )
+        for planner in waiting:
+            sent += email_availability(planner, claimed.year, AvailabilityEmailVariant.REMINDER)
     return sent

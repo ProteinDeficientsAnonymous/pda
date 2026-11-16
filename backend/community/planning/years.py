@@ -8,7 +8,7 @@ from ninja.responses import Status
 
 from community.models import PlanningSlot, PlanningYear
 from community.planning._access import require_manage, require_view
-from community.planning._shared import get_slot_or_404, get_year_or_404, slot_out
+from community.planning._shared import get_slot_or_404, get_year_or_404, slot_out, year_out
 from community.planning.schemas import (
     PlanningSlotIn,
     PlanningSlotOut,
@@ -22,10 +22,6 @@ from community.validation import Code, raise_validation
 router = Router()
 
 
-def _year_out(planning_year: PlanningYear) -> PlanningYearOut:
-    return PlanningYearOut(id=str(planning_year.id), year=planning_year.year)
-
-
 @router.get(
     "/planning/years/",
     response={200: list[PlanningYearOut], 403: ErrorOut},
@@ -33,7 +29,7 @@ def _year_out(planning_year: PlanningYear) -> PlanningYearOut:
 )
 def list_years(request):
     require_view(request, "list_planning_years")
-    return Status(200, [_year_out(y) for y in PlanningYear.objects.all()])
+    return Status(200, [year_out(y) for y in PlanningYear.objects.all()])
 
 
 @router.post(
@@ -47,7 +43,7 @@ def create_year(request, payload: PlanningYearIn):
         planning_year = PlanningYear.create_with_default_slots(payload.year)
     except IntegrityError:
         raise_validation(Code.Planning.YEAR_EXISTS, field="year", status_code=400)
-    return Status(201, _year_out(planning_year))
+    return Status(201, year_out(planning_year))
 
 
 @router.get(
