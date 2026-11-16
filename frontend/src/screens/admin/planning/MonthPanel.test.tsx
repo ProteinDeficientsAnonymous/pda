@@ -110,9 +110,9 @@ describe('MonthPanel', () => {
     expect(within(row('ada')).getByText('sent')).toBeInTheDocument();
   });
 
-  it('offers withdraw when a started month has no answer', () => {
+  it('offers withdraw when a started month is awaiting an answer', () => {
     renderPanel(makeGrid([on('ada', 'proposed')], { year: 2000 }));
-    expect(within(row('ada')).getByText('no answer')).toBeInTheDocument();
+    expect(within(row('ada')).getByText('awaiting answer')).toBeInTheDocument();
     expect(within(row('ada')).getByRole('button', { name: 'withdraw ada' })).toBeInTheDocument();
   });
 

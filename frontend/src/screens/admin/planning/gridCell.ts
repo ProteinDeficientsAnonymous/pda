@@ -57,7 +57,7 @@ export function isWithdrawable(state: CellState): boolean {
 export const STATE_TEXT: Record<CellState, string> = {
   committed: 'in',
   proposed: 'sent',
-  no_answer: 'no answer',
+  no_answer: 'awaiting answer',
   draft: 'not sent yet',
   declined: 'declined',
   available: 'free',

@@ -83,10 +83,12 @@ describe('ScheduleTab', () => {
     );
   });
 
-  it('shows the send bar while drafts wait', () => {
+  it('shows the send bar under the grid while drafts wait', () => {
     shown = { ...grid, assignments: [{ id: 'a1', slotId: 's1', userId: 'u1', status: 'draft' }] };
     renderWithProviders(<ScheduleTab year={2999} />);
-    expect(screen.getByText('1 not sent yet')).toBeInTheDocument();
+    const bar = screen.getByText('1 not sent yet');
+    const month = screen.getByRole('button', { name: 'january' });
+    expect(month.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it.each(['committed', 'proposed'] as const)(
