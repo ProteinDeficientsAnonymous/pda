@@ -370,6 +370,13 @@
         "params": []
       }
     ],
+    "Reserve": [
+      {
+        "name": "NOT_FOUND",
+        "value": "reserve.not_found",
+        "params": []
+      }
+    ],
     "Comment": [
       {
         "name": "NOT_FOUND",

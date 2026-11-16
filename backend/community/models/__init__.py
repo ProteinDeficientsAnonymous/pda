@@ -70,6 +70,7 @@ from community.models.planning import (
     SlotAssignment,
 )
 from community.models.poll import EventPoll, PollOption, PollVote
+from community.models.reserve import ReserveEntry
 from community.models.speech import EventSpeech, SpeechTemplate
 from community.models.survey import (
     Survey,
@@ -107,6 +108,7 @@ __all__ = [
     "PollAvailability",
     "QuestionType",
     "RejectionReason",
+    "ReserveEntry",
     "RSVP_CHOICE_TYPES",
     "MATCHABLE_RSVP_STATUSES",
     "RSVP_QUESTION_TYPE_CHOICES",

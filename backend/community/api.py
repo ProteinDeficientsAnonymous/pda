@@ -66,6 +66,8 @@ from community.planning.responses import router as planning_responses_router
 from community.planning.years import router as planning_years_router
 from community.polls.crud import router as polls_router
 from community.polls.options import router as poll_options_router
+from community.reserve.manage import router as reserve_manage_router
+from community.reserve.read import router as reserve_read_router
 from community.rsvps.host import router as event_host_rsvps_router
 from community.rsvps.member import router as event_rsvps_router
 from community.rsvps.public_manage import router as public_rsvp_manage_router
@@ -84,6 +86,8 @@ router = Router()
 router.add_router("", guidelines_router)
 router.add_router("", home_router)
 router.add_router("", pages_router)
+router.add_router("", reserve_read_router)
+router.add_router("", reserve_manage_router)
 router.add_router("", join_form_router)
 router.add_router("", join_requests_router)
 router.add_router("", join_request_submit_router)

@@ -81,6 +81,9 @@ class Code:
         NAME_REQUIRED = "tag.name_required"
         NAME_ALREADY_EXISTS = "tag.name_already_exists"
 
+    class Reserve:
+        NOT_FOUND = "reserve.not_found"
+
     class Comment:
         NOT_FOUND = "comment.not_found"
         REPLY_DEPTH_EXCEEDED = "comment.reply_depth_exceeded"
