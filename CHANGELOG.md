@@ -1,3 +1,10 @@
+## [0.245.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.1...v0.245.2) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - run planning reminders in the daily cron ([#2526](https://github.com/ProteinDeficientsAnonymous/pda/issues/2526)) ([a7eb132](https://github.com/ProteinDeficientsAnonymous/pda/commit/a7eb132973a4cb2ae0f3fbf05b0bc66264e8654d))
+
 ## [0.245.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.0...v0.245.1) (2026-11-16)
 
 
