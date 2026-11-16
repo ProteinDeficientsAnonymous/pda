@@ -57,6 +57,8 @@ class TestRespond:
             ("commit", Status.COMMITTED),
             ("commit", Status.DECLINED),
             ("commit", Status.WITHDRAWN),
+            ("commit", Status.DRAFT),
+            ("decline", Status.DRAFT),
             ("decline", Status.DECLINED),
             ("decline", Status.WITHDRAWN),
         ],

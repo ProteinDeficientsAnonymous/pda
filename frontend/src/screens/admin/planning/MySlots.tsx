@@ -53,7 +53,7 @@ export function MySlots() {
 
   async function backOut(row: MySlot) {
     const ok = await confirm({
-      message: `back out of ${row.slot.label}? the coordinator will be told`,
+      message: `back out of ${row.slot.label}? no worries — we'll pass it along`,
       confirmLabel: 'yes, back out',
       destructive: true,
     });

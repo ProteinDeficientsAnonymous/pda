@@ -7,13 +7,14 @@ from notifications.models import Notification, NotificationType
 from notifications.planning_email import (
     PlanningEmailDetails,
     PlanningEmailVariant,
+    describe_slots,
     send_planning_email,
 )
 from notifications.service import notify_users
 from users.helpers import visible_display_name
 from users.models import User
 
-from community.models import AssignmentStatus, SlotAssignment
+from community.models import AssignmentStatus, PlanningSlot, SlotAssignment
 from community.planning._planners import coordinator_users
 
 
@@ -41,14 +42,13 @@ def planning_url() -> str:
     return f"{settings.FRONTEND_BASE_URL}/admin/planning"
 
 
-def email_planner(assignment: SlotAssignment, variant: PlanningEmailVariant) -> bool:
-    user = assignment.user
+def email_planner(user: User, slots: list[PlanningSlot], variant: PlanningEmailVariant) -> bool:
     if not user.email:
         return False
     details = PlanningEmailDetails(
         to=user.email,
         display_name=user.full_name or "",
-        slot_label=assignment.slot.label,
+        slot_labels=tuple(slot.label for slot in slots),
         planning_url=planning_url(),
         variant=variant,
     )
@@ -58,14 +58,16 @@ def email_planner(assignment: SlotAssignment, variant: PlanningEmailVariant) -> 
     )
 
 
-def notify_proposed(assignment: SlotAssignment) -> None:
-    _notify(
-        assignment,
+def notify_proposed(user: User, slots: list[PlanningSlot], proposed_by: User) -> None:
+    summary = describe_slots(tuple(slot.label for slot in slots))
+    _notify_many(
+        [user.pk],
         NotificationType.PLANNING_PROPOSED,
-        f"you've been asked to plan {assignment.slot.label} — tap to respond",
-        assignment.proposed_by,
+        f"any chance you could plan {summary}? 🌱 tap to answer",
+        proposed_by,
     )
-    email_planner(assignment, PlanningEmailVariant.PROPOSED)
+    # A rolled-back send must not leave an email out for proposals that are still drafts.
+    transaction.on_commit(lambda: email_planner(user, slots, PlanningEmailVariant.PROPOSED))
 
 
 def notify_upcoming(assignment: SlotAssignment) -> None:
@@ -75,7 +77,7 @@ def notify_upcoming(assignment: SlotAssignment) -> None:
         f"{assignment.slot.label} is coming up — time to create the event",
         assignment.proposed_by,
     )
-    email_planner(assignment, PlanningEmailVariant.UPCOMING)
+    email_planner(assignment.user, [assignment.slot], PlanningEmailVariant.UPCOMING)
 
 
 def notify_withdrawn(assignment: SlotAssignment, by: User) -> None:
