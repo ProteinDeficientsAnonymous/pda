@@ -35,7 +35,9 @@ class TestChecklistItems:
         assert _texts(api_client, manager)[-1] == "book a room"
 
     def test_blank_text_rejected(self, api_client, manager):
-        assert send(api_client, "post", URL, {"text": "  "}, manager).status_code == 422
+        response = send(api_client, "post", URL, {"text": "  "}, manager)
+        assert response.status_code == 422
+        assert response.json()["detail"][0]["code"] == "field_invalid"
 
     def test_update_and_delete(self, api_client, manager):
         item = PlanningChecklistItem.objects.first()
