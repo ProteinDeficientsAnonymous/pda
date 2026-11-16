@@ -182,8 +182,8 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
       )}
       {others.length > 0 && (
         <Button
-          variant="ghost"
-          className="mt-2 h-8 px-2"
+          variant="secondary"
+          className="mt-2 h-8 px-3"
           aria-expanded={adding}
           onClick={() => {
             setAdding(!adding);
