@@ -1,10 +1,10 @@
 hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
-{% if variant == "upcoming" %}{{ summary|lower }} is coming up and you're planning it.{% else %}you've been asked to plan {{ summary|lower }} on pda.{% endif %}
+{% if variant == "upcoming" %}{{ summary|lower }} is coming up and you're planning it.{% elif variant == "reminder" %}just checking in — any chance you could plan {{ summary|lower }}?{% else %}any chance you could plan {{ summary|lower }}? 🌱{% endif %}
 {% if slot_labels|length > 1 %}
 {% for label in slot_labels %}- {{ label|lower }}
 {% endfor %}{% endif %}
-{% if variant == "upcoming" %}create the event from the planning page so it's on the calendar:{% else %}let the coordinators know whether you're in:{% endif %}
+{% if variant == "upcoming" %}create the event from the planning page so it's on the calendar:{% else %}tap below and let us know if you're in:{% endif %}
 
 {{ planning_url }}
 
