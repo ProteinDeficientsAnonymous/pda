@@ -114,6 +114,7 @@ class MySlotOut(BaseModel):
     year: int
     slot: PlanningSlotOut
     teammates: list[TeammateOut]
+    checklist_done_ids: list[str]
 
 
 ChecklistText = Annotated[str, Field(max_length=300), AfterValidator(_not_blank)]
@@ -138,3 +139,11 @@ class ChecklistItemPatchIn(BaseModel):
 
 class ChecklistMoveIn(BaseModel):
     direction: Literal["up", "down"]
+
+
+class ChecklistTickIn(BaseModel):
+    done: bool
+
+
+class SlotChecklistOut(BaseModel):
+    done_ids: list[str]
