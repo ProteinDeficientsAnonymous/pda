@@ -42,7 +42,7 @@ interface GridTileProps {
   slotLabel: string;
   isPlanner: boolean;
   self?: boolean;
-  actionLabel?: string | undefined;
+  viewOnly?: boolean;
   disabled: boolean;
   onAct: () => void;
 }
@@ -53,16 +53,21 @@ export function GridTile({
   slotLabel,
   isPlanner,
   self = false,
-  actionLabel,
+  viewOnly = false,
   disabled,
   onAct,
 }: GridTileProps) {
   const textId = useId();
-  const blockedReason = !isWithdrawable(state) && !isPlanner ? 'no longer a planner' : null;
+  const blockedReason =
+    !viewOnly && !isWithdrawable(state) && !isPlanner ? 'no longer a planner' : null;
   return (
     <button
       type="button"
-      aria-label={actionLabel ?? cellActionLabel(state, plannerName, slotLabel, self)}
+      aria-label={
+        viewOnly
+          ? `${plannerName}, ${slotLabel}`
+          : cellActionLabel(state, plannerName, slotLabel, self)
+      }
       aria-describedby={textId}
       title={blockedReason ?? undefined}
       disabled={disabled || blockedReason !== null}

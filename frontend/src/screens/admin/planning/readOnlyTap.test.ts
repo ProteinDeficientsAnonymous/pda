@@ -17,13 +17,7 @@ describe('readOnlyTapNotice', () => {
       "you can only put yourself in for months you've been proposed for",
       false,
     ],
-    [
-      'declined',
-      true,
-      true,
-      "you can only put yourself in for months you've been proposed for",
-      false,
-    ],
+    ['declined', true, true, 'you declined june — ask a coordinator to propose you again', false],
     ['blank', true, true, "you said you're not free in june — update your availability", true],
     ['blank', true, false, 'add your availability so you can be proposed months', true],
   ] as const)(

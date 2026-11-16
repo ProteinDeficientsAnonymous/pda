@@ -27,6 +27,12 @@ export function readOnlyTapNotice(
       toAvailability: true,
     };
   }
+  if (state === 'declined') {
+    return {
+      message: `you declined ${slotLabel} — ask a coordinator to propose you again`,
+      toAvailability: false,
+    };
+  }
   return {
     message: "you can only put yourself in for months you've been proposed for",
     toAvailability: false,

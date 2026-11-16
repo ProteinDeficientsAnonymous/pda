@@ -1,5 +1,6 @@
-import { screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Permission } from '@/models/permissions';
@@ -21,6 +22,10 @@ const grid = makePlanningGrid({
 });
 
 let shown = grid;
+
+function Search() {
+  return <output aria-label="search">{useLocation().search}</output>;
+}
 let status = { isPending: false, isError: false };
 
 const mutation = { mutateAsync: vi.fn(), isPending: false };
@@ -99,6 +104,33 @@ describe('ScheduleTab', () => {
     expect(toastMock).toHaveBeenCalledWith('add your availability so you can be proposed months', {
       action: { label: 'my availability', onClick: expect.any(Function) },
     });
+  });
+
+  it('opens my availability from the toast action', async () => {
+    setAuthed(makeUserWithPermissions([Permission.ViewEventPlanning], { id: 'u1' }));
+    shown = { ...grid, planners: [makePlanner({ submitted: false, availableSlotIds: [] })] };
+    renderWithProviders(
+      <>
+        <ScheduleTab year={2999} />
+        <Search />
+      </>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'ada, january' }));
+    const [, options] = toastMock.mock.calls[0] as [string, { action: { onClick: () => void } }];
+    act(() => {
+      options.action.onClick();
+    });
+    expect(screen.getByLabelText('search')).toHaveTextContent('?tab=availability');
+  });
+
+  it('explains taps on a former planner row instead of disabling them', async () => {
+    setAuthed(makeUserWithPermissions([Permission.ViewEventPlanning]));
+    shown = { ...grid, planners: [makePlanner({ isPlanner: false, availableSlotIds: ['s1'] })] };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    const tile = screen.getByRole('button', { name: 'ada, january' });
+    expect(tile).toBeEnabled();
+    await userEvent.click(tile);
+    expect(toastMock).toHaveBeenCalledWith('you can only change your own row', undefined);
   });
 
   it('toggles the open month on repeat taps', async () => {
