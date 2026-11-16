@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -58,18 +58,29 @@ beforeEach(() => {
 });
 
 describe('AvailabilityForm', () => {
-  it('renders a checkbox per slot', () => {
+  it('renders a switch per slot', () => {
     renderWithProviders(<AvailabilityForm year={2027} />);
-    expect(screen.getAllByRole('checkbox')).toHaveLength(3);
-    expect(screen.getByLabelText('february')).not.toBeChecked();
+    expect(screen.getAllByRole('switch')).toHaveLength(3);
+    expect(screen.getByRole('switch', { name: 'february' })).not.toBeChecked();
+  });
+
+  it('lays monthlies out in two columns and extras below', () => {
+    renderWithProviders(<AvailabilityForm year={2027} />);
+    const grid = screen.getByTestId('monthly-slots');
+    expect(grid.style.gridTemplateRows).toBe('repeat(1, auto)');
+    const monthly = within(grid);
+    expect(monthly.getByRole('switch', { name: 'january' })).toBeInTheDocument();
+    expect(monthly.getByRole('switch', { name: 'february' })).toBeInTheDocument();
+    expect(monthly.queryByRole('switch', { name: 'spring biannual' })).not.toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'spring biannual' })).toBeInTheDocument();
   });
 
   it('submits selected slot ids, interest and monthly count', async () => {
     const user = userEvent.setup();
     renderWithProviders(<AvailabilityForm year={2027} />);
 
-    await user.click(screen.getByLabelText('january'));
-    await user.click(screen.getByLabelText('spring biannual'));
+    await user.click(screen.getByRole('switch', { name: 'january' }));
+    await user.click(screen.getByRole('switch', { name: 'spring biannual' }));
     await user.click(screen.getByLabelText('maybe'));
     await user.clear(screen.getByLabelText('how many monthlies will you plan?'));
     await user.type(screen.getByLabelText('how many monthlies will you plan?'), '3');
@@ -126,8 +137,8 @@ describe('AvailabilityForm', () => {
     };
     renderWithProviders(<AvailabilityForm year={2027} />);
 
-    expect(screen.getByLabelText('february')).toBeChecked();
-    expect(screen.getByLabelText('january')).not.toBeChecked();
+    expect(screen.getByRole('switch', { name: 'february' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'january' })).not.toBeChecked();
     expect(screen.getByLabelText('maybe')).toBeChecked();
     expect(screen.getByLabelText('how many monthlies will you plan?')).toHaveValue(4);
   });

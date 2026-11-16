@@ -44,14 +44,6 @@ export function slotHasCommitted(grid: PlanningGrid, slotId: string): boolean {
   return slotStatuses(grid, slotId).includes('committed');
 }
 
-// a staged draft means the coordinator already picked a replacement
-const COVERING: Assignment['status'][] = ['draft', 'proposed', 'committed'];
-
-export function slotNeedsPlanner(grid: PlanningGrid, slotId: string): boolean {
-  const statuses = slotStatuses(grid, slotId);
-  return statuses.includes('declined') && !statuses.some((s) => COVERING.includes(s));
-}
-
 export function draftCount(grid: PlanningGrid): number {
   return grid.assignments.filter((a) => a.status === 'draft').length;
 }
@@ -60,4 +52,20 @@ const WITHDRAWABLE: CellState[] = ['committed', 'proposed', 'no_answer', 'draft'
 
 export function isWithdrawable(state: CellState): boolean {
   return WITHDRAWABLE.includes(state);
+}
+
+export const STATE_TEXT: Record<CellState, string> = {
+  committed: 'in',
+  proposed: 'sent',
+  no_answer: 'no answer',
+  draft: 'not sent yet',
+  declined: 'declined',
+  available: 'free',
+  blank: 'not free',
+};
+
+export function cellActionLabel(state: CellState, plannerName: string, slotLabel: string): string {
+  if (state === 'draft') return `remove draft ${plannerName} for ${slotLabel}`;
+  if (isWithdrawable(state)) return `withdraw ${plannerName} from ${slotLabel}`;
+  return `propose ${plannerName} for ${slotLabel}`;
 }

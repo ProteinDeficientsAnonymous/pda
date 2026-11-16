@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
-import { type PlanningYear, useCreateYear, usePlanningYears } from '@/api/planning';
+import { type PlanningYear, useCreateYear, useMySlots, usePlanningYears } from '@/api/planning';
 import { useHasPermission } from '@/auth/useAuth';
 import { Button } from '@/components/ui/Button';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Select } from '@/components/ui/Select';
 import { Permission } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { AvailabilityForm } from './AvailabilityForm';
 import { MySlots } from './MySlots';
-import { PlanningGrid } from './PlanningGrid';
+import { type PlanningTab, resolveTab, TAB_OPTIONS } from './planningTab';
+import { ScheduleTab } from './ScheduleTab';
 import { SlotEditor } from './SlotEditor';
 import { toastOnError } from './toastOnError';
 
@@ -34,11 +37,48 @@ function StartYearButton({ year, onStarted }: { year: number; onStarted: (y: num
   );
 }
 
+function MineTab({ year }: { year: number }) {
+  return (
+    <>
+      <MySlots />
+      <AvailabilityForm year={year} />
+    </>
+  );
+}
+
 export default function PlanningScreen() {
   const { data: years, isPending, isError } = usePlanningYears();
+  const mySlots = useMySlots();
+  const [params, setParams] = useSearchParams();
   const [picked, setPicked] = useState<number | null>(null);
   const [nextYear] = useState(() => new Date().getFullYear() + 1);
   const canManage = useHasPermission(Permission.ManageEventPlanning);
+
+  const rawTab = params.get('tab');
+  const urlTab = TAB_OPTIONS.some((o) => o.value === rawTab) ? rawTab : null;
+  const hasWaiting = mySlots.data?.some((r) => r.status === 'proposed') ?? false;
+  const defaultSettled = !canManage || urlTab !== null || !mySlots.isPending;
+  const resolved = resolveTab(urlTab, hasWaiting);
+  const tab: PlanningTab = canManage ? resolved : 'mine';
+
+  const pickTab = useCallback(
+    (next: PlanningTab) => {
+      setParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          p.set('tab', next);
+          return p;
+        },
+        { replace: true },
+      );
+    },
+    [setParams],
+  );
+
+  // persist the resolved default so answering a proposal doesn't flip the tab
+  useEffect(() => {
+    if (canManage && urlTab === null && defaultSettled) pickTab(resolved);
+  }, [canManage, urlTab, defaultSettled, resolved, pickTab]);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load planning years — try refreshing" />;
@@ -56,7 +96,6 @@ export default function PlanningScreen() {
   }
 
   const year = picked ?? defaultYear(years);
-
   return (
     <ContentContainer>
       <h1 className="mb-6 text-2xl font-medium tracking-tight">event planning</h1>
@@ -71,12 +110,30 @@ export default function PlanningScreen() {
             options={years.map((y) => ({ value: String(y.year), label: String(y.year) }))}
           />
         </div>
-        {canStartNext ? <StartYearButton year={nextYear} onStarted={setPicked} /> : null}
       </div>
-      <MySlots />
-      <AvailabilityForm year={year} />
-      {canManage ? <PlanningGrid year={year} /> : null}
-      {canManage ? <SlotEditor year={year} /> : null}
+      {canManage ? (
+        <SegmentedControl
+          name="planning-tab"
+          ariaLabel="planning view"
+          options={TAB_OPTIONS}
+          value={defaultSettled ? tab : null}
+          onChange={pickTab}
+          className="mb-6"
+        />
+      ) : null}
+      {!defaultSettled ? <ContentLoading /> : null}
+      {defaultSettled && tab === 'schedule' ? <ScheduleTab key={year} year={year} /> : null}
+      {defaultSettled && tab === 'mine' ? <MineTab year={year} /> : null}
+      {defaultSettled && tab === 'slots' ? (
+        <>
+          <SlotEditor year={year} />
+          {canStartNext ? (
+            <div className="mt-6">
+              <StartYearButton year={nextYear} onStarted={setPicked} />
+            </div>
+          ) : null}
+        </>
+      ) : null}
     </ContentContainer>
   );
 }

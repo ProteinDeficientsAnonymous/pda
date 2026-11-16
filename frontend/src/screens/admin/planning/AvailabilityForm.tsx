@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TextField } from '@/components/ui/TextField';
+import { Toggle } from '@/components/ui/Toggle';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { toastOnError } from './toastOnError';
@@ -46,6 +47,19 @@ function FormFields({ year, slots, initial }: { year: number; slots: Slots; init
   const [count, setCount] = useState(String(initial.monthlyCount));
 
   const countValid = parseCount(count) !== null;
+  const monthlies = slots.filter((s) => s.kind === 'monthly');
+  const extras = slots.filter((s) => s.kind !== 'monthly');
+
+  const renderToggle = (s: Slots[number]) => (
+    <Toggle
+      key={s.id}
+      label={s.label}
+      checked={slotIds.has(s.id)}
+      onChange={() => {
+        toggle(s.id);
+      }}
+    />
+  );
 
   function toggle(id: string) {
     setSlotIds((prev) => {
@@ -75,18 +89,16 @@ function FormFields({ year, slots, initial }: { year: number; slots: Slots; init
         <legend className="text-foreground mb-1 text-sm font-medium">
           which slots can you plan?
         </legend>
-        {slots.map((s) => (
-          <label key={s.id} className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={slotIds.has(s.id)}
-              onChange={() => {
-                toggle(s.id);
-              }}
-            />
-            {s.label}
-          </label>
-        ))}
+        {monthlies.length > 0 && (
+          <div
+            data-testid="monthly-slots"
+            className="grid grid-flow-col grid-cols-2 gap-x-6 gap-y-2"
+            style={{ gridTemplateRows: `repeat(${String(Math.ceil(monthlies.length / 2))}, auto)` }}
+          >
+            {monthlies.map(renderToggle)}
+          </div>
+        )}
+        {extras.map(renderToggle)}
       </fieldset>
 
       <div className="flex flex-col gap-2">
