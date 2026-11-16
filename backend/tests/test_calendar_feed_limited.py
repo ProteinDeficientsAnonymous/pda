@@ -29,10 +29,12 @@ def events(db):
     _event("Members Potluck", EventType.COMMUNITY, PageVisibility.MEMBERS_ONLY, host=host)
     _event("Public Picnic", EventType.COMMUNITY, PageVisibility.PUBLIC, host=host)
     _event("Official Walk", EventType.OFFICIAL, PageVisibility.MEMBERS_ONLY, host=host)
+    _event("Book Club", EventType.CLUB, PageVisibility.MEMBERS_ONLY, host=host)
+    return host
 
 
 def _subscribe(membership_status):
-    User.objects.create(
+    return User.objects.create(
         phone_number="+16505551234",
         first_name="Sub",
         membership_status=membership_status,
@@ -54,8 +56,19 @@ class TestLimitedCalendarFeed:
         _subscribe(status)
         content = _feed(api_client)
         assert "Members Potluck" not in content
-        assert "Official Walk spot" in content
-        assert "chat.whatsapp.com/OfficialWalk" in content
+        for title in ("Official Walk", "Book Club"):
+            assert f"{title} spot" in content
+            assert f"chat.whatsapp.com/{title.replace(' ', '')}" in content
+
+    @LIMITED_STATUSES
+    def test_limited_feed_hides_invite_only_community_event_they_are_invited_to(
+        self, api_client, events, status
+    ):
+        party = _event(
+            "Secret Supper", EventType.COMMUNITY, PageVisibility.INVITE_ONLY, host=events
+        )
+        party.invited_users.add(_subscribe(status))
+        assert "Secret Supper" not in _feed(api_client)
 
     @LIMITED_STATUSES
     def test_limited_feed_gets_public_fields_of_public_community_events(
@@ -70,6 +83,6 @@ class TestLimitedCalendarFeed:
     def test_member_feed_is_unchanged(self, api_client, events):
         _subscribe(MembershipStatus.ACTIVE_MEMBER)
         content = _feed(api_client)
-        for title in ("Members Potluck", "Public Picnic", "Official Walk"):
+        for title in ("Members Potluck", "Public Picnic", "Official Walk", "Book Club"):
             assert f"{title} spot" in content
             assert f"chat.whatsapp.com/{title.replace(' ', '')}" in content
