@@ -4,6 +4,7 @@ import logging
 import re
 
 from community.attendance.analytics import AttendedEventOut
+from community.events.limited_access import is_limited
 from community.models import AttendanceStatus, EventRSVP
 from community.rsvps.counts import attendance_q, reportable_events_q
 from community.validation import Code, raise_validation
@@ -73,8 +74,10 @@ def _matches_for_non_admin(u: User, q: str, digits: str) -> bool:
     return bool(u.show_phone and (q in u.phone_number or (digits and digits in u.phone_number)))
 
 
-@router.get("/users/search/", response={200: list[UserSearchOut]}, auth=gated_jwt)
+@router.get("/users/search/", response={200: list[UserSearchOut], 403: ErrorOut}, auth=gated_jwt)
 def search_users(request, q: str = ""):
+    if is_limited(request.auth):
+        raise_validation(Code.Perm.DENIED, status_code=403, action="search_users")
     qs = User.objects.active_members().filter(needs_onboarding=False).exclude(pk=request.auth.pk)
     q = q.strip()
     digits = re.sub(r"\D", "", q)
