@@ -167,7 +167,7 @@ def single_event_ics(request, event_id: str):
     try:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users")
+            .prefetch_related("co_hosts")
             .get(event_lookup_q(event_id))
         )
     except Event.DoesNotExist:

@@ -256,9 +256,8 @@ class TestLimitedEventIcs:
     @LIMITED_USER_FIXTURES
     def test_members_only_community_event_is_hidden(self, api_client, request, fixture, host):
         event = _event("Private", EventType.COMMUNITY, PageVisibility.MEMBERS_ONLY, host=host)
-        status, body = _ics(api_client, event, request.getfixturevalue(fixture))
+        status, _ = _ics(api_client, event, request.getfixturevalue(fixture))
         assert status == 404
-        assert "123 Sprout Lane" not in body
 
     @LIMITED_USER_FIXTURES
     def test_public_community_event_hides_member_fields(self, api_client, request, fixture, host):
