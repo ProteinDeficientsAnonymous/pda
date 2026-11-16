@@ -11,7 +11,7 @@ import { ContentContainer, ContentError, ContentLoading } from '@/screens/public
 
 import { AvailabilityForm } from './AvailabilityForm';
 import { MySlots } from './MySlots';
-import { type PlanningTab, resolveTab, TAB_OPTIONS } from './planningTab';
+import { explicitTab, type PlanningTab, resolveTab, tabOptions } from './planningTab';
 import { ScheduleTab } from './ScheduleTab';
 import { SlotEditor } from './SlotEditor';
 import { toastOnError } from './toastOnError';
@@ -37,15 +37,6 @@ function StartYearButton({ year, onStarted }: { year: number; onStarted: (y: num
   );
 }
 
-function MineTab({ year }: { year: number }) {
-  return (
-    <>
-      <MySlots />
-      <AvailabilityForm year={year} />
-    </>
-  );
-}
-
 export default function PlanningScreen() {
   const { data: years, isPending, isError } = usePlanningYears();
   const mySlots = useMySlots();
@@ -54,12 +45,10 @@ export default function PlanningScreen() {
   const [nextYear] = useState(() => new Date().getFullYear() + 1);
   const canManage = useHasPermission(Permission.ManageEventPlanning);
 
-  const rawTab = params.get('tab');
-  const urlTab = TAB_OPTIONS.some((o) => o.value === rawTab) ? rawTab : null;
+  const urlTab = explicitTab(params.get('tab'), canManage);
   const hasWaiting = mySlots.data?.some((r) => r.status === 'proposed') ?? false;
   const defaultSettled = !canManage || urlTab !== null || !mySlots.isPending;
-  const resolved = resolveTab(urlTab, hasWaiting);
-  const tab: PlanningTab = canManage ? resolved : 'mine';
+  const tab: PlanningTab = resolveTab(urlTab, hasWaiting, canManage);
 
   const pickTab = useCallback(
     (next: PlanningTab) => {
@@ -77,8 +66,8 @@ export default function PlanningScreen() {
 
   // persist the resolved default so answering a proposal doesn't flip the tab
   useEffect(() => {
-    if (canManage && urlTab === null && defaultSettled) pickTab(resolved);
-  }, [canManage, urlTab, defaultSettled, resolved, pickTab]);
+    if (urlTab === null && defaultSettled) pickTab(tab);
+  }, [urlTab, defaultSettled, tab, pickTab]);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load planning years — try refreshing" />;
@@ -111,19 +100,18 @@ export default function PlanningScreen() {
           />
         </div>
       </div>
-      {canManage ? (
-        <SegmentedControl
-          name="planning-tab"
-          ariaLabel="planning view"
-          options={TAB_OPTIONS}
-          value={defaultSettled ? tab : null}
-          onChange={pickTab}
-          className="mb-6"
-        />
-      ) : null}
+      <SegmentedControl
+        name="planning-tab"
+        ariaLabel="planning view"
+        options={tabOptions(canManage)}
+        value={defaultSettled ? tab : null}
+        onChange={pickTab}
+        className="mb-6 max-w-full overflow-x-auto [scrollbar-width:none]"
+      />
       {!defaultSettled ? <ContentLoading /> : null}
       {defaultSettled && tab === 'schedule' ? <ScheduleTab key={year} year={year} /> : null}
-      {defaultSettled && tab === 'mine' ? <MineTab year={year} /> : null}
+      {defaultSettled && tab === 'events' ? <MySlots /> : null}
+      {defaultSettled && tab === 'availability' ? <AvailabilityForm year={year} /> : null}
       {defaultSettled && tab === 'slots' ? (
         <>
           <SlotEditor year={year} />
