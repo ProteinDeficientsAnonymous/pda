@@ -267,9 +267,10 @@ class TestTentativeDirectoryAccess:
 @pytest.mark.django_db
 class TestLimitedMemberSearch:
     @LIMITED_USER_FIXTURES
-    def test_search_is_blocked_for_limited_users(self, api_client, request, fixture, test_user):
+    @pytest.mark.parametrize("q", ["", "Test"])
+    def test_search_is_blocked_for_limited_users(self, api_client, request, fixture, q, test_user):
         user = request.getfixturevalue(fixture)
-        response = api_client.get("/api/auth/users/search/", **auth_headers_for(user))
+        response = api_client.get(f"/api/auth/users/search/?q={q}", **auth_headers_for(user))
         assert response.status_code == 403
         assert_error_code(response, Code.Perm.DENIED)
 
