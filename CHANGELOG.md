@@ -1,3 +1,10 @@
+# [0.250.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.249.0...v0.250.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - coordinators can confirm a planner directly (api) ([#2548](https://github.com/ProteinDeficientsAnonymous/pda/issues/2548)) ([ff9e289](https://github.com/ProteinDeficientsAnonymous/pda/commit/ff9e2898f53c4a084a1dbf546c6fba57095740f4))
+
 # [0.249.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.4...v0.249.0) (2026-11-16)
 
 
