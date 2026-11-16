@@ -37,7 +37,6 @@ export function ScheduleTab({ year }: { year: number }) {
             busy={busy}
           />
         </div>
-        <SendProposalsBar send={send} drafts={draftCount(grid)} />
         {openSlotId ? (
           <MonthPanel
             key={openSlotId}
@@ -52,6 +51,7 @@ export function ScheduleTab({ year }: { year: number }) {
             }}
           />
         ) : null}
+        <SendProposalsBar send={send} drafts={draftCount(grid)} />
       </div>
       {confirmElement}
     </>

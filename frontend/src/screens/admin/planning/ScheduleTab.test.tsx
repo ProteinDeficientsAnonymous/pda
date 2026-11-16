@@ -91,6 +91,15 @@ describe('ScheduleTab', () => {
     expect(month.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('keeps the send bar under an open month panel', async () => {
+    shown = { ...grid, assignments: [{ id: 'a1', slotId: 's1', userId: 'u1', status: 'draft' }] };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    await userEvent.click(screen.getByRole('button', { name: 'january' }));
+    const panel = screen.getByRole('heading', { name: 'january' });
+    const bar = screen.getByText('1 not sent yet');
+    expect(panel.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it.each(['committed', 'proposed'] as const)(
     'confirms before withdrawing a %s tile',
     async (status) => {
