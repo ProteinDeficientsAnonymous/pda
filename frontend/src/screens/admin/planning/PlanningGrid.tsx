@@ -94,7 +94,8 @@ export function PlanningGrid({ year }: { year: number }) {
   return (
     <section className="mt-8">
       <h2 className="mb-3 text-lg font-medium">planning grid</h2>
-      <div className="border-border overflow-x-auto rounded-lg border">
+      {/* relative: the cells' sr-only labels are absolute and would otherwise widen the page on phones */}
+      <div className="border-border relative overflow-x-auto rounded-lg border">
         <table aria-label="planning grid" className="w-full border-collapse text-sm">
           <thead>
             <tr>
