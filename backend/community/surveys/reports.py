@@ -89,9 +89,10 @@ def summarize_question(q: SurveyQuestion, responses: list[SurveyResponse]) -> Qu
     )
 
 
-def csv_answer_cell(q: SurveyQuestion, answer) -> str:
+def csv_answer_cell(q: SurveyQuestion | None, answer) -> str:
     if isinstance(answer, dict):
-        ordered = [opt for opt in (q.options or []) if opt in answer]
+        options = (q.options if q else None) or []
+        ordered = [opt for opt in options if opt in answer]
         ordered += [opt for opt in answer if opt not in ordered]
         return csv_safe(";".join(f"{opt}={answer[opt]}" for opt in ordered))
     if answer is None:
@@ -101,7 +102,7 @@ def csv_answer_cell(q: SurveyQuestion, answer) -> str:
         return csv_safe("\n".join(answer))
     text = str(answer)
     # Validated numbers like -5 stay numeric in spreadsheets instead of becoming '-5 text.
-    if q.field_type == SurveyQuestionType.NUMBER and _PLAIN_NUMBER.fullmatch(text):
+    if q and q.field_type == SurveyQuestionType.NUMBER and _PLAIN_NUMBER.fullmatch(text):
         return text
     return csv_safe(text)
 
@@ -133,6 +134,26 @@ def get_survey_summary(request, survey_id: UUID, event_id: UUID | None = None):
     return Status(200, [summarize_question(q, responses) for q in questions])
 
 
+def _stored_answer(response: SurveyResponse, question_id: str):
+    entry = response.answers.get(question_id)
+    return entry.get("answer") if isinstance(entry, dict) else entry
+
+
+def removed_questions(responses: list[SurveyResponse], current_ids: set[str]) -> dict[str, str]:
+    """return(dict): question id -> stored label, for answers to questions no longer on the survey."""
+    removed: dict[str, str] = {}
+    for r in responses:
+        for qid, entry in r.answers.items():
+            if qid not in current_ids:
+                removed.setdefault(qid, _stored_label(entry))
+    return removed
+
+
+def _stored_label(entry) -> str:
+    label = entry.get("label") if isinstance(entry, dict) else None
+    return label or "removed question"
+
+
 @router.get(
     "/surveys/{survey_id}/responses.csv",
     response={403: ErrorOut, 404: ErrorOut},
@@ -143,14 +164,18 @@ def get_survey_responses_csv(request, survey_id: UUID):
     questions = [q for q in survey.questions.all() if q.field_type != SurveyQuestionType.SECTION]
     buf = io.StringIO()
     writer = csv.writer(buf)
+    responses = ordered_responses(survey)
+    removed = removed_questions(responses, {str(q.id) for q in questions})
     labels = [csv_safe(q.label) for q in questions]
+    labels += [csv_safe(f"{label} (removed)") for label in removed.values()]
     header = ["submitted_at"] if survey.anonymous else ["submitted_by", "submitted_at"]
     if survey.feedback_event_type:
         header.append("event")
     writer.writerow([*header, *labels])
-    for r in ordered_responses(survey):
+    for r in responses:
         cells = [
             csv_answer_cell(q, (r.answers.get(str(q.id)) or {}).get("answer")) for q in questions
         ]
+        cells += [csv_answer_cell(None, _stored_answer(r, qid)) for qid in removed]
         writer.writerow(_csv_row_prefix(r, survey, request.auth) + cells)
     return csv_response(buf.getvalue(), f"survey-responses-{survey.slug}.csv")

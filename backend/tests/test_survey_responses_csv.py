@@ -95,6 +95,27 @@ class TestSurveyResponsesCsv:
         assert anon_row[3] == ""
         assert anon_row[4] == ""
 
+    def test_removed_question_answers_get_their_own_column(
+        self, api_client, surveys_admin_headers, csv_survey
+    ):
+        notes = csv_survey.questions.get(label="Notes")
+        response = csv_survey.responses.get(user__isnull=True)
+        response.answers["gone-id"] = {"label": "anything else?", "answer": "=loved it"}
+        response.save()
+        notes.delete()
+        rows = _rows(api_client.get(_url(csv_survey), **surveys_admin_headers))
+        assert rows[0] == [
+            "submitted_by",
+            "submitted_at",
+            "Toppings",
+            "When",
+            "Notes (removed)",
+            "anything else? (removed)",
+        ]
+        by_name = {row[0]: row for row in rows[1:]}
+        assert by_name[""][4:] == ["hello, world", "'=loved it"]
+        assert by_name["Surveys Admin"][4:] == ["'=SUM(A1)", ""]
+
     def test_submitted_at_is_iso(self, api_client, surveys_admin_headers, csv_survey):
         rows = _rows(api_client.get(_url(csv_survey), **surveys_admin_headers))
         submitted = {r.submitted_at.isoformat() for r in csv_survey.responses.all()}

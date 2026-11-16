@@ -4,6 +4,7 @@ import { renderAnswer } from '@/components/questions/renderAnswer';
 import { Button } from '@/components/ui/Button';
 
 import { ExpandableAnswer, WRAP_TEXT } from './ExpandableAnswer';
+import { removedQuestions } from './removedQuestions';
 import { formatSubmittedAt, submitterLabel } from './surveyResponseFormat';
 
 // Widths live on an inner div: browsers ignore max-width on table cells.
@@ -23,6 +24,7 @@ export function SurveyResponsesTable({
 }) {
   const showEvent = Boolean(survey.feedbackEventType);
   const questions = survey.questions.filter((q) => q.fieldType !== QuestionType.Section);
+  const removed = removedQuestions(survey, responses);
   // relative keeps the absolute sr-only header inside the scroller; without it the page widens (#1920).
   return (
     <div className="border-border bg-surface relative overflow-x-auto rounded-lg border">
@@ -33,6 +35,11 @@ export function SurveyResponsesTable({
             <th className="px-3 py-2">submitted by</th>
             <th className="px-3 py-2">at</th>
             {questions.map((q) => (
+              <th key={q.id} className="px-3 py-2">
+                <div className={QUESTION_WIDTH}>{q.label}</div>
+              </th>
+            ))}
+            {removed.map((q) => (
               <th key={q.id} className="px-3 py-2">
                 <div className={QUESTION_WIDTH}>{q.label}</div>
               </th>
@@ -64,6 +71,13 @@ export function SurveyResponsesTable({
                     ) : (
                       <div className={WRAP_TEXT}>{renderAnswer(r.answers[q.id])}</div>
                     )}
+                  </div>
+                </td>
+              ))}
+              {removed.map((q) => (
+                <td key={q.id} className="text-foreground px-3 py-2">
+                  <div className={QUESTION_WIDTH}>
+                    <ExpandableAnswer text={renderAnswer(r.answers[q.id])} />
                   </div>
                 </td>
               ))}
