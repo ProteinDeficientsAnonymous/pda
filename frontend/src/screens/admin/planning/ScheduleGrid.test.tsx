@@ -29,7 +29,7 @@ const grid: PlanningGrid = {
   planners: [
     planner('u1', 'ada', { availableSlotIds: ['s1'] }),
     planner('u3', 'cy', { submitted: false, monthlyCount: 0, hasEmail: false }),
-    planner('u2', 'bo', { isPlanner: false, monthlyCount: 1 }),
+    planner('u2', 'bo', { isPlanner: false, monthlyCount: 1, biannualInterest: 'maybe' }),
   ],
   assignments: [
     { id: 'a1', slotId: 's1', userId: 'u2', status: 'committed' },
@@ -120,15 +120,25 @@ describe('ScheduleGrid', () => {
     for (const tile of tiles) expect(tile).toBeDisabled();
   });
 
-  it('lists submitted planners first with their load, then the rest with –', () => {
+  it('lists submitted planners first with their load, then the rest with – twice', () => {
     renderGrid();
     const cells = screen.getAllByText(/^(ada|bo|cy|–|\d+\/\d+)$/).map((el) => el.textContent);
-    expect(cells).toEqual(['ada', '0/2', 'bo', '2/1', 'cy', '–']);
+    expect(cells).toEqual(['ada', '0/2', 'bo', '2/1', 'cy', '–', '–']);
   });
 
-  it('labels the load column', () => {
+  it('labels the monthlies and biannual columns, short on phones', () => {
     renderGrid();
-    expect(screen.getByText('load')).toBeInTheDocument();
+    for (const word of ['mo', 'bi']) expect(screen.getByText(word)).toHaveClass('md:hidden');
+    for (const word of ['monthlies', 'biannual']) {
+      expect(screen.getByText(word)).toHaveClass('hidden', 'md:inline');
+    }
+  });
+
+  it("shows each planner's biannual interest", () => {
+    renderGrid();
+    expect(screen.getByText('biannual: yes')).toBeInTheDocument();
+    expect(screen.getByText('biannual: maybe')).toBeInTheDocument();
+    expect(screen.getByText('biannual: no answer')).toBeInTheDocument();
   });
 
   it('spells out the extra slot markers in the key', () => {
