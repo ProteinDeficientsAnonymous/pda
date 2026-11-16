@@ -44,9 +44,14 @@ export function LoadCell({
   return (
     <div style={style} className="flex items-center justify-end text-[10px] tabular-nums">
       {load ? (
-        <span className={cn(load.taken > load.offered && 'font-semibold')}>
-          {`${String(load.taken)}/${String(load.offered)}`}
-        </span>
+        <>
+          <span aria-hidden="true" className={cn(load.taken > load.offered && 'font-semibold')}>
+            {`${String(load.taken)}/${String(load.offered)}`}
+          </span>
+          <span className="sr-only">
+            {`${String(load.taken)} of ${String(load.offered)} taken${load.taken > load.offered ? ', over' : ''}`}
+          </span>
+        </>
       ) : (
         <>
           <span aria-hidden="true" className="text-muted">
