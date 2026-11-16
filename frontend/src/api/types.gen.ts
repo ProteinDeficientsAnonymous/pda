@@ -5475,6 +5475,8 @@ export interface components {
         };
         /** PlanningYearOut */
         PlanningYearOut: {
+            /** Availability Opened At */
+            availability_opened_at: string | null;
             /** Id */
             id: string;
             /** Year */

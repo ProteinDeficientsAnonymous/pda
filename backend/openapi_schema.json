@@ -6223,6 +6223,18 @@
       },
       "PlanningYearOut": {
         "properties": {
+          "availability_opened_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Availability Opened At"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -6234,7 +6246,8 @@
         },
         "required": [
           "id",
-          "year"
+          "year",
+          "availability_opened_at"
         ],
         "title": "PlanningYearOut",
         "type": "object"
