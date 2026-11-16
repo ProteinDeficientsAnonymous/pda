@@ -10,6 +10,7 @@ import { Permission } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { AvailabilityForm } from './AvailabilityForm';
+import { GuidelinesTab } from './GuidelinesTab';
 import { MySlots } from './MySlots';
 import { explicitTab, type PlanningTab, resolveTab, tabOptions } from './planningTab';
 import { ScheduleTab } from './ScheduleTab';
@@ -112,6 +113,7 @@ export default function PlanningScreen() {
       {defaultSettled && tab === 'schedule' ? <ScheduleTab key={year} year={year} /> : null}
       {defaultSettled && tab === 'events' ? <MySlots /> : null}
       {defaultSettled && tab === 'availability' ? <AvailabilityForm year={year} /> : null}
+      {defaultSettled && tab === 'guidelines' ? <GuidelinesTab /> : null}
       {defaultSettled && tab === 'slots' ? (
         <>
           <SlotEditor year={year} />
