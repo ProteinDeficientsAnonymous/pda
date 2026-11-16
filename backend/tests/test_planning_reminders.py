@@ -89,6 +89,25 @@ class TestProposalReminders:
         fake_email_sender.send.return_value = SendResult(success=True, provider_message_id="x")
         assert send_proposal_reminders(now + DAY) == 1
 
+    def test_one_email_lists_every_unanswered_slot(self, proposed, slot, fake_email_sender):
+        later = slot.planning_year.slots.get(label="april")
+        newer = SlotAssignment.objects.create(
+            slot=later, user=proposed.user, proposed_at=PROPOSED_AT + 2 * DAY
+        )
+        assert send_proposal_reminders(PROPOSED_AT + 3 * DAY) == 1
+        fake_email_sender.send.assert_called_once()
+        kwargs = fake_email_sender.send.call_args.kwargs
+        assert kwargs["subject"] == f"still need an answer: can you plan {slot.label} and april?"
+        newer.refresh_from_db()
+        assert (newer.reminder_count, newer.last_reminded_at) == (1, PROPOSED_AT + 3 * DAY)
+
+    def test_each_planner_gets_their_own_email(self, proposed, slot, fake_email_sender):
+        other = make_user(VIEW, email="other@example.com")
+        SlotAssignment.objects.create(slot=slot, user=other, proposed_at=PROPOSED_AT)
+        assert send_proposal_reminders(PROPOSED_AT + 3 * DAY) == 2
+        sent_to = {c.kwargs["to"] for c in fake_email_sender.send.call_args_list}
+        assert sent_to == {"planner@example.com", "other@example.com"}
+
 
 @pytest.fixture
 def committed(slot):

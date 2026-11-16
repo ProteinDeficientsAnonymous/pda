@@ -52,27 +52,52 @@ def _claim(due: QuerySet[SlotAssignment], pk: UUID, **stamp) -> SlotAssignment |
         return claimed
 
 
-def send_proposal_reminders(now: datetime) -> int:
-    """Email unanswered proposals every 3 days until the month starts; failed sends roll back.
+def _pending_reminders(now: datetime, user_id: UUID) -> QuerySet[SlotAssignment]:
+    return SlotAssignment.objects.filter(
+        _month_not_started(now), status=AssignmentStatus.PROPOSED, user_id=user_id
+    )
 
-    return(int): number of reminders sent
+
+def _claim_planner(now: datetime, user_id: UUID) -> list[SlotAssignment]:
+    """Stamp every unanswered slot of a planner who has one due, so they share one cadence.
+
+    return(list[SlotAssignment]): the rows as they were before stamping; empty if none are due
+    """
+    with transaction.atomic():
+        pending = list(
+            _pending_reminders(now, user_id)
+            .select_for_update(of=("self",))
+            .select_related("slot", "user")
+            .order_by("slot__planning_year__year", "slot__order")
+        )
+        if not _due_reminders(now).filter(user_id=user_id).exists():
+            return []
+        _pending_reminders(now, user_id).update(
+            last_reminded_at=now, reminder_count=F("reminder_count") + 1
+        )
+        return pending
+
+
+def send_proposal_reminders(now: datetime) -> int:
+    """Email each planner one reminder listing every unanswered slot, every 3 days until each
+    slot's month starts; a failed send rolls the stamps back.
+
+    return(int): number of reminder emails sent
     """
     sent = 0
-    for candidate in list(_due_reminders(now)):
-        claimed = _claim(
-            _due_reminders(now),
-            candidate.pk,
-            last_reminded_at=now,
-            reminder_count=F("reminder_count") + 1,
-        )
-        if claimed is None:
+    due_planners = _due_reminders(now).order_by().values_list("user_id", flat=True).distinct()
+    for user_id in list(due_planners):
+        claimed = _claim_planner(now, user_id)
+        if not claimed:
             continue
-        if email_planner(claimed.user, [claimed.slot], PlanningEmailVariant.REMINDER):
+        slots = [a.slot for a in claimed]
+        if email_planner(claimed[0].user, slots, PlanningEmailVariant.REMINDER):
             sent += 1
             continue
-        SlotAssignment.objects.filter(pk=claimed.pk).update(
-            last_reminded_at=claimed.last_reminded_at, reminder_count=claimed.reminder_count
-        )
+        for a in claimed:
+            SlotAssignment.objects.filter(pk=a.pk).update(
+                last_reminded_at=a.last_reminded_at, reminder_count=a.reminder_count
+            )
     return sent
 
 
