@@ -169,6 +169,12 @@ def _make_tentative(user, join_request, by: User) -> list[str]:
     return [*fields, "first_name", "last_name"]
 
 
+def applicant_guidelines_paused(join_request) -> bool:
+    """Whether admitting them would bring back a guidelines pause, which vetting can't lift."""
+    user = join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
+    return user is not None and user.is_guidelines_paused
+
+
 def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     """Provision the non-member User backing a tentatively-approved join request.
 

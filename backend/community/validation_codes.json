@@ -883,6 +883,11 @@
         "params": []
       },
       {
+        "name": "APPLICANT_GUIDELINES_PAUSED",
+        "value": "join_request.applicant_guidelines_paused",
+        "params": []
+      },
+      {
         "name": "ONLY_REJECTED_CAN_BE_UN_REJECTED",
         "value": "join_request.only_rejected_can_be_un_rejected",
         "params": []

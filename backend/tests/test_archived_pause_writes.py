@@ -2,9 +2,11 @@ from datetime import timedelta
 
 import pytest
 from community.models import Event, EventStatus, JoinRequestStatus
+from community.validation import Code
 from django.utils import timezone
 from users.models import MembershipStatus, User
 
+from tests._asserts import assert_error_code
 from tests._users import make_user
 
 pytestmark = pytest.mark.django_db
@@ -89,19 +91,27 @@ def test_pausing_an_archived_host_keeps_their_events(api_client, manage_users_he
     assert event.status == EventStatus.ACTIVE
 
 
-def test_guidelines_paused_while_archived_comes_back_paused(
+def test_approval_waits_for_a_pause_set_while_archived_to_be_lifted(
     api_client, manage_users_headers, vettor_headers, sample_join_request
 ):
     member = make_user(phone_number=sample_join_request.phone_number, last_login=timezone.now())
     member = _archive(api_client, manage_users_headers, member)
     _patch(api_client, manage_users_headers, member, {"guidelines_paused": True})
-    response = api_client.patch(
-        f"/api/community/join-requests/{sample_join_request.id}/",
-        {"status": JoinRequestStatus.APPROVED},
-        content_type="application/json",
-        **vettor_headers,
-    )
-    assert response.status_code == 200
+
+    def approve():
+        return api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.APPROVED},
+            content_type="application/json",
+            **vettor_headers,
+        )
+
+    assert_error_code(approve(), Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED)
     member.refresh_from_db()
-    assert member.membership_status == MembershipStatus.GUIDELINES_PAUSED
+    assert member.archived_at is not None
+
+    _patch(api_client, manage_users_headers, member, {"guidelines_paused": False})
+    assert approve().status_code == 200
+    member.refresh_from_db()
+    assert member.membership_status == MembershipStatus.ATTENDANCE_PAUSED
     assert member.archived_at is None

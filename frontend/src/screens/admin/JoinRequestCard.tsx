@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { JoinRequestStatus, type JoinRequestSummary, type RsvpBreakdown } from '@/api/join';
 import { rejectionReasonText } from '@/api/rejectionEmail';
 import { Button } from '@/components/ui/Button';
+import { MembershipStatus } from '@/models/user';
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
 
@@ -37,6 +38,8 @@ export function JoinRequestCard({
   const isTentative = request.status === JoinRequestStatus.TENTATIVE;
   const isRejected = request.status === JoinRequestStatus.REJECTED;
   const canResend = request.status === JoinRequestStatus.APPROVED && request.onboardedAt === null;
+  const guidelinesPaused =
+    request.previousArchive?.pausedStatus === MembershipStatus.GuidelinesPaused;
   const [messageOpen, setMessageOpen] = useState(false);
   return (
     <article className="border-border bg-surface rounded-lg border p-4">
@@ -95,11 +98,16 @@ export function JoinRequestCard({
 
       {isPending ? (
         <div className="mt-4 flex flex-wrap gap-2">
+          {guidelinesPaused ? (
+            <p className="text-warning w-full text-xs">
+              lift their guidelines pause before approving them
+            </p>
+          ) : null}
           <Button
             onClick={() => {
               onDecide(JoinRequestStatus.APPROVED);
             }}
-            disabled={busy}
+            disabled={busy || guidelinesPaused}
           >
             approve
           </Button>
@@ -108,7 +116,7 @@ export function JoinRequestCard({
             onClick={() => {
               onDecide(JoinRequestStatus.TENTATIVE);
             }}
-            disabled={busy}
+            disabled={busy || guidelinesPaused}
           >
             tentatively approve
           </Button>

@@ -118,7 +118,6 @@ def test_reapproving_archived_applicant_makes_member(
 @pytest.mark.parametrize(
     ("before", "after"),
     [
-        (MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.GUIDELINES_PAUSED),
         (MembershipStatus.ATTENDANCE_PAUSED, MembershipStatus.ATTENDANCE_PAUSED),
         (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.ACTIVE_MEMBER),
         (None, MembershipStatus.ACTIVE_MEMBER),

@@ -27,6 +27,7 @@ from community.join_requests._history import (
 )
 from community.join_requests._rejection import Rejection, send_join_rejection, validate_rejection
 from community.join_requests.approval import (
+    applicant_guidelines_paused,
     provision_approved_user,
     provision_tentative_user,
     send_join_approval,
@@ -331,6 +332,8 @@ def _apply_status_transition(
         # A tentative person who shouldn't stay is archived from the members screen instead.
         if was_tentative and status == JoinRequestStatus.REJECTED:
             raise_validation(Code.JoinRequest.TENTATIVE_CANNOT_BE_REJECTED, status_code=400)
+        if status in _ADMITTED_STATUSES and applicant_guidelines_paused(join_request):
+            raise_validation(Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED, status_code=400)
 
         _stamp_decision(join_request, status, actor, rejection)
         if status == JoinRequestStatus.TENTATIVE:

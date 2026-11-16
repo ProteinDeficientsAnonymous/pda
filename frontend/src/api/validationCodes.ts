@@ -466,6 +466,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'this request has already been decided';
     case Code.JoinRequest.TentativeCannotBeRejected:
       return "tentative members can't be rejected — archive them from the members screen instead";
+    case Code.JoinRequest.ApplicantGuidelinesPaused:
+      return "they're guidelines-paused — lift the pause before approving them";
     case Code.JoinRequest.OnlyRejectedCanBeUnRejected:
       return 'only rejected requests can be un-rejected';
     case Code.JoinRequest.AlreadyMember:
