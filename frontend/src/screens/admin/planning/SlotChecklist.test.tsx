@@ -58,6 +58,26 @@ describe('SlotChecklist', () => {
     expect(tick).toHaveBeenCalledWith({ itemId: 'i1', done: false });
   });
 
+  it('keeps rows in place while open and locks a box until its save settles', async () => {
+    let settle = () => {};
+    tick.mockReturnValue(
+      new Promise<void>((resolve) => {
+        settle = resolve;
+      }),
+    );
+    renderWithProviders(<SlotChecklist slotId="s1" label="march" doneIds={['i1']} />);
+    await open();
+    const box = screen.getByRole('checkbox', { name: 'make a flyer for march' });
+    await userEvent.click(box);
+    expect(box).toBeChecked();
+    expect(box).toBeDisabled();
+    expect(screen.getAllByRole('checkbox')[0]).toBe(box);
+    settle();
+    await waitFor(() => {
+      expect(box).toBeEnabled();
+    });
+  });
+
   it('rolls back and toasts when a tick fails', async () => {
     tick.mockRejectedValue(new Error('nope'));
     renderWithProviders(<SlotChecklist slotId="s1" label="march" doneIds={['i1']} />);

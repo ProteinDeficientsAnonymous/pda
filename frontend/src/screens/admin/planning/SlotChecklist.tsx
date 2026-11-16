@@ -11,11 +11,13 @@ function TickRow({
   item,
   label,
   done,
+  saving,
   onToggle,
 }: {
   item: ChecklistItem;
   label: string;
   done: boolean;
+  saving: boolean;
   onToggle: (done: boolean) => void;
 }) {
   return (
@@ -25,6 +27,7 @@ function TickRow({
           type="checkbox"
           aria-label={`${item.text} for ${label}`}
           checked={done}
+          disabled={saving}
           onChange={(e) => {
             onToggle(e.target.checked);
           }}
@@ -49,7 +52,8 @@ export function SlotChecklist({
 }) {
   const { data: items } = useChecklist();
   const tick = useTickChecklistItem(slotId);
-  const [open, setOpen] = useState(false);
+  // set when the panel opens so ticking doesn't move rows under the cursor or drop focus
+  const [order, setOrder] = useState<string[] | null>(null);
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const panelId = useId();
 
@@ -57,7 +61,11 @@ export function SlotChecklist({
 
   const isDone = (id: string) => pending[id] ?? doneIds.includes(id);
   const doneCount = items.filter((i) => isDone(i.id)).length;
-  const ordered = [...items.filter((i) => !isDone(i.id)), ...items.filter((i) => isDone(i.id))];
+  const rank = (id: string) => {
+    const at = order?.indexOf(id) ?? -1;
+    return at === -1 ? items.length : at;
+  };
+  const ordered = [...items].sort((a, b) => rank(a.id) - rank(b.id));
 
   async function toggle(itemId: string, done: boolean) {
     setPending((p) => ({ ...p, [itemId]: done }));
@@ -69,17 +77,23 @@ export function SlotChecklist({
     <div className="basis-full">
       <button
         type="button"
-        aria-expanded={open}
+        aria-expanded={order !== null}
         aria-controls={panelId}
         className="text-foreground-secondary flex items-center gap-1 text-xs"
         onClick={() => {
-          setOpen((o) => !o);
+          setOrder((o) =>
+            o
+              ? null
+              : [...items.filter((i) => !isDone(i.id)), ...items.filter((i) => isDone(i.id))].map(
+                  (i) => i.id,
+                ),
+          );
         }}
       >
         {`checklist · ${String(doneCount)}/${String(items.length)} done`}
-        <Chevron open={open} />
+        <Chevron open={order !== null} />
       </button>
-      {open ? (
+      {order ? (
         <ul id={panelId} className="mt-2 flex flex-col gap-2">
           {ordered.map((item) => (
             <TickRow
@@ -87,6 +101,7 @@ export function SlotChecklist({
               item={item}
               label={label}
               done={isDone(item.id)}
+              saving={item.id in pending}
               onToggle={(done) => void toggle(item.id, done)}
             />
           ))}
