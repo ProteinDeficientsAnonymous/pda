@@ -5,6 +5,7 @@ from community.models import (
     PlanningAvailability,
     SlotAssignment,
 )
+from users.models import Role
 from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
@@ -76,6 +77,16 @@ class TestGrid:
         }
         assert columns[str(ex_planner.id)]["is_planner"] is False
         assert columns[str(with_assignment.id)]["is_planner"] is False
+
+    def test_excludes_admins_and_managers_without_the_view_grant(self, api_client, year):
+        admin = make_user(first_name="boss")
+        admin.roles.add(Role.objects.get(name="admin", is_default=True))
+        manager = make_user(MANAGE, first_name="lead")
+        both = make_user(MANAGE, VIEW, first_name="leah")
+        ids = {c["user_id"] for c in get_grid(api_client, headers_for(MANAGE)).json()["planners"]}
+        assert str(admin.id) not in ids
+        assert str(manager.id) not in ids
+        assert str(both.id) in ids
 
     def test_excludes_non_planners_without_activity(self, api_client, year):
         bystander = make_user()
