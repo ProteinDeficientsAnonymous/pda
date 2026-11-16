@@ -69,6 +69,23 @@ describe('ScheduleTab', () => {
     expect(screen.queryByRole('heading', { name: 'january' })).not.toBeInTheDocument();
   });
 
+  it('collapses add someone when another month opens', async () => {
+    shown = {
+      ...grid,
+      slots: [...grid.slots, makeSlot({ id: 's2', label: 'february', month: 2, order: 2 })],
+    };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    await userEvent.click(screen.getByRole('button', { name: 'february' }));
+    await userEvent.click(screen.getByRole('button', { name: 'add someone' }));
+    expect(screen.getByRole('button', { name: 'hide' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'january' }));
+    await userEvent.click(screen.getByRole('button', { name: 'february' }));
+    expect(screen.getByRole('button', { name: 'add someone' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+  });
+
   it('keeps the old table below the new grid', () => {
     renderWithProviders(<ScheduleTab year={2999} />);
     const january = screen.getByRole('button', { name: 'january' });
