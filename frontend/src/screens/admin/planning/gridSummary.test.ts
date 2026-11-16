@@ -1,43 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Assignment, PlannerColumn, PlanningGrid } from '@/api/planning';
-import { makeSlot } from '@/test/fixtures';
+import { makeAssignment, makePlanner, makePlanningGrid, makeSlot } from '@/test/fixtures';
 
 import { needsPlanner, plannerLoad, slotCoverage, summaryCounts } from './gridSummary';
 
 const today = new Date(2027, 1, 15);
 
-const planner = (userId: string, overrides: Partial<PlannerColumn> = {}): PlannerColumn => ({
-  userId,
-  name: userId,
-  isPlanner: true,
-  hasEmail: true,
-  submitted: true,
-  biannualInterest: 'yes',
-  monthlyCount: 2,
-  availableSlotIds: [],
-  ...overrides,
-});
+const planner = (userId: string, overrides: Partial<PlannerColumn> = {}) =>
+  makePlanner({ userId, name: userId, biannualInterest: 'yes', monthlyCount: 2, ...overrides });
 
-const asg = (slotId: string, userId: string, status: Assignment['status']): Assignment => ({
-  id: `${slotId}-${userId}`,
-  slotId,
-  userId,
-  status,
-});
+const asg = (slotId: string, userId: string, status: Assignment['status']) =>
+  makeAssignment({ id: `${slotId}-${userId}`, slotId, userId, status });
 
-function makeGrid(
-  planners: PlannerColumn[],
-  assignments: Assignment[] = [],
-  month = 3,
-): PlanningGrid {
-  return {
-    year: 2027,
-    slots: [makeSlot({ id: 's1', month })],
-    planners,
-    assignments,
-  };
-}
+const makeGrid = (planners: PlannerColumn[], assignments: Assignment[] = [], month = 3) =>
+  makePlanningGrid({ year: 2027, slots: [makeSlot({ id: 's1', month })], planners, assignments });
 
 describe('slotCoverage', () => {
   it('prefers committed over proposed over draft', () => {

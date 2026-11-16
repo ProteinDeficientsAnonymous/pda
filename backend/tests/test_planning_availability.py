@@ -71,7 +71,7 @@ class TestAvailability:
         assert send(api_client, "get", URL, headers=headers).json() == replaced.json()
 
     def test_put_empty_slots_clears(self, api_client, year):
-        headers = auth_headers_for(make_user(VIEW))
+        headers = headers_for(VIEW)
         send(api_client, "put", URL, body(list(year.slots.all()[:2])), headers)
         assert send(api_client, "put", URL, body([]), headers).json()["slot_ids"] == []
 
@@ -81,7 +81,7 @@ class TestAvailability:
 
     def test_rejects_slot_from_other_year(self, api_client, year):
         other = PlanningYear.create_with_default_slots(2028)
-        headers = auth_headers_for(make_user(VIEW))
+        headers = headers_for(VIEW)
         response = send(
             api_client, "put", URL, body([year.slots.first(), other.slots.first()]), headers
         )
