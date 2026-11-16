@@ -28,6 +28,12 @@ describe('NameCell', () => {
     expect(screen.queryByText('no email')).not.toBeInTheDocument();
   });
 
+  it('marks a planner who left in words', () => {
+    render(<NameCell planner={planner({ isPlanner: false })} style={{}} />);
+    expect(screen.getByText('(left)')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText('no longer a planner')).toHaveClass('sr-only');
+  });
+
   it('flags a missing email', () => {
     render(<NameCell planner={planner({ hasEmail: false })} style={{}} />);
     expect(screen.getByText('no email')).toHaveClass('sr-only');
@@ -36,15 +42,17 @@ describe('NameCell', () => {
 
 describe('LoadCell', () => {
   it.each([
-    [{ taken: 2, offered: 1 }, '2/1', true],
-    [{ taken: 1, offered: 2 }, '1/2', false],
-  ])('shows %o as %s, bold %s', (load, text, bold) => {
+    [{ taken: 2, offered: 1 }, '2/1', true, '2 of 1 taken, over'],
+    [{ taken: 1, offered: 2 }, '1/2', false, '1 of 2 taken'],
+  ])('shows %o as %s, bold %s', (load, text, bold, words) => {
     render(<LoadCell load={load} style={{}} />);
     expect(screen.getByText(text).classList.contains('font-semibold')).toBe(bold);
+    expect(screen.getByText(words)).toHaveClass('sr-only');
   });
 
   it('shows – without a form', () => {
     render(<LoadCell load={null} style={{}} />);
-    expect(screen.getByText('–')).toBeInTheDocument();
+    expect(screen.getByText('–')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText('no form')).toHaveClass('sr-only');
   });
 });

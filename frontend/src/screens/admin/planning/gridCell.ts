@@ -44,14 +44,6 @@ export function slotHasCommitted(grid: PlanningGrid, slotId: string): boolean {
   return slotStatuses(grid, slotId).includes('committed');
 }
 
-// a staged draft means the coordinator already picked a replacement
-const COVERING: Assignment['status'][] = ['draft', 'proposed', 'committed'];
-
-export function slotNeedsPlanner(grid: PlanningGrid, slotId: string): boolean {
-  const statuses = slotStatuses(grid, slotId);
-  return statuses.includes('declined') && !statuses.some((s) => COVERING.includes(s));
-}
-
 export function draftCount(grid: PlanningGrid): number {
   return grid.assignments.filter((a) => a.status === 'draft').length;
 }
