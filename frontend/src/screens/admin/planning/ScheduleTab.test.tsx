@@ -62,6 +62,12 @@ describe('ScheduleTab', () => {
     expect(january.compareDocumentPosition(old) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('shows the send bar while drafts wait', () => {
+    shown = { ...grid, assignments: [{ id: 'a1', slotId: 's1', userId: 'u1', status: 'draft' }] };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByText('1 not sent yet')).toBeInTheDocument();
+  });
+
   it('skips the grid without planners', () => {
     shown = { ...grid, planners: [] };
     renderWithProviders(<ScheduleTab year={2999} />);

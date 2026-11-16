@@ -29,7 +29,7 @@ export function SendProposalsBar({ send, drafts }: SendProposalsBarProps) {
       <Button
         disabled={send.isPending}
         onClick={() => void sendAll()}
-        className="bg-brand-on text-brand-600 hover:bg-brand-on/90 shrink-0"
+        className="bg-brand-on text-brand-600 hover:bg-brand-on/90 disabled:bg-brand-on/70 shrink-0"
       >
         send proposals
       </Button>
