@@ -223,11 +223,16 @@ describe('PlanningScreen', () => {
       expect(screen.queryByRole('button', { name: /^start / })).not.toBeInTheDocument();
     });
 
-    it('hides the button once next year exists', () => {
+    it('offers the year after the latest one', () => {
       signInWith(Permission.ManageEventPlanning);
-      years = [{ id: 'y1', year: nextYear }];
+      years = [
+        { id: 'y1', year: nextYear },
+        { id: 'y2', year: nextYear - 1 },
+      ];
       renderWithProviders(<PlanningScreen />, { route: '/?tab=slots' });
-      expect(screen.queryByRole('button', { name: /^start / })).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: `start ${String(nextYear + 1)}` }),
+      ).toBeInTheDocument();
     });
   });
 });

@@ -8,7 +8,6 @@ from community.models import (
 from users.models import Role
 from users.permissions import PermissionKey
 
-from tests._auth import auth_headers_for
 from tests._planning import headers_for, send
 from tests._users import make_user
 
@@ -112,7 +111,7 @@ class TestGrid:
     def test_query_count_does_not_grow_with_planners(
         self, api_client, year, django_assert_max_num_queries
     ):
-        headers = auth_headers_for(make_user(MANAGE))
+        headers = headers_for(MANAGE)
         slots = list(year.slots.all()[:3])
         for _ in range(2):
             planner = make_user(VIEW)

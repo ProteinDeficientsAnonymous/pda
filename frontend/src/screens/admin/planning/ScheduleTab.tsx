@@ -23,7 +23,6 @@ export function ScheduleTab({ year }: { year: number }) {
 
   return (
     <>
-      <SendProposalsBar send={send} drafts={draftCount(grid)} />
       <SummaryPills counts={summaryCounts(grid, today)} />
       <div className="flex flex-col gap-4">
         <div className="min-w-0 flex-1">
@@ -52,6 +51,7 @@ export function ScheduleTab({ year }: { year: number }) {
             }}
           />
         ) : null}
+        <SendProposalsBar send={send} drafts={draftCount(grid)} />
       </div>
       {confirmElement}
     </>

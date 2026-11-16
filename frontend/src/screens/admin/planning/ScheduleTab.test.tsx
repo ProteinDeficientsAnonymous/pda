@@ -2,29 +2,15 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { PlanningGrid } from '@/api/planning';
-import { makeSlot } from '@/test/fixtures';
+import { makeAssignment, makePlanner, makePlanningGrid, makeSlot } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { ScheduleTab } from './ScheduleTab';
 
-const grid: PlanningGrid = {
-  year: 2999,
+const grid = makePlanningGrid({
   slots: [makeSlot({ id: 's1', label: 'january', month: 1, order: 1 })],
-  planners: [
-    {
-      userId: 'u1',
-      name: 'ada',
-      isPlanner: true,
-      hasEmail: true,
-      submitted: true,
-      biannualInterest: null,
-      monthlyCount: 1,
-      availableSlotIds: ['s1'],
-    },
-  ],
-  assignments: [],
-};
+  planners: [makePlanner({ availableSlotIds: ['s1'] })],
+});
 
 let shown = grid;
 let status = { isPending: false, isError: false };
@@ -83,16 +69,27 @@ describe('ScheduleTab', () => {
     );
   });
 
-  it('shows the send bar while drafts wait', () => {
-    shown = { ...grid, assignments: [{ id: 'a1', slotId: 's1', userId: 'u1', status: 'draft' }] };
+  it('shows the send bar under the grid while drafts wait', () => {
+    shown = { ...grid, assignments: [makeAssignment()] };
     renderWithProviders(<ScheduleTab year={2999} />);
-    expect(screen.getByText('1 not sent yet')).toBeInTheDocument();
+    const bar = screen.getByText('1 not sent yet');
+    const month = screen.getByRole('button', { name: 'january' });
+    expect(month.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps the send bar under an open month panel', async () => {
+    shown = { ...grid, assignments: [makeAssignment()] };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    await userEvent.click(screen.getByRole('button', { name: 'january' }));
+    const panel = screen.getByRole('heading', { name: 'january' });
+    const bar = screen.getByText('1 not sent yet');
+    expect(panel.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it.each(['committed', 'proposed'] as const)(
     'confirms before withdrawing a %s tile',
     async (status) => {
-      shown = { ...grid, assignments: [{ id: 'a1', slotId: 's1', userId: 'u1', status }] };
+      shown = { ...grid, assignments: [makeAssignment({ status })] };
       renderWithProviders(<ScheduleTab year={2999} />);
       await userEvent.click(screen.getByRole('button', { name: 'withdraw ada from january' }));
       expect(screen.getByText('withdraw ada from january?')).toBeInTheDocument();
