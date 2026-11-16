@@ -4,9 +4,9 @@ import type { PlannerColumn, PlanningGrid } from '@/api/planning';
 import { cn } from '@/utils/cn';
 
 import { cellState, findAssignment } from './gridCell';
-import { GRID_SIZE_CLASS, gridTemplate, loadTrack, slotColumns } from './gridLayout';
+import { biTrack, GRID_SIZE_CLASS, gridTemplate, loadTrack, slotColumns } from './gridLayout';
 import { CoverageMark, GridKey } from './GridMarks';
-import { LoadCell, NameCell } from './GridRowCells';
+import { BiCell, LoadCell, NameCell, PhoneShort } from './GridRowCells';
 import { plannerLoad, slotCoverage } from './gridSummary';
 import { GridTile } from './GridTile';
 import type { usePlanningActions } from './usePlanningActions';
@@ -44,6 +44,7 @@ export function ScheduleGrid({
 }: ScheduleGridProps) {
   const columns = slotColumns(grid.slots);
   const loadColumn = loadTrack(columns);
+  const biColumn = biTrack(columns);
   const submitted = grid.planners.filter((p) => p.submitted);
   const notSubmitted = grid.planners.filter((p) => !p.submitted);
   const split = submitted.length > 0 && notSubmitted.length > 0;
@@ -69,6 +70,10 @@ export function ScheduleGrid({
         );
       })}
       <LoadCell load={plannerLoad(grid, planner)} style={at(row, loadColumn)} />
+      <BiCell
+        interest={planner.submitted ? planner.biannualInterest : null}
+        style={at(row, biColumn)}
+      />
     </Fragment>
   );
 
@@ -85,12 +90,18 @@ export function ScheduleGrid({
           <span style={at(2, 1)} className="text-muted self-center text-xs md:text-sm">
             month
           </span>
-          <span
-            style={at(1, loadColumn)}
-            className="text-muted self-center text-right text-[10px] md:text-xs"
-          >
-            load
-          </span>
+          {[
+            { column: loadColumn, short: 'mo', long: 'monthlies' },
+            { column: biColumn, short: 'bi', long: 'biannual' },
+          ].map(({ column, short, long }) => (
+            <span
+              key={long}
+              style={at(1, column)}
+              className="text-muted self-center text-right text-[10px] md:text-xs"
+            >
+              <PhoneShort short={short} long={long} />
+            </span>
+          ))}
           {columns.map(({ slot, header, track }) => {
             const open = slot.id === openSlotId;
             return (

@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 
-import type { PlannerColumn } from '@/api/planning';
+import type { BiannualInterest, PlannerColumn } from '@/api/planning';
 import { cn } from '@/utils/cn';
 
 import type { plannerLoad } from './gridSummary';
@@ -63,6 +63,39 @@ export function LoadCell({
           <span className="sr-only">no form</span>
         </>
       )}
+    </div>
+  );
+}
+
+export function PhoneShort({ short, long }: { short: string; long: string }) {
+  return (
+    <>
+      <span className="md:hidden">{short}</span>
+      <span className="hidden md:inline">{long}</span>
+    </>
+  );
+}
+
+export function BiCell({
+  interest,
+  style,
+}: {
+  interest: BiannualInterest | null;
+  style: CSSProperties;
+}) {
+  return (
+    // relative + overflow-hidden: the last column's 1px sr-only box would widen the scroller
+    <div
+      style={style}
+      className={cn(
+        'relative flex items-center justify-end overflow-hidden text-[10px] md:text-xs',
+        (interest ?? 'no') === 'no' && 'text-muted',
+      )}
+    >
+      <span aria-hidden="true">
+        {interest ? <PhoneShort short={interest.charAt(0)} long={interest} /> : '–'}
+      </span>
+      <span className="sr-only">{`biannual: ${interest ?? 'no answer'}`}</span>
     </div>
   );
 }

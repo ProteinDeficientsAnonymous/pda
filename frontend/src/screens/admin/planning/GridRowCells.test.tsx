@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { LoadCell, NameCell } from './GridRowCells';
+import { BiCell, LoadCell, NameCell } from './GridRowCells';
 
 const planner = (extra: object = {}) => ({
   userId: 'u1',
@@ -54,5 +54,26 @@ describe('LoadCell', () => {
     render(<LoadCell load={null} style={{}} />);
     expect(screen.getByText('–')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByText('no form')).toHaveClass('sr-only');
+  });
+});
+
+describe('BiCell', () => {
+  it.each([
+    ['yes', 'y', false],
+    ['maybe', 'm', false],
+    ['no', 'n', true],
+  ] as const)('shows %s as %s on phones, muted %s', (interest, short, muted) => {
+    const { container } = render(<BiCell interest={interest} style={{}} />);
+    expect(screen.getByText(short)).toHaveClass('md:hidden');
+    expect(screen.getByText(interest)).toHaveClass('hidden', 'md:inline');
+    expect(screen.getByText(`biannual: ${interest}`)).toHaveClass('sr-only');
+    expect(container.firstElementChild?.classList.contains('text-muted')).toBe(muted);
+  });
+
+  it('shows a muted – without an answer', () => {
+    const { container } = render(<BiCell interest={null} style={{}} />);
+    expect(screen.getByText('–')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText('biannual: no answer')).toHaveClass('sr-only');
+    expect(container.firstElementChild).toHaveClass('text-muted');
   });
 });
