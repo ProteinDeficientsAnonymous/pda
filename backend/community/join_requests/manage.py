@@ -312,6 +312,16 @@ _DECISION_ACTIONS = {
 }
 
 
+def _refuse_guidelines_paused(join_request: JoinRequest, *, approving: bool) -> None:
+    # Lock what the check and provisioning read, so a pause can't land between them.
+    users = User.objects.select_for_update().filter(
+        Q(pk=join_request.user_id) | Q(phone_number=join_request.phone_number)
+    )
+    list(users)
+    if applicant_guidelines_paused(join_request, approving=approving):
+        raise_validation(Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED, status_code=400)
+
+
 def _apply_status_transition(
     id: UUID, status: str, actor, rejection: Rejection
 ) -> tuple[JoinRequest, str | None, bool, bool]:
@@ -332,11 +342,8 @@ def _apply_status_transition(
         # A tentative person who shouldn't stay is archived from the members screen instead.
         if was_tentative and status == JoinRequestStatus.REJECTED:
             raise_validation(Code.JoinRequest.TENTATIVE_CANNOT_BE_REJECTED, status_code=400)
-        approving = status == JoinRequestStatus.APPROVED
-        if status in _ADMITTED_STATUSES and applicant_guidelines_paused(
-            join_request, approving=approving
-        ):
-            raise_validation(Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED, status_code=400)
+        if status in _ADMITTED_STATUSES:
+            _refuse_guidelines_paused(join_request, approving=status == JoinRequestStatus.APPROVED)
 
         _stamp_decision(join_request, status, actor, rejection)
         if status == JoinRequestStatus.TENTATIVE:

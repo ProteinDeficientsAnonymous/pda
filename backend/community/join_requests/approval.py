@@ -178,8 +178,9 @@ def _admitted_user(join_request, *, approving: bool) -> User | None:
 
 
 def applicant_guidelines_paused(join_request, *, approving: bool) -> bool:
-    user = _admitted_user(join_request, approving=approving)
-    return user is not None and user.is_guidelines_paused
+    """Whether the linked user, or the user provisioning would admit, is guidelines-paused."""
+    users = (join_request.user, _admitted_user(join_request, approving=approving))
+    return any(user is not None and user.is_guidelines_paused for user in users)
 
 
 def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:

@@ -5,7 +5,7 @@ from community.join_requests.approval import maybe_promote_tentative
 from community.models import JoinRequest, JoinRequestStatus
 from community.validation import Code
 from django.utils import timezone
-from users.models import MembershipStatus, Role
+from users.models import MembershipStatus, Role, User
 
 from tests._asserts import assert_error_code
 from tests._tentative_helpers import open_official_event
@@ -28,13 +28,17 @@ def archived_member(vettor_user):
     return member
 
 
-def _decide(api_client, headers, join_request, status):
-    response = api_client.patch(
+def _patch_status(api_client, headers, join_request, status):
+    return api_client.patch(
         f"/api/community/join-requests/{join_request.id}/",
         {"status": status},
         content_type="application/json",
         **headers,
     )
+
+
+def _decide(api_client, headers, join_request, status):
+    response = _patch_status(api_client, headers, join_request, status)
     assert response.status_code == 200
     return response.json()
 
@@ -105,12 +109,7 @@ def test_vetting_refuses_an_applicant_archived_while_guidelines_paused(
         archived_at=timezone.now(),
         status_before_archive=MembershipStatus.GUIDELINES_PAUSED,
     )
-    response = api_client.patch(
-        f"/api/community/join-requests/{sample_join_request.id}/",
-        {"status": decision},
-        content_type="application/json",
-        **vettor_headers,
-    )
+    response = _patch_status(api_client, vettor_headers, sample_join_request, decision)
     assert response.status_code == 400
     assert_error_code(response, Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED)
     sample_join_request.refresh_from_db()
@@ -122,23 +121,21 @@ def test_vetting_refuses_an_applicant_archived_while_guidelines_paused(
     assert paused.status_before_archive == MembershipStatus.GUIDELINES_PAUSED
 
 
-def test_approval_checks_the_phone_match_as_well_as_the_linked_user(
-    api_client, vettor_headers, sample_join_request
+@pytest.mark.parametrize("paused", ["linked", "phone_match"])
+def test_approval_checks_a_linked_archived_account_and_the_phone_match(
+    api_client, vettor_headers, sample_join_request, paused
 ):
-    sample_join_request.user = make_user(phone_number="+16505559999", archived_at=timezone.now())
+    pause = {"archived_at": timezone.now(), "status_before_archive": "guidelines_paused"}
+    linked_pause = pause if paused == "linked" else {"archived_at": timezone.now()}
+    sample_join_request.user = make_user(phone_number="+16505559999", **linked_pause)
     sample_join_request.save(update_fields=["user"])
-    make_user(
-        phone_number=PHONE,
-        archived_at=timezone.now(),
-        status_before_archive=MembershipStatus.GUIDELINES_PAUSED,
-    )
-    response = api_client.patch(
-        f"/api/community/join-requests/{sample_join_request.id}/",
-        {"status": JoinRequestStatus.APPROVED},
-        content_type="application/json",
-        **vettor_headers,
+    if paused == "phone_match":
+        make_user(phone_number=PHONE, **pause)
+    response = _patch_status(
+        api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED
     )
     assert_error_code(response, Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED)
+    assert not User.objects.filter(phone_number=PHONE, archived_at__isnull=True).exists()
 
 
 def test_a_paused_phone_match_does_not_block_a_linked_rsvper(
@@ -159,11 +156,8 @@ def test_approving_a_tentative_who_is_guidelines_paused_is_refused(
     sample_join_request.status = JoinRequestStatus.TENTATIVE
     sample_join_request.user = paused
     sample_join_request.save(update_fields=["status", "user"])
-    response = api_client.patch(
-        f"/api/community/join-requests/{sample_join_request.id}/",
-        {"status": JoinRequestStatus.APPROVED},
-        content_type="application/json",
-        **vettor_headers,
+    response = _patch_status(
+        api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED
     )
     assert_error_code(response, Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED)
     sample_join_request.refresh_from_db()
