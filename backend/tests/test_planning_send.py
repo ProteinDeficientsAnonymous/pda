@@ -4,6 +4,7 @@ import pytest
 from community.models import AssignmentStatus, PlanningYear
 from community.validation import Code
 from django.conf import settings
+from django.test import TestCase
 from notifications.email_sender import SendResult
 from notifications.models import Notification, NotificationType
 from users.permissions import PermissionKey
@@ -14,18 +15,13 @@ from tests._planning import assign, send
 from tests._users import make_user
 
 VIEW = PermissionKey.VIEW_EVENT_PLANNING
-MANAGE = PermissionKey.MANAGE_EVENT_PLANNING
 DRAFT = AssignmentStatus.DRAFT
-
-
-@pytest.fixture
-def coordinator(db):
-    return make_user(MANAGE)
 
 
 def send_proposals(api_client, actor, year=2027):
     url = f"/api/community/planning/years/{year}/proposals/send/"
-    return send(api_client, "post", url, headers=auth_headers_for(actor))
+    with TestCase.captureOnCommitCallbacks(execute=True):
+        return send(api_client, "post", url, headers=auth_headers_for(actor))
 
 
 @pytest.mark.django_db
@@ -47,7 +43,7 @@ class TestSendProposals:
         assert notification.notification_type == NotificationType.PLANNING_PROPOSED
         labels = [s.label for s in slots]
         summary = f"{labels[0]}, {labels[1]} and {labels[2]}"
-        assert notification.message == f"you've been asked to plan {summary} — tap to respond"
+        assert notification.message == f"any chance you could plan {summary}? 🌱 tap to answer"
         assert notification.related_user == coordinator
         kwargs = fake_email_sender.send.call_args.kwargs
         assert kwargs["to"] == "planner@example.com"
@@ -76,6 +72,15 @@ class TestSendProposals:
         assign(other, make_user(VIEW), DRAFT)
         response = send_proposals(api_client, coordinator)
         assert response.json() == {"planners_notified": 0, "proposals_sent": 0}
+        assert not Notification.objects.exists()
+        fake_email_sender.send.assert_not_called()
+
+    def test_skips_drafts_for_ex_planners(self, api_client, slot, coordinator, fake_email_sender):
+        draft = assign(slot, make_user(), DRAFT)
+        response = send_proposals(api_client, coordinator)
+        assert response.json() == {"planners_notified": 0, "proposals_sent": 0}
+        draft.refresh_from_db()
+        assert draft.status == DRAFT
         assert not Notification.objects.exists()
         fake_email_sender.send.assert_not_called()
 
@@ -120,9 +125,9 @@ class TestSendProposals:
 
 
 @pytest.mark.django_db
-def test_a_failed_notice_unsends_only_that_planners_drafts(api_client, year, coordinator):
+def test_a_failed_planner_is_skipped_and_the_rest_sent(api_client, year, coordinator, caplog):
     slot = year.slots.order_by("order").first()
-    rows = [assign(slot, make_user(VIEW), DRAFT) for _ in range(2)]
+    rows = {row.user_id: row for row in (assign(slot, make_user(VIEW), DRAFT) for _ in range(2))}
     calls = []
 
     def fail_second(user, slots, by):
@@ -130,12 +135,13 @@ def test_a_failed_notice_unsends_only_that_planners_drafts(api_client, year, coo
         if len(calls) == 2:
             raise RuntimeError("push down")
 
-    api_client.raise_request_exception = True
-    with (
-        patch("community.planning.proposals.notify_proposed", side_effect=fail_second),
-        pytest.raises(RuntimeError),
-    ):
-        send_proposals(api_client, coordinator)
-    for row in rows:
-        row.refresh_from_db()
-    assert sorted(r.status for r in rows) == sorted([AssignmentStatus.PROPOSED, DRAFT])
+    with patch("community.planning.proposals.notify_proposed", side_effect=fail_second):
+        response = send_proposals(api_client, coordinator)
+    assert response.status_code == 200
+    assert response.json() == {"planners_notified": 1, "proposals_sent": 1}
+    sent, failed = (rows[user.pk] for user in calls)
+    sent.refresh_from_db()
+    failed.refresh_from_db()
+    assert sent.status == AssignmentStatus.PROPOSED
+    assert failed.status == DRAFT
+    assert "planning_send_failed" in caplog.text
