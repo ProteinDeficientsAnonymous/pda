@@ -1,3 +1,10 @@
+# [0.252.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.251.0...v0.252.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - audit planning assignment status changes ([#2562](https://github.com/ProteinDeficientsAnonymous/pda/issues/2562)) ([9908ca0](https://github.com/ProteinDeficientsAnonymous/pda/commit/9908ca078cd2755a1761659dd7ab890b7f7c53de))
+
 # [0.251.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.250.1...v0.251.0) (2026-11-16)
 
 
