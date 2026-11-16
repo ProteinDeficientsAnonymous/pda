@@ -38,6 +38,7 @@ export function ScheduleTab({ year }: { year: number }) {
             </div>
             {openSlotId ? (
               <MonthPanel
+                key={openSlotId}
                 grid={grid}
                 slotId={openSlotId}
                 year={year}

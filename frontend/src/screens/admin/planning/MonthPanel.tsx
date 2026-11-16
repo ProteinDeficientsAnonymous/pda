@@ -7,6 +7,7 @@ import {
   type CellState,
   cellState,
   findAssignment,
+  isWithdrawable,
   slotHasCommitted,
   STATE_TEXT,
 } from './gridCell';
@@ -67,10 +68,10 @@ function Section({
         {rows.map((row) => (
           <li key={row.planner.userId} className="flex items-center gap-2">
             <span className="min-w-0 flex-1">
-              <span className="flex items-baseline gap-2">
+              <span className="flex flex-wrap items-baseline gap-x-2">
                 <span className="truncate">{row.planner.name}</span>
                 {row.notes?.map((note) => (
-                  <span key={note} className="text-muted shrink-0 text-xs">
+                  <span key={note} className="text-muted text-xs">
                     {note}
                   </span>
                 ))}
@@ -120,7 +121,8 @@ export function MonthPanel({ grid, slotId, year, today, act, busy, onClose }: Mo
     const notes = plannerNotes(planner, extraSlot);
     if (assignment) {
       const detail = STATE_TEXT[state];
-      onIt.push({ planner, state, assignment, detail, text: actionText(state), notes });
+      const disabled = !isWithdrawable(state) && !planner.isPlanner;
+      onIt.push({ planner, state, assignment, detail, text: actionText(state), disabled, notes });
     } else {
       const disabled = !planner.isPlanner;
       if (state === 'available') {

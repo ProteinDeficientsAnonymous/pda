@@ -100,6 +100,34 @@ describe('MonthPanel', () => {
     expect(within(row('dee')).getByText('in')).toBeInTheDocument();
   });
 
+  it('labels a sent proposal', () => {
+    renderPanel(makeGrid([on('ada', 'proposed')]));
+    expect(within(row('ada')).getByText('sent')).toBeInTheDocument();
+  });
+
+  it('offers withdraw when a started month has no answer', () => {
+    renderPanel(makeGrid([on('ada', 'proposed')], { year: 2000 }));
+    expect(within(row('ada')).getByText('no answer')).toBeInTheDocument();
+    expect(within(row('ada')).getByRole('button', { name: 'withdraw' })).toBeInTheDocument();
+  });
+
+  it('proposes a decliner again', async () => {
+    const grid = makeGrid([on('bo', 'declined')]);
+    const { act } = renderPanel(grid);
+    await userEvent.click(within(row('bo')).getByRole('button', { name: 'propose again' }));
+    expect(act).toHaveBeenCalledWith(slot, grid.planners[1], 'declined', grid.assignments[0]);
+  });
+
+  it('will not propose a decliner who is no longer a planner', () => {
+    renderPanel(
+      makeGrid([on('bo', 'declined'), on('cy', 'committed')], {
+        planners: [planner('bo', { isPlanner: false }), planner('cy', { isPlanner: false })],
+      }),
+    );
+    expect(within(row('bo')).getByRole('button', { name: 'propose again' })).toBeDisabled();
+    expect(within(row('cy')).getByRole('button', { name: 'withdraw' })).toBeEnabled();
+  });
+
   it('passes the assignment when withdrawing', async () => {
     const grid = makeGrid([on('ada', 'committed')]);
     const { act } = renderPanel(grid);
