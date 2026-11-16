@@ -24,6 +24,7 @@ A rejected applicant can't sign in or public-RSVP (the form and `/my-rsvps` both
 | comment | ❌ | events they RSVP'd to | official/club events they RSVP'd to | events they RSVP'd to |
 | create events | ❌ | ❌ | ❌ | community + drafts; official/club need a tag permission |
 | co-host | ❌ | ❌ | ❌ | ✅ |
+| invite members | ❌ | ❌ | ❌ | hosts and `manage_events`; RSVP'd guests if the event allows all members |
 | download one event's `.ics` | public fields | public fields | full, even for community events (see open questions) | full |
 
 On a community event, a limited user sees exactly what a visitor sees and can't act on it (`community/events/limited_access.py`). Hosts, co-hosts and `manage_events` holders can always see guests and comment. They can only add or invite people who could see the event: never archived, guidelines-paused or `none` users (a public rsvper already on the list stays manageable), and limited users only on official/club events (`can_be_guest`).
