@@ -29,6 +29,22 @@ describe('GridTile', () => {
     expect(screen.getByRole('button')).toHaveAccessibleDescription(STATE_TEXT[state]);
   });
 
+  it.each([
+    ['committed', '✓', 'rounded-[3px]'],
+    ['proposed', '?', 'rounded-full'],
+    ['no_answer', '!', 'rounded-full'],
+    ['draft', '', 'rounded-[3px]'],
+    ['declined', '✕', 'rounded-[3px]'],
+    ['available', '', 'rounded-[3px]'],
+    ['blank', '', 'rounded-[3px]'],
+  ] as const)('draws %s as glyph "%s" on a %s tile', (state, glyph, shape) => {
+    renderTile({ state });
+    const tile = screen.getByRole('button').querySelector('[aria-hidden="true"]');
+    expect(tile?.textContent).toBe(glyph);
+    expect(tile).toHaveClass(shape);
+    expect(tile?.querySelector('.rounded-full') !== null).toBe(state === 'available');
+  });
+
   it('names a draft tile by its remove action', () => {
     renderTile({ state: 'draft' });
     expect(screen.getByRole('button', { name: 'remove draft ada for january' })).toBeEnabled();
@@ -51,9 +67,14 @@ describe('GridTile', () => {
     expect(screen.getByRole('button')).toBeDisabled();
   });
 
-  it('fits the fixed grid cell footprint', () => {
+  it('fits the fixed grid cell footprint and lifts its focus ring over neighbours', () => {
     renderTile();
-    expect(screen.getByRole('button')).toHaveClass('h-[22px]', 'w-[17px]', 'relative');
+    expect(screen.getByRole('button')).toHaveClass(
+      'h-[22px]',
+      'w-[17px]',
+      'relative',
+      'focus-visible:z-10',
+    );
   });
 
   it('calls onAct on click', async () => {
