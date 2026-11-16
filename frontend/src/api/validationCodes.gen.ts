@@ -81,6 +81,9 @@ export const Code = {
     NameRequired: 'tag.name_required',
     NameAlreadyExists: 'tag.name_already_exists',
   },
+  Reserve: {
+    NotFound: 'reserve.not_found',
+  },
   Comment: {
     NotFound: 'comment.not_found',
     ReplyDepthExceeded: 'comment.reply_depth_exceeded',
@@ -388,6 +391,7 @@ export type ValidationCode =
   | 'tag.not_found'
   | 'tag.name_required'
   | 'tag.name_already_exists'
+  | 'reserve.not_found'
   | 'comment.not_found'
   | 'comment.reply_depth_exceeded'
   | 'comment.invalid_emoji'
@@ -624,6 +628,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'tag.not_found': [],
   'tag.name_required': [],
   'tag.name_already_exists': [],
+  'reserve.not_found': [],
   'comment.not_found': [],
   'comment.reply_depth_exceeded': [],
   'comment.invalid_emoji': [],

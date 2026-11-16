@@ -219,6 +219,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Tag.NameAlreadyExists:
       return 'a tag with that name already exists';
 
+    // Reserve
+    case Code.Reserve.NotFound:
+      return 'reserve entry not found';
+
     // URL
     case Code.Url.Invalid:
       return 'enter a valid url';
