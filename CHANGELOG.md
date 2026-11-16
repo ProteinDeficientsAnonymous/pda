@@ -1,3 +1,10 @@
+# [0.249.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.4...v0.249.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - declutter month panel: planners first, add someone hides the rest ([#2549](https://github.com/ProteinDeficientsAnonymous/pda/issues/2549)) ([0321615](https://github.com/ProteinDeficientsAnonymous/pda/commit/0321615dc41d568b4b1ca2b7aa7256622d660bc4))
+
 ## [0.248.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.3...v0.248.4) (2026-11-16)
 
 
