@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import type { Assignment, PlannerColumn, PlanningGrid } from '@/api/planning';
+import type { PlannerColumn, PlanningGrid } from '@/api/planning';
 import { Button } from '@/components/ui/Button';
 
 import {
@@ -38,27 +38,20 @@ function actionText(state: CellState): string {
   return 'withdraw';
 }
 
-interface PanelRow {
-  planner: PlannerColumn;
-  state: CellState;
-  assignment?: Assignment;
-  detail: string;
+interface RowAction {
   text: string;
   disabled?: boolean;
-  notes?: string[];
+  run: () => void;
 }
 
-function Section({
-  title,
-  rows,
-  busy,
-  onAct,
-}: {
-  title: string;
-  rows: PanelRow[];
-  busy: boolean;
-  onAct: (row: PanelRow) => void;
-}) {
+interface PanelRow {
+  planner: PlannerColumn;
+  detail?: string;
+  notes?: string[];
+  actions: RowAction[];
+}
+
+function Section({ title, rows, busy }: { title: string; rows: PanelRow[]; busy: boolean }) {
   if (rows.length === 0) return null;
   return (
     <>
@@ -75,19 +68,20 @@ function Section({
                   </span>
                 ))}
               </span>
-              <span className="text-muted block text-xs">{row.detail}</span>
+              {row.detail && <span className="text-muted block text-xs">{row.detail}</span>}
             </span>
-            <Button
-              variant="secondary"
-              className="h-8 px-3"
-              aria-label={`${row.text} ${row.planner.name}`}
-              disabled={busy || row.disabled}
-              onClick={() => {
-                onAct(row);
-              }}
-            >
-              {row.text}
-            </Button>
+            {row.actions.map((action) => (
+              <Button
+                key={action.text}
+                variant="secondary"
+                className="h-8 px-3"
+                aria-label={`${action.text} ${row.planner.name}`}
+                disabled={busy || action.disabled}
+                onClick={action.run}
+              >
+                {action.text}
+              </Button>
+            ))}
           </li>
         ))}
       </ul>
@@ -108,6 +102,42 @@ function plannerNotes(planner: PlannerColumn, extraSlot: boolean): string[] {
   return notes;
 }
 
+type Act = MonthPanelProps['act'];
+
+function panelRows(grid: PlanningGrid, slot: PlanningGrid['slots'][number], act: Act) {
+  const planning: PanelRow[] = [];
+  const asked: PanelRow[] = [];
+  const free: PanelRow[] = [];
+  const noForm: PanelRow[] = [];
+  for (const planner of grid.planners) {
+    const state = cellState(slot.id, planner.userId, grid);
+    const assignment = findAssignment(grid, slot.id, planner.userId);
+    const notes = plannerNotes(planner, slot.kind !== 'monthly');
+    const action = (text: string, disabled: boolean): RowAction => ({
+      text,
+      disabled,
+      run: () => void act(slot, planner, state, assignment),
+    });
+    if (assignment) {
+      const disabled = !isWithdrawable(state) && !planner.isPlanner;
+      const row = { planner, notes, actions: [action(actionText(state), disabled)] };
+      if (state === 'committed') planning.push(row);
+      else asked.push({ ...row, detail: STATE_TEXT[state] });
+    } else if (state === 'available') {
+      const detail = loadText(grid, planner);
+      free.push({ planner, notes, detail, actions: [action('propose', !planner.isPlanner)] });
+    } else if (planner.isPlanner && !planner.submitted) {
+      noForm.push({ planner, notes, actions: [action('propose', false)] });
+    }
+  }
+  return { planning, asked, free, noForm };
+}
+
+function addText(adding: boolean, freeCount: number): string {
+  if (adding) return 'hide';
+  return freeCount > 0 ? `add someone · ${String(freeCount)} free` : 'add someone';
+}
+
 export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPanelProps) {
   const [adding, setAdding] = useState(false);
   const ref = useRef<HTMLElement>(null);
@@ -116,33 +146,7 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
   }, [slotId]);
   const slot = grid.slots.find((s) => s.id === slotId);
   if (!slot) return null;
-  const extraSlot = slot.kind !== 'monthly';
-  const asked: PanelRow[] = [];
-  const free: PanelRow[] = [];
-  const others: PanelRow[] = [];
-  for (const planner of grid.planners) {
-    const state = cellState(slotId, planner.userId, grid);
-    const assignment = findAssignment(grid, slotId, planner.userId);
-    const notes = plannerNotes(planner, extraSlot);
-    if (assignment) {
-      const detail = STATE_TEXT[state];
-      const disabled = !isWithdrawable(state) && !planner.isPlanner;
-      asked.push({ planner, state, assignment, detail, text: actionText(state), disabled, notes });
-    } else {
-      const disabled = !planner.isPlanner;
-      if (state === 'available') {
-        const detail = loadText(grid, planner);
-        free.push({ planner, state, detail, text: 'propose', disabled, notes });
-      } else if (planner.isPlanner) {
-        const detail = planner.submitted ? STATE_TEXT[state] : 'no form';
-        others.push({ planner, state, detail, text: 'propose', disabled, notes });
-      }
-    }
-  }
-  const names = (rows: PanelRow[]) => rows.map((r) => r.planner.name).join(', ');
-  const notFree = others.filter((r) => r.planner.submitted);
-  const noForm = others.filter((r) => !r.planner.submitted);
-  const onAct = (row: PanelRow) => void act(slot, row.planner, row.state, row.assignment);
+  const { planning, asked, free, noForm } = panelRows(grid, slot, act);
 
   return (
     <section
@@ -167,29 +171,24 @@ export function MonthPanel({ grid, slotId, today, act, busy, onClose }: MonthPan
           ×
         </Button>
       </div>
-      <Section title="asked" rows={asked} busy={busy} onAct={onAct} />
-      <Section title="free" rows={free} busy={busy} onAct={onAct} />
-      {adding ? (
+      <Section title="planning" rows={planning} busy={busy} />
+      <Section title="asked" rows={asked} busy={busy} />
+      {adding && (
         <>
-          <Section title="not free" rows={notFree} busy={busy} onAct={onAct} />
-          <Section title="no form" rows={noForm} busy={busy} onAct={onAct} />
+          <Section title="free" rows={free} busy={busy} />
+          <Section title="no form" rows={noForm} busy={busy} />
         </>
-      ) : (
-        <div className="text-muted mt-3 space-y-0.5 text-xs">
-          {notFree.length > 0 && <p>{`not free · ${names(notFree)}`}</p>}
-          {noForm.length > 0 && <p>{`no form · ${names(noForm)}`}</p>}
-        </div>
       )}
-      {others.length > 0 && (
+      {free.length + noForm.length > 0 && (
         <Button
           variant="secondary"
-          className="mt-2 h-8 px-3"
+          className="mt-3 h-8 px-3"
           aria-expanded={adding}
           onClick={() => {
             setAdding(!adding);
           }}
         >
-          {adding ? 'hide' : 'add someone'}
+          {addText(adding, free.length)}
         </Button>
       )}
     </section>
