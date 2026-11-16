@@ -91,6 +91,7 @@ export function ScheduleGrid({
               <Fragment key={slot.id}>
                 <button
                   type="button"
+                  id={`month-${slot.id}`}
                   style={at(1, track)}
                   aria-label={slot.label}
                   aria-pressed={open}
