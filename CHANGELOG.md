@@ -1,3 +1,10 @@
+# [0.242.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.241.0...v0.242.0) (2026-11-16)
+
+
+### Features
+
+* add a hint to the speech walk details field ([#2501](https://github.com/ProteinDeficientsAnonymous/pda/issues/2501)) ([5cdfdb1](https://github.com/ProteinDeficientsAnonymous/pda/commit/5cdfdb15c7d85034d9cab0eb43436ff17f234836))
+
 # [0.241.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.240.1...v0.241.0) (2026-11-16)
 
 
