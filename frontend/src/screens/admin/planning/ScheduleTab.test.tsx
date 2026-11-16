@@ -63,6 +63,7 @@ describe('ScheduleTab', () => {
     expect(screen.getByRole('heading', { name: 'january' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'close january' }));
     expect(screen.queryByRole('heading', { name: 'january' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'january' })).toHaveFocus();
   });
 
   it('collapses add someone when another month opens', async () => {

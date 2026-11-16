@@ -74,7 +74,7 @@ export function ScheduleGrid({
 
   return (
     <div>
-      <div className="relative overflow-x-auto py-0.5">
+      <div className="relative overflow-x-auto overflow-y-hidden py-0.5">
         <div
           className="mx-auto grid w-max"
           style={{
@@ -94,6 +94,7 @@ export function ScheduleGrid({
               <Fragment key={slot.id}>
                 <button
                   type="button"
+                  id={`month-${slot.id}`}
                   style={at(1, track)}
                   aria-label={slot.label}
                   aria-pressed={open}
