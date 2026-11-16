@@ -122,6 +122,25 @@ def test_vetting_refuses_an_applicant_archived_while_guidelines_paused(
     assert paused.status_before_archive == MembershipStatus.GUIDELINES_PAUSED
 
 
+def test_approval_checks_the_phone_match_as_well_as_the_linked_user(
+    api_client, vettor_headers, sample_join_request
+):
+    sample_join_request.user = make_user(phone_number="+16505559999", archived_at=timezone.now())
+    sample_join_request.save(update_fields=["user"])
+    make_user(
+        phone_number=PHONE,
+        archived_at=timezone.now(),
+        status_before_archive=MembershipStatus.GUIDELINES_PAUSED,
+    )
+    response = api_client.patch(
+        f"/api/community/join-requests/{sample_join_request.id}/",
+        {"status": JoinRequestStatus.APPROVED},
+        content_type="application/json",
+        **vettor_headers,
+    )
+    assert_error_code(response, Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED)
+
+
 def test_approving_a_tentative_who_is_guidelines_paused_is_refused(
     api_client, vettor_headers, sample_join_request
 ):

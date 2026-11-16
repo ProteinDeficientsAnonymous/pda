@@ -1,6 +1,7 @@
 import logging
 
 from django.conf import settings
+from django.db.models import Q
 from django.utils import timezone
 from notifications.email_helpers import send_join_approval_email
 from notifications.email_sender import get_email_sender
@@ -170,9 +171,11 @@ def _make_tentative(user, join_request, by: User) -> list[str]:
 
 
 def applicant_guidelines_paused(join_request) -> bool:
-    """Whether admitting them would bring back a guidelines pause, which vetting can't lift."""
-    user = join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
-    return user is not None and user.is_guidelines_paused
+    """Whether the linked or phone-matched user, either of which approval may admit, is paused."""
+    candidates = User.objects.select_for_update().filter(
+        Q(pk=join_request.user_id) | Q(phone_number=join_request.phone_number)
+    )
+    return any(user.is_guidelines_paused for user in candidates)
 
 
 def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
@@ -227,7 +230,7 @@ def maybe_promote_tentative(user, event, actor) -> bool:
     user has a linked TENTATIVE join request. Returns whether a promotion
     happened, so the caller knows to send the approval email.
     """
-    # An archived re-applicant can be tentative under a guidelines pause; check-in doesn't lift it.
+    # Only older tentative rows can be guidelines-paused now; check-in doesn't lift it.
     if not is_official_or_club(event.event_type) or user.is_guidelines_paused:
         return False
     join_request = user.join_requests.filter(status=JoinRequestStatus.TENTATIVE).first()
