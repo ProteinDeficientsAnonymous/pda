@@ -24,7 +24,7 @@ from community.models import (
     EventStatus,
     PageVisibility,
     RSVPStatus,
-    parse_event_ref,
+    event_lookup_q,
 )
 from community.shared import authenticated_user, gated, optional_jwt
 from community.validation import ValidationException
@@ -161,26 +161,20 @@ def calendar_feed(request, token: str = ""):
     return response
 
 
-# Intentionally public ("add to calendar"); a signed-in viewer gets the same
-# fields as on the event page, so limited users get the visitor view outside
-# official/club.
+# Public ("add to calendar"); a signed-in viewer gets the fields the event page shows them.
 @router.get("/events/{event_id}/ics/", auth=optional_jwt)
 def single_event_ics(request, event_id: str):
     try:
         event = (
             Event.objects.select_related("created_by")
             .prefetch_related("co_hosts", "invited_users")
-            .get(parse_event_ref(event_id).as_q())
+            .get(event_lookup_q(event_id))
         )
     except Event.DoesNotExist:
         return HttpResponse("Event not found.", status=404, content_type="text/plain")
 
     viewer = event_viewer_for(authenticated_user(request.auth), event)
 
-    # Apply the canonical event-read visibility rules so the ICS gate stays in
-    # lockstep with the main get_event endpoint. This covers deleted (404),
-    # draft (403), members-only-non-official-for-anon (404), and invite-only
-    # (403) — not just the invite-only tier.
     try:
         enforce_event_read_visibility(event, viewer)
     except ValidationException as exc:
