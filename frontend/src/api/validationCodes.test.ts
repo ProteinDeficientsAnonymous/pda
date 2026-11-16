@@ -65,6 +65,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says a reserve entry was not found', () => {
+    expect(messageForCode({ code: Code.Reserve.NotFound, field: null })).toBe(
+      'reserve entry not found',
+    );
+  });
+
   it('says only members can be co-hosts', () => {
     expect(messageForCode({ code: Code.CoHostInvite.NotMember, field: null })).toBe(
       'only members can be co-hosts',

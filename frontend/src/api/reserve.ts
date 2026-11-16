@@ -19,7 +19,7 @@ export interface Reserve {
   updatedAt: Date | null;
 }
 
-export function mapReserve(w: WireReserve): Reserve {
+function mapReserve(w: WireReserve): Reserve {
   return {
     entries: w.entries.map((e) => ({
       id: e.id,
@@ -33,7 +33,7 @@ export function mapReserve(w: WireReserve): Reserve {
   };
 }
 
-async function fetchReserve(): Promise<Reserve> {
+export async function fetchReserve(): Promise<Reserve> {
   const { data } = await apiClient.get<WireReserve>('/api/community/reserve/');
   return mapReserve(data);
 }
