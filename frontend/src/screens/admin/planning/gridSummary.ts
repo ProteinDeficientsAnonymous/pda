@@ -1,4 +1,4 @@
-import type { PlannerColumn, PlanningGrid } from '@/api/planning';
+import type { Assignment, PlannerColumn, PlanningGrid } from '@/api/planning';
 
 export type Coverage =
   | { kind: 'in' }
@@ -7,7 +7,7 @@ export type Coverage =
   | { kind: 'free'; count: number }
   | { kind: 'past' };
 
-const LOADING: string[] = ['draft', 'proposed', 'committed'];
+const LOADING: Assignment['status'][] = ['draft', 'proposed', 'committed'];
 
 export function slotEnded(year: number, month: number, today: Date): boolean {
   return today >= new Date(year, month, 1);
@@ -15,7 +15,7 @@ export function slotEnded(year: number, month: number, today: Date): boolean {
 
 export function slotCoverage(grid: PlanningGrid, slotId: string, today: Date): Coverage {
   const onSlot = grid.assignments.filter((a) => a.slotId === slotId);
-  const has = (status: string) => onSlot.some((a) => a.status === status);
+  const has = (status: Assignment['status']) => onSlot.some((a) => a.status === status);
   if (has('committed')) return { kind: 'in' };
   if (has('proposed')) return { kind: 'sent' };
   if (has('draft')) return { kind: 'draft' };
@@ -23,7 +23,7 @@ export function slotCoverage(grid: PlanningGrid, slotId: string, today: Date): C
   if (slot && slotEnded(grid.year, slot.month, today)) return { kind: 'past' };
   const declined = new Set(onSlot.filter((a) => a.status === 'declined').map((a) => a.userId));
   const count = grid.planners.filter(
-    (p) => p.availableSlotIds.includes(slotId) && !declined.has(p.userId),
+    (p) => p.isPlanner && p.availableSlotIds.includes(slotId) && !declined.has(p.userId),
   ).length;
   return { kind: 'free', count };
 }
