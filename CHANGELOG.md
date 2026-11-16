@@ -1,3 +1,38 @@
+# [0.242.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.241.0...v0.242.0) (2026-11-16)
+
+
+### Features
+
+* add a hint to the speech walk details field ([#2501](https://github.com/ProteinDeficientsAnonymous/pda/issues/2501)) ([5cdfdb1](https://github.com/ProteinDeficientsAnonymous/pda/commit/5cdfdb15c7d85034d9cab0eb43436ff17f234836))
+
+# [0.241.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.240.1...v0.241.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - batch planning proposals and reminders into one email per planner ([#2495](https://github.com/ProteinDeficientsAnonymous/pda/issues/2495)) ([9f06bfe](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f06bfef57347b354499b3144f5d1fa932b7d457))
+
+## [0.240.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.240.0...v0.240.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - stop the planning grid widening the page on phones ([#2494](https://github.com/ProteinDeficientsAnonymous/pda/issues/2494)) ([694e2e3](https://github.com/ProteinDeficientsAnonymous/pda/commit/694e2e3afa7fb2657aa7d35f629c733ed8e6c9b0))
+
+# [0.240.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.239.1...v0.240.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - yearly event planning schedule ([#2441](https://github.com/ProteinDeficientsAnonymous/pda/issues/2441)) ([0748b12](https://github.com/ProteinDeficientsAnonymous/pda/commit/0748b1228258cd0359ccd80845d03cea851212e2))
+
+## [0.239.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.239.0...v0.239.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* 2119 - stop clipping the rsvp deadline calendar in the event form ([#2489](https://github.com/ProteinDeficientsAnonymous/pda/issues/2489)) ([5d8e5ba](https://github.com/ProteinDeficientsAnonymous/pda/commit/5d8e5badef79e8ccae70c1a0b80a2faa6daa4dc9))
+
 # [0.239.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.238.0...v0.239.0) (2026-11-15)
 
 

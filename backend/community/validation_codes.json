@@ -1349,6 +1349,63 @@
         "value": "connect.app_not_found",
         "params": []
       }
+    ],
+    "Planning": [
+      {
+        "name": "YEAR_EXISTS",
+        "value": "planning.year_exists",
+        "params": []
+      },
+      {
+        "name": "YEAR_NOT_FOUND",
+        "value": "planning.year_not_found",
+        "params": []
+      },
+      {
+        "name": "SLOT_NOT_FOUND",
+        "value": "planning.slot_not_found",
+        "params": []
+      },
+      {
+        "name": "SLOT_NOT_IN_YEAR",
+        "value": "planning.slot_not_in_year",
+        "params": []
+      },
+      {
+        "name": "NOT_A_PLANNER",
+        "value": "planning.not_a_planner",
+        "params": []
+      },
+      {
+        "name": "ALREADY_ASSIGNED",
+        "value": "planning.already_assigned",
+        "params": []
+      },
+      {
+        "name": "ASSIGNMENT_NOT_FOUND",
+        "value": "planning.assignment_not_found",
+        "params": []
+      },
+      {
+        "name": "NOT_PENDING",
+        "value": "planning.not_pending",
+        "params": []
+      },
+      {
+        "name": "NOT_EVENT_HOST",
+        "value": "planning.not_event_host",
+        "params": []
+      },
+      {
+        "name": "SLOT_HAS_EVENT",
+        "value": "planning.slot_has_event",
+        "params": []
+      },
+      {
+        "name": "EVENT_ALREADY_LINKED",
+        "value": "planning.event_already_linked",
+        "params": []
+      }
     ]
   }
 }
