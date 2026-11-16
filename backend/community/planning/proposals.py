@@ -85,13 +85,14 @@ def send_proposals(request, year: int):
 )
 def withdraw_assignment(request, assignment_id: UUID):
     require_manage(request, "withdraw_planning_assignment")
-    assignment = get_assignment_or_404(assignment_id)
-    if assignment.status == AssignmentStatus.DRAFT:
-        assignment.withdraw()
-    elif assignment.status in ACTIVE_STATUSES:
+    with transaction.atomic():
+        assignment = get_assignment_or_404(assignment_id, lock=True)
+        was_active = assignment.status in ACTIVE_STATUSES
         was_committed = assignment.status == AssignmentStatus.COMMITTED
-        assignment.withdraw()
+        if assignment.status in HELD_STATUSES:
+            assignment.withdraw()
+    if was_active:
         notify_withdrawn(assignment, request.auth)
-        if was_committed:
-            rescind_planner_invite(assignment.slot, assignment.user_id)
+    if was_committed:
+        rescind_planner_invite(assignment.slot, assignment.user_id)
     return Status(204, None)
