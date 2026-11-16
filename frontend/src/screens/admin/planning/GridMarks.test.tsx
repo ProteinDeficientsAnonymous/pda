@@ -48,6 +48,6 @@ describe('GridKey', () => {
       makeSlot({ id: 's3', label: 'dec holiday', month: 12, kind: 'biannual', order: 2 }),
     ]);
     render(<GridKey columns={columns} />);
-    expect(screen.getByText('★ june anniversary · ◆ dec holiday')).toBeInTheDocument();
+    expect(screen.getByText('🥳 june anniversary · 🎄 dec holiday')).toBeInTheDocument();
   });
 });
