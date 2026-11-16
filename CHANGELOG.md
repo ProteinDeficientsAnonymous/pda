@@ -1,3 +1,10 @@
+## [0.245.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.2...v0.245.3) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - send proposals bar under the grid; awaiting answer label ([#2527](https://github.com/ProteinDeficientsAnonymous/pda/issues/2527)) ([19dff2a](https://github.com/ProteinDeficientsAnonymous/pda/commit/19dff2a071ce2b9f69864895b7fda6bd212bea66))
+
 ## [0.245.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.1...v0.245.2) (2026-11-16)
 
 
