@@ -3,12 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { explicitTab, resolveTab, tabOptions } from './planningTab';
 
 describe('tabOptions', () => {
-  it('keeps slots for managers', () => {
+  it('keeps slots and the checklist editor for managers', () => {
     expect(tabOptions(false).map((o) => o.label)).toEqual([
       'schedule',
       'my events',
       'my availability',
-      'checklist',
       'guidelines',
     ]);
     expect(tabOptions(true).map((o) => o.value)).toEqual([
@@ -29,6 +28,7 @@ describe('explicitTab', () => {
 
   it('ignores tabs the viewer cannot open', () => {
     expect(explicitTab('slots', false)).toBeNull();
+    expect(explicitTab('checklist', false)).toBeNull();
     expect(explicitTab('bogus', true)).toBeNull();
   });
 });

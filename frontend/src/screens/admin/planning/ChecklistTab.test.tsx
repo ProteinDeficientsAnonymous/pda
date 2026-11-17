@@ -1,9 +1,6 @@
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Permission } from '@/models/permissions';
-import { setAuthed } from '@/test/auth';
-import { makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { ChecklistTab } from './ChecklistTab';
@@ -15,34 +12,24 @@ vi.mock('@/api/planningChecklist', () => ({
 }));
 
 vi.mock('./ChecklistEditor', () => ({
-  ChecklistEditor: () => <div>checklist editor</div>,
+  ChecklistEditor: ({ items }: { items: unknown[] }) => (
+    <div>{`checklist editor with ${String(items.length)}`}</div>
+  ),
 }));
 
 beforeEach(() => {
-  setAuthed(makeUserWithPermissions([Permission.ViewEventPlanning]));
   checklist = {
     isPending: false,
     isError: false,
-    data: [
-      { id: 'i1', text: 'secure venue', detail: '' },
-      { id: 'i2', text: 'add the questionnaire', detail: 'all are required' },
-    ],
+    data: [{ id: 'i1', text: 'secure venue', detail: '' }],
   };
 });
 
 describe('ChecklistTab', () => {
-  it('shows the checklist in order with details', () => {
+  it('gives coordinators the editor', () => {
     renderWithProviders(<ChecklistTab />);
-    const items = screen.getAllByRole('listitem');
-    expect(items[0]).toHaveTextContent('secure venue');
-    expect(items[1]).toHaveTextContent('add the questionnaireall are required');
-  });
-
-  it('gives coordinators the editor instead of the plain list', () => {
-    setAuthed(makeUserWithPermissions([Permission.ManageEventPlanning]));
-    renderWithProviders(<ChecklistTab />);
-    expect(screen.getByText('checklist editor')).toBeInTheDocument();
-    expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
+    expect(screen.getByText('checklist editor with 1')).toBeInTheDocument();
+    expect(screen.queryByText('no checklist items yet 🌿')).not.toBeInTheDocument();
   });
 
   it('shows loading until the checklist arrives', () => {
@@ -51,10 +38,11 @@ describe('ChecklistTab', () => {
     expect(screen.getByText('loading…')).toBeInTheDocument();
   });
 
-  it('shows an empty state', () => {
+  it('shows an empty state above the add form', () => {
     checklist = { isPending: false, isError: false, data: [] };
     renderWithProviders(<ChecklistTab />);
     expect(screen.getByText('no checklist items yet 🌿')).toBeInTheDocument();
+    expect(screen.getByText('checklist editor with 0')).toBeInTheDocument();
   });
 
   it('shows a load error', () => {

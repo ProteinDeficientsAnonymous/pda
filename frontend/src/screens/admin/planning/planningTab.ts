@@ -17,14 +17,17 @@ const OWN_TABS: TabOption[] = [
   { value: 'availability', label: 'my availability' },
 ];
 
-const GUIDE_TABS: TabOption[] = [
+const GUIDELINES_TAB: TabOption = { value: 'guidelines', label: 'guidelines' };
+
+// planners tick the checklist under each of their events in my events; this tab edits the list
+const PLANNER_TABS: TabOption[] = [...OWN_TABS, GUIDELINES_TAB];
+
+const MANAGER_TABS: TabOption[] = [
+  ...OWN_TABS,
+  { value: 'slots', label: 'slots' },
   { value: 'checklist', label: 'checklist' },
-  { value: 'guidelines', label: 'guidelines' },
+  GUIDELINES_TAB,
 ];
-
-const PLANNER_TABS: TabOption[] = [...OWN_TABS, ...GUIDE_TABS];
-
-const MANAGER_TABS: TabOption[] = [...OWN_TABS, { value: 'slots', label: 'slots' }, ...GUIDE_TABS];
 
 export function tabOptions(canManage: boolean): TabOption[] {
   return canManage ? MANAGER_TABS : PLANNER_TABS;
