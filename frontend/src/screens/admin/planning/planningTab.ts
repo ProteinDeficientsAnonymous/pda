@@ -29,6 +29,12 @@ const MANAGER_TABS: TabOption[] = [
   GUIDELINES_TAB,
 ];
 
+export function withTab(prev: URLSearchParams, tab: PlanningTab): URLSearchParams {
+  const p = new URLSearchParams(prev);
+  p.set('tab', tab);
+  return p;
+}
+
 export function tabOptions(canManage: boolean): TabOption[] {
   return canManage ? MANAGER_TABS : PLANNER_TABS;
 }
