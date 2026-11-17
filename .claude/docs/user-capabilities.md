@@ -68,7 +68,7 @@ Granted through roles; only members can hold roles. The admin role has every per
 | `edit_guidelines`, `edit_faq`, `edit_homepage`, `edit_join_questions`, `edit_speech_template` | edit that content |
 | `manage_surveys` | create and edit surveys |
 | `manage_event_planning` | set up planning years and slots, see the planning grid, propose and withdraw planners; includes `view_event_planning` |
-| `view_event_planning` | fill in planning availability, commit to or decline proposed slots, see own slots and teammates |
+| `view_event_planning` | fill in planning availability, commit to or decline proposed slots, see own slots and teammates, see the schedule grid read-only (minus drafts), commit to a proposed slot from their own grid row |
 | `manage_documents` | read and edit internal docs |
 | `import_payments` | import and verify cash app payments |
 

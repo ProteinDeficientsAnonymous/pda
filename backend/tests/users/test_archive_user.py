@@ -1,10 +1,20 @@
 from datetime import timedelta
 
 import pytest
-from community.models import CancelReason, Event, EventRSVP, RSVPStatus
+from community.models import (
+    CancelReason,
+    CoHostInviteStatus,
+    Event,
+    EventCoHostInvite,
+    EventRSVP,
+    EventStatus,
+    EventType,
+    RSVPStatus,
+)
 from django.utils import timezone
-from users._archive import archive_user
-from users.models import User
+from notifications.models import Notification, NotificationType
+from users._archive_user import archive_user
+from users.models import MembershipStatus, User
 from users.roles import Role
 
 
@@ -31,8 +41,14 @@ class TestArchiveUser:
         member_role, _ = Role.objects.get_or_create(name="member", is_default=True)
         vettor = Role.objects.create(name="vettor")
         member.roles.add(member_role, vettor)
-        assert archive_user(rf.get("/"), member) == [str(vettor.pk)]
+        assert archive_user(rf.get("/"), member)["removed_role_ids"] == [str(vettor.pk)]
         assert list(member.roles.all()) == [member_role]
+
+    def test_archiving_twice_keeps_the_prior_status(self, rf, member):
+        archive_user(rf.get("/"), member)
+        assert archive_user(rf.get("/"), member) == {}
+        member.refresh_from_db()
+        assert member.status_before_archive == MembershipStatus.ACTIVE_MEMBER
 
     def test_releases_upcoming_rsvp_and_promotes_waitlist(self, rf, member, other_user):
         event = _event(other_user, max_attendees=1)
@@ -84,10 +100,37 @@ class TestArchiveUser:
         archive_user(rf.get("/"), member)
         assert list(shared.co_hosts.all()) == [other_user]
 
-    def test_keeps_sole_hosted_events(self, rf, member):
-        solo = _event(member)
+    def test_releases_official_rsvp_too(self, rf, member, other_user):
+        event = _event(other_user, event_type=EventType.OFFICIAL)
+        EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.ATTENDING)
         archive_user(rf.get("/"), member)
-        assert list(solo.co_hosts.all()) == [member]
+        rsvp = EventRSVP.objects.get(event=event, user=member)
+        assert rsvp.status == RSVPStatus.CANT_GO
+        assert rsvp.cancel_reason == CancelReason.ARCHIVE
+
+    def test_drafts_sole_hosted_event_and_tells_guests(
+        self, rf, member, other_user, django_capture_on_commit_callbacks
+    ):
+        solo = _event(member)
+        EventRSVP.objects.create(event=solo, user=other_user, status=RSVPStatus.ATTENDING)
+        with django_capture_on_commit_callbacks(execute=True):
+            released = archive_user(rf.get("/"), member)
+        assert released["drafted_event_ids"] == [str(solo.pk)]
+        solo.refresh_from_db()
+        assert solo.status == EventStatus.DRAFT
+        assert not solo.co_hosts.exists()
+        notice = Notification.objects.get(notification_type=NotificationType.EVENT_UNPUBLISHED)
+        assert (notice.recipient, notice.event) == (other_user, solo)
+
+    def test_rescinds_pending_cohost_invites(self, rf, member, other_user):
+        upcoming = EventCoHostInvite.objects.create(event=_event(other_user), user=member)
+        past = EventCoHostInvite.objects.create(event=_event(other_user, days=-3), user=member)
+        released = archive_user(rf.get("/"), member)
+        assert released["rescinded_invite_event_ids"] == [str(upcoming.event_id)]
+        upcoming.refresh_from_db()
+        past.refresh_from_db()
+        assert upcoming.status == CoHostInviteStatus.RESCINDED
+        assert past.status == CoHostInviteStatus.PENDING
 
 
 @pytest.mark.django_db

@@ -1,3 +1,108 @@
+# [0.254.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.253.0...v0.254.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - show planners the schedule and let them put themselves in ([#2563](https://github.com/ProteinDeficientsAnonymous/pda/issues/2563)) ([f40328e](https://github.com/ProteinDeficientsAnonymous/pda/commit/f40328eeec12fa978416c46fefac1ac2832dd525))
+
+# [0.253.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.252.0...v0.253.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - put yourself in from your own grid row ([#2556](https://github.com/ProteinDeficientsAnonymous/pda/issues/2556)) ([ad10ab7](https://github.com/ProteinDeficientsAnonymous/pda/commit/ad10ab740d5d641eda598507384cc125737f01b5))
+
+# [0.252.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.251.0...v0.252.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - audit planning assignment status changes ([#2562](https://github.com/ProteinDeficientsAnonymous/pda/issues/2562)) ([9908ca0](https://github.com/ProteinDeficientsAnonymous/pda/commit/9908ca078cd2755a1761659dd7ab890b7f7c53de))
+
+# [0.251.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.250.1...v0.251.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - show queued drafts in the send proposals bar ([#2550](https://github.com/ProteinDeficientsAnonymous/pda/issues/2550)) ([575ffda](https://github.com/ProteinDeficientsAnonymous/pda/commit/575ffda4c8a749488c336c6cf650e59870230770))
+
+## [0.250.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.250.0...v0.250.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2422 - draft solo-hosted events and rescind co-host invites on archive ([#2537](https://github.com/ProteinDeficientsAnonymous/pda/issues/2537)) ([e066c81](https://github.com/ProteinDeficientsAnonymous/pda/commit/e066c8161509d412bb104307b4da92d36802af41))
+
+# [0.250.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.249.0...v0.250.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - coordinators can confirm a planner directly (api) ([#2548](https://github.com/ProteinDeficientsAnonymous/pda/issues/2548)) ([ff9e289](https://github.com/ProteinDeficientsAnonymous/pda/commit/ff9e2898f53c4a084a1dbf546c6fba57095740f4))
+
+# [0.249.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.4...v0.249.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - declutter month panel: planners first, add someone hides the rest ([#2549](https://github.com/ProteinDeficientsAnonymous/pda/issues/2549)) ([0321615](https://github.com/ProteinDeficientsAnonymous/pda/commit/0321615dc41d568b4b1ca2b7aa7256622d660bc4))
+
+## [0.248.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.3...v0.248.4) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - drop the month row line from the grid key ([#2547](https://github.com/ProteinDeficientsAnonymous/pda/issues/2547)) ([8a55b03](https://github.com/ProteinDeficientsAnonymous/pda/commit/8a55b03d6ea7b71fbc325f4a04f6fc5104619243))
+
+## [0.248.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.2...v0.248.3) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - add someone is a secondary button ([#2546](https://github.com/ProteinDeficientsAnonymous/pda/issues/2546)) ([e5d1d52](https://github.com/ProteinDeficientsAnonymous/pda/commit/e5d1d5206df4d86b2ff9ffb3161bcd3648bf66fd))
+
+## [0.248.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.1...v0.248.2) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - create event is a primary button in my events ([#2545](https://github.com/ProteinDeficientsAnonymous/pda/issues/2545)) ([2b03a96](https://github.com/ProteinDeficientsAnonymous/pda/commit/2b03a9613ad0b99ec738c1611db34710f4c4c57f))
+
+## [0.248.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.248.0...v0.248.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - show "just you so far" when a slot has no teammates ([#2544](https://github.com/ProteinDeficientsAnonymous/pda/issues/2544)) ([68fbbda](https://github.com/ProteinDeficientsAnonymous/pda/commit/68fbbda97b2d14508d867cad1ba862bd880c1406))
+
+# [0.248.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.247.0...v0.248.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - 🥳 june and 🎄 december markers on the planning grid ([#2542](https://github.com/ProteinDeficientsAnonymous/pda/issues/2542)) ([bb34369](https://github.com/ProteinDeficientsAnonymous/pda/commit/bb34369fe50311c1b145278a4b1988af5f38780f))
+
+# [0.247.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.246.1...v0.247.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - ask planners for availability; weekly reminder ([#2538](https://github.com/ProteinDeficientsAnonymous/pda/issues/2538)) ([175bee8](https://github.com/ProteinDeficientsAnonymous/pda/commit/175bee806333dda75cdf7fe21cf72fb65c811b23))
+
+## [0.246.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.246.0...v0.246.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* 2121 - drop the no answer grid state ([#2536](https://github.com/ProteinDeficientsAnonymous/pda/issues/2536)) ([f2248ac](https://github.com/ProteinDeficientsAnonymous/pda/commit/f2248acb1262e8bd683ca9590929246e02f49a86))
+
+# [0.246.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.3...v0.246.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - split planning into my events and my availability tabs ([#2528](https://github.com/ProteinDeficientsAnonymous/pda/issues/2528)) ([df5aff3](https://github.com/ProteinDeficientsAnonymous/pda/commit/df5aff306cb3000405ca66e2741ebce2fd862a1f))
+
 ## [0.245.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.245.2...v0.245.3) (2026-11-16)
 
 

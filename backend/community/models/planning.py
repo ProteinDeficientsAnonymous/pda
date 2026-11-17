@@ -27,6 +27,8 @@ _BIANNUALS = (("june anniversary", 6), ("dec holiday", 12))
 class PlanningYear(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     year = models.PositiveSmallIntegerField(unique=True)
+    availability_opened_at = models.DateTimeField(null=True, blank=True)
+    availability_reminded_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     if TYPE_CHECKING:
         slots: "Manager[PlanningSlot]"
@@ -154,12 +156,15 @@ class SlotAssignment(models.Model):
     def propose(self, by) -> None:
         self._open(AssignmentStatus.PROPOSED, by)
 
+    def confirm(self, by) -> None:
+        self._open(AssignmentStatus.COMMITTED, by)
+
     def _open(self, status: AssignmentStatus, by) -> None:
         with transaction.atomic():
             self.status = status
             self.proposed_by = by
             self.proposed_at = timezone.now()
-            self.responded_at = None
+            self.responded_at = self.proposed_at if status == AssignmentStatus.COMMITTED else None
             self.last_reminded_at = None
             self.reminder_count = 0
             self.upcoming_notified_at = None

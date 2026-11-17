@@ -7,7 +7,6 @@ import { cellActionLabel, type CellState, isWithdrawable, STATE_TEXT } from './g
 const TILE_CLASS: Record<CellState, string> = {
   committed: 'rounded-[3px] bg-plan-in text-plan-in-fg',
   proposed: 'rounded-full bg-plan-sent text-plan-sent-fg',
-  no_answer: 'rounded-full bg-plan-sent text-plan-sent-fg',
   draft: 'rounded-[3px] border border-dashed border-plan-draft bg-surface',
   declined: 'rounded-[3px] bg-plan-blank text-muted',
   available: 'rounded-[3px] border border-plan-free-edge bg-plan-free',
@@ -17,7 +16,6 @@ const TILE_CLASS: Record<CellState, string> = {
 const GLYPH: Partial<Record<CellState, string>> = {
   committed: '✓',
   proposed: '?',
-  no_answer: '!',
   declined: '✕',
 };
 
@@ -43,8 +41,9 @@ interface GridTileProps {
   plannerName: string;
   slotLabel: string;
   isPlanner: boolean;
+  self?: boolean;
   disabled: boolean;
-  onAct: () => void;
+  onAct?: (() => void) | undefined;
 }
 
 export function GridTile({
@@ -52,15 +51,24 @@ export function GridTile({
   plannerName,
   slotLabel,
   isPlanner,
+  self = false,
   disabled,
   onAct,
 }: GridTileProps) {
   const textId = useId();
   const blockedReason = !isWithdrawable(state) && !isPlanner ? 'no longer a planner' : null;
+  if (!onAct) {
+    return (
+      <span className="inline-flex h-[var(--pg-row)] w-[var(--pg-col)] items-center justify-center">
+        <TileFace state={state} />
+        <span className="sr-only">{`${plannerName}, ${slotLabel}: ${STATE_TEXT[state]}`}</span>
+      </span>
+    );
+  }
   return (
     <button
       type="button"
-      aria-label={cellActionLabel(state, plannerName, slotLabel)}
+      aria-label={cellActionLabel(state, plannerName, slotLabel, self)}
       aria-describedby={textId}
       title={blockedReason ?? undefined}
       disabled={disabled || blockedReason !== null}

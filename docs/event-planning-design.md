@@ -19,7 +19,6 @@ Leah runs the yearly event-planning schedule in a spreadsheet: one row per slot 
 - Showing slots on the community calendar. A slot reaches the calendar only as the real event created from it (option A in the design conversation).
 - Specific dates on slots. Slots are months; the planner picks the date when creating the event.
 - Auto-assigning planners to slots.
-- Reminders for planners who haven't filled out the availability form.
 
 ## Approaches considered
 
@@ -38,7 +37,7 @@ Only a role that grants `view_event_planning` makes someone a planner. Neither `
 
 ## Data model (`backend/community/models/planning.py`)
 
-- **PlanningYear**: `year` (unique int), `created_at`.
+- **PlanningYear**: `year` (unique int), `availability_opened_at`, `availability_reminded_at`, `created_at`.
 - **PlanningSlot**: `planning_year` FK, `label` (e.g. "march", "june anniversary"), `month` (1–12), `kind` (`monthly` | `biannual`), `event` FK nullable (`SET_NULL`), `order`.
 - **PlanningAvailability**: one per (year, user): `biannual_interest` (`yes` | `maybe` | `no`), `monthly_count` (int), `available_slots` M2M to PlanningSlot, `updated_at`.
 - **SlotAssignment**: one per (slot, user): `status` (`draft` | `proposed` | `committed` | `declined` | `withdrawn`), `proposed_by`, `proposed_at`, `responded_at`, `last_reminded_at`, `reminder_count`, `upcoming_notified_at`.
@@ -47,17 +46,23 @@ Creating a year pre-fills 12 monthly slots and the two biannuals (june anniversa
 
 ## Flows
 
+**Asking for availability.** Once the slots look right, the coordinator hits **ask planners for availability** on the slots tab (after a confirm). It's one-shot per year: it stamps `availability_opened_at` and sends every planner an in-app notification plus an email (if they have one) linking to `/admin/planning?tab=availability`.
+
 **Availability.** A planner opens the planning tab, picks the year, and submits: slots they could plan (toggles), biannual interest, and how many monthlies they'll take. Editable any time.
 
 **Proposing.** The coordinator clicks a cell to stage that planner for that slot, including planners who didn't mark it available. Several planners can be staged on one slot. A staged proposal is a `draft`: nobody is notified, and clicking it again removes it silently. When done, the coordinator hits **send proposals**, which turns every draft in the year into `proposed` and sends each planner one in-app notification and one email listing all their new slots. The coordinator can withdraw a sent proposal or remove a committed planner; the planner is notified.
 
+**Confirming directly.** A coordinator can mark any planner, themselves included, as committed to a slot without a proposal (`POST /planning/slots/{id}/assignments/confirm/`). It creates the row or flips a draft, proposed or declined one straight to `committed`, stamping `proposed_by`, `proposed_at` and `responded_at` and clearing reminders. The planner gets an in-app notification and an email saying they're down for it; confirming yourself is silent. If the slot already has an event, the planner gets a co-host invite, same as a late commit.
+
 **Answering.** The planner commits or declines from the tab. Both notify every `manage_event_planning` holder in-app. A decline returns the slot to the coordinator: the cell shows "declined" and the slot is flagged as needing a planner. A committed planner can back out later, which acts as a decline.
 
-**Reminders.** A daily job emails every planner with a `proposed` assignment every 3 days until they answer, with no cap, stopping once the slot's month has started. Each planner gets one reminder email listing all their unanswered slots, not one per slot. A proposal never answered stays `proposed`; the grid shows it as "awaiting answer" once the month has started. Reminders go only to active members who still hold `view_event_planning`.
+**Reminders.** A daily job emails every planner with a `proposed` assignment every 3 days until they answer, with no cap, stopping once the slot's month has started. Each planner gets one reminder email listing all their unanswered slots, not one per slot. A proposal never answered stays `proposed` and keeps showing as sent. Reminders go only to active members who still hold `view_event_planning`.
+
+**Availability reminders.** The same daily job emails every planner who hasn't submitted availability for an opened year, once a week (first one a week after opening), until they submit. It stops on january 1st of that year: by then proposals are out and the grid shows them under "no form". The year is stamped in `availability_reminded_at` under a row lock before sending, so a rerun doesn't double-send; a failed email waits for next week.
 
 **Upcoming notice.** The same daily job sends committed planners one email and in-app notification once the slot is within 6 weeks of the 1st of its month (so a late commit gets it on the next run), stamped in `upcoming_notified_at`, and skipped if the slot already has an event.
 
-**No email.** Proposals and the upcoming notice always create an in-app notification too; reminders are email-only. The grid marks planners with no email so the coordinator knows to chase them directly.
+**No email.** Proposals, the availability ask and the upcoming notice always create an in-app notification too; both kinds of reminder are email-only. The grid marks planners with no email so the coordinator knows to chase them directly.
 
 **Creating the event.** A committed slot shows "create event" to its committed planners and to the coordinator. It opens the event form prefilled as an official event with the slot's label as title and a date in the slot's month, and passes the slot id. The form offers only the event types the creator can tag, and the backend's existing type-to-permission check still applies. On create, the backend links `slot.event` and sends co-host invites to the other committed planners on that slot. The grid then shows the slot as scheduled, with the event's status.
 
@@ -67,20 +72,20 @@ Creating a year pre-fills 12 monthly slots and the two biannuals (june anniversa
 
 - **Admin hub tile "event planning"**, visible with either permission.
 - **Header** for everyone: title and year select.
-- **Planner view** (`view_event_planning`), the coordinator's **mine** tab: "waiting on you" list of proposals with commit / decline; "your slots" list showing month, teammates (others proposed or committed on that slot, with their status), and the create-event button or event link; then the availability form, with a toggle per slot (monthlies in two columns, extra slots below).
-- **Coordinator view** (`manage_event_planning`): tabs **schedule** (default), **mine** and **slots**, kept in `?tab=`; with no tab set, a coordinator with an unanswered proposal of their own lands on mine. Planners without manage get the mine content with no tabs. Logged-out visitors are sent to login and back.
-  - **schedule**: summary pills (slots needing a planner, not counting months that have ended; proposals waiting; planners with no form); the grid; the month panel; the send proposals bar at the bottom, shown while drafts wait, so showing it shifts nothing above.
-  - **The grid** is turned on its side so it fits a phone: planners down (no-form planners below a divider), slots across at fixed widths (monthlies in month order with a gap per quarter, then extra slots with ★ / ◆ markers explained in a key), plus a "month" summary row, a monthlies column (taken/offered) and a biannual column (yes/maybe/no). Each cell is a 15px tile in the app's greens where shape carries the state: in ✓ square, sent ? circle, awaiting answer ! circle, not sent yet (draft) dashed square, declined ✕, free dotted pale square, blank. Tapping a cell drafts, removes a draft, or confirms a withdraw, as in Proposing.
-  - **The month panel** opens when a month letter is tapped (under the grid): the slot's status and event link, who's free with their load and a propose button, who's been asked in what state (decliners included), and "add someone" for everyone else. It's the large-button way to do everything the small cells do.
-  - **slots**: one compact row per slot with "edit" opening the label / month / kind / delete controls; add a slot; start the year after the latest one.
+- **Planner tabs** (`view_event_planning`): **schedule** (read-only), **my events** and **my availability**, kept in `?tab=` (the old `?tab=mine` opens my events). My events has a "waiting on you" list of proposals with commit / decline, then "events you're planning": month, teammates (others proposed or committed on that slot, with their status), and the create-event button or event link next to back out. My availability is the form, with a toggle per slot (monthlies in two columns, extra slots below).
+- **Coordinator view** (`manage_event_planning`): tabs **schedule** (default), **my events**, **my availability** and **slots**; with no tab set, a coordinator with an unanswered proposal of their own lands on my events. Planners without manage get the three planner tabs, opening on my events. Logged-out visitors are sent to login and back.
+  - **schedule**: summary pills (slots needing a planner, not counting months that have ended; proposals waiting; planners with no form); the grid; the month panel; the send proposals bar at the bottom, shown while drafts wait, so showing it shifts nothing above. Its "n not sent yet" toggle opens the queue grouped by planner ("ada · january ✕ march ✕"); tapping a month asks before dropping that draft.
+  - **The grid** is turned on its side so it fits a phone: planners down (no-form planners below a divider), slots across at fixed widths (monthlies in month order with a gap per quarter, then extra slots with markers explained in a key: 🥳 for june, 🎄 for december, ★ / ◆ / ▲ / ● for the rest), plus a "month" summary row, a monthlies column (taken/offered) and a biannual column (yes/maybe/no). Each cell is a 15px tile in the app's greens where shape carries the state: in ✓ square, sent ? circle, not sent yet (draft) dashed square, declined ✕, free dotted pale square, blank. Tapping a cell drafts, removes a draft, or confirms a withdraw, as in Proposing. Tapping a declined cell asks before proposing again. On the coordinator's own row, tapping any cell that isn't in puts them straight in (Confirming directly), so they never send themselves a proposal. Planners without manage see the same grid and month panel read-only: no drafts, no send bar, no add someone, and the only tappable cells are their own sent ones, which commit them (same as "i'm in" on my events).
+  - **The month panel** opens when a month letter is tapped (under the grid): the slot's status and event link, "planning" for who's committed (with withdraw), "asked" for drafts, sent proposals and decliners, then "add someone" (with a count of who's free) that expands to who's free with their load, then who has no form. People who said they're not free aren't listed; a grid tap can still draft them. It's the large-button way to do everything the small cells do.
+  - **slots**: "ask planners for availability" above the slots (once sent, it shows when instead); one compact row per slot with "edit" opening the label / month / kind / delete controls; add a slot; start the year after the latest one.
 
-Grid states by priority: committed > proposed (awaiting answer once the month starts) > draft > declined > available > blank. Never colour alone; no red/green.
+Grid states by priority: committed > proposed > draft > declined > available > blank. Never colour alone; no red/green.
 
 All text lowercase.
 
 ## Visibility
 
-Planners see their own availability and assignments, plus teammates' names and statuses on slots they're proposed or committed to. Only the coordinator sees the full grid and everyone's availability.
+Planners see their own availability and assignments, plus teammates' names and statuses on slots they're proposed or committed to. Every planner can see the schedule grid, including everyone's availability; only the coordinator sees unsent drafts.
 
 ## Ops
 

@@ -27,9 +27,19 @@ describe('slotColumns', () => {
   it('headers: month initials then extra markers', () => {
     expect(slotColumns(defaultYear()).map((c) => c.header)).toEqual([
       ...'jfmamjjasond'.split(''),
-      '★',
-      '◆',
+      '🥳',
+      '🎄',
     ]);
+  });
+
+  it('marks june and december extras with emoji and keeps the other markers in order', () => {
+    const cols = slotColumns([
+      extra('dec', 12),
+      extra('spring', 3),
+      extra('june', 6),
+      extra('fall', 9),
+    ]);
+    expect(cols.map((c) => c.header)).toEqual(['★', '🥳', '◆', '🎄']);
   });
 
   it('tracks skip quarter and extra gap tracks', () => {
@@ -50,7 +60,7 @@ describe('slotColumns', () => {
   });
 
   it('numbers extras past four', () => {
-    const extras = Array.from({ length: 6 }, (_, i) => extra(`e${String(i)}`, 6, i));
+    const extras = Array.from({ length: 6 }, (_, i) => extra(`e${String(i)}`, 3, i));
     const cols = slotColumns(extras);
     expect(cols.map((c) => c.header)).toEqual(['★', '◆', '▲', '●', '5', '6']);
     expect(gridTemplate(cols)).toBe(vars('name col col col col col col load bi'));

@@ -40,6 +40,10 @@ function renderPanel(grid: PlanningGrid, { busy = false, onClose = vi.fn(), act 
 
 const row = (name: string) => screen.getByText(name).closest('li') as HTMLElement;
 
+const addButton = () => screen.getByRole('button', { name: /^add someone/ });
+
+const openAdd = () => userEvent.click(addButton());
+
 describe('MonthPanel', () => {
   it.each([
     [[on('ada', 'committed')], 2999, 'covered'],
@@ -66,6 +70,7 @@ describe('MonthPanel', () => {
   it('proposes a free planner', async () => {
     const grid = makeGrid([]);
     const { act } = renderPanel(grid);
+    await openAdd();
     expect(within(row('ada')).getByText('0 of 2 monthlies taken')).toBeInTheDocument();
     await userEvent.click(within(row('ada')).getByRole('button', { name: 'propose ada' }));
     expect(act).toHaveBeenCalledWith(slot, grid.planners[0], 'available', undefined);
@@ -80,12 +85,23 @@ describe('MonthPanel', () => {
         on('dee', 'committed'),
       ]),
     );
-    expect(screen.getByRole('heading', { name: 'asked' })).toBeInTheDocument();
     expect(within(row('ada')).getByText('not sent yet')).toBeInTheDocument();
     expect(within(row('ada')).getByRole('button', { name: 'undo ada' })).toBeInTheDocument();
     expect(within(row('bo')).getByRole('button', { name: 'propose again bo' })).toBeInTheDocument();
     expect(within(row('cy')).getByRole('button', { name: 'withdraw cy' })).toBeInTheDocument();
-    expect(within(row('dee')).getByText('in')).toBeInTheDocument();
+    expect(within(row('dee')).getByRole('button', { name: 'withdraw dee' })).toBeInTheDocument();
+  });
+
+  it('lists committed planners under planning, apart from asked', () => {
+    renderPanel(makeGrid([on('ada', 'committed'), on('bo', 'proposed')]));
+    const [planning, asked] = screen.getAllByRole('list') as [HTMLElement, HTMLElement];
+    expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+      'planning',
+      'asked',
+    ]);
+    expect(within(planning).getByText('ada')).toBeInTheDocument();
+    expect(within(planning).queryByText('in')).not.toBeInTheDocument();
+    expect(within(asked).getByText('bo')).toBeInTheDocument();
   });
 
   it('labels a sent proposal', () => {
@@ -93,9 +109,9 @@ describe('MonthPanel', () => {
     expect(within(row('ada')).getByText('sent')).toBeInTheDocument();
   });
 
-  it('offers withdraw when a started month is awaiting an answer', () => {
+  it('keeps a proposal as sent after its month has started', () => {
     renderPanel(makeGrid([on('ada', 'proposed')], { year: 2000 }));
-    expect(within(row('ada')).getByText('awaiting answer')).toBeInTheDocument();
+    expect(within(row('ada')).getByText('sent')).toBeInTheDocument();
     expect(within(row('ada')).getByRole('button', { name: 'withdraw ada' })).toBeInTheDocument();
   });
 
@@ -151,79 +167,87 @@ describe('MonthPanel', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('will not propose someone who is not a planner', () => {
+  it('will not propose someone who is not a planner', async () => {
     renderPanel(makeGrid([], { planners: [planner('ada', { isPlanner: false })] }));
+    await openAdd();
     expect(within(row('ada')).getByRole('button', { name: 'propose ada' })).toBeDisabled();
     expect(within(row('ada')).getByText('no longer a planner')).toBeInTheDocument();
   });
 
-  describe('everyone else', () => {
-    const gridWithOthers = (slotOverrides: Partial<PlanningGrid['slots'][number]> = {}) =>
-      makeGrid([], {
-        slots: [{ ...slot, ...slotOverrides }],
+  describe('add someone', () => {
+    const gridWithOthers = () =>
+      makeGrid([on('ada', 'committed')], {
         planners: [
           planner('ada'),
+          planner('bo'),
+          planner('cy'),
           planner('dan', { availableSlotIds: [] }),
-          planner('duncan', { availableSlotIds: [] }),
           planner('mo', { submitted: false, availableSlotIds: [] }),
-          planner('jo', { submitted: false, availableSlotIds: [] }),
         ],
       });
 
-    it('lists them on muted lines', () => {
+    it('hides everyone not on the slot and counts who is free', () => {
       renderPanel(gridWithOthers());
-      expect(screen.getByText('not free · dan, duncan')).toBeInTheDocument();
-      expect(screen.getByText('no form · mo, jo')).toBeInTheDocument();
+      expect(addButton()).toHaveTextContent('add someone · 2 free');
+      expect(addButton()).toHaveAttribute('aria-expanded', 'false');
+      for (const name of ['bo', 'cy', 'dan', 'mo']) {
+        expect(screen.queryByText(name)).not.toBeInTheDocument();
+      }
     });
 
-    it('proposes someone who is not free after add someone', async () => {
-      const grid = gridWithOthers();
-      const { act } = renderPanel(grid);
-      const add = screen.getByRole('button', { name: 'add someone' });
-      expect(add).toHaveAttribute('aria-expanded', 'false');
-      await userEvent.click(add);
-      expect(add).toHaveAttribute('aria-expanded', 'true');
-      await userEvent.click(within(row('dan')).getByRole('button', { name: 'propose dan' }));
-      expect(act).toHaveBeenCalledWith(slot, grid.planners[1], 'blank', undefined);
-    });
-
-    it('leaves ex-planners out of add someone', async () => {
-      renderPanel(
-        makeGrid([], {
-          planners: [planner('ada'), planner('ex', { isPlanner: false, availableSlotIds: [] })],
-        }),
-      );
-      expect(screen.queryByRole('button', { name: 'add someone' })).not.toBeInTheDocument();
-      expect(screen.queryByText(/not free/)).not.toBeInTheDocument();
-    });
-
-    it('splits not free from no form once expanded and offers hide', async () => {
+    it('shows free then no form once expanded, never who is not free', async () => {
       renderPanel(gridWithOthers());
-      await userEvent.click(screen.getByRole('button', { name: 'add someone' }));
-      expect(screen.getByRole('heading', { name: 'not free' })).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: 'no form' })).toBeInTheDocument();
+      await openAdd();
+      expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+        'planning',
+        'free',
+        'no form',
+      ]);
+      expect(screen.queryByText('dan')).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'hide' })).toHaveAttribute('aria-expanded', 'true');
     });
 
-    it('has no add someone when everyone is free', () => {
-      renderPanel(makeGrid([]));
-      expect(screen.queryByRole('button', { name: 'add someone' })).not.toBeInTheDocument();
+    it('proposes someone with no form', async () => {
+      const grid = gridWithOthers();
+      const { act } = renderPanel(grid);
+      await openAdd();
+      await userEvent.click(within(row('mo')).getByRole('button', { name: 'propose mo' }));
+      expect(act).toHaveBeenCalledWith(slot, grid.planners[4], 'blank', undefined);
+    });
+
+    it('drops the count when nobody is free', () => {
+      renderPanel(
+        makeGrid([], { planners: [planner('mo', { submitted: false, availableSlotIds: [] })] }),
+      );
+      expect(addButton()).toHaveTextContent(/^add someone$/);
+    });
+
+    it('is gone when nobody is left to add', () => {
+      renderPanel(
+        makeGrid([on('ada', 'committed')], {
+          planners: [planner('ada'), planner('ex', { isPlanner: false, availableSlotIds: [] })],
+        }),
+      );
+      expect(screen.queryByRole('button', { name: /add someone/ })).not.toBeInTheDocument();
     });
   });
 
-  it('shows biannual interest only on an extra slot', () => {
+  it('shows biannual interest only on an extra slot', async () => {
     const planners = [planner('ada', { biannualInterest: 'maybe' })];
     renderPanel(makeGrid([], { planners, slots: [{ ...slot, kind: 'biannual' }] }));
+    await openAdd();
     expect(within(row('ada')).getByText('biannual: maybe')).toBeInTheDocument();
   });
 
-  it('hides biannual interest on a monthly slot', () => {
+  it('hides biannual interest on a monthly slot', async () => {
     renderPanel(makeGrid([], { planners: [planner('ada', { biannualInterest: 'maybe' })] }));
+    await openAdd();
     expect(screen.queryByText('biannual: maybe')).not.toBeInTheDocument();
   });
 
-  it('flags planners with no email', () => {
+  it('flags planners with no email', async () => {
     renderPanel(makeGrid([], { planners: [planner('ada', { hasEmail: false })] }));
+    await openAdd();
     expect(within(row('ada')).getByText('no email')).toBeInTheDocument();
   });
 });
