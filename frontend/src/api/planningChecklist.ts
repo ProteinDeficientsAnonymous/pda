@@ -49,3 +49,10 @@ export function useMoveChecklistItem() {
     },
   );
 }
+
+export function useTickChecklistItem(slotId: string) {
+  return usePlanningMutation(async ({ itemId, done }: { itemId: string; done: boolean }) => {
+    const body: components['schemas']['ChecklistTickIn'] = { done };
+    await apiClient.put(`/api/community/planning/slots/${slotId}/checklist/${itemId}/`, body);
+  });
+}

@@ -9,6 +9,7 @@ import {
   useCreateChecklistItem,
   useDeleteChecklistItem,
   useMoveChecklistItem,
+  useTickChecklistItem,
   useUpdateChecklistItem,
 } from './planningChecklist';
 
@@ -67,6 +68,15 @@ describe('checklist mutations', () => {
     await result.current.mutateAsync({ id: 'i2', direction: 'up' });
     expect(apiClient.post).toHaveBeenCalledWith('/api/community/planning/checklist/i2/move/', {
       direction: 'up',
+    });
+  });
+
+  it('tick puts the done state for the slot', async () => {
+    vi.mocked(apiClient.put).mockResolvedValue({ data: { done_ids: ['i1'] } });
+    const { result } = renderHook(() => useTickChecklistItem('s1'), { wrapper: queryWrapper() });
+    await result.current.mutateAsync({ itemId: 'i1', done: true });
+    expect(apiClient.put).toHaveBeenCalledWith('/api/community/planning/slots/s1/checklist/i1/', {
+      done: true,
     });
   });
 });
