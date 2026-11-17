@@ -1,3 +1,11 @@
+## [0.255.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.255.0...v0.255.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* 2247 - gate single-event .ics fields for limited users ([#2535](https://github.com/ProteinDeficientsAnonymous/pda/issues/2535)) ([36e7b73](https://github.com/ProteinDeficientsAnonymous/pda/commit/36e7b7310f7fc9df4a75c896eaaf2320641bf031))
+* 2248 - block limited users from member search ([#2532](https://github.com/ProteinDeficientsAnonymous/pda/issues/2532)) ([b553e78](https://github.com/ProteinDeficientsAnonymous/pda/commit/b553e78a9c45c1629b60f889ad7a2250c2d95fc0))
+
 # [0.255.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.254.0...v0.255.0) (2026-11-17)
 
 
