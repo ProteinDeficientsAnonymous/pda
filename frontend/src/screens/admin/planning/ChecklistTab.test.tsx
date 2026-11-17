@@ -1,6 +1,9 @@
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { Permission } from '@/models/permissions';
+import { setAuthed } from '@/test/auth';
+import { makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { ChecklistTab } from './ChecklistTab';
@@ -11,7 +14,12 @@ vi.mock('@/api/planningChecklist', () => ({
   useChecklist: () => checklist,
 }));
 
+vi.mock('./ChecklistEditor', () => ({
+  ChecklistEditor: () => <div>checklist editor</div>,
+}));
+
 beforeEach(() => {
+  setAuthed(makeUserWithPermissions([Permission.ViewEventPlanning]));
   checklist = {
     isPending: false,
     isError: false,
@@ -28,6 +36,13 @@ describe('ChecklistTab', () => {
     const items = screen.getAllByRole('listitem');
     expect(items[0]).toHaveTextContent('secure venue');
     expect(items[1]).toHaveTextContent('add the questionnaireall are required');
+  });
+
+  it('gives coordinators the editor instead of the plain list', () => {
+    setAuthed(makeUserWithPermissions([Permission.ManageEventPlanning]));
+    renderWithProviders(<ChecklistTab />);
+    expect(screen.getByText('checklist editor')).toBeInTheDocument();
+    expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
   });
 
   it('shows loading until the checklist arrives', () => {
