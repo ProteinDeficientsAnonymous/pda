@@ -25,6 +25,22 @@ describe('SlotEventLink', () => {
     expect(screen.getByText(`${text} ·`, { exact: false })).toBeInTheDocument();
   });
 
+  it('renders a status-free button link when asButton', () => {
+    renderWithProviders(
+      <SlotEventLink
+        slot={makeSlot({ eventId: 'e1', eventSlug: 'march-walk', eventStatus: 'draft' })}
+        year={2027}
+        canCreate={false}
+        asButton
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'view event' })).toHaveAttribute(
+      'href',
+      '/events/march-walk',
+    );
+    expect(screen.queryByText(/draft/)).not.toBeInTheDocument();
+  });
+
   it('links to the create form for the slot when there is no event', () => {
     renderLink(makeSlot());
     expect(screen.getByRole('link', { name: 'create event' })).toHaveAttribute(

@@ -4,7 +4,7 @@ import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { SlotChecklist } from './SlotChecklist';
-import { SlotEventLink } from './SlotEventLink';
+import { SlotEventLink, SlotEventStatus } from './SlotEventLink';
 import { toastOnError } from './toastOnError';
 
 const RESPOND_FAILED = "couldn't save your response — try again";
@@ -22,8 +22,9 @@ function SlotRow({
   return (
     <li className="border-border flex flex-wrap items-center justify-between gap-2 border-t py-2 first:border-t-0">
       <div>
-        <p className="text-sm font-medium">
+        <p className="flex items-center gap-2 text-sm font-medium">
           {showYear ? `${String(row.year)} · ${slot.label}` : slot.label}
+          <SlotEventStatus slot={slot} />
         </p>
         <p className="text-muted text-xs">
           {teammates.length > 0

@@ -97,7 +97,7 @@ describe('MySlots', () => {
       'href',
       '/events/jan-potluck',
     );
-    expect(within(section).getByText(/draft ·/)).toBeInTheDocument();
+    expect(within(section).getByText('draft')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'waiting on you' })).not.toBeInTheDocument();
   });
 
