@@ -6,7 +6,7 @@ from users.helpers import visible_display_name
 from users.models import User
 
 from community.models import AssignmentStatus, PlanningAvailability, PlanningSlot, SlotAssignment
-from community.planning._access import require_manage
+from community.planning._access import can_manage_planning, require_view
 from community.planning._planners import planner_users
 from community.planning._shared import assignment_out, get_year_or_404, slot_out
 from community.planning.schemas import GridOut, PlannerColumnOut
@@ -36,13 +36,14 @@ def _column(
     auth=gated_jwt,
 )
 def get_grid(request, year: int):
-    require_manage(request, "get_planning_grid")
+    require_view(request, "get_planning_grid")
     planning_year = get_year_or_404(year)
     slots = list(planning_year.slots.select_related("event"))
+    hidden = [AssignmentStatus.WITHDRAWN]
+    if not can_manage_planning(request.auth):
+        hidden.append(AssignmentStatus.DRAFT)
     assignments = list(
-        SlotAssignment.objects.filter(slot__planning_year=planning_year).exclude(
-            status=AssignmentStatus.WITHDRAWN
-        )
+        SlotAssignment.objects.filter(slot__planning_year=planning_year).exclude(status__in=hidden)
     )
     rows = {
         row.user_id: row

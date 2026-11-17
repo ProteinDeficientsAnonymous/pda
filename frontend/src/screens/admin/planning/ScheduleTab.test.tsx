@@ -2,7 +2,15 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { makeAssignment, makePlanner, makePlanningGrid, makeSlot } from '@/test/fixtures';
+import { Permission } from '@/models/permissions';
+import { setAuthed } from '@/test/auth';
+import {
+  makeAssignment,
+  makePlanner,
+  makePlanningGrid,
+  makeSlot,
+  makeUserWithPermissions,
+} from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import { ScheduleTab } from './ScheduleTab';
@@ -16,6 +24,7 @@ let shown = grid;
 let status = { isPending: false, isError: false };
 
 const mutation = { mutateAsync: vi.fn(), isPending: false };
+const commitMutation = { mutateAsync: vi.fn(), isPending: false };
 
 vi.mock('@/api/planning', () => ({
   usePlanningGrid: () => ({
@@ -24,6 +33,8 @@ vi.mock('@/api/planning', () => ({
   }),
   usePropose: () => mutation,
   useWithdraw: () => mutation,
+  useConfirmPlanner: () => mutation,
+  useCommit: () => commitMutation,
   useSendProposals: () => mutation,
 }));
 
@@ -31,6 +42,44 @@ describe('ScheduleTab', () => {
   beforeEach(() => {
     shown = grid;
     status = { isPending: false, isError: false };
+    setAuthed(makeUserWithPermissions([Permission.ManageEventPlanning]));
+    mutation.mutateAsync.mockClear();
+    commitMutation.mutateAsync.mockClear();
+  });
+
+  it('shows planners who cannot manage a read-only grid and panel', async () => {
+    setAuthed(makeUserWithPermissions([Permission.ViewEventPlanning]));
+    shown = { ...grid, assignments: [makeAssignment({ status: 'committed' })] };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByText('ada, january: in')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /ada/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'january' }));
+    expect(screen.getByRole('heading', { name: 'january' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /withdraw|add someone/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'create event' })).not.toBeInTheDocument();
+  });
+
+  it('lets planners who cannot manage put themselves in from their own row', async () => {
+    setAuthed(makeUserWithPermissions([Permission.ViewEventPlanning], { id: 'u1' }));
+    shown = { ...grid, assignments: [makeAssignment({ status: 'proposed' })] };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    await userEvent.click(screen.getByRole('button', { name: 'put yourself in for january' }));
+    expect(commitMutation.mutateAsync).toHaveBeenCalledWith('a1');
+    expect(mutation.mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('keeps a planner who cannot manage from putting themselves in unproposed', () => {
+    setAuthed(makeUserWithPermissions([Permission.ViewEventPlanning], { id: 'u1' }));
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.getByText('ada, january: free')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /put yourself in/ })).not.toBeInTheDocument();
+  });
+
+  it('keeps a planner who cannot manage from withdrawing their own ✓', () => {
+    setAuthed(makeUserWithPermissions([Permission.ViewEventPlanning], { id: 'u1' }));
+    shown = { ...grid, assignments: [makeAssignment({ status: 'committed' })] };
+    renderWithProviders(<ScheduleTab year={2999} />);
+    expect(screen.queryByRole('button', { name: /ada/ })).not.toBeInTheDocument();
   });
 
   it('toggles the open month on repeat taps', async () => {
@@ -58,12 +107,12 @@ describe('ScheduleTab', () => {
       slots: [...grid.slots, makeSlot({ id: 's2', label: 'february', month: 2, order: 2 })],
     };
     renderWithProviders(<ScheduleTab year={2999} />);
-    await userEvent.click(screen.getByRole('button', { name: 'february' }));
-    await userEvent.click(screen.getByRole('button', { name: 'add someone' }));
-    expect(screen.getByRole('button', { name: 'hide' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'january' }));
+    await userEvent.click(screen.getByRole('button', { name: /^add someone/ }));
+    expect(screen.getByRole('button', { name: 'hide' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'february' }));
-    expect(screen.getByRole('button', { name: 'add someone' })).toHaveAttribute(
+    await userEvent.click(screen.getByRole('button', { name: 'january' }));
+    expect(screen.getByRole('button', { name: /^add someone/ })).toHaveAttribute(
       'aria-expanded',
       'false',
     );

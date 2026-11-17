@@ -24,6 +24,7 @@ class AuditTargetType(models.TextChoices):
     REJECTION_EMAIL = "rejection_email", "Rejection email"
     RESERVE_ENTRY = "reserve_entry", "Reserve entry"
     ROLE = "role", "Role"
+    SLOT_ASSIGNMENT = "slot_assignment", "Slot assignment"
     SPEECH_TEMPLATE = "speech_template", "Speech template"
     SURVEY = "survey", "Survey"
     SURVEY_QUESTION = "survey_question", "Survey question"

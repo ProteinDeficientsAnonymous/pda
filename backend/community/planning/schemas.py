@@ -10,6 +10,7 @@ from community.models import AssignmentStatus, BiannualInterest, EventStatus, Pl
 class PlanningYearOut(BaseModel):
     id: str
     year: int
+    availability_opened_at: datetime | None
 
 
 class PlanningSlotOut(BaseModel):

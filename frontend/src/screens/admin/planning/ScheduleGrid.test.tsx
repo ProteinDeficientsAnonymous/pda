@@ -1,9 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { PlannerColumn } from '@/api/planning';
-import { makeAssignment, makePlanner, makePlanningGrid, makeSlot } from '@/test/fixtures';
+import { setAuthed, setUnauthed } from '@/test/auth';
+import { makeAssignment, makePlanner, makePlanningGrid, makeSlot, makeUser } from '@/test/fixtures';
 
 import { ScheduleGrid } from './ScheduleGrid';
 
@@ -42,6 +43,8 @@ function renderGrid(overrides: Partial<Parameters<typeof ScheduleGrid>[0]> = {})
 }
 
 describe('ScheduleGrid', () => {
+  afterEach(setUnauthed);
+
   it('scrolls inside its own relative wrapper', () => {
     const { container } = renderGrid();
     expect(container.querySelector('.overflow-x-auto')).toHaveClass(
@@ -101,6 +104,13 @@ describe('ScheduleGrid', () => {
     const { act } = renderGrid();
     await userEvent.click(screen.getByRole('button', { name: 'propose ada for january' }));
     expect(act).toHaveBeenCalledWith(grid.slots[1], grid.planners[0], 'available', undefined);
+  });
+
+  it('labels your own row as putting yourself in', () => {
+    setAuthed(makeUser({ id: 'u1' }));
+    renderGrid();
+    expect(screen.getByRole('button', { name: 'put yourself in for january' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'propose cy for january' })).toBeInTheDocument();
   });
 
   it('locks every tile while busy', () => {

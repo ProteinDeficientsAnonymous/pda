@@ -330,6 +330,7 @@ export const Code = {
     NotPending: 'planning.not_pending',
     NotEventHost: 'planning.not_event_host',
     SlotHasEvent: 'planning.slot_has_event',
+    AvailabilityAlreadyOpen: 'planning.availability_already_open',
     EventAlreadyLinked: 'planning.event_already_linked',
   },
 } as const;
@@ -580,6 +581,7 @@ export type ValidationCode =
   | 'planning.not_pending'
   | 'planning.not_event_host'
   | 'planning.slot_has_event'
+  | 'planning.availability_already_open'
   | 'planning.event_already_linked';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
@@ -828,5 +830,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'planning.not_pending': [],
   'planning.not_event_host': [],
   'planning.slot_has_event': [],
+  'planning.availability_already_open': [],
   'planning.event_already_linked': [],
 };

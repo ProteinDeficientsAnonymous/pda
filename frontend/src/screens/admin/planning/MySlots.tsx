@@ -24,14 +24,21 @@ function SlotRow({
         <p className="text-sm font-medium">
           {showYear ? `${String(row.year)} · ${slot.label}` : slot.label}
         </p>
-        {teammates.length > 0 ? (
-          <p className="text-muted text-xs">
-            with {teammates.map((t) => `${t.name} (${t.status})`).join(', ')}
-          </p>
-        ) : null}
-        <SlotEventLink slot={slot} year={row.year} canCreate={row.status === 'committed'} />
+        <p className="text-muted text-xs">
+          {teammates.length > 0
+            ? `with ${teammates.map((t) => `${t.name} (${t.status})`).join(', ')}`
+            : 'just you so far'}
+        </p>
       </div>
-      <div className="flex gap-2">{children}</div>
+      <div className="flex flex-wrap items-center gap-2">
+        <SlotEventLink
+          slot={slot}
+          year={row.year}
+          canCreate={row.status === 'committed'}
+          asButton
+        />
+        {children}
+      </div>
     </li>
   );
 }
@@ -43,7 +50,7 @@ export function MySlots() {
   const { confirm, element } = useConfirm();
 
   if (isPending) return <ContentLoading />;
-  if (isError) return <ContentError message="couldn't load your slots — try refreshing" />;
+  if (isError) return <ContentError message="couldn't load your events — try refreshing" />;
 
   const busy = commit.isPending || decline.isPending;
   const showYear = new Set(data.map((r) => r.year)).size > 1;
@@ -66,7 +73,11 @@ export function MySlots() {
 
   return (
     <div className="mb-8">
-      {data.length === 0 ? <p className="text-muted text-sm">nothing assigned yet 🌿</p> : null}
+      {data.length === 0 ? (
+        <p className="text-muted text-sm">
+          nothing yet — add your availability so you can be proposed some months 🌿
+        </p>
+      ) : null}
       {waiting.length > 0 ? (
         <section aria-labelledby="waiting-on-you" className="mb-4">
           <h2 id="waiting-on-you" className="mb-2 text-lg font-medium">
@@ -102,7 +113,7 @@ export function MySlots() {
       {committed.length > 0 ? (
         <section aria-labelledby="your-slots">
           <h2 id="your-slots" className="mb-2 text-lg font-medium">
-            your slots
+            events you&apos;re planning
           </h2>
           <ul>
             {committed.map((row) => (

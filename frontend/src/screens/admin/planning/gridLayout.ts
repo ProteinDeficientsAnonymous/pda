@@ -1,6 +1,7 @@
 import type { PlanningSlot } from '@/api/planning';
 
 export const EXTRA_MARKERS = ['★', '◆', '▲', '●'] as const;
+const MONTH_MARKERS: Partial<Record<number, string>> = { 6: '🥳', 12: '🎄' };
 
 export const GRID_SIZE_CLASS =
   '[--pg-name:44px] [--pg-col:17px] [--pg-row:22px] [--pg-tile:15px] [--pg-qgap:5px] [--pg-xgap:8px] [--pg-load:26px] [--pg-bi:12px] ' +
@@ -30,9 +31,11 @@ export function slotColumns(slots: PlanningSlot[]): SlotColumn[] {
     columns.push({ slot, header: 'jfmamjjasond'[slot.month - 1] ?? '', isExtra: false, track });
     track += 1;
   });
+  let markerIndex = 0;
   extras.forEach((slot, i) => {
     if (i === 0 && columns.length > 0) track += 1;
-    columns.push({ slot, header: EXTRA_MARKERS[i] ?? String(i + 1), isExtra: true, track });
+    const header = MONTH_MARKERS[slot.month] ?? EXTRA_MARKERS[markerIndex++] ?? String(i + 1);
+    columns.push({ slot, header, isExtra: true, track });
     track += 1;
   });
   return columns;

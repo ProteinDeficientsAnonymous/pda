@@ -207,6 +207,15 @@ export function useCreateYear() {
   });
 }
 
+export function useOpenAvailability(year: number) {
+  return usePlanningMutation(async () => {
+    const { data } = await apiClient.post<PlanningYear>(
+      `/api/community/planning/years/${String(year)}/availability/open/`,
+    );
+    return data;
+  });
+}
+
 interface SlotInput {
   label: string;
   month: number;
@@ -242,6 +251,13 @@ export function usePropose() {
   return usePlanningMutation(async ({ slotId, userId }: { slotId: string; userId: string }) => {
     const body: components['schemas']['ProposeIn'] = { user_id: userId };
     await apiClient.post(`/api/community/planning/slots/${slotId}/assignments/`, body);
+  });
+}
+
+export function useConfirmPlanner() {
+  return usePlanningMutation(async ({ slotId, userId }: { slotId: string; userId: string }) => {
+    const body: components['schemas']['ProposeIn'] = { user_id: userId };
+    await apiClient.post(`/api/community/planning/slots/${slotId}/assignments/confirm/`, body);
   });
 }
 

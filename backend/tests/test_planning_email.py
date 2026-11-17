@@ -2,9 +2,12 @@ from unittest.mock import MagicMock
 
 import pytest
 from notifications.planning_email import (
+    AvailabilityEmailDetails,
+    AvailabilityEmailVariant,
     PlanningEmailDetails,
     PlanningEmailVariant,
     describe_slots,
+    send_availability_email,
     send_planning_email,
 )
 
@@ -51,3 +54,31 @@ def test_several_slots_go_in_one_email_listing_each():
         assert f"- {label}" in sent["text"]
         assert f"<li>{label}</li>" in sent["html"]
     assert "- june\n\ntap below" in sent["text"]
+
+
+def test_confirmed_tells_them_they_are_in():
+    sent = _send(("March",), PlanningEmailVariant.CONFIRMED)
+    assert sent["subject"] == "you're planning march 🌱"
+    assert "you're down to plan march 🌱" in sent["text"]
+    assert "see your events" in sent["html"]
+
+
+def _send_availability(variant: AvailabilityEmailVariant) -> dict:
+    sender = MagicMock()
+    details = AvailabilityEmailDetails(
+        to="p@example.com",
+        display_name="Sam",
+        year=2027,
+        availability_url="https://pda.test/admin/planning?tab=availability",
+        variant=variant,
+    )
+    send_availability_email(sender=sender, details=details)
+    return sender.send.call_args.kwargs
+
+
+def test_availability_reminder_nudges_for_the_year():
+    sent = _send_availability(AvailabilityEmailVariant.REMINDER)
+    assert sent["subject"] == "still need your 2027 planning availability"
+    assert "hi sam —" in sent["text"]
+    assert "we still need to know when you can plan events in 2027" in sent["text"]
+    assert "https://pda.test/admin/planning?tab=availability" in sent["html"]
