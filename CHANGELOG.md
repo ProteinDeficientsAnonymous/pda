@@ -1,3 +1,10 @@
+# [0.256.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.255.2...v0.256.0) (2026-11-17)
+
+
+### Features
+
+* drag to reorder planning checklist items ([#2566](https://github.com/ProteinDeficientsAnonymous/pda/issues/2566)) ([6ea91ad](https://github.com/ProteinDeficientsAnonymous/pda/commit/6ea91ad5483cbaefe07fedbd1ed266405e758256))
+
 ## [0.255.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.255.1...v0.255.2) (2026-11-17)
 
 
