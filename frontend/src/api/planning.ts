@@ -47,6 +47,7 @@ export interface MySlot {
   year: number;
   slot: PlanningSlot;
   teammates: { name: string; status: AssignmentStatus }[];
+  checklistDoneIds: string[];
 }
 
 export interface PlannerColumn {
@@ -93,6 +94,7 @@ function mapMySlot(w: WireMySlot): MySlot {
     year: w.year,
     slot: mapSlot(w.slot),
     teammates: w.teammates,
+    checklistDoneIds: w.checklist_done_ids,
   };
 }
 
@@ -176,7 +178,9 @@ export function useMyAvailability(year: number) {
 }
 
 // everything under ['planning'] — the grid, my slots and availability all derive from the same rows
-function usePlanningMutation<TVars, TData = void>(mutationFn: (vars: TVars) => Promise<TData>) {
+export function usePlanningMutation<TVars, TData = void>(
+  mutationFn: (vars: TVars) => Promise<TData>,
+) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn,

@@ -332,6 +332,7 @@ export const Code = {
     SlotHasEvent: 'planning.slot_has_event',
     AvailabilityAlreadyOpen: 'planning.availability_already_open',
     EventAlreadyLinked: 'planning.event_already_linked',
+    ChecklistItemNotFound: 'planning.checklist_item_not_found',
   },
 } as const;
 
@@ -582,7 +583,8 @@ export type ValidationCode =
   | 'planning.not_event_host'
   | 'planning.slot_has_event'
   | 'planning.availability_already_open'
-  | 'planning.event_already_linked';
+  | 'planning.event_already_linked'
+  | 'planning.checklist_item_not_found';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -832,4 +834,5 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'planning.slot_has_event': [],
   'planning.availability_already_open': [],
   'planning.event_already_linked': [],
+  'planning.checklist_item_not_found': [],
 };
