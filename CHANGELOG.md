@@ -1,3 +1,10 @@
+# [0.255.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.254.0...v0.255.0) (2026-11-17)
+
+
+### Features
+
+* 2121 - planner checklist and guidelines ([#2553](https://github.com/ProteinDeficientsAnonymous/pda/issues/2553)) ([5049092](https://github.com/ProteinDeficientsAnonymous/pda/commit/50490920f41574cf7514c5dd37f464dbf861dd80))
+
 # [0.254.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.253.0...v0.254.0) (2026-11-16)
 
 
