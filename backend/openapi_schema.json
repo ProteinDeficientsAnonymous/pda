@@ -1075,6 +1075,19 @@
         "title": "ChecklistMoveIn",
         "type": "object"
       },
+      "ChecklistTickIn": {
+        "properties": {
+          "done": {
+            "title": "Done",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "done"
+        ],
+        "title": "ChecklistTickIn",
+        "type": "object"
+      },
       "CommentBodyIn": {
         "properties": {
           "body": {
@@ -5789,6 +5802,13 @@
             "title": "Assignment Id",
             "type": "string"
           },
+          "checklist_done_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Checklist Done Ids",
+            "type": "array"
+          },
           "slot": {
             "$ref": "#/components/schemas/PlanningSlotOut"
           },
@@ -5812,7 +5832,8 @@
           "status",
           "year",
           "slot",
-          "teammates"
+          "teammates",
+          "checklist_done_ids"
         ],
         "title": "MySlotOut",
         "type": "object"
@@ -7713,6 +7734,22 @@
           "value"
         ],
         "title": "ShowIfOut",
+        "type": "object"
+      },
+      "SlotChecklistOut": {
+        "properties": {
+          "done_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Done Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "done_ids"
+        ],
+        "title": "SlotChecklistOut",
         "type": "object"
       },
       "SpeechTemplateOut": {
@@ -18235,6 +18272,84 @@
           }
         ],
         "summary": "Confirm Assignment",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/slots/{slot_id}/checklist/{item_id}/": {
+      "put": {
+        "operationId": "community_planning_checklist_tick_checklist_item",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slot_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Slot Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChecklistTickIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlotChecklistOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Tick Checklist Item",
         "tags": [
           "community"
         ]

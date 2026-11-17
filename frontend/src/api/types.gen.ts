@@ -2056,6 +2056,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/planning/slots/{slot_id}/checklist/{item_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Tick Checklist Item */
+        put: operations["community_planning_checklist_tick_checklist_item"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/planning/slots/{slot_id}/event/": {
         parameters: {
             query?: never;
@@ -3343,6 +3360,11 @@ export interface components {
              * @enum {string}
              */
             direction: "up" | "down";
+        };
+        /** ChecklistTickIn */
+        ChecklistTickIn: {
+            /** Done */
+            done: boolean;
         };
         /** CommentBodyIn */
         CommentBodyIn: {
@@ -5433,6 +5455,8 @@ export interface components {
         MySlotOut: {
             /** Assignment Id */
             assignment_id: string;
+            /** Checklist Done Ids */
+            checklist_done_ids: string[];
             slot: components["schemas"]["PlanningSlotOut"];
             status: components["schemas"]["AssignmentStatus"];
             /** Teammates */
@@ -6125,6 +6149,11 @@ export interface components {
             question_id: string;
             /** Value */
             value: string;
+        };
+        /** SlotChecklistOut */
+        SlotChecklistOut: {
+            /** Done Ids */
+            done_ids: string[];
         };
         /** SpeechTemplateOut */
         SpeechTemplateOut: {
@@ -12972,6 +13001,51 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_checklist_tick_checklist_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChecklistTickIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlotChecklistOut"];
                 };
             };
             /** @description Forbidden */
