@@ -14,6 +14,7 @@ const mine = (id: string, status: MySlot['status'], year = 2027): MySlot => ({
   year,
   slot: makeSlot({ id: `slot-${id}`, label: `label ${id}`, month: 1, order: 1 }),
   teammates: [],
+  checklistDoneIds: [],
 });
 
 let state: { isPending: boolean; isError: boolean; data: MySlot[] | undefined };
@@ -35,6 +36,10 @@ vi.mock('@/api/planning', () => ({
   useDecline: () => ({ mutateAsync: decline, isPending: false }),
 }));
 
+vi.mock('./SlotChecklist', () => ({
+  SlotChecklist: ({ label }: { label: string }) => <div>checklist for {label}</div>,
+}));
+
 beforeEach(() => {
   state = { isPending: false, isError: false, data: [] };
   commit.mockReset().mockResolvedValue(undefined);
@@ -43,6 +48,13 @@ beforeEach(() => {
 });
 
 describe('MySlots', () => {
+  it('shows the checklist only on slots the planner committed to', () => {
+    state.data = [mine('a1', 'proposed'), mine('a2', 'committed')];
+    renderWithProviders(<MySlots />);
+    expect(screen.getByText('checklist for label a2')).toBeInTheDocument();
+    expect(screen.queryByText('checklist for label a1')).not.toBeInTheDocument();
+  });
+
   it('shows the empty state', () => {
     renderWithProviders(<MySlots />);
     expect(
