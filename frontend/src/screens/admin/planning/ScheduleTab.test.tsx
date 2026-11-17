@@ -38,7 +38,7 @@ vi.mock('sonner', () => ({
     (...args: unknown[]) => {
       toastMock(...args);
     },
-    { error: vi.fn() },
+    { error: vi.fn(), success: vi.fn() },
   ),
 }));
 
