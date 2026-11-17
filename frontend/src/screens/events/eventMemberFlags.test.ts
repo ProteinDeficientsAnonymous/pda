@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { EventStatus } from '@/models/event';
+import { EventStatus, RsvpStatus } from '@/models/event';
+import { MembershipStatus } from '@/models/user';
 import { makeEvent, makeUser } from '@/test/fixtures';
 
 import { eventMemberSectionFlags } from './eventMemberFlags';
@@ -32,4 +33,20 @@ describe('eventMemberSectionFlags rsvpDeadlineClosed', () => {
     const host = makeUser({ id: 'host' });
     expect(eventMemberSectionFlags(pastDeadline, host).rsvpDeadlineClosed).toBe(false);
   });
+});
+
+describe('eventMemberSectionFlags canInvite', () => {
+  const rsvpd = makeEvent({ rsvpEnabled: true, myRsvp: RsvpStatus.Attending });
+
+  it('lets a member who rsvpd invite', () => {
+    expect(eventMemberSectionFlags(rsvpd, makeUser()).canInvite).toBe(true);
+  });
+
+  it.each([MembershipStatus.Tentative, MembershipStatus.AttendancePaused])(
+    'hides the invite button from a %s user',
+    (membershipStatus) => {
+      const user = makeUser({ membershipStatus });
+      expect(eventMemberSectionFlags(rsvpd, user).canInvite).toBe(false);
+    },
+  );
 });

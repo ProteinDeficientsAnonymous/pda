@@ -2,9 +2,11 @@ import pytest
 from community.models import (
     AssignmentStatus,
     EventStatus,
+    PlanningChecklistItem,
     PlanningSlotKind,
     PlanningYear,
     SlotAssignment,
+    SlotChecklistTick,
 )
 from django.db import IntegrityError
 
@@ -77,3 +79,25 @@ class TestSlotAssignment:
         SlotAssignment.objects.create(slot=slot, user=user)
         with pytest.raises(IntegrityError):
             SlotAssignment.objects.create(slot=slot, user=user)
+
+
+@pytest.mark.django_db
+class TestPlanningChecklist:
+    def test_seeded_in_order(self):
+        items = list(PlanningChecklistItem.objects.all())
+        assert items[0].text == "secure venue"
+        assert items[-1].text.startswith("after the meetup")
+        assert "opt out" in items[4].detail
+
+    def test_one_tick_per_slot_item(self, year):
+        slot = year.slots.get(label="march")
+        item = PlanningChecklistItem.objects.first()
+        SlotChecklistTick.objects.create(slot=slot, item=item)
+        with pytest.raises(IntegrityError):
+            SlotChecklistTick.objects.create(slot=slot, item=item)
+
+    def test_deleting_item_drops_ticks(self, year):
+        item = PlanningChecklistItem.objects.create(text="book a room", order=99)
+        SlotChecklistTick.objects.create(slot=year.slots.first(), item=item, done_by=make_user())
+        item.delete()
+        assert not SlotChecklistTick.objects.exists()

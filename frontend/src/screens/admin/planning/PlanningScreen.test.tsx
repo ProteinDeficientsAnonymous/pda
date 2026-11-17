@@ -45,6 +45,14 @@ vi.mock('./ScheduleTab', () => ({
   ScheduleTab: ({ year }: { year: number }) => <div>grid for {year}</div>,
 }));
 
+vi.mock('./ChecklistTab', () => ({
+  ChecklistTab: () => <div>checklist tab</div>,
+}));
+
+vi.mock('./GuidelinesTab', () => ({
+  GuidelinesTab: () => <div>guidelines tab</div>,
+}));
+
 vi.mock('./SlotEditor', () => ({
   SlotEditor: ({ year }: { year: number }) => <div>editor for {year}</div>,
 }));
@@ -86,6 +94,9 @@ describe('PlanningScreen', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'my availability' }));
     expect(screen.getByText('form for 2026')).toBeInTheDocument();
     expect(screen.queryByText('my slots')).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'checklist' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: 'guidelines' }));
+    expect(screen.getByText('guidelines tab')).toBeInTheDocument();
   });
 
   describe('tabs', () => {
@@ -117,6 +128,14 @@ describe('PlanningScreen', () => {
       renderWithProviders(<PlanningScreen />);
       expect(screen.getByRole('radio', { name: 'my events' })).toBeChecked();
       expect(screen.getByText('my slots')).toBeInTheDocument();
+    });
+
+    it('gives managers the checklist tab', async () => {
+      signInWith(Permission.ManageEventPlanning);
+      years = [{ id: 'y1', year: 2027 }];
+      renderWithProviders(<PlanningScreen />);
+      await userEvent.click(screen.getByRole('radio', { name: 'checklist' }));
+      expect(screen.getByText('checklist tab')).toBeInTheDocument();
     });
 
     it('shows the slot editor and start button on the slots tab only', async () => {
@@ -177,7 +196,7 @@ describe('PlanningScreen', () => {
       (route) => {
         years = [{ id: 'y1', year: 2027 }];
         renderWithProviders(<PlanningScreen />, { route });
-        expect(screen.getAllByRole('radio')).toHaveLength(3);
+        expect(screen.getAllByRole('radio')).toHaveLength(4);
         expect(screen.getByRole('radio', { name: 'schedule' })).toBeInTheDocument();
         expect(screen.getByRole('radio', { name: 'my events' })).toBeChecked();
         expect(screen.getByRole('radio', { name: 'my availability' })).toBeInTheDocument();
