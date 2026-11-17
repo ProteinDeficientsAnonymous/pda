@@ -129,7 +129,9 @@ export function usePlanningActions(year: number): PlanningActions {
       return;
     }
     if (!assignment) return;
-    await toastOnError(commit.mutateAsync(assignment.id), "couldn't put you in — try again");
+    if (await toastOnError(commit.mutateAsync(assignment.id), "couldn't put you in — try again")) {
+      toast.success(`you're in for ${slot.label} 🌱`, { id: READ_ONLY_TAP_TOAST });
+    }
   }
 
   return {
