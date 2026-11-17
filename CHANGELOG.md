@@ -1,3 +1,10 @@
+## [0.255.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.255.1...v0.255.2) (2026-11-17)
+
+
+### Bug Fixes
+
+* 2246 - filter the calendar feed for limited users ([#2534](https://github.com/ProteinDeficientsAnonymous/pda/issues/2534)) ([9b7b4d3](https://github.com/ProteinDeficientsAnonymous/pda/commit/9b7b4d30dd0942109e274ddb2deefa2307cf1388))
+
 ## [0.255.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.255.0...v0.255.1) (2026-11-17)
 
 
