@@ -16,6 +16,7 @@ from community.models import (
     Event,
     EventRSVP,
     JoinRequest,
+    PlanningYear,
     RSVPStatus,
     Survey,
 )
@@ -244,6 +245,16 @@ def test_e2e_seed_member_screens_clears_waitlist_screens(capsys):
     call_command("e2e_seed", "waitlist-screens")
     call_command("e2e_seed", "member-screens")
     assert not Event.objects.filter(slug="supper").exists()
+
+
+@pytest.mark.django_db
+def test_e2e_seed_view_planner_has_only_view_planning(capsys):
+    call_command("e2e_seed", "view-planner")
+    out = json.loads(capsys.readouterr().out)
+    planner = User.objects.get(id=RefreshToken(out["refresh_token"])["user_id"])
+    perms = [p for role in planner.roles.all() for p in role.permissions]
+    assert perms == [PermissionKey.VIEW_EVENT_PLANNING]
+    assert PlanningYear.objects.exists()
 
 
 @pytest.mark.django_db

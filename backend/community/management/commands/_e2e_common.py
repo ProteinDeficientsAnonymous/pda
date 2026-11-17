@@ -1,13 +1,15 @@
 import secrets
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import MembershipStatus, User
+from users.roles import Role
 
 from community.models import Event, EventStatus, EventType, PageVisibility
 
 E2E_PASSWORD = "e2e-test-pass-123"
+_CONSENT_AT = datetime(2020, 1, 1, tzinfo=UTC)
 
 
 def random_phone() -> str:
@@ -42,6 +44,20 @@ def member_user(phone: str) -> User:
         has_seen_veganniversary=True,
         password=E2E_PASSWORD,
     )
+    return user
+
+
+def browser_user(permissions: list[str] | None = None) -> User:
+    user = member_user(random_phone())
+    user.guidelines_consent_at = _CONSENT_AT
+    user.sms_consent_at = _CONSENT_AT
+    user.contact_privacy_consent_at = _CONSENT_AT
+    user.save(
+        update_fields=["guidelines_consent_at", "sms_consent_at", "contact_privacy_consent_at"]
+    )
+    if permissions:
+        role = Role.objects.create(name=f"e2e-role-{secrets.token_hex(4)}", permissions=permissions)
+        user.roles.add(role)
     return user
 
 
