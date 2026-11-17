@@ -4,12 +4,19 @@ import { explicitTab, resolveTab, tabOptions } from './planningTab';
 
 describe('tabOptions', () => {
   it('gives planners only their own tabs', () => {
-    expect(tabOptions(false).map((o) => o.label)).toEqual(['my events', 'my availability']);
+    expect(tabOptions(false).map((o) => o.label)).toEqual([
+      'my events',
+      'my availability',
+      'checklist',
+      'guidelines',
+    ]);
     expect(tabOptions(true).map((o) => o.value)).toEqual([
       'schedule',
       'events',
       'availability',
       'slots',
+      'checklist',
+      'guidelines',
     ]);
   });
 });

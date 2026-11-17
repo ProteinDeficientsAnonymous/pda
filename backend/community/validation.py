@@ -340,6 +340,7 @@ class Code:
         SLOT_HAS_EVENT = "planning.slot_has_event"
         AVAILABILITY_ALREADY_OPEN = "planning.availability_already_open"
         EVENT_ALREADY_LINKED = "planning.event_already_linked"
+        CHECKLIST_ITEM_NOT_FOUND = "planning.checklist_item_not_found"
 
 
 class ValidationException(Exception):

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import AfterValidator, BaseModel, Field
@@ -28,14 +28,14 @@ class PlanningYearIn(BaseModel):
     year: int = Field(ge=2020, le=2100)
 
 
-def _label_not_blank(value: str) -> str:
+def _not_blank(value: str) -> str:
     trimmed = value.strip()
     if not trimmed:
-        raise ValueError("label required")
+        raise ValueError("must not be blank")
     return trimmed
 
 
-SlotLabel = Annotated[str, Field(max_length=100), AfterValidator(_label_not_blank)]
+SlotLabel = Annotated[str, Field(max_length=100), AfterValidator(_not_blank)]
 
 
 class PlanningSlotIn(BaseModel):
@@ -114,3 +114,36 @@ class MySlotOut(BaseModel):
     year: int
     slot: PlanningSlotOut
     teammates: list[TeammateOut]
+    checklist_done_ids: list[str]
+
+
+ChecklistText = Annotated[str, Field(max_length=300), AfterValidator(_not_blank)]
+ChecklistDetail = Annotated[str, Field(max_length=2000), AfterValidator(str.strip)]
+
+
+class ChecklistItemOut(BaseModel):
+    id: str
+    text: str
+    detail: str
+
+
+class ChecklistItemIn(BaseModel):
+    text: ChecklistText
+    detail: ChecklistDetail = ""
+
+
+class ChecklistItemPatchIn(BaseModel):
+    text: ChecklistText | None = None
+    detail: ChecklistDetail | None = None
+
+
+class ChecklistMoveIn(BaseModel):
+    direction: Literal["up", "down"]
+
+
+class ChecklistTickIn(BaseModel):
+    done: bool
+
+
+class SlotChecklistOut(BaseModel):
+    done_ids: list[str]

@@ -1,19 +1,33 @@
-export type PlanningTab = 'schedule' | 'events' | 'availability' | 'slots';
+export type PlanningTab =
+  | 'schedule'
+  | 'events'
+  | 'availability'
+  | 'slots'
+  | 'checklist'
+  | 'guidelines';
 
 interface TabOption {
   value: PlanningTab;
   label: string;
 }
 
-const PLANNER_TABS: TabOption[] = [
+const GUIDE_TABS: TabOption[] = [
+  { value: 'checklist', label: 'checklist' },
+  { value: 'guidelines', label: 'guidelines' },
+];
+
+const OWN_TABS: TabOption[] = [
   { value: 'events', label: 'my events' },
   { value: 'availability', label: 'my availability' },
 ];
 
+const PLANNER_TABS: TabOption[] = [...OWN_TABS, ...GUIDE_TABS];
+
 const MANAGER_TABS: TabOption[] = [
   { value: 'schedule', label: 'schedule' },
-  ...PLANNER_TABS,
+  ...OWN_TABS,
   { value: 'slots', label: 'slots' },
+  ...GUIDE_TABS,
 ];
 
 export function tabOptions(canManage: boolean): TabOption[] {
