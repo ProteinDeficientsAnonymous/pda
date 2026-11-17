@@ -11,7 +11,7 @@ import { ContentContainer, ContentError, ContentLoading } from '@/screens/public
 
 import { AvailabilityForm } from './AvailabilityForm';
 import { MySlots } from './MySlots';
-import { explicitTab, type PlanningTab, resolveTab, tabOptions } from './planningTab';
+import { explicitTab, type PlanningTab, resolveTab, tabOptions, withTab } from './planningTab';
 import { ScheduleTab } from './ScheduleTab';
 import { SlotEditor } from './SlotEditor';
 import { toastOnError } from './toastOnError';
@@ -52,14 +52,7 @@ export default function PlanningScreen() {
 
   const pickTab = useCallback(
     (next: PlanningTab) => {
-      setParams(
-        (prev) => {
-          const p = new URLSearchParams(prev);
-          p.set('tab', next);
-          return p;
-        },
-        { replace: true },
-      );
+      setParams((prev) => withTab(prev, next), { replace: true });
     },
     [setParams],
   );

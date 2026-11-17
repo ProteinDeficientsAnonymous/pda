@@ -16,7 +16,7 @@ import { useAuthStore } from '@/auth/store';
 import { useConfirm } from '@/components/ui/useConfirm';
 
 import { cellActionLabel, type CellState, isWithdrawable } from './gridCell';
-import type { PlanningTab } from './planningTab';
+import { withTab } from './planningTab';
 import { readOnlyTapNotice } from './readOnlyTap';
 import { toastOnError } from './toastOnError';
 
@@ -106,14 +106,7 @@ export function usePlanningActions(year: number): PlanningActions {
   }
 
   function openAvailability() {
-    setParams(
-      (prev) => {
-        const p = new URLSearchParams(prev);
-        p.set('tab', 'availability' satisfies PlanningTab);
-        return p;
-      },
-      { replace: true },
-    );
+    setParams((prev) => withTab(prev, 'availability'), { replace: true });
   }
 
   async function readOnlyTap(...[slot, planner, state, assignment]: Parameters<Act>) {
