@@ -82,6 +82,14 @@ describe('cellActionLabel', () => {
   ])('%s -> %s', (state, expected) => {
     expect(cellActionLabel(state, 'ada', 'january')).toBe(expected);
   });
+
+  it.each<[CellState, string]>([
+    ['proposed', 'put yourself in for january'],
+    ['declined', 'put yourself in for january'],
+    ['committed', 'withdraw ada from january'],
+  ])('on your own row %s -> %s', (state, expected) => {
+    expect(cellActionLabel(state, 'ada', 'january', true)).toBe(expected);
+  });
 });
 
 describe('slotHasCommitted', () => {

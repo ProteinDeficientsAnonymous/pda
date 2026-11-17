@@ -1,4 +1,4 @@
-import type { Assignment, PlanningGrid } from '@/api/planning';
+import type { Assignment, PlannerColumn, PlanningGrid, PlanningSlot } from '@/api/planning';
 
 export type CellState = 'committed' | 'proposed' | 'draft' | 'declined' | 'available' | 'blank';
 
@@ -32,6 +32,23 @@ export function draftCount(grid: PlanningGrid): number {
   return grid.assignments.filter((a) => a.status === 'draft').length;
 }
 
+export interface PlannerDrafts {
+  planner: PlannerColumn;
+  drafts: { slot: PlanningSlot; assignment: Assignment }[];
+}
+
+export function draftsByPlanner(grid: PlanningGrid): PlannerDrafts[] {
+  return grid.planners
+    .map((planner) => ({
+      planner,
+      drafts: grid.slots.flatMap((slot) => {
+        const assignment = findAssignment(grid, slot.id, planner.userId);
+        return assignment?.status === 'draft' ? [{ slot, assignment }] : [];
+      }),
+    }))
+    .filter(({ drafts }) => drafts.length > 0);
+}
+
 const WITHDRAWABLE: CellState[] = ['committed', 'proposed', 'draft'];
 
 export function isWithdrawable(state: CellState): boolean {
@@ -47,7 +64,13 @@ export const STATE_TEXT: Record<CellState, string> = {
   blank: 'not free',
 };
 
-export function cellActionLabel(state: CellState, plannerName: string, slotLabel: string): string {
+export function cellActionLabel(
+  state: CellState,
+  plannerName: string,
+  slotLabel: string,
+  self = false,
+): string {
+  if (self && state !== 'committed') return `put yourself in for ${slotLabel}`;
   if (state === 'draft') return `remove draft ${plannerName} for ${slotLabel}`;
   if (isWithdrawable(state)) return `withdraw ${plannerName} from ${slotLabel}`;
   return `propose ${plannerName} for ${slotLabel}`;

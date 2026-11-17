@@ -56,6 +56,13 @@ def test_several_slots_go_in_one_email_listing_each():
     assert "- june\n\ntap below" in sent["text"]
 
 
+def test_confirmed_tells_them_they_are_in():
+    sent = _send(("March",), PlanningEmailVariant.CONFIRMED)
+    assert sent["subject"] == "you're planning march 🌱"
+    assert "you're down to plan march 🌱" in sent["text"]
+    assert "see your events" in sent["html"]
+
+
 def _send_availability(variant: AvailabilityEmailVariant) -> dict:
     sender = MagicMock()
     details = AvailabilityEmailDetails(

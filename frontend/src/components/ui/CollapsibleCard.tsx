@@ -2,6 +2,8 @@ import { type ReactNode, useId, useState } from 'react';
 
 import { cn } from '@/utils/cn';
 
+import { Chevron } from './Chevron';
+
 interface Props {
   title: string;
   /** Shown on the right of the header when collapsed and no error present. */
@@ -57,7 +59,7 @@ export function CollapsibleCard({
               {summary}
             </span>
           ) : null}
-          <Chevron open={isOpen} />
+          <Chevron open={isOpen} className="text-muted" />
         </span>
       </button>
       <div
@@ -70,24 +72,5 @@ export function CollapsibleCard({
         {children}
       </div>
     </section>
-  );
-}
-
-function Chevron({ open }: { open: boolean }) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={cn('text-muted transition-transform duration-200', open && 'rotate-180')}
-    >
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
   );
 }

@@ -10,12 +10,14 @@ class PlanningEmailVariant(StrEnum):
     PROPOSED = "proposed"
     REMINDER = "reminder"
     UPCOMING = "upcoming"
+    CONFIRMED = "confirmed"
 
 
 _PLANNING_SUBJECTS = {
     PlanningEmailVariant.PROPOSED: "can you plan {label}?",
     PlanningEmailVariant.REMINDER: "still need an answer: can you plan {label}?",
     PlanningEmailVariant.UPCOMING: "{label} is coming up",
+    PlanningEmailVariant.CONFIRMED: "you're planning {label} 🌱",
 }
 
 _MAX_NAMED_IN_SUBJECT = 3

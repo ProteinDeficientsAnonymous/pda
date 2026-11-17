@@ -6,15 +6,12 @@ interface TabOption {
 }
 
 const PLANNER_TABS: TabOption[] = [
+  { value: 'schedule', label: 'schedule' },
   { value: 'events', label: 'my events' },
   { value: 'availability', label: 'my availability' },
 ];
 
-const MANAGER_TABS: TabOption[] = [
-  { value: 'schedule', label: 'schedule' },
-  ...PLANNER_TABS,
-  { value: 'slots', label: 'slots' },
-];
+const MANAGER_TABS: TabOption[] = [...PLANNER_TABS, { value: 'slots', label: 'slots' }];
 
 export function tabOptions(canManage: boolean): TabOption[] {
   return canManage ? MANAGER_TABS : PLANNER_TABS;

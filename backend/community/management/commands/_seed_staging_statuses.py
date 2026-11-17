@@ -84,7 +84,7 @@ def _seed_tentative(spec: StatusSpec, index: int, admin: User) -> tuple[User, bo
 
 
 def _apply_status(user: User, spec: StatusSpec, admin: User) -> None:
-    # Mirrors apply_attendance_pause / archive_user, which sit in private users modules.
+    # Sets the status fields apply_attendance_pause / archive_user set; it releases nothing.
     pause = spec.archived_from or spec.status
     fields: list[str] = []
     if pause == MembershipStatus.GUIDELINES_PAUSED:

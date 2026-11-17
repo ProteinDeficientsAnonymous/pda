@@ -38,7 +38,7 @@ describe('GridKey', () => {
       expect(screen.getByText(words)).toBeInTheDocument();
     }
     expect(screen.queryByText(/★/)).not.toBeInTheDocument();
-    expect(screen.getByText(/^month row: /)).toBeInTheDocument();
+    expect(screen.queryByText(/^month row: /)).not.toBeInTheDocument();
   });
 
   it('spells out the extra slot markers', () => {
@@ -48,6 +48,6 @@ describe('GridKey', () => {
       makeSlot({ id: 's3', label: 'dec holiday', month: 12, kind: 'biannual', order: 2 }),
     ]);
     render(<GridKey columns={columns} />);
-    expect(screen.getByText('★ june anniversary · ◆ dec holiday')).toBeInTheDocument();
+    expect(screen.getByText('🥳 june anniversary · 🎄 dec holiday')).toBeInTheDocument();
   });
 });
