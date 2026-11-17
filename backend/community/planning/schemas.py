@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated
 from uuid import UUID
 
 from pydantic import AfterValidator, BaseModel, Field
@@ -137,8 +137,8 @@ class ChecklistItemPatchIn(BaseModel):
     detail: ChecklistDetail | None = None
 
 
-class ChecklistMoveIn(BaseModel):
-    direction: Literal["up", "down"]
+class ChecklistOrderIn(BaseModel):
+    ids: list[UUID]
 
 
 class ChecklistTickIn(BaseModel):

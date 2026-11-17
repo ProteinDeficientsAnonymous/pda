@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
 import { usePlanningMutation } from './planning';
@@ -6,15 +6,15 @@ import type { components } from './types.gen';
 
 export type ChecklistItem = components['schemas']['ChecklistItemOut'];
 type ChecklistInput = components['schemas']['ChecklistItemIn'];
-type MoveDirection = components['schemas']['ChecklistMoveIn']['direction'];
 
 const URL = '/api/community/planning/checklist/';
+const CHECKLIST_KEY = ['planning', 'checklist'];
 
 export const PLANNING_GUIDELINES_SLUG = 'planning-guidelines';
 
 export function useChecklist() {
   return useQuery({
-    queryKey: ['planning', 'checklist'],
+    queryKey: CHECKLIST_KEY,
     queryFn: async () => {
       const { data } = await apiClient.get<ChecklistItem[]>(URL);
       return data;
@@ -41,13 +41,23 @@ export function useDeleteChecklistItem() {
   });
 }
 
-export function useMoveChecklistItem() {
-  return usePlanningMutation(
-    async ({ id, direction }: { id: string; direction: MoveDirection }) => {
-      const body: components['schemas']['ChecklistMoveIn'] = { direction };
-      await apiClient.post(`${URL}${id}/move/`, body);
+export function useReorderChecklist() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const body: components['schemas']['ChecklistOrderIn'] = { ids };
+      await apiClient.put(`${URL}order/`, body);
     },
-  );
+    onMutate: async (ids) => {
+      await qc.cancelQueries({ queryKey: CHECKLIST_KEY });
+      qc.setQueryData<ChecklistItem[]>(CHECKLIST_KEY, (items) => {
+        if (!items) return items;
+        const byId = new Map(items.map((i) => [i.id, i]));
+        return ids.flatMap((id) => byId.get(id) ?? []);
+      });
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['planning'] }),
+  });
 }
 
 export function useTickChecklistItem(slotId: string) {

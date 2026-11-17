@@ -58,12 +58,15 @@ class TestChecklistItems:
         headers = headers_for(PermissionKey.VIEW_EVENT_PLANNING)
         assert send(api_client, method, url, body, headers).status_code == 403
 
-    def test_move_swaps_neighbours_and_stops_at_ends(self, api_client, manager):
-        first, second = PlanningChecklistItem.objects.all()[:2]
-        response = send(api_client, "post", f"{URL}{second.id}/move/", {"direction": "up"}, manager)
-        assert [i["text"] for i in response.json()[:2]] == [second.text, first.text]
-        response = send(api_client, "post", f"{URL}{second.id}/move/", {"direction": "up"}, manager)
-        assert response.json()[0]["text"] == second.text
+    def test_reorder_follows_payload(self, api_client, manager):
+        ids = [str(i.id) for i in PlanningChecklistItem.objects.all()][::-1]
+        response = send(api_client, "put", f"{URL}order/", {"ids": ids}, manager)
+        assert response.status_code == 200
+        assert [i["id"] for i in response.json()] == ids
+
+    def test_planners_cannot_reorder(self, api_client):
+        headers = headers_for(PermissionKey.VIEW_EVENT_PLANNING)
+        assert send(api_client, "put", f"{URL}order/", {"ids": []}, headers).status_code == 403
 
 
 @pytest.mark.django_db

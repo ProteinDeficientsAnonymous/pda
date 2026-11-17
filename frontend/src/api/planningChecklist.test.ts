@@ -8,7 +8,7 @@ import {
   useChecklist,
   useCreateChecklistItem,
   useDeleteChecklistItem,
-  useMoveChecklistItem,
+  useReorderChecklist,
   useTickChecklistItem,
   useUpdateChecklistItem,
 } from './planningChecklist';
@@ -62,12 +62,20 @@ describe('checklist mutations', () => {
     expect(apiClient.delete).toHaveBeenCalledWith('/api/community/planning/checklist/i1/');
   });
 
-  it('move posts the direction', async () => {
-    vi.mocked(apiClient.post).mockResolvedValue({ data: [] });
-    const { result } = renderHook(useMoveChecklistItem, { wrapper: queryWrapper() });
-    await result.current.mutateAsync({ id: 'i2', direction: 'up' });
-    expect(apiClient.post).toHaveBeenCalledWith('/api/community/planning/checklist/i2/move/', {
-      direction: 'up',
+  it('reorder reorders the cache before putting the ids', async () => {
+    vi.mocked(apiClient.put).mockResolvedValue({ data: null });
+    const qc = makeQueryClient();
+    const a = { id: 'i1', text: 'secure venue', detail: '' };
+    const b = { id: 'i2', text: 'make a flyer', detail: '' };
+    qc.setQueryData(['planning', 'checklist'], [a, b]);
+    const { result } = renderHook(useReorderChecklist, { wrapper: queryWrapper(qc) });
+    const done = result.current.mutateAsync(['i2', 'i1']);
+    await waitFor(() => {
+      expect(qc.getQueryData(['planning', 'checklist'])).toEqual([b, a]);
+    });
+    await done;
+    expect(apiClient.put).toHaveBeenCalledWith('/api/community/planning/checklist/order/', {
+      ids: ['i2', 'i1'],
     });
   });
 

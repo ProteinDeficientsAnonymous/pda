@@ -4,9 +4,10 @@ import {
   type ChecklistItem,
   useCreateChecklistItem,
   useDeleteChecklistItem,
-  useMoveChecklistItem,
+  useReorderChecklist,
   useUpdateChecklistItem,
 } from '@/api/planningChecklist';
+import { SortableList } from '@/components/SortableList';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
@@ -59,13 +60,12 @@ function ItemFields({
   );
 }
 
-function ItemRow({ item, first, last }: { item: ChecklistItem; first: boolean; last: boolean }) {
+function ItemRow({ item }: { item: ChecklistItem }) {
   const update = useUpdateChecklistItem();
   const remove = useDeleteChecklistItem();
-  const move = useMoveChecklistItem();
   const { confirm, element } = useConfirm();
   const [draft, setDraft] = useState<Draft | null>(null);
-  const busy = update.isPending || remove.isPending || move.isPending;
+  const busy = update.isPending || remove.isPending;
 
   async function save(next: Draft) {
     const input = { text: next.text.trim(), detail: next.detail.trim() };
@@ -82,16 +82,9 @@ function ItemRow({ item, first, last }: { item: ChecklistItem; first: boolean; l
       await toastOnError(remove.mutateAsync(item.id), "couldn't delete that item — try again");
   }
 
-  function onMove(direction: 'up' | 'down') {
-    void toastOnError(
-      move.mutateAsync({ id: item.id, direction }),
-      "couldn't move that item — try again",
-    );
-  }
-
   if (draft) {
     return (
-      <li className="flex flex-col gap-2">
+      <div className="border-border bg-surface flex flex-col gap-2 rounded-lg border p-3">
         <ItemFields id={`item-${item.id}`} draft={draft} onChange={setDraft} />
         <div className="flex flex-wrap gap-2">
           <Button disabled={busy || !draft.text.trim()} onClick={() => void save(draft)}>
@@ -115,47 +108,26 @@ function ItemRow({ item, first, last }: { item: ChecklistItem; first: boolean; l
           </Button>
         </div>
         {element}
-      </li>
+      </div>
     );
   }
 
   return (
-    <li className="flex items-start justify-between gap-2">
+    <div className="border-border bg-surface flex items-start justify-between gap-2 rounded-lg border p-3">
       <div className="min-w-0 break-words">
         <ChecklistItemText item={item} />
       </div>
-      <div className="flex shrink-0 gap-1">
-        <Button
-          variant="ghost"
-          aria-label={`move ${item.text} up`}
-          disabled={busy || first}
-          onClick={() => {
-            onMove('up');
-          }}
-        >
-          ↑
-        </Button>
-        <Button
-          variant="ghost"
-          aria-label={`move ${item.text} down`}
-          disabled={busy || last}
-          onClick={() => {
-            onMove('down');
-          }}
-        >
-          ↓
-        </Button>
-        <Button
-          variant="secondary"
-          aria-label={`edit ${item.text}`}
-          onClick={() => {
-            setDraft({ text: item.text, detail: item.detail });
-          }}
-        >
-          edit
-        </Button>
-      </div>
-    </li>
+      <Button
+        variant="secondary"
+        aria-label={`edit ${item.text}`}
+        className="shrink-0"
+        onClick={() => {
+          setDraft({ text: item.text, detail: item.detail });
+        }}
+      >
+        edit
+      </Button>
+    </div>
   );
 }
 
@@ -183,13 +155,17 @@ function AddItem() {
 }
 
 export function ChecklistEditor({ items }: { items: ChecklistItem[] }) {
+  const reorder = useReorderChecklist();
   return (
     <div className="flex flex-col gap-6">
-      <ul className="flex flex-col gap-4">
-        {items.map((item, i) => (
-          <ItemRow key={item.id} item={item} first={i === 0} last={i === items.length - 1} />
-        ))}
-      </ul>
+      <SortableList
+        items={items}
+        ariaLabel="checklist items"
+        onReorder={(ids) => {
+          void toastOnError(reorder.mutateAsync(ids), "couldn't reorder the checklist — try again");
+        }}
+        renderItem={(item) => <ItemRow item={item} />}
+      />
       <AddItem />
     </div>
   );
