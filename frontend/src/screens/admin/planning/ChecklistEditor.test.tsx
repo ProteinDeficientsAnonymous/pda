@@ -1,5 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderWithProviders } from '@/test/render';
@@ -9,13 +10,39 @@ import { ChecklistEditor } from './ChecklistEditor';
 const createItem = vi.fn();
 const updateItem = vi.fn();
 const deleteItem = vi.fn();
-const moveItem = vi.fn();
+const reorder = vi.fn();
 
 vi.mock('@/api/planningChecklist', () => ({
   useCreateChecklistItem: () => ({ mutateAsync: createItem, isPending: false }),
   useUpdateChecklistItem: () => ({ mutateAsync: updateItem, isPending: false }),
   useDeleteChecklistItem: () => ({ mutateAsync: deleteItem, isPending: false }),
-  useMoveChecklistItem: () => ({ mutateAsync: moveItem, isPending: false }),
+  useReorderChecklist: () => ({ mutateAsync: reorder, isPending: false }),
+}));
+
+vi.mock('@/components/SortableList', () => ({
+  SortableList: ({
+    items,
+    onReorder,
+    renderItem,
+  }: {
+    items: { id: string }[];
+    onReorder: (ids: string[]) => void;
+    renderItem: (item: { id: string }) => ReactNode;
+  }) => (
+    <div>
+      {items.map((item) => (
+        <div key={item.id}>{renderItem(item)}</div>
+      ))}
+      <button
+        type="button"
+        onClick={() => {
+          onReorder(items.map((i) => i.id).reverse());
+        }}
+      >
+        simulate reorder
+      </button>
+    </div>
+  ),
 }));
 
 const ITEMS = [
@@ -24,21 +51,17 @@ const ITEMS = [
 ];
 
 beforeEach(() => {
-  for (const fn of [createItem, updateItem, deleteItem, moveItem]) {
+  for (const fn of [createItem, updateItem, deleteItem, reorder]) {
     fn.mockReset().mockResolvedValue(undefined);
   }
 });
 
 describe('ChecklistEditor', () => {
-  it('moves items and disables moves past the ends', async () => {
+  it('saves the new order after a drag', async () => {
     const user = userEvent.setup();
     renderWithProviders(<ChecklistEditor items={ITEMS} />);
-    expect(screen.getByRole('button', { name: 'move secure venue up' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'move make a flyer down' })).toBeDisabled();
-    await user.click(screen.getByRole('button', { name: 'move make a flyer up' }));
-    expect(moveItem).toHaveBeenCalledWith({ id: 'i2', direction: 'up' });
-    await user.click(screen.getByRole('button', { name: 'move secure venue down' }));
-    expect(moveItem).toHaveBeenCalledWith({ id: 'i1', direction: 'down' });
+    await user.click(screen.getByRole('button', { name: 'simulate reorder' }));
+    expect(reorder).toHaveBeenCalledWith(['i2', 'i1']);
   });
 
   it('edits an item and trims what it saves', async () => {

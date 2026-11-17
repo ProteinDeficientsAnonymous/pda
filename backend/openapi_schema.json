@@ -1058,21 +1058,21 @@
         "title": "ChecklistItemPatchIn",
         "type": "object"
       },
-      "ChecklistMoveIn": {
+      "ChecklistOrderIn": {
         "properties": {
-          "direction": {
-            "enum": [
-              "up",
-              "down"
-            ],
-            "title": "Direction",
-            "type": "string"
+          "ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
           }
         },
         "required": [
-          "direction"
+          "ids"
         ],
-        "title": "ChecklistMoveIn",
+        "title": "ChecklistOrderIn",
         "type": "object"
       },
       "ChecklistTickIn": {
@@ -17774,6 +17774,57 @@
         ]
       }
     },
+    "/api/community/planning/checklist/order/": {
+      "put": {
+        "operationId": "community_planning_checklist_reorder_checklist",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChecklistOrderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChecklistItemOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Reorder Checklist",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/planning/checklist/{item_id}/": {
       "delete": {
         "operationId": "community_planning_checklist_delete_checklist_item",
@@ -17886,78 +17937,6 @@
           }
         ],
         "summary": "Update Checklist Item",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/community/planning/checklist/{item_id}/move/": {
-      "post": {
-        "operationId": "community_planning_checklist_move_checklist_item",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "item_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Item Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChecklistMoveIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ChecklistItemOut"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Not Found"
-          }
-        },
-        "security": [
-          {
-            "GatedJWTAuth": []
-          }
-        ],
-        "summary": "Move Checklist Item",
         "tags": [
           "community"
         ]

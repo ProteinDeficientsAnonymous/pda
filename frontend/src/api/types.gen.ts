@@ -1952,6 +1952,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/planning/checklist/order/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reorder Checklist */
+        put: operations["community_planning_checklist_reorder_checklist"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/planning/checklist/{item_id}/": {
         parameters: {
             query?: never;
@@ -1968,23 +1985,6 @@ export interface paths {
         head?: never;
         /** Update Checklist Item */
         patch: operations["community_planning_checklist_update_checklist_item"];
-        trace?: never;
-    };
-    "/api/community/planning/checklist/{item_id}/move/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Move Checklist Item */
-        post: operations["community_planning_checklist_move_checklist_item"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/community/planning/me/": {
@@ -3353,13 +3353,10 @@ export interface components {
             /** Text */
             text?: string | null;
         };
-        /** ChecklistMoveIn */
-        ChecklistMoveIn: {
-            /**
-             * Direction
-             * @enum {string}
-             */
-            direction: "up" | "down";
+        /** ChecklistOrderIn */
+        ChecklistOrderIn: {
+            /** Ids */
+            ids: string[];
         };
         /** ChecklistTickIn */
         ChecklistTickIn: {
@@ -12680,6 +12677,39 @@ export interface operations {
             };
         };
     };
+    community_planning_checklist_reorder_checklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChecklistOrderIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistItemOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community_planning_checklist_delete_checklist_item: {
         parameters: {
             query?: never;
@@ -12740,50 +12770,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChecklistItemOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community_planning_checklist_move_checklist_item: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                item_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChecklistMoveIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChecklistItemOut"][];
                 };
             };
             /** @description Forbidden */

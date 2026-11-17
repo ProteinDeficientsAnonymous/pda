@@ -1,4 +1,3 @@
-from typing import Literal
 from uuid import UUID
 
 from config.auth import gated_jwt
@@ -19,7 +18,7 @@ from community.planning.schemas import (
     ChecklistItemIn,
     ChecklistItemOut,
     ChecklistItemPatchIn,
-    ChecklistMoveIn,
+    ChecklistOrderIn,
     ChecklistTickIn,
     SlotChecklistOut,
 )
@@ -63,6 +62,20 @@ def create_checklist_item(request, payload: ChecklistItemIn):
     return Status(201, _item_out(item))
 
 
+@router.put(
+    "/planning/checklist/order/",
+    response={200: list[ChecklistItemOut], 403: ErrorOut},
+    auth=gated_jwt,
+)
+def reorder_checklist(request, payload: ChecklistOrderIn):
+    require_manage(request, "reorder_planning_checklist")
+    order = {item_id: i for i, item_id in enumerate(payload.ids, 1)}
+    PlanningChecklistItem.objects.bulk_update(
+        [PlanningChecklistItem(id=item_id, order=i) for item_id, i in order.items()], ["order"]
+    )
+    return Status(200, _all_items())
+
+
 @router.patch(
     "/planning/checklist/{item_id}/",
     response={200: ChecklistItemOut, 403: ErrorOut, 404: ErrorOut},
@@ -87,31 +100,6 @@ def delete_checklist_item(request, item_id: UUID):
     require_manage(request, "delete_planning_checklist_item")
     _get_item_or_404(item_id).delete()
     return Status(204, None)
-
-
-def _swap_with_neighbour(item: PlanningChecklistItem, direction: Literal["up", "down"]) -> None:
-    items = list(PlanningChecklistItem.objects.select_for_update())
-    index = next(i for i, other in enumerate(items) if other.pk == item.pk)
-    target = index - 1 if direction == "up" else index + 1
-    if not 0 <= target < len(items):
-        return
-    items[index], items[target] = items[target], items[index]
-    for order, other in enumerate(items, 1):
-        other.order = order
-    PlanningChecklistItem.objects.bulk_update(items, ["order"])
-
-
-@router.post(
-    "/planning/checklist/{item_id}/move/",
-    response={200: list[ChecklistItemOut], 403: ErrorOut, 404: ErrorOut},
-    auth=gated_jwt,
-)
-def move_checklist_item(request, item_id: UUID, payload: ChecklistMoveIn):
-    require_manage(request, "move_planning_checklist_item")
-    item = _get_item_or_404(item_id)
-    with transaction.atomic():
-        _swap_with_neighbour(item, payload.direction)
-    return Status(200, _all_items())
 
 
 @router.put(
