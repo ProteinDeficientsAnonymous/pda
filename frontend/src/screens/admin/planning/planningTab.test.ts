@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { explicitTab, resolveTab, tabOptions } from './planningTab';
 
 describe('tabOptions', () => {
-  it('gives planners only their own tabs', () => {
+  it('keeps slots for managers', () => {
     expect(tabOptions(false).map((o) => o.label)).toEqual([
+      'schedule',
       'my events',
       'my availability',
       'checklist',
@@ -27,7 +28,7 @@ describe('explicitTab', () => {
   });
 
   it('ignores tabs the viewer cannot open', () => {
-    expect(explicitTab('schedule', false)).toBeNull();
+    expect(explicitTab('slots', false)).toBeNull();
     expect(explicitTab('bogus', true)).toBeNull();
   });
 });

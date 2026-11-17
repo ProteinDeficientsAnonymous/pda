@@ -1,6 +1,8 @@
 import { useState } from 'react';
 
 import { usePlanningGrid } from '@/api/planning';
+import { useHasPermission } from '@/auth/useAuth';
+import { Permission } from '@/models/permissions';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { summaryCounts } from './gridSummary';
@@ -14,7 +16,8 @@ export function ScheduleTab({ year }: { year: number }) {
   const { data: grid, isPending, isError } = usePlanningGrid(year);
   const [today] = useState(() => new Date());
   const [openSlotId, setOpenSlotId] = useState<string | null>(null);
-  const { act, busy, send, confirmElement } = usePlanningActions(year);
+  const { act, tap, commitOwn, busy, send, confirmElement } = usePlanningActions(year);
+  const readOnly = !useHasPermission(Permission.ManageEventPlanning);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the planning grid — try refreshing" />;
@@ -32,8 +35,9 @@ export function ScheduleTab({ year }: { year: number }) {
             onToggleSlot={(slotId) => {
               setOpenSlotId((open) => (open === slotId ? null : slotId));
             }}
-            act={act}
+            act={readOnly ? commitOwn : tap}
             busy={busy}
+            readOnly={readOnly}
           />
         </div>
         {openSlotId ? (
@@ -44,13 +48,14 @@ export function ScheduleTab({ year }: { year: number }) {
             today={today}
             act={act}
             busy={busy}
+            readOnly={readOnly}
             onClose={() => {
               setOpenSlotId(null);
               document.getElementById(`month-${openSlotId}`)?.focus();
             }}
           />
         ) : null}
-        <SendProposalsBar grid={grid} send={send} act={act} busy={busy} />
+        {readOnly ? null : <SendProposalsBar grid={grid} send={send} act={act} busy={busy} />}
       </div>
       {confirmElement}
     </>

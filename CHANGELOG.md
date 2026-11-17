@@ -1,3 +1,24 @@
+# [0.254.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.253.0...v0.254.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - show planners the schedule and let them put themselves in ([#2563](https://github.com/ProteinDeficientsAnonymous/pda/issues/2563)) ([f40328e](https://github.com/ProteinDeficientsAnonymous/pda/commit/f40328eeec12fa978416c46fefac1ac2832dd525))
+
+# [0.253.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.252.0...v0.253.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - put yourself in from your own grid row ([#2556](https://github.com/ProteinDeficientsAnonymous/pda/issues/2556)) ([ad10ab7](https://github.com/ProteinDeficientsAnonymous/pda/commit/ad10ab740d5d641eda598507384cc125737f01b5))
+
+# [0.252.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.251.0...v0.252.0) (2026-11-16)
+
+
+### Features
+
+* 2121 - audit planning assignment status changes ([#2562](https://github.com/ProteinDeficientsAnonymous/pda/issues/2562)) ([9908ca0](https://github.com/ProteinDeficientsAnonymous/pda/commit/9908ca078cd2755a1761659dd7ab890b7f7c53de))
+
 # [0.251.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.250.1...v0.251.0) (2026-11-16)
 
 

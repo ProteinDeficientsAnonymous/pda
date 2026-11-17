@@ -6,10 +6,10 @@ from django.db import transaction
 from django.db.models import QuerySet
 from ninja import Router
 from ninja.responses import Status
-from users.models import User
 
 from community.models import AssignmentStatus, SlotAssignment
 from community.planning._access import require_manage
+from community.planning._audit import audit_transition
 from community.planning._notify import notify_confirmed, notify_proposed, notify_withdrawn
 from community.planning._planners import planner_users
 from community.planning._shared import (
@@ -47,10 +47,12 @@ def propose_assignment(request, slot_id: UUID, payload: ProposeIn):
         user=user,
         defaults={"proposed_by": request.auth, "status": AssignmentStatus.DRAFT},
     )
+    before = None if created else assignment.status
     if not created:
-        if assignment.status in HELD_STATUSES:
+        if before in HELD_STATUSES:
             raise_validation(Code.Planning.ALREADY_ASSIGNED, field="user_id", status_code=400)
         assignment.stage(request.auth)
+    audit_transition(request, "drafted", assignment, before)
     return Status(201, assignment_out(assignment))
 
 
@@ -66,12 +68,14 @@ def confirm_assignment(request, slot_id: UUID, payload: ProposeIn):
     if user is None:
         raise_validation(Code.Planning.NOT_A_PLANNER, field="user_id", status_code=400)
     with transaction.atomic():
-        assignment, _ = SlotAssignment.objects.select_for_update(of=("self",)).get_or_create(
+        assignment, created = SlotAssignment.objects.select_for_update(of=("self",)).get_or_create(
             slot=slot, user=user, defaults={"status": AssignmentStatus.DRAFT}
         )
         if assignment.status == AssignmentStatus.COMMITTED:
             raise_validation(Code.Planning.ALREADY_ASSIGNED, field="user_id", status_code=400)
+        before = None if created else assignment.status
         assignment.confirm(request.auth)
+        audit_transition(request, "confirmed", assignment, before)
         if user != request.auth:
             notify_confirmed(assignment, request.auth)
     event = slot.live_event
@@ -96,7 +100,7 @@ def send_proposals(request, year: int):
     notified = sent = 0
     for user_id in planner_ids:
         try:
-            count = _send_planner_drafts(drafts, user_id, request.auth)
+            count = _send_planner_drafts(request, drafts, user_id)
         except Exception:  # noqa: BLE001 — one planner's failure must not block the rest
             logger.exception("planning_send_failed", extra={"user": user_id})
             continue
@@ -106,7 +110,7 @@ def send_proposals(request, year: int):
     return ProposalsSentOut(planners_notified=notified, proposals_sent=sent)
 
 
-def _send_planner_drafts(drafts: QuerySet[SlotAssignment], user_id: UUID, by: User) -> int:
+def _send_planner_drafts(request, drafts: QuerySet[SlotAssignment], user_id: UUID) -> int:
     # One transaction per planner: a failed notice un-sends only that planner's drafts.
     with transaction.atomic():
         mine = list(
@@ -116,9 +120,10 @@ def _send_planner_drafts(drafts: QuerySet[SlotAssignment], user_id: UUID, by: Us
             .order_by("slot__order")
         )
         for draft in mine:
-            draft.propose(by)
+            draft.propose(request.auth)
+            audit_transition(request, "proposed", draft, AssignmentStatus.DRAFT)
         if mine:
-            notify_proposed(mine[0].user, [d.slot for d in mine], by)
+            notify_proposed(mine[0].user, [d.slot for d in mine], request.auth)
     return len(mine)
 
 
@@ -131,10 +136,12 @@ def withdraw_assignment(request, assignment_id: UUID):
     require_manage(request, "withdraw_planning_assignment")
     with transaction.atomic():
         assignment = get_assignment_or_404(assignment_id, lock=True)
-        was_active = assignment.status in ACTIVE_STATUSES
-        was_committed = assignment.status == AssignmentStatus.COMMITTED
-        if assignment.status in HELD_STATUSES:
+        before = assignment.status
+        was_active = before in ACTIVE_STATUSES
+        was_committed = before == AssignmentStatus.COMMITTED
+        if before in HELD_STATUSES:
             assignment.withdraw()
+            audit_transition(request, "withdrawn", assignment, before)
     if was_active:
         notify_withdrawn(assignment, request.auth)
     if was_committed:

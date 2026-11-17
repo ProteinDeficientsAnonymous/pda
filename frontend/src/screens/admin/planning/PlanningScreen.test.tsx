@@ -184,12 +184,13 @@ describe('PlanningScreen', () => {
       expect(screen.getByText('grid for 2027')).toBeInTheDocument();
     });
 
-    it.each(['/', '/?tab=slots', '/?tab=schedule'])(
-      'gives planners who cannot manage only their own tabs at %s',
+    it.each(['/', '/?tab=slots'])(
+      'opens planners who cannot manage on my events at %s',
       (route) => {
         years = [{ id: 'y1', year: 2027 }];
         renderWithProviders(<PlanningScreen />, { route });
-        expect(screen.getAllByRole('radio')).toHaveLength(4);
+        expect(screen.getAllByRole('radio')).toHaveLength(5);
+        expect(screen.getByRole('radio', { name: 'schedule' })).toBeInTheDocument();
         expect(screen.getByRole('radio', { name: 'my events' })).toBeChecked();
         expect(screen.getByRole('radio', { name: 'my availability' })).toBeInTheDocument();
         expect(screen.getByText('my slots')).toBeInTheDocument();
@@ -197,6 +198,12 @@ describe('PlanningScreen', () => {
         expect(screen.queryByText('editor for 2027')).not.toBeInTheDocument();
       },
     );
+
+    it('lets planners who cannot manage open the schedule', () => {
+      years = [{ id: 'y1', year: 2027 }];
+      renderWithProviders(<PlanningScreen />, { route: '/?tab=schedule' });
+      expect(screen.getByText('grid for 2027')).toBeInTheDocument();
+    });
   });
 
   describe('start next year', () => {
