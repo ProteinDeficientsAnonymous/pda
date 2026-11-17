@@ -7586,6 +7586,15 @@ export interface operations {
                     "application/json": components["schemas"]["UserSearchOut"][];
                 };
             };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     users__user_deletion_delete_user: {

@@ -262,3 +262,19 @@ class TestTentativeDirectoryAccess:
     def test_directory_still_works_for_members(self, api_client, test_user):
         response = api_client.get("/api/auth/users/directory/", **auth_headers_for(test_user))
         assert response.status_code == 200
+
+
+@pytest.mark.django_db
+class TestLimitedMemberSearch:
+    @LIMITED_USER_FIXTURES
+    @pytest.mark.parametrize("q", ["", "Test"])
+    def test_search_is_blocked_for_limited_users(self, api_client, request, fixture, q, test_user):
+        user = request.getfixturevalue(fixture)
+        response = api_client.get(f"/api/auth/users/search/?q={q}", **auth_headers_for(user))
+        assert response.status_code == 403
+        assert_error_code(response, Code.Perm.DENIED)
+
+    def test_search_still_works_for_members(self, api_client, test_user, host):
+        response = api_client.get("/api/auth/users/search/?q=Host", **auth_headers_for(test_user))
+        assert response.status_code == 200
+        assert str(host.id) in {u["id"] for u in response.json()}
