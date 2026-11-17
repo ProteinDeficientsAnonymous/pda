@@ -1,3 +1,15 @@
+# [0.257.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.256.0...v0.257.0) (2026-11-17)
+
+
+### Bug Fixes
+
+* **planning:** status pill and primary view event button ([#2567](https://github.com/ProteinDeficientsAnonymous/pda/issues/2567)) ([dff3404](https://github.com/ProteinDeficientsAnonymous/pda/commit/dff34047a53d3b3b11fdbc5e4beeb33a810e2320))
+
+
+### Features
+
+* 2121 - explain why a planner's grid tap does nothing ([#2565](https://github.com/ProteinDeficientsAnonymous/pda/issues/2565)) ([512ee11](https://github.com/ProteinDeficientsAnonymous/pda/commit/512ee11ce7508e00c43aa2f4985013fd52476870))
+
 # [0.256.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.255.2...v0.256.0) (2026-11-17)
 
 
