@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import {
   type Assignment,
@@ -14,7 +16,11 @@ import { useAuthStore } from '@/auth/store';
 import { useConfirm } from '@/components/ui/useConfirm';
 
 import { cellActionLabel, type CellState, isWithdrawable } from './gridCell';
+import { withTab } from './planningTab';
+import { readOnlyTapNotice } from './readOnlyTap';
 import { toastOnError } from './toastOnError';
+
+const READ_ONLY_TAP_TOAST = 'planning-read-only-tap';
 
 type Act = (
   slot: PlanningSlot,
@@ -26,7 +32,7 @@ type Act = (
 interface PlanningActions {
   act: Act;
   tap: Act;
-  commitOwn: Act;
+  readOnlyTap: Act;
   busy: boolean;
   send: ReturnType<typeof useSendProposals>;
   confirmElement: ReactNode;
@@ -38,6 +44,7 @@ export function usePlanningActions(year: number): PlanningActions {
   const confirmPlanner = useConfirmPlanner();
   const commit = useCommit();
   const meId = useAuthStore((s) => s.user?.id);
+  const [, setParams] = useSearchParams();
   const send = useSendProposals(year);
   const { confirm, element } = useConfirm();
 
@@ -98,15 +105,32 @@ export function usePlanningActions(year: number): PlanningActions {
     );
   }
 
-  async function commitOwn(...[, , , assignment]: Parameters<Act>) {
+  function openAvailability() {
+    setParams((prev) => withTab(prev, 'availability'), { replace: true });
+  }
+
+  async function readOnlyTap(...[slot, planner, state, assignment]: Parameters<Act>) {
+    const self = planner.userId === meId;
+    const notice = readOnlyTapNotice(state, self, planner.submitted, slot.label);
+    if (notice) {
+      toast(notice.message, {
+        id: READ_ONLY_TAP_TOAST,
+        ...(notice.toAvailability && {
+          action: { label: 'my availability', onClick: openAvailability },
+        }),
+      });
+      return;
+    }
     if (!assignment) return;
-    await toastOnError(commit.mutateAsync(assignment.id), "couldn't put you in — try again");
+    if (await toastOnError(commit.mutateAsync(assignment.id), "couldn't put you in — try again")) {
+      toast.success(`you're in for ${slot.label} 🌱`, { id: READ_ONLY_TAP_TOAST });
+    }
   }
 
   return {
     act,
     tap,
-    commitOwn,
+    readOnlyTap,
     busy:
       propose.isPending ||
       withdraw.isPending ||

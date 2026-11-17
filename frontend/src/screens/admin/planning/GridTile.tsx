@@ -42,8 +42,9 @@ interface GridTileProps {
   slotLabel: string;
   isPlanner: boolean;
   self?: boolean;
+  viewOnly?: boolean;
   disabled: boolean;
-  onAct?: (() => void) | undefined;
+  onAct: () => void;
 }
 
 export function GridTile({
@@ -52,28 +53,28 @@ export function GridTile({
   slotLabel,
   isPlanner,
   self = false,
+  viewOnly = false,
   disabled,
   onAct,
 }: GridTileProps) {
   const textId = useId();
   const blockedReason = !isWithdrawable(state) && !isPlanner ? 'no longer a planner' : null;
-  if (!onAct) {
-    return (
-      <span className="inline-flex h-[var(--pg-row)] w-[var(--pg-col)] items-center justify-center">
-        <TileFace state={state} />
-        <span className="sr-only">{`${plannerName}, ${slotLabel}: ${STATE_TEXT[state]}`}</span>
-      </span>
-    );
-  }
   return (
     <button
       type="button"
-      aria-label={cellActionLabel(state, plannerName, slotLabel, self)}
+      aria-label={
+        viewOnly
+          ? `${plannerName}, ${slotLabel}`
+          : cellActionLabel(state, plannerName, slotLabel, self)
+      }
       aria-describedby={textId}
       title={blockedReason ?? undefined}
-      disabled={disabled || blockedReason !== null}
+      disabled={disabled || (!viewOnly && blockedReason !== null)}
       onClick={onAct}
-      className="focus-visible:outline-plan-ink enabled:hover:bg-surface-dim relative inline-flex h-[var(--pg-row)] w-[var(--pg-col)] items-center justify-center rounded focus-visible:z-10 focus-visible:outline-2 disabled:opacity-50"
+      className={cn(
+        'focus-visible:outline-plan-ink enabled:hover:bg-surface-dim relative inline-flex h-[var(--pg-row)] w-[var(--pg-col)] items-center justify-center rounded focus-visible:z-10 focus-visible:outline-2 disabled:opacity-50',
+        viewOnly && blockedReason && 'opacity-50',
+      )}
     >
       <TileFace state={state} />
       <span id={textId} className="sr-only">

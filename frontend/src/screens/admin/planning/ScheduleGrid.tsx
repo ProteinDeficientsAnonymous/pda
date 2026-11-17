@@ -10,6 +10,7 @@ import { CoverageMark, GridKey } from './GridMarks';
 import { BiCell, LoadCell, NameCell, PhoneShort } from './GridRowCells';
 import { plannerLoad, slotCoverage } from './gridSummary';
 import { GridTile } from './GridTile';
+import { readOnlyTapNotice } from './readOnlyTap';
 import type { usePlanningActions } from './usePlanningActions';
 
 interface ScheduleGridProps {
@@ -61,7 +62,8 @@ export function ScheduleGrid({
         const state = cellState(slot.id, planner.userId, grid);
         const assignment = findAssignment(grid, slot.id, planner.userId);
         const self = planner.userId === meId;
-        const canAct = !readOnly || (self && state === 'proposed');
+        const viewOnly =
+          readOnly && readOnlyTapNotice(state, self, planner.submitted, slot.label) !== null;
         return (
           <div key={slot.id} style={at(row, track)}>
             <GridTile
@@ -70,8 +72,9 @@ export function ScheduleGrid({
               slotLabel={slot.label}
               isPlanner={planner.isPlanner}
               self={self}
-              disabled={busy}
-              onAct={canAct ? () => void act(slot, planner, state, assignment) : undefined}
+              viewOnly={viewOnly}
+              disabled={busy && !viewOnly}
+              onAct={() => void act(slot, planner, state, assignment)}
             />
           </div>
         );

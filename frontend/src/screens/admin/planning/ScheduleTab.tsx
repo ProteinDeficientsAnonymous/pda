@@ -16,7 +16,7 @@ export function ScheduleTab({ year }: { year: number }) {
   const { data: grid, isPending, isError } = usePlanningGrid(year);
   const [today] = useState(() => new Date());
   const [openSlotId, setOpenSlotId] = useState<string | null>(null);
-  const { act, tap, commitOwn, busy, send, confirmElement } = usePlanningActions(year);
+  const { act, tap, readOnlyTap, busy, send, confirmElement } = usePlanningActions(year);
   const readOnly = !useHasPermission(Permission.ManageEventPlanning);
 
   if (isPending) return <ContentLoading />;
@@ -35,7 +35,7 @@ export function ScheduleTab({ year }: { year: number }) {
             onToggleSlot={(slotId) => {
               setOpenSlotId((open) => (open === slotId ? null : slotId));
             }}
-            act={readOnly ? commitOwn : tap}
+            act={readOnly ? readOnlyTap : tap}
             busy={busy}
             readOnly={readOnly}
           />
