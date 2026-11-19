@@ -103,7 +103,7 @@ def _pick(hits: _Hits) -> _Pick:
         reason = "sender is waitlisted; note names another guest"
         return _Pick(hits.note_guests, [*extras, sender], MatchSource.NOTE, reason, True)
     pick = _pick_without_sender(hits)
-    return replace(pick, candidates=pick.candidates + hits.senders)
+    return replace(pick, candidates=_unique(pick.candidates + list(hits.partial_senders)))
 
 
 def _people_text(people: PeopleRange) -> str:

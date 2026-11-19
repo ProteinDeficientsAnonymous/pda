@@ -66,6 +66,17 @@ class TestSenderMatch:
         assert p.matched_by == MatchSource.SENDER
         assert p.candidate_user_ids == ["u-beth"]
 
+    def test_sender_with_multi_word_last_name_is_candidate(self):
+        ana = guest("u-ana", "Ana", "Garcia-Lopez")
+        [p] = _match([row(sender="Anita Garcia-Lopez")], [ALEX, ana])
+        assert p.candidate_user_ids == ["u-ana"]
+
+    def test_partial_sender_kept_alongside_weak_note_hit(self):
+        beth = guest("u-beth", "Beth", "Vazquez")
+        [p] = _match([row(sender="Elizabeth Vazquez", note="thanks jamie")], [JAMIE, beth])
+        assert p.confidence == MatchConfidence.UNSURE
+        assert set(p.candidate_user_ids) == {"u-jamie", "u-beth"}
+
     def test_double_amount_with_plus_one_is_confident(self):
         alex = guest("u-alex", "Alex", "Kim", has_plus_one=True)
         [p] = _match([row(sender="Alex Kim", amount="30")], [alex])
@@ -192,7 +203,7 @@ class TestNoteMatch:
         assert p.user_ids == ["u-sam"]
 
     def test_first_name_only_in_note_is_unsure_candidate(self):
-        [p] = _match([row(sender="Pat Kim", note="for jamie!")], [ALEX, JAMIE])
+        [p] = _match([row(sender="Pat Moss", note="for jamie!")], [ALEX, JAMIE])
         assert p.confidence == MatchConfidence.UNSURE
         assert p.user_ids == []
         assert p.candidate_user_ids == ["u-jamie"]

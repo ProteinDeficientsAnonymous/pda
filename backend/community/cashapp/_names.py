@@ -79,9 +79,9 @@ class NameIndex:
         tokens = normalize_name(sender_name).split()
         if not tokens:
             return []
-        guests = self.sender_first.get(tokens[0], [])
-        if len(tokens) > 1:
-            guests = guests + self.sender_last.get(tokens[-1], [])
+        guests = list(self.sender_first.get(tokens[0], []))
+        for i in range(1, len(tokens)):
+            guests += self.sender_last.get(" ".join(tokens[i:]), [])
         return list({g.user_id: g for g in guests}.values())
 
     def note_hits(
