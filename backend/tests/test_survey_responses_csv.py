@@ -103,18 +103,15 @@ class TestSurveyResponsesCsv:
         response.answers["gone-id"] = {"label": "anything else?", "answer": "=loved it"}
         response.save()
         notes.delete()
-        rows = _rows(api_client.get(_url(csv_survey), **surveys_admin_headers))
-        assert rows[0] == [
-            "submitted_by",
-            "submitted_at",
-            "Toppings",
-            "When",
-            "Notes (removed)",
-            "anything else? (removed)",
-        ]
-        by_name = {row[0]: row for row in rows[1:]}
-        assert by_name[""][4:] == ["hello, world", "'=loved it"]
-        assert by_name["Surveys Admin"][4:] == ["'=SUM(A1)", ""]
+        header, *body = _rows(api_client.get(_url(csv_survey), **surveys_admin_headers))
+        assert header[:4] == ["submitted_by", "submitted_at", "Toppings", "When"]
+        # Postgres jsonb reorders keys, so removed-column order isn't insertion order.
+        assert sorted(header[4:]) == ["Notes (removed)", "anything else? (removed)"]
+        by_name = {row[0]: dict(zip(header, row, strict=True)) for row in body}
+        assert by_name[""]["Notes (removed)"] == "hello, world"
+        assert by_name[""]["anything else? (removed)"] == "'=loved it"
+        assert by_name["Surveys Admin"]["Notes (removed)"] == "'=SUM(A1)"
+        assert by_name["Surveys Admin"]["anything else? (removed)"] == ""
 
     def test_submitted_at_is_iso(self, api_client, surveys_admin_headers, csv_survey):
         rows = _rows(api_client.get(_url(csv_survey), **surveys_admin_headers))

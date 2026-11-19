@@ -165,7 +165,7 @@ def get_survey_responses_csv(request, survey_id: UUID):
     buf = io.StringIO()
     writer = csv.writer(buf)
     responses = ordered_responses(survey)
-    removed = removed_questions(responses, {str(q.id) for q in questions})
+    removed = removed_questions(responses, {str(q.id) for q in survey.questions.all()})
     labels = [csv_safe(q.label) for q in questions]
     labels += [csv_safe(f"{label} (removed)") for label in removed.values()]
     header = ["submitted_at"] if survey.anonymous else ["submitted_by", "submitted_at"]
@@ -173,9 +173,7 @@ def get_survey_responses_csv(request, survey_id: UUID):
         header.append("event")
     writer.writerow([*header, *labels])
     for r in responses:
-        cells = [
-            csv_answer_cell(q, (r.answers.get(str(q.id)) or {}).get("answer")) for q in questions
-        ]
+        cells = [csv_answer_cell(q, _stored_answer(r, str(q.id))) for q in questions]
         cells += [csv_answer_cell(None, _stored_answer(r, qid)) for qid in removed]
         writer.writerow(_csv_row_prefix(r, survey, request.auth) + cells)
     return csv_response(buf.getvalue(), f"survey-responses-{survey.slug}.csv")
