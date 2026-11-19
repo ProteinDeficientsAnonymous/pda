@@ -9,7 +9,7 @@ import pytest
 from asgiref.sync import async_to_sync
 from community.models import Event, EventType, PageVisibility
 from django.conf import settings
-from django.db import DatabaseError
+from django.db import DatabaseError, IntegrityError, transaction
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from notifications import sse
@@ -122,6 +122,44 @@ class TestAnonymousConnectionCap:
         assert async_to_sync(drain)() == []
         assert sse._anonymous_connections == 0
 
+    @pytest.mark.parametrize(
+        ("scope", "channels"),
+        [
+            (_ANON_EVENT_1, ["LISTEN event_updates"]),
+            (_MEMBER, ["LISTEN notifications", "LISTEN event_updates"]),
+        ],
+    )
+    def test_listen_channels_per_scope(self, monkeypatch, scope, channels):
+        conn = _FakeListenConn()
+
+        async def fake_connect(*_args, **_kwargs):
+            return conn
+
+        monkeypatch.setattr(sse, "_build_async_dsn", lambda: "postgresql://fake")
+        monkeypatch.setattr(sse.psycopg.AsyncConnection, "connect", fake_connect)
+
+        async def drain():
+            return [frame async for frame in sse_generator(scope)]
+
+        assert async_to_sync(drain)() == ["event: connected\ndata: {}\n\n"]
+        assert conn.executed == channels
+
+
+class _FakeListenConn:
+    closed = True
+
+    def __init__(self):
+        self.executed: list[str] = []
+
+    async def execute(self, sql: str) -> None:
+        self.executed.append(sql)
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_exc):
+        return False
+
 
 class TestNotifyReadStateChanged:
     def test_publishes_read_payload_on_postgres(self, monkeypatch):
@@ -190,6 +228,12 @@ class TestConsumeTicket:
         ticket = SseTicket.mint_for_event(public_event)
         scope = async_to_sync(consume_ticket)(ticket.token)
         assert scope == StreamScope(user_id=None, event_id=str(public_event.pk))
+
+    @pytest.mark.parametrize("bind", ["neither", "both"])
+    def test_ticket_needs_exactly_one_of_user_or_event(self, test_user, public_event, bind):
+        fields = {"user": test_user, "event": public_event} if bind == "both" else {}
+        with pytest.raises(IntegrityError), transaction.atomic():
+            SseTicket.objects.create(token="t", expires_at=timezone.now(), **fields)
 
     def test_second_consume_is_rejected(self, public_event):
         ticket = SseTicket.mint_for_event(public_event)

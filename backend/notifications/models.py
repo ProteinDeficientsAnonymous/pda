@@ -111,6 +111,12 @@ class SseTicket(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["expires_at"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(user__isnull=True) ^ models.Q(event__isnull=True),
+                name="sseticket_user_xor_event",
+            )
+        ]
 
     @property
     def is_expired(self) -> bool:

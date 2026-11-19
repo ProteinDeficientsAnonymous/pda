@@ -35,4 +35,13 @@ class Migration(migrations.Migration):
                 to=settings.AUTH_USER_MODEL,
             ),
         ),
+        migrations.AddConstraint(
+            model_name="sseticket",
+            constraint=models.CheckConstraint(
+                condition=models.Q(
+                    ("user__isnull", True), ("event__isnull", True), _connector="XOR"
+                ),
+                name="sseticket_user_xor_event",
+            ),
+        ),
     ]

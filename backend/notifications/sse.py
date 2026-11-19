@@ -163,7 +163,8 @@ async def _stream_frames(scope: StreamScope, *, deadline: float | None):
     try:
         dsn = _build_async_dsn()
         async with await psycopg.AsyncConnection.connect(dsn, autocommit=True) as conn:
-            await conn.execute(f"LISTEN {_PG_CHANNEL}")
+            if scope.user_id is not None:
+                await conn.execute(f"LISTEN {_PG_CHANNEL}")
             await conn.execute(f"LISTEN {_EVENT_UPDATES_CHANNEL}")
             yield "event: connected\ndata: {}\n\n"
 
