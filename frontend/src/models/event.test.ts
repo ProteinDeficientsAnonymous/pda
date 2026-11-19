@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { MembershipStatus } from '@/models/user';
 import { makeEvent, makeUser } from '@/test/fixtures';
 
 import {
@@ -111,9 +112,12 @@ describe('myRsvpLabel', () => {
 });
 
 describe('isLimited', () => {
-  it('is true for a limited user', () => {
-    expect(isLimited(makeUser({ isMember: false }))).toBe(true);
-  });
+  it.each([MembershipStatus.Tentative, MembershipStatus.AttendancePaused])(
+    'is true for a signed-in %s user',
+    (membershipStatus) => {
+      expect(isLimited(makeUser({ isMember: false, membershipStatus }))).toBe(true);
+    },
+  );
 
   it('is false for a member', () => {
     expect(isLimited(makeUser())).toBe(false);

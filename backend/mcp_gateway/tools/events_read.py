@@ -95,8 +95,9 @@ async def list_event_tags() -> list[dict[str, Any]]:
 
 @pda_tool(
     description=(
-        "get the official event description templates and their slots. official events start from "
-        "official_walk when event_format is walk, otherwise official_non_walk. replace each "
+        "get the official and club event description templates and their slots. official events "
+        "start from official_walk when event_format is walk, otherwise official_non_walk; club "
+        "events start from club. replace each "
         "[ALL CAPS] slot with the planner's details (ask for any you don't know) and keep the rest of "
         "the official copy word for word."
     )
