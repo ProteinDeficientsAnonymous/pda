@@ -7,8 +7,8 @@ from django.conf import settings
 
 from notifications._brevo_sender import BrevoSender
 from notifications._console_sender import ConsoleSender
-from notifications._log_only_test_domain_sender import LogOnlyTestDomainSender
 from notifications._resend_sender import ResendSender
+from notifications._routing_email_sender import RoutingEmailSender
 from notifications.email_types import (
     TEST_EMAIL_DOMAIN,
     EmailSender,
@@ -51,15 +51,14 @@ class EmailStream(StrEnum):
     BULK = "bulk"
 
 
-def _resolve_transactional() -> EmailSender:
-    if settings.RESEND_API_KEY:
-        return ResendSender()
-    if getattr(settings, "IS_PRODUCTION", False):
-        raise RuntimeError("RESEND_API_KEY is required in production but is not set")
-    return ConsoleSender()
+def _resolve_provider(stream: EmailStream) -> EmailSender:
+    if stream is EmailStream.TRANSACTIONAL:
+        if settings.RESEND_API_KEY:
+            return ResendSender()
+        if getattr(settings, "IS_PRODUCTION", False):
+            raise RuntimeError("RESEND_API_KEY is required in production but is not set")
+        return ConsoleSender()
 
-
-def _resolve_bulk() -> EmailSender:
     if settings.BREVO_API_KEY:
         return BrevoSender()
     if getattr(settings, "IS_PRODUCTION", False):
@@ -69,17 +68,16 @@ def _resolve_bulk() -> EmailSender:
     return ConsoleSender()
 
 
-_RESOLVERS: dict[EmailStream, Callable[[], EmailSender]] = {
-    EmailStream.TRANSACTIONAL: _resolve_transactional,
-    EmailStream.BULK: _resolve_bulk,
-}
-
 _cached_senders: dict[EmailStream, EmailSender] = {}
 _cache_lock = threading.Lock()
 
 
 def get_email_sender(stream: EmailStream = EmailStream.TRANSACTIONAL) -> EmailSender:
-    """Resolve the configured sender for a stream. Cached per process (thread-safe)."""
+    """Factory: pick the provider for ``stream``, then wrap in a recipient router.
+
+    Cached per process (thread-safe). The router sends seeded test-domain
+    addresses to ConsoleSender and everything else to the resolved provider.
+    """
     cached = _cached_senders.get(stream)
     if cached is not None:
         return cached
@@ -90,14 +88,14 @@ def get_email_sender(stream: EmailStream = EmailStream.TRANSACTIONAL) -> EmailSe
         if cached is not None:
             return cached
 
-        inner = _RESOLVERS[stream]()
-        sender = LogOnlyTestDomainSender(inner)
+        provider = _resolve_provider(stream)
+        sender = RoutingEmailSender(provider=provider, log_only=ConsoleSender())
         _cached_senders[stream] = sender
         logger.info(
-            "email sender resolved: stream=%s sender=%s inner=%s",
+            "email sender resolved: stream=%s sender=%s provider=%s",
             stream.value,
             type(sender).__name__,
-            type(inner).__name__,
+            type(provider).__name__,
         )
         return sender
 

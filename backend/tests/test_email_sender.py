@@ -8,7 +8,7 @@ from django.conf import settings as django_settings
 from notifications import _resend_sender
 from notifications._console_sender import ConsoleSender
 from notifications._resend_sender import ResendSender
-from notifications._log_only_test_domain_sender import LogOnlyTestDomainSender
+from notifications._routing_email_sender import RoutingEmailSender
 from notifications.email_sender import (
     TEST_EMAIL_DOMAIN,
     EmailSender,
@@ -237,11 +237,11 @@ class TestResendSender:
         assert params["text"] == "hi"
 
 
-class TestLogOnlyTestDomainSender:
-    def test_test_domain_uses_console_and_skips_inner(self, caplog):
-        inner = ResendSender.__new__(ResendSender)
-        with patch.object(inner, "send") as mock_send:
-            sender = LogOnlyTestDomainSender(inner)
+class TestRoutingEmailSender:
+    def test_test_domain_uses_log_only_and_skips_provider(self, caplog):
+        provider = ResendSender.__new__(ResendSender)
+        with patch.object(provider, "send") as mock_send:
+            sender = RoutingEmailSender(provider=provider, log_only=ConsoleSender())
             with caplog.at_level(logging.INFO, logger="notifications.console_sender"):
                 result = sender.send(
                     to=f"seed@{TEST_EMAIL_DOMAIN}",
@@ -257,9 +257,9 @@ class TestLogOnlyTestDomainSender:
         assert "hi body" in log_text
 
     def test_test_domain_match_is_case_insensitive(self):
-        inner = ResendSender.__new__(ResendSender)
-        with patch.object(inner, "send") as mock_send:
-            result = LogOnlyTestDomainSender(inner).send(
+        provider = ResendSender.__new__(ResendSender)
+        with patch.object(provider, "send") as mock_send:
+            result = RoutingEmailSender(provider=provider, log_only=ConsoleSender()).send(
                 to=f"Seed@{TEST_EMAIL_DOMAIN.upper()}",
                 subject="x",
                 html="<p>x</p>",
@@ -268,10 +268,10 @@ class TestLogOnlyTestDomainSender:
         assert result.success is True
         mock_send.assert_not_called()
 
-    def test_other_domains_delegate_to_inner(self):
-        inner = ResendSender.__new__(ResendSender)
-        with patch.object(inner, "send", return_value=SendResult(success=True)) as mock_send:
-            result = LogOnlyTestDomainSender(inner).send(
+    def test_other_domains_use_provider(self):
+        provider = ResendSender.__new__(ResendSender)
+        with patch.object(provider, "send", return_value=SendResult(success=True)) as mock_send:
+            result = RoutingEmailSender(provider=provider, log_only=ConsoleSender()).send(
                 to="real@example.com",
                 subject="hello",
                 html="<p>hi</p>",
@@ -293,8 +293,9 @@ class TestGetEmailSender:
         settings.RESEND_FROM_EMAIL = "noreply@example.com"
         try:
             sender = get_email_sender()
-            assert isinstance(sender, LogOnlyTestDomainSender)
-            assert isinstance(sender.inner, ResendSender)
+            assert isinstance(sender, RoutingEmailSender)
+            assert isinstance(sender.provider, ResendSender)
+            assert isinstance(sender.log_only, ConsoleSender)
         finally:
             reset_email_sender_cache()
 
@@ -303,8 +304,9 @@ class TestGetEmailSender:
         settings.RESEND_API_KEY = ""
         try:
             sender = get_email_sender()
-            assert isinstance(sender, LogOnlyTestDomainSender)
-            assert isinstance(sender.inner, ConsoleSender)
+            assert isinstance(sender, RoutingEmailSender)
+            assert isinstance(sender.provider, ConsoleSender)
+            assert isinstance(sender.log_only, ConsoleSender)
         finally:
             reset_email_sender_cache()
 
