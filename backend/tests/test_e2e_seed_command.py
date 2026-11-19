@@ -258,6 +258,13 @@ def test_e2e_seed_view_planner_has_only_view_planning(capsys):
 
 
 @pytest.mark.django_db
+def test_e2e_seed_view_planner_reuses_existing_year(capsys):
+    PlanningYear.create_with_default_slots(2000)
+    call_command("e2e_seed", "view-planner")
+    assert list(PlanningYear.objects.values_list("year", flat=True)) == [2000]
+
+
+@pytest.mark.django_db
 def test_e2e_seed_unknown_scenario():
     with pytest.raises(CommandError):
         call_command("e2e_seed", "not-a-real-scenario")
