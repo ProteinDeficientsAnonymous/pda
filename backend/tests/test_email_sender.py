@@ -8,7 +8,9 @@ from django.conf import settings as django_settings
 from notifications import _resend_sender
 from notifications._console_sender import ConsoleSender
 from notifications._resend_sender import ResendSender
+from notifications._log_only_test_domain_sender import LogOnlyTestDomainSender
 from notifications.email_sender import (
+    TEST_EMAIL_DOMAIN,
     EmailSender,
     SendResult,
     get_email_sender,
@@ -235,6 +237,55 @@ class TestResendSender:
         assert params["text"] == "hi"
 
 
+class TestLogOnlyTestDomainSender:
+    def test_test_domain_logs_and_skips_inner(self, caplog):
+        inner = ConsoleSender()
+        with patch.object(inner, "send") as mock_send:
+            sender = LogOnlyTestDomainSender(inner)
+            with caplog.at_level(logging.INFO, logger="notifications.log_only_test_domain"):
+                result = sender.send(
+                    to=f"seed@{TEST_EMAIL_DOMAIN}",
+                    subject="hello seed",
+                    html="<p>hi</p>",
+                    text="hi body",
+                )
+        assert result.success is True
+        mock_send.assert_not_called()
+        log_text = "\n".join(r.message for r in caplog.records)
+        assert f"seed@{TEST_EMAIL_DOMAIN}" in log_text
+        assert "hello seed" in log_text
+        assert "hi body" in log_text
+
+    def test_test_domain_match_is_case_insensitive(self):
+        inner = ConsoleSender()
+        with patch.object(inner, "send") as mock_send:
+            result = LogOnlyTestDomainSender(inner).send(
+                to=f"Seed@{TEST_EMAIL_DOMAIN.upper()}",
+                subject="x",
+                html="<p>x</p>",
+                text="x",
+            )
+        assert result.success is True
+        mock_send.assert_not_called()
+
+    def test_other_domains_delegate_to_inner(self):
+        inner = ConsoleSender()
+        with patch.object(inner, "send", return_value=SendResult(success=True)) as mock_send:
+            result = LogOnlyTestDomainSender(inner).send(
+                to="real@example.com",
+                subject="hello",
+                html="<p>hi</p>",
+                text="hi",
+            )
+        assert result.success is True
+        mock_send.assert_called_once_with(
+            to="real@example.com",
+            subject="hello",
+            html="<p>hi</p>",
+            text="hi",
+        )
+
+
 class TestGetEmailSender:
     def test_returns_resend_sender_when_key_set(self, settings):
         reset_email_sender_cache()
@@ -242,7 +293,8 @@ class TestGetEmailSender:
         settings.RESEND_FROM_EMAIL = "noreply@example.com"
         try:
             sender = get_email_sender()
-            assert isinstance(sender, ResendSender)
+            assert isinstance(sender, LogOnlyTestDomainSender)
+            assert isinstance(sender.inner, ResendSender)
         finally:
             reset_email_sender_cache()
 
@@ -251,7 +303,8 @@ class TestGetEmailSender:
         settings.RESEND_API_KEY = ""
         try:
             sender = get_email_sender()
-            assert isinstance(sender, ConsoleSender)
+            assert isinstance(sender, LogOnlyTestDomainSender)
+            assert isinstance(sender.inner, ConsoleSender)
         finally:
             reset_email_sender_cache()
 
@@ -274,3 +327,20 @@ class TestGetEmailSender:
                 get_email_sender()
         finally:
             reset_email_sender_cache()
+
+    def test_resend_path_skips_provider_for_test_domain(self, settings):
+        reset_email_sender_cache()
+        settings.RESEND_API_KEY = "test_key"
+        settings.RESEND_FROM_EMAIL = "noreply@example.com"
+        try:
+            with patch("resend.Emails.send") as mock_send:
+                result = get_email_sender().send(
+                    to=f"seed@{TEST_EMAIL_DOMAIN}",
+                    subject="staging probe",
+                    html="<p>probe</p>",
+                    text="probe",
+                )
+        finally:
+            reset_email_sender_cache()
+        assert result.success is True
+        mock_send.assert_not_called()

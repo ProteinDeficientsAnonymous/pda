@@ -12,6 +12,9 @@ from pydantic import BaseModel
 
 logger = logging.getLogger("notifications.email_sender")
 
+# Seeded staging users use this domain; LogOnlyTestDomainSender logs instead of sending.
+TEST_EMAIL_DOMAIN = "proteindeficienttestdomain.com"
+
 
 class SendResult(BaseModel):
     success: bool
@@ -116,10 +119,15 @@ def get_email_sender(stream: EmailStream = EmailStream.TRANSACTIONAL) -> EmailSe
         if cached is not None:
             return cached
 
-        sender = _RESOLVERS[stream]()
+        from notifications._log_only_test_domain_sender import LogOnlyTestDomainSender
+
+        sender = LogOnlyTestDomainSender(_RESOLVERS[stream]())
         _cached_senders[stream] = sender
         logger.info(
-            "email sender resolved: stream=%s sender=%s", stream.value, type(sender).__name__
+            "email sender resolved: stream=%s sender=%s inner=%s",
+            stream.value,
+            type(sender).__name__,
+            type(sender.inner).__name__,
         )
         return sender
 
