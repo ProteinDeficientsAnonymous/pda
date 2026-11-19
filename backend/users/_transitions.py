@@ -4,7 +4,7 @@ from audit.models import AuditTargetType
 from community.validation import Code, InvalidStateTransition, TransitionFailure
 from django.utils import timezone
 
-from users.models import (
+from users.membership import (
     ALLOWED_MEMBERSHIP_TRANSITIONS,
     PAUSED_STATUSES,
     STATUS_CHANGE_FIELDS,

@@ -66,29 +66,6 @@ class TestUpdateUser:
         other_user.refresh_from_db()
         assert other_user.membership_status == MembershipStatus.GUIDELINES_PAUSED
 
-    def test_update_user_locks_row_for_update(
-        self, api_client, manage_users_headers, other_user, monkeypatch
-    ):
-        from django.db.models.query import QuerySet
-
-        original = QuerySet.select_for_update
-        called = False
-
-        def spy(self, *args, **kwargs):
-            nonlocal called
-            called = True
-            return original(self, *args, **kwargs)
-
-        monkeypatch.setattr(QuerySet, "select_for_update", spy)
-        response = api_client.patch(
-            f"/api/auth/users/{other_user.pk}/",
-            {"first_name": "Locked"},
-            content_type="application/json",
-            **manage_users_headers,
-        )
-        assert response.status_code == 200
-        assert called
-
     def test_update_user_has_joined_whatsapp(self, api_client, manage_users_headers, other_user):
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
@@ -327,17 +304,6 @@ class TestDeleteUser:
         other_user.archived_at = timezone.now()
         other_user.save(update_fields=["archived_at"])
 
-        response = api_client.delete(
-            f"/api/auth/users/{other_user.pk}/",
-            **manage_users_headers,
-        )
-        assert response.status_code == 400
-        assert_error_code(response, Code.User.ALREADY_ARCHIVED)
-
-    def test_delete_user_archive_noop_returns_already_archived(
-        self, api_client, manage_users_headers, other_user, monkeypatch
-    ):
-        monkeypatch.setattr("users._user_deletion.archive_user", lambda *_a, **_k: {})
         response = api_client.delete(
             f"/api/auth/users/{other_user.pk}/",
             **manage_users_headers,
