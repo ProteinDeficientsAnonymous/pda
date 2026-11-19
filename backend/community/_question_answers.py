@@ -75,7 +75,7 @@ def normalize_answer(
         return list(dict.fromkeys(checkbox_values(answer)))
     if isinstance(answer, list):
         raise_validation(codes.invalid_format, field=field, label=q.label)
-    text = answer.strip()
+    text = str(answer).strip()
     if q.field_type == QuestionType.SELECT and text:
         assert_single_choice_member(text, q.options, **invalid_option)
     return text
