@@ -21,7 +21,9 @@ def _response(rsvp: EventRSVP, labels: dict[str, str], viewer: User) -> dict[str
         "status": rsvp.status,
         # snapshot label covers answers to since-deleted questions
         "answers": {
-            labels.get(qid, snap["label"]): snap["answer"] for qid, snap in answers.items()
+            labels.get(qid, snap.get("label", qid)): snap.get("answer")
+            for qid, snap in answers.items()
+            if isinstance(snap, dict)
         },
     }
 

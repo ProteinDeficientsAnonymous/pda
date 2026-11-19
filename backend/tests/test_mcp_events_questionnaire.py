@@ -101,3 +101,12 @@ def test_answer_to_deleted_question_keeps_its_snapshot_label(test_user, event, p
     body = run_tool(test_user, TOOL, event="photo-walk")
 
     assert body["responses"][0]["answers"] == {"old question": "kept"}
+
+
+def test_malformed_snapshot_is_skipped(test_user, event, photo_question):
+    stored = {**_answers((photo_question, "yes")), "legacy": "bare string"}
+    make_rsvp(event, make_member(), questionnaire_responses=stored)
+
+    body = run_tool(test_user, TOOL, event="photo-walk")
+
+    assert body["responses"][0]["answers"] == {"opt out of photos?": "yes"}
