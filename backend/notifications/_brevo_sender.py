@@ -6,7 +6,7 @@ import time
 import httpx
 from django.conf import settings
 
-from notifications.email_sender import SendResult, mask_recipient, validate_recipient
+from notifications.email_types import SendResult, mask_recipient, validate_recipient
 
 logger = logging.getLogger("notifications.brevo_sender")
 
@@ -131,7 +131,7 @@ class BrevoSender:
                     self._backoff(exc, masked, subject, attempt)
                     continue
                 break
-            except Exception as exc:  # noqa: BLE001 — one bad send must not abort a digest run
+            except Exception as exc:
                 last_error = exc
                 break
 

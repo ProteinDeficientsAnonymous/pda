@@ -2,6 +2,8 @@ import { type ReactNode, useId, useState } from 'react';
 
 import { cn } from '@/utils/cn';
 
+import { Chevron } from './Chevron';
+
 interface Props {
   title: string;
   /** Shown on the right of the header when collapsed and no error present. */
@@ -30,8 +32,9 @@ export function CollapsibleCard({
   return (
     <section
       className={cn(
-        'bg-surface overflow-hidden rounded-[var(--radius-md)] border shadow-(--shadow-sm) transition-colors',
-        isOpen ? 'border-brand-200' : 'border-brand-100 hover:border-brand-200',
+        'bg-surface rounded-[var(--radius-md)] border shadow-(--shadow-sm) transition-colors',
+        // Clipping an open card would cut off popovers inside it, like the date pickers.
+        isOpen ? 'border-brand-200' : 'border-brand-100 hover:border-brand-200 overflow-hidden',
       )}
     >
       <button
@@ -41,7 +44,7 @@ export function CollapsibleCard({
         onClick={() => {
           if (!forceOpen) setOpen((v) => !v);
         }}
-        className="focus-visible:ring-brand-200 hover:bg-brand-50/50 flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+        className="focus-visible:ring-brand-200 hover:bg-brand-50/50 flex w-full items-center justify-between gap-3 rounded-t-[var(--radius-md)] px-4 py-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
         <span className="flex items-center gap-2">
           <span className="text-foreground text-sm font-medium">{title}</span>
@@ -56,7 +59,7 @@ export function CollapsibleCard({
               {summary}
             </span>
           ) : null}
-          <Chevron open={isOpen} />
+          <Chevron open={isOpen} className="text-muted" />
         </span>
       </button>
       <div
@@ -69,24 +72,5 @@ export function CollapsibleCard({
         {children}
       </div>
     </section>
-  );
-}
-
-function Chevron({ open }: { open: boolean }) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={cn('text-muted transition-transform duration-200', open && 'rotate-180')}
-    >
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
   );
 }

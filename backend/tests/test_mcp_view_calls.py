@@ -38,7 +38,7 @@ def _tool_error(view, user, *args) -> dict:
 
 def test_unwraps_status_models_and_lists(test_user):
     body = _call(templates, test_user)
-    assert set(body) == {"official_walk", "official_non_walk"}
+    assert set(body) == {"official_walk", "official_non_walk", "club"}
     assert _call(lambda r: Status(200, [templates(r).value]), test_user) == [body]
 
 
@@ -61,7 +61,7 @@ def test_rollback_safe_audit_written_after_validation_error(test_user):
     def view(request):
         with transaction.atomic():
             audit_log_before_raise(logging.WARNING, "login_paused", request)
-            raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+            raise_validation(Code.Auth.ACCOUNT_GUIDELINES_PAUSED, status_code=403)
 
     assert _tool_error(view, test_user)["status"] == 403
     assert AuditLogEntry.objects.get().details == {"via": "mcp"}

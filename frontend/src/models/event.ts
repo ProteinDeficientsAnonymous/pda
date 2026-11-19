@@ -1,7 +1,7 @@
 import type { components } from '@/api/types.gen';
 
 import { hasPermission, Permission } from './permissions';
-import type { User } from './user';
+import { MembershipStatus, type User } from './user';
 
 /** checkbox answers are a list of ticked options; older ones are comma-joined strings */
 export type QuestionnaireAnswer = string | string[];
@@ -172,6 +172,7 @@ export interface Event {
   rsvpEnabled: boolean;
   allowPlusOnes: boolean;
   maxAttendees: number | null;
+  rsvpDeadline: Date | null;
   attendingCount: number;
   waitlistedCount: number;
   invitedCount: number;
@@ -248,9 +249,13 @@ export function canLimitedRsvp(event: Event): boolean {
   return LIMITED_ACCESS_EVENT_TYPES.includes(event.eventType);
 }
 
-// Mirrors backend is_limited: tentative applicants and attendance-paused users sign in without membership.
-export function isLimited(user: Pick<User, 'isMember'> | null | undefined): boolean {
-  return user?.isMember === false;
+// Mirrors backend is_limited: signed in without full access (tentative or attendance-paused).
+export function isLimited(user: Pick<User, 'membershipStatus'> | null | undefined): boolean {
+  return user != null && user.membershipStatus !== MembershipStatus.ActiveMember;
+}
+
+export function isRsvpDeadlinePassed(event: Event, now: number = Date.now()): boolean {
+  return event.rsvpDeadline !== null && event.rsvpDeadline.getTime() < now;
 }
 
 export function canPublicRsvp(event: Event): boolean {

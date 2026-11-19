@@ -134,6 +134,11 @@ class TestAuditPersistence:
         assert AuditLogEntry.objects.get().ip_address is None
 
 
+def _archive(user) -> list[str]:
+    user.archived_at = user.date_joined
+    return ["archived_at"]
+
+
 class TestSurviveRollback:
     class Rollback(Exception):
         pass
@@ -156,12 +161,14 @@ class TestSurviveRollback:
         assert AuditLogEntry.objects.get().action == "login_failed"
 
     @pytest.mark.parametrize(
-        ("field", "action"),
-        [("archived_at", "magic_login_archived"), ("is_paused", "magic_login_paused")],
+        ("block", "action"),
+        [
+            (_archive, "magic_login_archived"),
+            (lambda u: u.apply_guidelines_pause(by=None), "magic_login_paused"),
+        ],
     )
-    def test_blocked_magic_login_audit_persists(self, api_client, test_user, field, action):
-        setattr(test_user, field, True if field == "is_paused" else test_user.date_joined)
-        test_user.save(update_fields=[field])
+    def test_blocked_magic_login_audit_persists(self, api_client, test_user, block, action):
+        test_user.save(update_fields=block(test_user))
         magic = MagicLoginToken.create_for_user(test_user)
 
         response = api_client.get(f"/api/auth/magic-login/{magic.token}/")

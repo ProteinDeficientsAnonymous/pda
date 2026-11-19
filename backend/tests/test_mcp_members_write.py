@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 from community.models import Event, EventStatus
+from users.models import MembershipStatus
 
 from tests._events import make_event
 from tests._mcp_tool_helpers import run_tool, tool_error, tool_names
@@ -31,7 +32,9 @@ class TestSetAttendancePause:
 
     @pytest.mark.parametrize("row_exists", [False, True])
     def test_rejects_an_unknown_or_non_member_id(self, manage_users_user, row_exists):
-        missing = str(make_user(is_member=False).pk if row_exists else uuid.uuid4())
+        missing = str(
+            make_user(membership_status=MembershipStatus.NONE).pk if row_exists else uuid.uuid4()
+        )
         assert f"no member with id {missing}" in tool_error(
             manage_users_user, TOOL, member_id=missing, paused=True
         )
@@ -52,7 +55,7 @@ class TestSetAttendancePause:
         assert result["attendance_paused_at"] is not None
         member.refresh_from_db()
         assert member.attendance_paused_at is not None
-        assert member.is_paused is False
+        assert member.membership_status == MembershipStatus.ATTENDANCE_PAUSED
         hosted.refresh_from_db()
         assert hosted.status == EventStatus.DRAFT
 
@@ -64,22 +67,8 @@ class TestSetAttendancePause:
             manage_users_user, TOOL, member_id=str(member.pk), paused=True, confirm_token=token
         )
 
-    def test_lifts_the_pause(self, manage_users_user, member):
-        _call(
-            manage_users_user,
-            member,
-            confirm_token=_call(manage_users_user, member)["confirm_token"],
-        )
-
-        token = _call(manage_users_user, member, paused=False)["confirm_token"]
-        result = _call(manage_users_user, member, paused=False, confirm_token=token)
-
-        assert result["attendance_paused_at"] is None
-        member.refresh_from_db()
-        assert member.is_member is True
-
-    def test_refuses_a_no_op(self, manage_users_user, member):
-        assert "isn't attendance-paused" in tool_error(
+    def test_refuses_lifting_the_pause(self, manage_users_user, member):
+        assert "lifts only when they check in" in tool_error(
             manage_users_user, TOOL, member_id=str(member.pk), paused=False
         )
 
