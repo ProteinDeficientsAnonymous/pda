@@ -8,6 +8,7 @@ type WireTemplates = components['schemas']['EventDescriptionTemplatesOut'];
 export interface EventDescriptionTemplates {
   officialWalk: string;
   officialNonWalk: string;
+  club: string;
 }
 
 export const eventDescriptionTemplateKeys = {
@@ -18,7 +19,11 @@ export async function fetchEventDescriptionTemplates(): Promise<EventDescription
   const { data } = await apiClient.get<WireTemplates>(
     '/api/community/event-description-templates/',
   );
-  return { officialWalk: data.official_walk, officialNonWalk: data.official_non_walk };
+  return {
+    officialWalk: data.official_walk,
+    officialNonWalk: data.official_non_walk,
+    club: data.club,
+  };
 }
 
 export function useEventDescriptionTemplates(enabled: boolean) {

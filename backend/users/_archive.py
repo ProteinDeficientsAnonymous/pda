@@ -1,5 +1,8 @@
+from collections.abc import Iterable
+
 from community.events.helpers import broadcast_capacity_change
 from community.models import (
+    CancelReason,
     CoHostInviteStatus,
     Event,
     EventCoHostInvite,
@@ -15,7 +18,6 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from notifications.service import broadcast_cohost_change
 
-from users.helpers import strip_non_member_roles
 from users.models import User
 
 HELD_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.WAITLISTED)
@@ -26,24 +28,9 @@ def upcoming_events_q(prefix: str = "") -> Q:
     return Q(**{f"{prefix}status__in": _LIVE_EVENT_STATUSES}) & ~is_past_q(timezone.now(), prefix)
 
 
-def archive_user(request, user: User) -> list[str]:
-    """Archive user and release what they hold on upcoming events.
-
-    param(request): the triggering request, for promoted-member email logging
-    param(user): the member to archive
-    return(list[str]): ids of the elevated roles that were stripped
-    """
-    with transaction.atomic():
-        user.archived_at = timezone.now()
-        user.calendar_token = ""
-        user.save(update_fields=["archived_at", "calendar_token"])
-        removed_role_ids = strip_non_member_roles(user)
-        release_upcoming_rsvps(request, user)
-        step_down_as_cohost(user)
-    return removed_role_ids
-
-
-def release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -> None:
+def release_upcoming_rsvps(
+    request, user: User, reason: CancelReason, event_filter: Q | None = None
+) -> None:
     event_ids = EventRSVP.objects.filter(
         upcoming_events_q("event__"), user=user, status__in=HELD_RSVP_STATUSES
     ).values_list("event_id", flat=True)
@@ -53,7 +40,8 @@ def release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.status = RSVPStatus.CANT_GO
         rsvp.cancelled_at = timezone.now()
-        rsvp.save(update_fields=["status", "cancelled_at", "updated_at"])
+        rsvp.cancel_reason = reason
+        rsvp.save(update_fields=["status", "cancelled_at", "cancel_reason", "updated_at"])
         if not was_attending:
             continue
         promoted_user_ids = promote_from_waitlist(event)
@@ -63,15 +51,13 @@ def release_upcoming_rsvps(request, user: User, event_filter: Q | None = None) -
         )
 
 
-def upcoming_hosted_events(user: User, event_filter: Q | None = None):
+def upcoming_hosted_events(user: User):
     return Event.objects.filter(
-        upcoming_events_q(), event_filter or Q(), pk__in=user.co_hosted_events.values("pk")
+        upcoming_events_q(), pk__in=user.co_hosted_events.values("pk")
     ).annotate(host_count=Count("co_hosts"))
 
 
-def step_down_as_cohost(user: User, event_filter: Q | None = None) -> None:
-    """Leave every upcoming event that has another host; sole-hosted events are left as-is."""
-    events = upcoming_hosted_events(user, event_filter).filter(host_count__gt=1)
+def step_down_as_cohost(user: User, events: Iterable[Event]) -> None:
     for event in events:
         leave_cohost(event, user)
         broadcast_cohost_change(event)

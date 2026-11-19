@@ -4,7 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '@/api/client';
 import { queryWrapper } from '@/test/render';
 
-import { AlreadyInvitedError, useJoinRequests, useSubmitJoinRequest } from './join';
+import {
+  AlreadyHasAccountError,
+  PendingJoinRequestError,
+  useJoinRequests,
+  useSubmitJoinRequest,
+} from './join';
 
 vi.mock('@/api/client');
 
@@ -59,15 +64,13 @@ describe('useJoinRequests', () => {
         status: 'pending',
         userId: null,
         previouslyArchived: false,
+        previousArchive: null,
         previouslyRejected: false,
-        tentativeAt: null,
-        tentativeByName: null,
-        approvedAt: null,
-        approvedByName: null,
+        previousRejection: null,
+        statusChangedAt: null,
+        statusChangedByName: null,
         approvedViaEventId: null,
         approvedViaEventTitle: null,
-        rejectedAt: null,
-        rejectedByName: null,
         rejectionReason: null,
         rejectionNote: '',
         onboardedAt: null,
@@ -113,6 +116,86 @@ describe('useJoinRequests', () => {
     ]);
   });
 
+  it('maps previous_rejection from the wire', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'jr-5',
+          full_name: 'Lee Park',
+          phone_number: '+12125550333',
+          answers: [],
+          submitted_at: '2024-04-01T09:00:00Z',
+          status: 'pending',
+          user_id: null,
+          previous_rejection: {
+            status_changed_at: '2023-11-02T18:00:00Z',
+            status_changed_by_name: 'Sam Vettor',
+            rejection_reason: '',
+            rejection_note: '',
+          },
+        },
+      ],
+    });
+
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.[0]?.previousRejection).toEqual({
+      statusChangedAt: '2023-11-02T18:00:00Z',
+      statusChangedByName: 'Sam Vettor',
+      rejectionReason: null,
+      rejectionNote: '',
+    });
+  });
+
+  it('maps previous_archive from the wire and fills missing fields with null', async () => {
+    const wire = {
+      full_name: 'Lee Park',
+      phone_number: '+12125550333',
+      answers: [],
+      submitted_at: '2024-04-01T09:00:00Z',
+      status: 'pending',
+      user_id: null,
+    };
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          ...wire,
+          id: 'jr-6',
+          previous_archive: {
+            archived_at: '2023-08-01T12:00:00Z',
+            archived_by_name: 'Sam Vettor',
+            paused_status: 'attendance_paused',
+          },
+          previous_rejection: {},
+        },
+        { ...wire, id: 'jr-7', previous_archive: {} },
+      ],
+    });
+
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.[0]?.previousArchive).toEqual({
+      archivedAt: '2023-08-01T12:00:00Z',
+      archivedByName: 'Sam Vettor',
+      pausedStatus: 'attendance_paused',
+    });
+    expect(result.current.data?.[0]?.previousRejection).toEqual({
+      statusChangedAt: null,
+      statusChangedByName: null,
+      rejectionReason: null,
+      rejectionNote: '',
+    });
+    expect(result.current.data?.[1]?.previousArchive).toEqual({
+      archivedAt: null,
+      archivedByName: null,
+      pausedStatus: null,
+    });
+  });
+
   it('maps attended_events from the wire', async () => {
     mockedGet.mockResolvedValueOnce({
       data: [
@@ -144,7 +227,7 @@ describe('useJoinRequests', () => {
       {
         eventId: 'evt-2',
         title: 'Community Hang',
-        startDatetime: '2026-02-01T18:00:00Z',
+        startDatetime: new Date('2026-02-01T18:00:00Z'),
         eventType: 'community',
       },
     ]);
@@ -224,7 +307,7 @@ const validPayload = {
 };
 
 describe('useSubmitJoinRequest', () => {
-  it('throws AlreadyInvitedError on a phone_already_invited 409', async () => {
+  it('throws AlreadyHasAccountError on a phone_already_invited 409', async () => {
     const conflict = makeAxiosError(409, {
       detail: [{ code: 'join_request.phone_already_invited', field: null }],
     });
@@ -235,11 +318,21 @@ describe('useSubmitJoinRequest', () => {
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.toBeInstanceOf(
-      AlreadyInvitedError,
+      AlreadyHasAccountError,
     );
 
-    await waitFor(() => expect(result.current.error).toBeInstanceOf(AlreadyInvitedError));
-    expect((result.current.error as AlreadyInvitedError).name).toBe('AlreadyInvitedError');
+    await waitFor(() => expect(result.current.error).toBeInstanceOf(AlreadyHasAccountError));
+    expect((result.current.error as AlreadyHasAccountError).name).toBe('AlreadyHasAccountError');
+  });
+
+  it.each([
+    ['join_request.phone_already_pending', PendingJoinRequestError],
+    ['join_request.phone_already_tentative', AlreadyHasAccountError],
+  ])('maps %s to its error', async (code, ErrorClass) => {
+    mockedPost.mockRejectedValueOnce(makeAxiosError(400, { detail: [{ code, field: null }] }));
+    const { result } = renderHook(() => useSubmitJoinRequest(), { wrapper: queryWrapper() });
+
+    await expect(result.current.mutateAsync(validPayload)).rejects.toBeInstanceOf(ErrorClass);
   });
 
   it('does not redirect on an email.already_exists 409 — stays on the form', async () => {
@@ -253,9 +346,9 @@ describe('useSubmitJoinRequest', () => {
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.not.toBeInstanceOf(
-      AlreadyInvitedError,
+      AlreadyHasAccountError,
     );
-    expect(result.current.error).not.toBeInstanceOf(AlreadyInvitedError);
+    expect(result.current.error).not.toBeInstanceOf(AlreadyHasAccountError);
   });
 
   it('surfaces validation detail string when server responds with 400', async () => {
@@ -282,6 +375,6 @@ describe('useSubmitJoinRequest', () => {
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.toThrow('Network Error');
-    expect(result.current.error).not.toBeInstanceOf(AlreadyInvitedError);
+    expect(result.current.error).not.toBeInstanceOf(AlreadyHasAccountError);
   });
 });

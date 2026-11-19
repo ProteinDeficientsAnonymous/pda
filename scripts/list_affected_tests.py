@@ -196,7 +196,20 @@ def _bundle_for_backend_source(p: str) -> frozenset[str] | None:
     return None
 
 
-def _classify_and_collect(paths: list[str]) -> set[str] | None:  # noqa: C901
+def _add_backend_path(p: str, candidates: set[str]) -> bool:
+    """Add tests for one backend path. Return False if the full suite is required."""
+    if rel_test := _test_path_from_diff(p):
+        candidates.add(rel_test)
+        return True
+    bundle = _bundle_for_backend_source(p)
+    if bundle is None:
+        # Unmapped backend path: unknown .py (likely a new app) → full suite; else ignore.
+        return not (p.endswith(".py") and MIGRATION_MARK not in p)
+    candidates.update(bundle)
+    return True
+
+
+def _classify_and_collect(paths: list[str]) -> set[str] | None:
     """Return set of paths relative to backend/, or None if full suite required."""
     candidates: set[str] = set()
     touched_backend = False
@@ -211,17 +224,8 @@ def _classify_and_collect(paths: list[str]) -> set[str] | None:  # noqa: C901
             return None
         if not p.startswith("backend/"):
             continue
-        if rel_test := _test_path_from_diff(p):
-            candidates.add(rel_test)
-            continue
-
-        bundle = _bundle_for_backend_source(p)
-        if bundle is None:
-            # Unmapped backend path: unknown .py (likely a new app) → full suite; else ignore.
-            if p.endswith(".py") and MIGRATION_MARK not in p:
-                return None
-            continue
-        candidates.update(bundle)
+        if not _add_backend_path(p, candidates):
+            return None
 
     if not touched_backend:
         # Only non-backend files (e.g. frontend) — nothing to run.

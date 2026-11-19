@@ -4,7 +4,6 @@ from typing import NoReturn
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
-from django.conf import settings
 from django.core.cache import caches
 from django.db import DatabaseError, IntegrityError, transaction
 from ninja import Router
@@ -12,7 +11,8 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
-from users.models import PUBLIC_FORM_PHONE_REGION, NonMemberRsvpToken, User, validate_phone
+from users.models import SIGN_IN_STATUSES, PublicRsvpToken, User, status_change_stamp
+from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import RsvpAnswer
@@ -31,6 +31,8 @@ from community.rsvps.public_shared import (
     email_details,
     load_public_rsvp_event,
     log_email_failure,
+    manage_rsvp_url,
+    reject_if_rejected_applicant,
 )
 from community.rsvps.status_emails import email_promoted_users
 from community.shared import ErrorOut, validate_display_name
@@ -90,15 +92,16 @@ def _reject_email_collision(request, email: str) -> NoReturn:
     raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
 
 
-def _create_non_member(
+def _create_public_rsvper(
     request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
-    """Get-or-create the non-member User keyed on the unique phone number."""
-    defaults = {"first_name": first_name, "last_name": last_name, "is_member": False}
+    """Get-or-create the public rsvper User keyed on the unique phone number."""
+    defaults = {"first_name": first_name, "last_name": last_name}
     try:
         with transaction.atomic():
             user, created = User.objects.get_or_create(
-                phone_number=phone, defaults={**defaults, "email": email or None}
+                phone_number=phone,
+                defaults={**defaults, "email": email or None, **status_change_stamp(None)},
             )
     except IntegrityError:
         _reject_email_collision(request, email)
@@ -108,10 +111,10 @@ def _create_non_member(
     return user, created
 
 
-def _resolve_non_member(
+def _resolve_public_rsvper(
     *, request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
-    """Resolve (or create) the non-member User backing this RSVP.
+    """Resolve (or create) the public rsvper User backing this RSVP.
 
     Identity is the phone alone; an email match only enforces uniqueness, never
     grounds to adopt that row (Issue 1029). Must run inside the surrounding transaction.
@@ -121,7 +124,7 @@ def _resolve_non_member(
     phone_match = User.objects.filter(phone_number=phone).first()
     email_match = User.objects.filter(email__iexact=email).first() if email else None
 
-    if phone_match and phone_match.is_member:
+    if phone_match and phone_match.membership_status in SIGN_IN_STATUSES:
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
     if phone_match and phone_match.archived_at:
@@ -132,7 +135,7 @@ def _resolve_non_member(
 
     if phone_match:
         return phone_match, False
-    return _create_non_member(request, first_name, last_name, email, phone)
+    return _create_public_rsvper(request, first_name, last_name, email, phone)
 
 
 def _send_confirmation_email(
@@ -183,8 +186,8 @@ def _send_recognized_login_link(request, user: User) -> None:
         # Per-user cooldown, not just per-IP rate limiting: stops a bare phone-number
         # probe from spamming an unverified inbox or repeatedly extending the token.
         return
-    token = NonMemberRsvpToken.issue_or_extend(user)
-    manage_url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
+    token = PublicRsvpToken.issue_or_extend(user)
+    manage_url = manage_rsvp_url(token.token)
     try:
         result = send_rsvp_manage_link_email(
             sender=get_email_sender(),
@@ -222,7 +225,8 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     user = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
     if user is None:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
-    if user.is_member:
+    # Anyone who can sign in goes to login; login only reveals a guidelines pause after the right password.
+    if user.membership_status in SIGN_IN_STATUSES:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
     if user.email:
         _send_recognized_login_link(request, user)
@@ -264,9 +268,10 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     normalized_email = payload.email.strip().lower()
     validate_rsvp_status(payload.status)
+    reject_if_rejected_applicant(request, validated_phone, event.id)
 
     with transaction.atomic():
-        user, created = _resolve_non_member(
+        user, created = _resolve_public_rsvper(
             request=request,
             first_name=first_name,
             last_name=last_name,
@@ -282,7 +287,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
                 answers=payload.questionnaire_responses,
             ),
         )
-        token = NonMemberRsvpToken.issue_or_extend(user)
+        token = PublicRsvpToken.issue_or_extend(user)
 
     audit_log(
         logging.INFO,

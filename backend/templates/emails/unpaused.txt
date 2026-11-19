@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+your pda account is unpaused. welcome back!
+
+once you come to an official or club event in person, you can rejoin the whatsapp. see upcoming events here:
+
+{{ calendar_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}

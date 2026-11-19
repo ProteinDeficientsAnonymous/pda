@@ -14,7 +14,7 @@ from mcp_gateway.event_templates import template_slots
 from mcp_gateway.server import pda_mcp
 
 from tests._mcp_tool_helpers import run_tool, signed_in, tool_error
-from tests._public_rsvp_helpers import make_non_member
+from tests._public_rsvp_helpers import make_public_rsvper
 
 pytestmark = pytest.mark.django_db
 PRICE = {"price": "$20"}
@@ -139,7 +139,7 @@ def test_non_host_refused_before_preview(make_event, vettor_user):
 
 def test_removing_non_member_rsvps_needs_confirmed_force(test_user, make_event):
     event = make_event(event_type=EventType.OFFICIAL, rsvp_enabled=True)
-    guest = make_non_member("+12025550177", "n@e.com")
+    guest = make_public_rsvper("+12025550177", "n@e.com")
     EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
     off, force = {"rsvp_enabled": False}, {"remove_non_member_rsvps": True}
     token = _update(test_user, event, off)["confirm_token"]
@@ -232,7 +232,7 @@ def test_preview_notes_location_moved_without_new_pin(test_user, make_event):
 def test_preview_notes_non_member_removal(test_user, make_event):
     event = make_event(event_type=EventType.OFFICIAL, rsvp_enabled=True)
     for i, status in enumerate([RSVPStatus.ATTENDING, RSVPStatus.MAYBE]):
-        guest = make_non_member(f"+1202555017{i}", f"n{i}@e.com")
+        guest = make_public_rsvper(f"+1202555017{i}", f"n{i}@e.com")
         EventRSVP.objects.create(event=event, user=guest, status=status)
     to_community = {"event_type": "community"}
     asking = _update(test_user, event, to_community)["notes"]

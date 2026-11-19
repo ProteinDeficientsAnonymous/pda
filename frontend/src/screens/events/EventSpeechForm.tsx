@@ -23,6 +23,7 @@ const FORMAT_KEYS: Record<EventFormat, SpeechBlankKey[]> = {
 const HINTS: Partial<Record<SpeechBlankKey, string>> = {
   front_walker: "who's the walk leader?",
   back_walker: "who's in the back of the group?",
+  walk_details: 'route, distance, where we end up — anything else walkers should know',
 };
 
 const FORMAT_OPTIONS = [

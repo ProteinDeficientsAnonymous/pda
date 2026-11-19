@@ -1,8 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { normalizePermissions } from '@/models/permissions';
-import type { Birthday, Veganniversary } from '@/models/user';
+import {
+  type Birthday,
+  MembershipStatus,
+  type MembershipStatusValue,
+  type Veganniversary,
+} from '@/models/user';
 
+import { mapAttendedEvent, type WireAttendedEvent } from './attendedEvents';
 import { apiClient } from './client';
 import { memberAttendanceAnalyticsKey } from './memberAttendanceAnalytics';
 
@@ -27,8 +33,8 @@ export interface Member {
   showPhone: boolean;
   showEmail: boolean;
   isMember: boolean;
+  membershipStatus: MembershipStatusValue;
   isSuperuser: boolean;
-  isPaused: boolean;
   hasJoinedWhatsapp: boolean;
   needsOnboarding: boolean;
   loginLinkRequested: boolean;
@@ -60,8 +66,8 @@ interface WireMember {
   show_phone?: boolean;
   show_email?: boolean;
   is_member?: boolean;
+  membership_status?: MembershipStatusValue;
   is_superuser?: boolean;
-  is_paused?: boolean;
   has_joined_whatsapp?: boolean;
   needs_onboarding?: boolean;
   login_link_requested?: boolean;
@@ -93,8 +99,8 @@ function fromWire(w: WireMember): Member {
     showPhone: w.show_phone ?? true,
     showEmail: w.show_email ?? true,
     isMember: w.is_member ?? true,
+    membershipStatus: w.membership_status ?? MembershipStatus.ActiveMember,
     isSuperuser: w.is_superuser ?? false,
-    isPaused: w.is_paused ?? false,
     hasJoinedWhatsapp: w.has_joined_whatsapp ?? false,
     needsOnboarding: w.needs_onboarding ?? false,
     loginLinkRequested: w.login_link_requested ?? false,
@@ -120,85 +126,16 @@ export function useUsers(includeNonMembers = false) {
   });
 }
 
-export interface MemberAttendedEvent {
-  eventId: string;
-  title: string;
-  startDatetime: Date | null;
-  eventType: string;
-}
-
-interface WireMemberAttendedEvent {
-  event_id: string;
-  title: string;
-  start_datetime?: string | null;
-  event_type: string;
-}
-
 export function useMemberAttendedEvents(userId: string) {
   return useQuery({
     queryKey: [...USERS_KEY, userId, 'attended-events'] as const,
     queryFn: async () => {
-      const { data } = await apiClient.get<WireMemberAttendedEvent[]>(
+      const { data } = await apiClient.get<WireAttendedEvent[]>(
         `/api/auth/users/${userId}/attended-events/`,
       );
-      return data.map((e): MemberAttendedEvent => ({
-        eventId: e.event_id,
-        title: e.title,
-        startDatetime: e.start_datetime ? new Date(e.start_datetime) : null,
-        eventType: e.event_type,
-      }));
+      return data.map(mapAttendedEvent);
     },
     enabled: userId !== '',
-  });
-}
-
-export interface CreateUserInput {
-  phoneNumber: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  roleId?: string;
-}
-
-export interface CreateUserResult {
-  id: string;
-  phoneNumber: string;
-  fullName: string;
-  firstName: string;
-  magicLinkToken: string;
-}
-
-interface WireCreateResult {
-  id: string;
-  phone_number: string;
-  first_name?: string;
-  full_name: string;
-  magic_link_token: string;
-}
-
-export function useCreateUser() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: CreateUserInput): Promise<CreateUserResult> => {
-      const body: Record<string, unknown> = {
-        phone_number: input.phoneNumber,
-        email: input.email,
-      };
-      if (input.firstName !== undefined) body.first_name = input.firstName;
-      if (input.lastName !== undefined) body.last_name = input.lastName;
-      if (input.roleId !== undefined) body.role_id = input.roleId;
-      const { data } = await apiClient.post<WireCreateResult>('/api/auth/create-user/', body);
-      return {
-        id: data.id,
-        phoneNumber: data.phone_number,
-        fullName: data.full_name,
-        firstName: data.first_name ?? '',
-        magicLinkToken: data.magic_link_token,
-      };
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: USERS_KEY });
-    },
   });
 }
 
@@ -207,7 +144,8 @@ export interface UpdateUserInput {
   firstName?: string;
   lastName?: string;
   email?: string;
-  isPaused?: boolean;
+  guidelinesPaused?: boolean;
+  attendancePaused?: boolean;
   hasJoinedWhatsapp?: boolean;
 }
 
@@ -220,7 +158,8 @@ export function useUpdateUser(userId: string) {
       if (input.firstName !== undefined) body.first_name = input.firstName;
       if (input.lastName !== undefined) body.last_name = input.lastName;
       if (input.email !== undefined) body.email = input.email;
-      if (input.isPaused !== undefined) body.is_paused = input.isPaused;
+      if (input.guidelinesPaused !== undefined) body.guidelines_paused = input.guidelinesPaused;
+      if (input.attendancePaused !== undefined) body.attendance_paused = input.attendancePaused;
       if (input.hasJoinedWhatsapp !== undefined) body.has_joined_whatsapp = input.hasJoinedWhatsapp;
       const { data } = await apiClient.patch<WireMember>(`/api/auth/users/${userId}/`, body);
       return fromWire(data);
@@ -228,62 +167,6 @@ export function useUpdateUser(userId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: USERS_KEY });
       void qc.invalidateQueries({ queryKey: memberAttendanceAnalyticsKey });
-    },
-  });
-}
-
-export interface BulkCreateResult {
-  row: number;
-  phoneNumber: string;
-  success: boolean;
-  error?: string;
-  magicLinkToken?: string;
-}
-
-export interface BulkCreateResponse {
-  results: BulkCreateResult[];
-  created: number;
-  failed: number;
-}
-
-interface WireBulkResult {
-  row: number;
-  phone_number: string;
-  success: boolean;
-  error?: string;
-  magic_link_token?: string;
-}
-
-interface WireBulkResponse {
-  results: WireBulkResult[];
-  created: number;
-  failed: number;
-}
-
-export function useBulkCreateUsers() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (phoneNumbers: string[]): Promise<BulkCreateResponse> => {
-      const { data } = await apiClient.post<WireBulkResponse>('/api/auth/bulk-create-users/', {
-        phone_numbers: phoneNumbers,
-      });
-      return {
-        created: data.created,
-        failed: data.failed,
-        results: data.results.map((r) => {
-          const result: BulkCreateResult = {
-            row: r.row,
-            phoneNumber: r.phone_number,
-            success: r.success,
-          };
-          if (r.error !== undefined) result.error = r.error;
-          if (r.magic_link_token !== undefined) result.magicLinkToken = r.magic_link_token;
-          return result;
-        }),
-      };
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: USERS_KEY });
     },
   });
 }

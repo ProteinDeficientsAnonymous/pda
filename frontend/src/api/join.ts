@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { MembershipStatusValue } from '@/models/user';
+
 import { hasErrorCode } from './apiErrors';
+import { type AttendedEvent, mapAttendedEvent, type WireAttendedEvent } from './attendedEvents';
 import { apiClient } from './client';
 import type { RejectionReason } from './rejectionEmail';
 import type { components } from './types.gen';
@@ -56,10 +59,17 @@ export interface SubmitJoinRequestPayload {
   website: string;
 }
 
-export class AlreadyInvitedError extends Error {
+export class AlreadyHasAccountError extends Error {
   constructor() {
-    super('already_invited');
-    this.name = 'AlreadyInvitedError';
+    super('already_has_account');
+    this.name = 'AlreadyHasAccountError';
+  }
+}
+
+export class PendingJoinRequestError extends Error {
+  constructor() {
+    super('pending_join_request');
+    this.name = 'PendingJoinRequestError';
   }
 }
 
@@ -81,8 +91,14 @@ export function useSubmitJoinRequest() {
         // A phone collision means this person already has an account — send
         // them to login. An email collision (or any other error) stays on the
         // form so they can correct it.
-        if (hasErrorCode(err, Code.JoinRequest.PhoneAlreadyInvited)) {
-          throw new AlreadyInvitedError();
+        if (
+          hasErrorCode(err, Code.JoinRequest.PhoneAlreadyInvited) ||
+          hasErrorCode(err, Code.JoinRequest.PhoneAlreadyTentative)
+        ) {
+          throw new AlreadyHasAccountError();
+        }
+        if (hasErrorCode(err, Code.JoinRequest.PhoneAlreadyPending)) {
+          throw new PendingJoinRequestError();
         }
         throw err;
       }
@@ -109,6 +125,7 @@ export const JoinRequestStatus = {
   TENTATIVE: 'tentative',
   APPROVED: 'approved',
   REJECTED: 'rejected',
+  CLOSED: 'closed',
 } as const;
 export type JoinRequestStatus = (typeof JoinRequestStatus)[keyof typeof JoinRequestStatus];
 
@@ -131,13 +148,6 @@ export interface JoinRequestRsvpEvent {
   startDatetime: string | null;
 }
 
-export interface JoinRequestAttendedEvent {
-  eventId: string;
-  title: string;
-  startDatetime: string | null;
-  eventType: string;
-}
-
 export interface JoinRequestSummary {
   id: string;
   fullName: string;
@@ -148,22 +158,55 @@ export interface JoinRequestSummary {
   status: JoinRequestStatus;
   userId: string | null;
   previouslyArchived: boolean;
+  previousArchive: PreviousArchive | null;
   previouslyRejected: boolean;
-  tentativeAt: string | null;
-  tentativeByName: string | null;
-  approvedAt: string | null;
-  approvedByName: string | null;
+  previousRejection: PreviousRejection | null;
+  statusChangedAt: string | null;
+  statusChangedByName: string | null;
   approvedViaEventId: string | null;
   approvedViaEventTitle: string | null;
-  rejectedAt: string | null;
-  rejectedByName: string | null;
   rejectionReason: RejectionReason | null;
   rejectionNote: string;
   onboardedAt: string | null;
   userHasJoinedWhatsapp: boolean;
   rsvpBreakdown: RsvpBreakdown;
   rsvpEvents: JoinRequestRsvpEvent[];
-  attendedEvents: JoinRequestAttendedEvent[];
+  attendedEvents: AttendedEvent[];
+}
+
+export interface PreviousArchive {
+  archivedAt: string | null;
+  archivedByName: string | null;
+  pausedStatus: MembershipStatusValue | null;
+}
+
+interface WirePreviousArchive {
+  archived_at?: string | null;
+  archived_by_name?: string | null;
+  paused_status?: MembershipStatusValue | null;
+}
+
+export interface PreviousRejection {
+  statusChangedAt: string | null;
+  statusChangedByName: string | null;
+  rejectionReason: RejectionReason | null;
+  rejectionNote: string;
+}
+
+interface WirePreviousRejection {
+  status_changed_at?: string | null;
+  status_changed_by_name?: string | null;
+  rejection_reason?: RejectionReason | '';
+  rejection_note?: string;
+}
+
+function mapPreviousRejection(w: WirePreviousRejection): PreviousRejection {
+  return {
+    statusChangedAt: w.status_changed_at ?? null,
+    statusChangedByName: w.status_changed_by_name ?? null,
+    rejectionReason: w.rejection_reason === '' ? null : (w.rejection_reason ?? null),
+    rejectionNote: w.rejection_note ?? '',
+  };
 }
 
 interface WireAnswer {
@@ -178,13 +221,6 @@ interface WireRsvpEvent {
   start_datetime: string | null;
 }
 
-interface WireAttendedEvent {
-  event_id: string;
-  title: string;
-  start_datetime: string | null;
-  event_type: string;
-}
-
 interface WireJoinRequest {
   id: string;
   full_name: string;
@@ -195,15 +231,13 @@ interface WireJoinRequest {
   status: JoinRequestStatus;
   user_id: string | null;
   previously_archived?: boolean;
+  previous_archive?: WirePreviousArchive | null;
   previously_rejected?: boolean;
-  tentative_at?: string | null;
-  tentative_by_name?: string | null;
-  approved_at?: string | null;
-  approved_by_name?: string | null;
+  previous_rejection?: WirePreviousRejection | null;
+  status_changed_at?: string | null;
+  status_changed_by_name?: string | null;
   approved_via_event_id?: string | null;
   approved_via_event_title?: string | null;
-  rejected_at?: string | null;
-  rejected_by_name?: string | null;
   rejection_reason?: RejectionReason | '';
   rejection_note?: string;
   onboarded_at?: string | null;
@@ -231,15 +265,19 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     status: w.status,
     userId: w.user_id,
     previouslyArchived: w.previously_archived ?? false,
+    previousArchive: w.previous_archive
+      ? {
+          archivedAt: w.previous_archive.archived_at ?? null,
+          archivedByName: w.previous_archive.archived_by_name ?? null,
+          pausedStatus: w.previous_archive.paused_status ?? null,
+        }
+      : null,
     previouslyRejected: w.previously_rejected ?? false,
-    tentativeAt: w.tentative_at ?? null,
-    tentativeByName: w.tentative_by_name ?? null,
-    approvedAt: w.approved_at ?? null,
-    approvedByName: w.approved_by_name ?? null,
+    previousRejection: w.previous_rejection ? mapPreviousRejection(w.previous_rejection) : null,
+    statusChangedAt: w.status_changed_at ?? null,
+    statusChangedByName: w.status_changed_by_name ?? null,
     approvedViaEventId: w.approved_via_event_id ?? null,
     approvedViaEventTitle: w.approved_via_event_title ?? null,
-    rejectedAt: w.rejected_at ?? null,
-    rejectedByName: w.rejected_by_name ?? null,
     rejectionReason: w.rejection_reason === '' ? null : (w.rejection_reason ?? null),
     rejectionNote: w.rejection_note ?? '',
     onboardedAt: w.onboarded_at ?? null,
@@ -255,12 +293,7 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
       title: e.title,
       startDatetime: e.start_datetime,
     })),
-    attendedEvents: (w.attended_events ?? []).map((e) => ({
-      eventId: e.event_id,
-      title: e.title,
-      startDatetime: e.start_datetime,
-      eventType: e.event_type,
-    })),
+    attendedEvents: (w.attended_events ?? []).map(mapAttendedEvent),
   };
 }
 
