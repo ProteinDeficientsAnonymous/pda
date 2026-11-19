@@ -25,6 +25,17 @@ from users.phone import ADMIN_ENTERED_PHONE_REGION, validate_phone
 from users.roles import Role
 
 
+@dataclass(frozen=True)
+class NewMemberFields:
+    """Identity + role for ``create_user_with_role``."""
+
+    phone: str
+    first_name: str
+    last_name: str
+    email: str | None
+    role_id: str | None = None
+
+
 @dataclass
 class ConsentTimestamps:
     """Consent timestamps captured on a JoinRequest before user creation."""
@@ -192,12 +203,8 @@ def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
         raise_validation(Code.Role.CANNOT_GRANT_ADMIN, field="role_id", status_code=403)
 
 
-def create_user_with_role(  # noqa: PLR0913
-    phone: str,
-    first_name: str,
-    last_name: str,
-    email: str | None,
-    role_id: str | None,
+def create_user_with_role(
+    fields: NewMemberFields,
     *,
     requesting_user: User,
     consent: ConsentTimestamps | None = None,
@@ -212,17 +219,17 @@ def create_user_with_role(  # noqa: PLR0913
     captured consent — otherwise it defaults to None (e.g. admin-created users
     who have no prior consent record).
     """
-    validated_phone = validate_phone(phone, ADMIN_ENTERED_PHONE_REGION)
+    validated_phone = validate_phone(fields.phone, ADMIN_ENTERED_PHONE_REGION)
     if User.objects.filter(phone_number=validated_phone).exists():
         raise_validation(Code.Phone.ALREADY_EXISTS, field="phone_number", status_code=409)
-    normalized_email = normalize_email(email)
+    normalized_email = normalize_email(fields.email)
     if normalized_email and User.objects.filter(email=normalized_email).exists():
         raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
-    _guard_admin_role_grant(role_id, requesting_user)
+    _guard_admin_role_grant(fields.role_id, requesting_user)
     user = User.objects.create_user(
         phone_number=validated_phone,
-        first_name=first_name,
-        last_name=last_name,
+        first_name=fields.first_name,
+        last_name=fields.last_name,
         email=normalized_email,
         membership_status=MembershipStatus.ACTIVE_MEMBER,
         **status_change_stamp(requesting_user),
@@ -233,8 +240,8 @@ def create_user_with_role(  # noqa: PLR0913
     user.set_unusable_password()
     user.save(update_fields=["password"])
     try:
-        if role_id:
-            role = Role.objects.get(pk=role_id)
+        if fields.role_id:
+            role = Role.objects.get(pk=fields.role_id)
             user.roles.add(role)
         else:
             member_role = Role.objects.filter(name="member", is_default=True).first()

@@ -58,4 +58,4 @@ def non_member_user(phone: str) -> User:
 
 def issue_access_token(user: User) -> str:
     refresh = RefreshToken.for_user(user)
-    return str(refresh.access_token)  # type: ignore[attr-defined]
+    return str(getattr(refresh, "access_token"))

@@ -185,7 +185,7 @@ def _notify_unpublished(event: Event, guest_ids: list[str]) -> None:
         return
     try:
         create_event_unpublished_notifications(event, guest_ids)
-    except Exception:  # noqa: BLE001 — the pause has committed; a failed notice must not undo it
+    except Exception:
         logger.warning("event_unpublished_notifications_failed", exc_info=True)
     sender = get_email_sender()
     event_when = format_event_when(event, tbd="")

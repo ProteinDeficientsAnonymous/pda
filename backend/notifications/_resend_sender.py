@@ -127,7 +127,7 @@ class ResendSender:
                     self._backoff(exc, masked, subject, attempt)
                     continue
                 break
-            except Exception as exc:  # noqa: BLE001 — never let a send 500 a public endpoint
+            except Exception as exc:
                 last_error = exc
                 break
 

@@ -276,7 +276,7 @@ def send_cohost_invite_emails(
                     event_url=event_url,
                 ),
             )
-        except Exception:  # noqa: BLE001 — one bad send must not abort the batch
+        except Exception:
             logger.warning("cohost_invite_email_send_exception", exc_info=True)
             continue
         if not result.success:

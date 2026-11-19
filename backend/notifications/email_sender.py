@@ -38,7 +38,7 @@ def send_best_effort(send: Callable[[], SendResult], log_key: str) -> bool:
     """param(send): performs one send; param(log_key): log action prefix; return(bool): success."""
     try:
         result = send()
-    except Exception:  # noqa: BLE001 — one bad send must not abort the caller's batch
+    except Exception:
         logger.warning(f"{log_key}_send_exception", exc_info=True)
         return False
     if not result.success:

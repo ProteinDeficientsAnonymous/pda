@@ -61,7 +61,8 @@ endif
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes agent-check-private-modules \
         agent-frontend-oxlint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
         agent-frontend-test agent-frontend-e2e agent-frontend-typecheck \
-        diff-coverage agent-diff-coverage-backend agent-diff-coverage-frontend
+        diff-coverage agent-diff-coverage-backend agent-diff-coverage-frontend \
+        check-anti-tampering sast mutation
 
 help:
 	@echo "Backend commands:"
@@ -116,6 +117,9 @@ help:
 	@echo "  make agent-frontend-ci  agent-ci frontend portion only"
 	@echo "  make agent-test-since Quiet test-since (same selection rules)"
 	@echo "  make diff-coverage    Run tests with coverage; fail if changed lines vs DIFF_COVER_BASE (origin/main) are <80% covered"
+	@echo "  make check-anti-tampering  Fail if the tree has lint/type suppressions or skipped tests"
+	@echo "  make sast             Run bandit high-severity SAST scan on backend"
+	@echo "  make mutation         Run diff-scoped mutation testing on changed backend files"
 
 # Backend + Frontend
 install:
@@ -396,6 +400,15 @@ diff-coverage:
 	-$(MAKE) agent-test AGENT_PYTEST_EXTRA="$(PYTEST_COV_ARGS)"
 	-$(MAKE) agent-frontend-test AGENT_VITEST_EXTRA=--coverage
 	$(MAKE) --keep-going agent-diff-coverage-backend agent-diff-coverage-frontend
+
+check-anti-tampering:
+	python3 scripts/check_anti_tampering.py
+
+sast:
+	UV_NO_PROGRESS=1 uvx -q bandit -q -lll -r backend -x backend/tests,backend/community/migrations,backend/users/migrations
+
+mutation:
+	python3 scripts/run_mutation.py
 
 # Same coverage as agent-frontend-lint + test/typecheck/types, all in parallel.
 parallel-agent-frontend:
