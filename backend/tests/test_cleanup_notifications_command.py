@@ -4,7 +4,14 @@ from io import StringIO
 import pytest
 from django.core.management import call_command
 from django.utils import timezone
-from notifications.models import SseTicket
+from notifications.models import Notification, SseTicket
+
+
+def _notification(user, *, is_read: bool, age_days: int) -> Notification:
+    notification = Notification.objects.create(recipient=user, message="hi", is_read=is_read)
+    created_at = timezone.now() - timedelta(days=age_days)
+    Notification.objects.filter(pk=notification.pk).update(created_at=created_at)
+    return notification
 
 
 def _ticket(user, *, used: bool, expired: bool) -> SseTicket:
@@ -27,3 +34,16 @@ def test_purges_expired_sse_tickets_only(test_user):
 
     assert set(SseTicket.objects.values_list("pk", flat=True)) == {fresh.pk, used_unexpired.pk}
     assert "Deleted 2 expired SSE tickets" in out.getvalue()
+
+
+@pytest.mark.django_db
+def test_purges_only_old_read_notifications(test_user):
+    recent_read = _notification(test_user, is_read=True, age_days=89)
+    old_unread = _notification(test_user, is_read=False, age_days=91)
+    _notification(test_user, is_read=True, age_days=91)
+    out = StringIO()
+
+    call_command("cleanup_notifications", stdout=out)
+
+    assert set(Notification.objects.values_list("pk", flat=True)) == {recent_read.pk, old_unread.pk}
+    assert "Deleted 1 old read notifications" in out.getvalue()
