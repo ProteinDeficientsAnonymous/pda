@@ -17,3 +17,10 @@ def test_index_exists(model, name, columns):
         constraints = connection.introspection.get_constraints(cursor, model._meta.db_table)
     assert constraints[name]["index"]
     assert constraints[name]["columns"] == columns
+
+
+@pytest.mark.django_db
+def test_dropping_phone_db_index_keeps_open_request_unique_index():
+    with connection.cursor() as cursor:
+        constraints = connection.introspection.get_constraints(cursor, JoinRequest._meta.db_table)
+    assert constraints["unique_open_join_request_per_phone"]["unique"]
