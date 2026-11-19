@@ -2,7 +2,7 @@ import re
 
 from django.db import migrations, models
 
-_FIRST_NUMBER = re.compile(r"\d+(?:\.\d+)?")
+_FIRST_NUMBER = re.compile(r"\d+(?:\.\d+)?|\.\d+")
 _MAX_PRICE = 100000
 
 
