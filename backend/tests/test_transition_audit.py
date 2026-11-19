@@ -141,7 +141,7 @@ def _make_failing_route_api(namespace: str, actor: User) -> NinjaAPI:
 
 @pytest.mark.integration
 class TestTransitionAuditPersistence:
-    @pytest.mark.django_db(transaction=True)
+    @pytest.mark.django_db(transaction=True, serialized_rollback=True)
     def test_ninja_handler_persists_rejected_transition_after_atomic_rollback(self):
         actor = make_user(first_name="Admin", last_name="Actor")
         subject = make_user(first_name="Original")
@@ -169,7 +169,7 @@ class TestTransitionAuditPersistence:
             "code": Code.User.GUIDELINES_PAUSED,
         }
 
-    @pytest.mark.django_db(transaction=True)
+    @pytest.mark.django_db(transaction=True, serialized_rollback=True)
     def test_mcp_call_view_persists_rejected_transition_with_mcp_marker(self):
         actor = make_user(first_name="Mcp", last_name="Caller")
         subject = make_user(first_name="Unchanged")
