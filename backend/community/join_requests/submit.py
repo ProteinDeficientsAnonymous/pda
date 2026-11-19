@@ -123,15 +123,17 @@ def _build_custom_answers(
     return result
 
 
-def _format_answer(answer: ChoiceAnswer) -> str:
-    # One option per line: option labels may contain commas.
-    return "".join(f"\n- {v}" for v in answer) if isinstance(answer, list) else answer
+def _answer_line(label: str, answer: ChoiceAnswer) -> str:
+    if isinstance(answer, list):
+        # One option per line: option labels may contain commas.
+        return f"{label}:" + "".join(f"\n- {v}" for v in answer)
+    return f"{label}: {answer}"
 
 
 def send_join_request_email(full_name: str, phone: str, custom_answers: dict) -> None:
     """Send vetting email for a new join request."""
     answer_lines = "\n".join(
-        f"{data['label']}: {_format_answer(data['answer'])}" for data in custom_answers.values()
+        _answer_line(data["label"], data["answer"]) for data in custom_answers.values()
     )
     send_vetting_email(
         f"New PDA Join Request: {full_name}",
