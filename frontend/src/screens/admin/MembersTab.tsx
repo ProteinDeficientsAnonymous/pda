@@ -3,15 +3,13 @@ import { useMemo, useState } from 'react';
 import { useRoles } from '@/api/roles';
 import { useUsers } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
-import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
 import { hasPermission, Permission } from '@/models/permissions';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
-import { BulkCreateDialog } from './BulkCreateDialog';
 import { MarkAttendedDialog } from './MarkAttendedDialog';
-import { MemberCreateDialog } from './MemberCreateDialog';
+import { isManagedMember } from './memberPause';
 import {
   filterAndSort,
   formatCountText,
@@ -28,11 +26,11 @@ export type MembersMode = 'members' | 'non-members';
 
 export function MembersTab({ mode }: { mode: MembersMode }) {
   const isNonMembers = mode === 'non-members';
-  // The list endpoint returns members-only by default and all users when
-  // opted in; the non-members tab keeps only the non-members from that set.
+  // The list endpoint returns members and tentative people by default and all users when
+  // opted in; the non-members tab keeps only the unmanaged non-members.
   const { data: fetched = [], isPending, isError } = useUsers(isNonMembers);
   const data = useMemo(
-    () => (isNonMembers ? fetched.filter((m) => !m.isMember) : fetched),
+    () => (isNonMembers ? fetched.filter((m) => !isManagedMember(m)) : fetched),
     [fetched, isNonMembers],
   );
   const { data: allRoles = [] } = useRoles();
@@ -40,8 +38,6 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
   const [sort, setSort] = useState<SortKey>('name');
   const [selectedRoles, setSelectedRoles] = useState<Set<string>>(() => new Set());
   const [selectedStatuses, setSelectedStatuses] = useState<Set<StatusFilter>>(() => new Set());
-  const [createOpen, setCreateOpen] = useState(false);
-  const [bulkOpen, setBulkOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [markOpen, setMarkOpen] = useState(false);
   const canMarkAttendance = hasPermission(
@@ -90,26 +86,6 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
 
   return (
     <>
-      {isNonMembers ? null : (
-        <div className="mb-4 flex justify-end gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setBulkOpen(true);
-            }}
-          >
-            bulk add
-          </Button>
-          <Button
-            onClick={() => {
-              setCreateOpen(true);
-            }}
-          >
-            add member
-          </Button>
-        </div>
-      )}
-
       <div className="bg-background sticky top-10 z-0 -mx-4 px-4 pt-2">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <div className="flex-1 sm:min-w-56">
@@ -169,24 +145,6 @@ export function MembersTab({ mode }: { mode: MembersMode }) {
         mode={mode}
         selection={canMarkAttendance ? { selectedIds, onToggle: toggleSelected } : undefined}
       />
-
-      {createOpen ? (
-        <MemberCreateDialog
-          open
-          onClose={() => {
-            setCreateOpen(false);
-          }}
-        />
-      ) : null}
-
-      {bulkOpen ? (
-        <BulkCreateDialog
-          open
-          onClose={() => {
-            setBulkOpen(false);
-          }}
-        />
-      ) : null}
 
       {markOpen ? (
         <MarkAttendedDialog

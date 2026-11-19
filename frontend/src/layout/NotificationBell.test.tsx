@@ -9,6 +9,7 @@ import {
   useUnreadCount,
 } from '@/api/notifications';
 import { useAuthStore } from '@/auth/store';
+import { useEventSource } from '@/hooks/useEventSource';
 import { NotificationType } from '@/models/notification';
 import { renderWithProviders } from '@/test/render';
 
@@ -331,5 +332,18 @@ describe('NotificationBell mark-read error handling', () => {
       'n9',
       expect.objectContaining({ onError: expect.any(Function) }),
     );
+  });
+});
+
+describe('NotificationBell cross-client read sync', () => {
+  it('invalidates only notification caches on a notifications_read push', () => {
+    const { qc } = renderBell();
+    const invalidate = vi.spyOn(qc, 'invalidateQueries');
+    const { events } = vi.mocked(useEventSource).mock.calls.at(-1)![0];
+
+    events.notifications_read!(new MessageEvent('notifications_read'));
+
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['notifications'] });
   });
 });

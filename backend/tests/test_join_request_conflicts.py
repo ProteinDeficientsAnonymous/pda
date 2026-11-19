@@ -8,15 +8,20 @@ and the rate-limit cache reset come from conftest.
 """
 
 import pytest
+from community.join_requests.manage import join_request_out
 from community.models import JoinRequest
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 
 @pytest.mark.django_db
 class TestJoinRequestConflicts:
     def test_submit_existing_member_returns_409(self, api_client, why_join_id):
-        User.objects.create_user(phone_number="+12025551299", password="pass", is_member=True)
+        User.objects.create_user(
+            phone_number="+12025551299",
+            password="pass",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
+        )
         response = api_client.post(
             "/api/community/join-request/",
             {
@@ -34,7 +39,11 @@ class TestJoinRequestConflicts:
         assert response.json()["detail"][0]["code"] == "join_request.already_member"
 
     def test_submit_existing_member_creates_no_join_request(self, api_client, why_join_id):
-        User.objects.create_user(phone_number="+12025551298", password="pass", is_member=True)
+        User.objects.create_user(
+            phone_number="+12025551298",
+            password="pass",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
+        )
         api_client.post(
             "/api/community/join-request/",
             {
@@ -55,7 +64,7 @@ class TestJoinRequestConflicts:
             phone_number="+12025551300",
             password="pass",
             email="taken@example.com",
-            is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         response = api_client.post(
             "/api/community/join-request/",
@@ -78,7 +87,7 @@ class TestJoinRequestConflicts:
             phone_number="+12025551302",
             password="pass",
             email="dupe@example.com",
-            is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         api_client.post(
             "/api/community/join-request/",
@@ -137,6 +146,5 @@ class TestJoinRequestConflicts:
             content_type="application/json",
         )
         assert response.status_code == 201
-        body = response.json()
-        assert body["previously_archived"] is True
-        assert JoinRequest.objects.filter(phone_number="+12025551297").exists()
+        jr = JoinRequest.objects.get(phone_number="+12025551297")
+        assert join_request_out(jr).previously_archived is True

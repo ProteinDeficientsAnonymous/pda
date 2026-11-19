@@ -31,6 +31,8 @@ export const Code = {
     RsvpsNotEnabled: 'event.rsvps_not_enabled',
     RsvpsClosedCancelled: 'event.rsvps_closed_cancelled',
     RsvpsClosedPast: 'event.rsvps_closed_past',
+    RsvpsClosedDeadline: 'event.rsvps_closed_deadline',
+    RsvpDeadlineAfterStart: 'event.rsvp_deadline_after_start',
     RsvpInvalidStatus: 'event.rsvp_invalid_status',
     NoPlusOneSpots: 'event.no_plus_one_spots',
     RsvpNotFound: 'event.rsvp_not_found',
@@ -40,7 +42,9 @@ export const Code = {
     RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
     AttendanceOpensLater: 'event.attendance_opens_later',
     NoPlusOneToCheckIn: 'event.no_plus_one_to_check_in',
+    DidntGoRequiresGoing: 'event.didnt_go_requires_going',
     PermDenied: 'event.perm_denied',
+    GuestNotEligible: 'event.guest_not_eligible',
     BlastInvalidAudience: 'event.blast_invalid_audience',
     BlastNoRecipients: 'event.blast_no_recipients',
     WouldRemoveNonMembers: 'event.would_remove_non_members',
@@ -77,6 +81,9 @@ export const Code = {
     NotFound: 'tag.not_found',
     NameRequired: 'tag.name_required',
     NameAlreadyExists: 'tag.name_already_exists',
+  },
+  Reserve: {
+    NotFound: 'reserve.not_found',
   },
   Comment: {
     NotFound: 'comment.not_found',
@@ -115,7 +122,9 @@ export const Code = {
   Auth: {
     InvalidCredentials: 'auth.invalid_credentials',
     AccountArchived: 'auth.account_archived',
-    AccountPaused: 'auth.account_paused',
+    AccountGuidelinesPaused: 'auth.account_guidelines_paused',
+    AccountRejected: 'auth.account_rejected',
+    NotAMember: 'auth.not_a_member',
     MagicLinkInvalidOrExpired: 'auth.magic_link_invalid_or_expired',
     MagicLinkAlreadyUsed: 'auth.magic_link_already_used',
     AlreadySignedInAsDifferentUser: 'auth.already_signed_in_as_different_user',
@@ -153,6 +162,8 @@ export const Code = {
     CannotHardDeleteLoggedIn: 'user.cannot_hard_delete_logged_in',
     CannotPauseSelf: 'user.cannot_pause_self',
     CannotPauseAdmin: 'user.cannot_pause_admin',
+    GuidelinesPaused: 'user.guidelines_paused',
+    AttendancePauseLiftsOnCheckIn: 'user.attendance_pause_lifts_on_check_in',
     RoleIdsNotFound: 'user.role_ids_not_found',
     InvalidBirthday: 'user.invalid_birthday',
     InvalidVeganniversary: 'user.invalid_veganniversary',
@@ -187,11 +198,13 @@ export const Code = {
   JoinRequest: {
     NotFound: 'join_request.not_found',
     AlreadyDecided: 'join_request.already_decided',
+    TentativeCannotBeRejected: 'join_request.tentative_cannot_be_rejected',
     OnlyRejectedCanBeUnRejected: 'join_request.only_rejected_can_be_un_rejected',
     AlreadyMember: 'join_request.already_member',
     PhoneAlreadyInvited: 'join_request.phone_already_invited',
     PhoneAlreadyPending: 'join_request.phone_already_pending',
     PhoneAlreadyTentative: 'join_request.phone_already_tentative',
+    OpenRequestExists: 'join_request.open_request_exists',
     AnswerRequired: 'join_request.answer_required',
     AnswerTooLong: 'join_request.answer_too_long',
     AnswerInvalidOption: 'join_request.answer_invalid_option',
@@ -280,6 +293,10 @@ export const Code = {
     BodyRequired: 'member_promotion_email.body_required',
     BodyTooLong: 'member_promotion_email.body_too_long',
   },
+  MemberRestoredEmail: {
+    BodyRequired: 'member_restored_email.body_required',
+    BodyTooLong: 'member_restored_email.body_too_long',
+  },
   RejectionEmail: {
     BodyRequired: 'rejection_email.body_required',
     BodyTooLong: 'rejection_email.body_too_long',
@@ -302,6 +319,21 @@ export const Code = {
     RequestExpired: 'connect.request_expired',
     RequestAlreadyUsed: 'connect.request_already_used',
     AppNotFound: 'connect.app_not_found',
+  },
+  Planning: {
+    YearExists: 'planning.year_exists',
+    YearNotFound: 'planning.year_not_found',
+    SlotNotFound: 'planning.slot_not_found',
+    SlotNotInYear: 'planning.slot_not_in_year',
+    NotAPlanner: 'planning.not_a_planner',
+    AlreadyAssigned: 'planning.already_assigned',
+    AssignmentNotFound: 'planning.assignment_not_found',
+    NotPending: 'planning.not_pending',
+    NotEventHost: 'planning.not_event_host',
+    SlotHasEvent: 'planning.slot_has_event',
+    AvailabilityAlreadyOpen: 'planning.availability_already_open',
+    EventAlreadyLinked: 'planning.event_already_linked',
+    ChecklistItemNotFound: 'planning.checklist_item_not_found',
   },
 } as const;
 
@@ -330,6 +362,8 @@ export type ValidationCode =
   | 'event.rsvps_not_enabled'
   | 'event.rsvps_closed_cancelled'
   | 'event.rsvps_closed_past'
+  | 'event.rsvps_closed_deadline'
+  | 'event.rsvp_deadline_after_start'
   | 'event.rsvp_invalid_status'
   | 'event.no_plus_one_spots'
   | 'event.rsvp_not_found'
@@ -339,7 +373,9 @@ export type ValidationCode =
   | 'event.rsvp_could_not_be_created'
   | 'event.attendance_opens_later'
   | 'event.no_plus_one_to_check_in'
+  | 'event.didnt_go_requires_going'
   | 'event.perm_denied'
+  | 'event.guest_not_eligible'
   | 'event.blast_invalid_audience'
   | 'event.blast_no_recipients'
   | 'event.would_remove_non_members'
@@ -372,6 +408,7 @@ export type ValidationCode =
   | 'tag.not_found'
   | 'tag.name_required'
   | 'tag.name_already_exists'
+  | 'reserve.not_found'
   | 'comment.not_found'
   | 'comment.reply_depth_exceeded'
   | 'comment.invalid_emoji'
@@ -396,7 +433,9 @@ export type ValidationCode =
   | 'display_name.needs_a_letter'
   | 'auth.invalid_credentials'
   | 'auth.account_archived'
-  | 'auth.account_paused'
+  | 'auth.account_guidelines_paused'
+  | 'auth.account_rejected'
+  | 'auth.not_a_member'
   | 'auth.magic_link_invalid_or_expired'
   | 'auth.magic_link_already_used'
   | 'auth.already_signed_in_as_different_user'
@@ -426,6 +465,8 @@ export type ValidationCode =
   | 'user.cannot_hard_delete_logged_in'
   | 'user.cannot_pause_self'
   | 'user.cannot_pause_admin'
+  | 'user.guidelines_paused'
+  | 'user.attendance_pause_lifts_on_check_in'
   | 'user.role_ids_not_found'
   | 'user.invalid_birthday'
   | 'user.invalid_veganniversary'
@@ -456,11 +497,13 @@ export type ValidationCode =
   | 'survey.condition_source_in_use'
   | 'join_request.not_found'
   | 'join_request.already_decided'
+  | 'join_request.tentative_cannot_be_rejected'
   | 'join_request.only_rejected_can_be_un_rejected'
   | 'join_request.already_member'
   | 'join_request.phone_already_invited'
   | 'join_request.phone_already_pending'
   | 'join_request.phone_already_tentative'
+  | 'join_request.open_request_exists'
   | 'join_request.answer_required'
   | 'join_request.answer_too_long'
   | 'join_request.answer_invalid_option'
@@ -514,6 +557,8 @@ export type ValidationCode =
   | 'member_promotion_message.body_too_long'
   | 'member_promotion_email.body_required'
   | 'member_promotion_email.body_too_long'
+  | 'member_restored_email.body_required'
+  | 'member_restored_email.body_too_long'
   | 'rejection_email.body_required'
   | 'rejection_email.body_too_long'
   | 'rejection_email.reason_text_required'
@@ -528,7 +573,20 @@ export type ValidationCode =
   | 'connect.request_not_found'
   | 'connect.request_expired'
   | 'connect.request_already_used'
-  | 'connect.app_not_found';
+  | 'connect.app_not_found'
+  | 'planning.year_exists'
+  | 'planning.year_not_found'
+  | 'planning.slot_not_found'
+  | 'planning.slot_not_in_year'
+  | 'planning.not_a_planner'
+  | 'planning.already_assigned'
+  | 'planning.assignment_not_found'
+  | 'planning.not_pending'
+  | 'planning.not_event_host'
+  | 'planning.slot_has_event'
+  | 'planning.availability_already_open'
+  | 'planning.event_already_linked'
+  | 'planning.checklist_item_not_found';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -555,6 +613,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvps_not_enabled': [],
   'event.rsvps_closed_cancelled': [],
   'event.rsvps_closed_past': [],
+  'event.rsvps_closed_deadline': [],
+  'event.rsvp_deadline_after_start': [],
   'event.rsvp_invalid_status': [],
   'event.no_plus_one_spots': [],
   'event.rsvp_not_found': [],
@@ -564,7 +624,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvp_could_not_be_created': [],
   'event.attendance_opens_later': [],
   'event.no_plus_one_to_check_in': [],
+  'event.didnt_go_requires_going': [],
   'event.perm_denied': ['action'],
+  'event.guest_not_eligible': [],
   'event.blast_invalid_audience': [],
   'event.blast_no_recipients': [],
   'event.would_remove_non_members': ['count'],
@@ -597,6 +659,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'tag.not_found': [],
   'tag.name_required': [],
   'tag.name_already_exists': [],
+  'reserve.not_found': [],
   'comment.not_found': [],
   'comment.reply_depth_exceeded': [],
   'comment.invalid_emoji': [],
@@ -621,7 +684,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'display_name.needs_a_letter': [],
   'auth.invalid_credentials': [],
   'auth.account_archived': [],
-  'auth.account_paused': [],
+  'auth.account_guidelines_paused': [],
+  'auth.account_rejected': [],
+  'auth.not_a_member': [],
   'auth.magic_link_invalid_or_expired': [],
   'auth.magic_link_already_used': [],
   'auth.already_signed_in_as_different_user': [],
@@ -651,6 +716,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'user.cannot_hard_delete_logged_in': [],
   'user.cannot_pause_self': [],
   'user.cannot_pause_admin': [],
+  'user.guidelines_paused': [],
+  'user.attendance_pause_lifts_on_check_in': [],
   'user.role_ids_not_found': [],
   'user.invalid_birthday': [],
   'user.invalid_veganniversary': [],
@@ -681,11 +748,13 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'survey.condition_source_in_use': ['label'],
   'join_request.not_found': [],
   'join_request.already_decided': [],
+  'join_request.tentative_cannot_be_rejected': [],
   'join_request.only_rejected_can_be_un_rejected': [],
   'join_request.already_member': [],
   'join_request.phone_already_invited': [],
   'join_request.phone_already_pending': [],
   'join_request.phone_already_tentative': [],
+  'join_request.open_request_exists': [],
   'join_request.answer_required': ['label'],
   'join_request.answer_too_long': ['label', 'max'],
   'join_request.answer_invalid_option': ['label'],
@@ -739,6 +808,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'member_promotion_message.body_too_long': ['max_length'],
   'member_promotion_email.body_required': [],
   'member_promotion_email.body_too_long': ['max_length'],
+  'member_restored_email.body_required': [],
+  'member_restored_email.body_too_long': ['max_length'],
   'rejection_email.body_required': [],
   'rejection_email.body_too_long': ['max_length'],
   'rejection_email.reason_text_required': [],
@@ -754,4 +825,17 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'connect.request_expired': [],
   'connect.request_already_used': [],
   'connect.app_not_found': [],
+  'planning.year_exists': [],
+  'planning.year_not_found': [],
+  'planning.slot_not_found': [],
+  'planning.slot_not_in_year': [],
+  'planning.not_a_planner': [],
+  'planning.already_assigned': [],
+  'planning.assignment_not_found': [],
+  'planning.not_pending': [],
+  'planning.not_event_host': [],
+  'planning.slot_has_event': [],
+  'planning.availability_already_open': [],
+  'planning.event_already_linked': [],
+  'planning.checklist_item_not_found': [],
 };

@@ -9,7 +9,7 @@ from community.validation import Code, ValidationException
 
 from tests._time import future_iso
 
-migration = importlib.import_module("community.migrations.0131_event_price_decimal")
+migration = importlib.import_module("community.migrations.0150_event_price_decimal")
 
 
 @pytest.mark.parametrize(
@@ -20,6 +20,7 @@ migration = importlib.import_module("community.migrations.0131_event_price_decim
         ("   ", None),
         ("10", Decimal("10.00")),
         ("$10", Decimal("10.00")),
+        ("10.", Decimal("10.00")),
         (" $ 1,250.5 ", Decimal("1250.50")),
         (12.345, Decimal("12.35")),
     ],
@@ -28,7 +29,25 @@ def test_parse_price_accepts_amounts(raw, expected):
     assert parse_price(raw) == expected
 
 
-@pytest.mark.parametrize("raw", ["free", "$10-20", "0", "-5", "NaN", "100000"])
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "free",
+        ".",
+        "$10-20",
+        "0",
+        "-5",
+        "NaN",
+        "100000",
+        "12,50",
+        "1,0",
+        "1e2",
+        "1_0",
+        "0.004",
+        "99999.999",
+        "\uff11\uff10",
+    ],
+)
 def test_parse_price_rejects_non_amounts(raw):
     with pytest.raises(ValidationException) as exc:
         parse_price(raw)
@@ -54,6 +73,9 @@ def test_price_text(amount, expected):
         ("", None),
         ("pwyc", None),
         ("$0", None),
+        ("venmo 9175551234", None),
+        ("$100000", None),
+        ("$.50", ".50"),
     ],
 )
 def test_migration_keeps_the_first_amount(raw, expected):

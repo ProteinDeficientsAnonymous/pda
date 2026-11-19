@@ -11,10 +11,10 @@ import JoinScreen from './JoinScreen';
 vi.mock('@/api/join', () => ({
   useJoinQuestions: vi.fn(),
   useSubmitJoinRequest: vi.fn(),
-  AlreadyInvitedError: class AlreadyInvitedError extends Error {
+  AlreadyHasAccountError: class AlreadyHasAccountError extends Error {
     constructor() {
-      super('already_invited');
-      this.name = 'AlreadyInvitedError';
+      super('already_has_account');
+      this.name = 'AlreadyHasAccountError';
     }
   },
 }));
