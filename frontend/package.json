@@ -17,6 +17,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:visual": "node visual/shot-names.mjs && playwright test -c playwright.visual.config.ts",
+    "test:staging": "playwright test -c playwright.staging.config.ts",
     "types:api": "openapi-typescript ../backend/openapi_schema.json -o src/api/types.gen.ts",
     "types:api:check": "openapi-typescript ../backend/openapi_schema.json -o src/api/types.gen.ts --check"
   },
