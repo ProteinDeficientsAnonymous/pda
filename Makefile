@@ -96,6 +96,8 @@ help:
 	@echo "  make frontend-format      Auto-format files (oxfmt)"
 	@echo "  make frontend-format-check  oxfmt check (no write)"
 	@echo "  make frontend-test        Run Vitest suite"
+	@echo "  make staging-smoke       Playwright walk of BASE_URL (default staging)"
+	@echo "  make staging-e2e         Existing Playwright specs against staging"
 	@echo "  make frontend-typecheck   Run TypeScript check"
 	@echo "  make frontend-types       Generate API types from OpenAPI + regen validation codes"
 	@echo "  make dump-codes           Dump backend Code catalog to validation_codes.json"
@@ -246,6 +248,20 @@ frontend-format-check:
 
 frontend-test:
 	cd frontend && pnpm test
+
+staging-smoke:
+	cd frontend && BASE_URL="$(or $(BASE_URL),https://staging-pda.up.railway.app)" pnpm test:staging
+
+# Seeds each spec into the staging database, then drives https://staging-pda.up.railway.app.
+# Login tokens have to be signed with staging's SECRET_KEY. The public Postgres URL is
+# on the Postgres service; the web service only has the private railway.internal host.
+staging-e2e:
+	@set -e; \
+	db=$$(railway variable list -p 3e109b65-524b-4af0-a9e4-cc96aae5faee -e staging -s Postgres-TnjF --kv | sed -n 's/^DATABASE_PUBLIC_URL=//p'); \
+	key=$$(railway variable list -p 3e109b65-524b-4af0-a9e4-cc96aae5faee -e staging -s staging --kv | sed -n 's/^SECRET_KEY=//p'); \
+	test -n "$$db"; test -n "$$key"; \
+	case "$$db" in *\?*) ;; *) db="$$db?sslmode=require" ;; esac; \
+	cd frontend && DATABASE_URL="$$db" SECRET_KEY="$$key" BASE_URL="$(or $(BASE_URL),https://staging-pda.up.railway.app)" pnpm exec playwright test
 
 frontend-typecheck:
 	cd frontend && pnpm typecheck
