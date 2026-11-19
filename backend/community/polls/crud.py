@@ -292,12 +292,7 @@ def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
             type=AuditTargetType.EVENT_POLL, id=str(poll.id), details={"event_id": str(event_id)}
         ),
     )
-    poll_fresh = (
-        EventPoll.objects.select_related("winning_option")
-        .prefetch_related("options__votes__user")
-        .get(pk=poll.pk)
-    )
-    return Status(200, poll_out(poll_fresh, request.auth))
+    return Status(200, poll_out(poll, request.auth))
 
 
 @router.post(
