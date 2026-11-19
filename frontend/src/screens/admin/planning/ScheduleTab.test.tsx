@@ -41,7 +41,9 @@ vi.mock('sonner', () => ({
     },
     {
       error: vi.fn(),
-      success: (...args: unknown[]) => toastSuccess(...args),
+      success: (...args: unknown[]) => {
+        toastSuccess(...args);
+      },
     },
   ),
 }));
