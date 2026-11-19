@@ -13,11 +13,12 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 from users.roles import Role
 
 from tests._auth import auth_headers_for
 from tests._time import future_iso
+from tests._users import make_attendance_paused, make_user
 
 
 @pytest.fixture
@@ -420,3 +421,52 @@ class TestCommentVisibility:
             **rsvp_headers,
         )
         assert response.status_code == 200
+
+
+@pytest.mark.django_db
+class TestLimitedViewerComments:
+    @pytest.fixture
+    def community_event(self, test_user):
+        return Event.objects.create(
+            title="Community Potluck",
+            start_datetime=future_iso(days=30),
+            created_by=test_user,
+            event_type=EventType.COMMUNITY,
+            visibility=PageVisibility.PUBLIC,
+            rsvp_enabled=True,
+        )
+
+    @pytest.mark.parametrize(
+        "make_limited",
+        [
+            lambda: make_user(membership_status=MembershipStatus.TENTATIVE),
+            make_attendance_paused,
+        ],
+        ids=["tentative", "attendance_paused"],
+    )
+    def test_limited_user_is_told_members_only_not_login(
+        self, api_client, community_event, make_limited
+    ):
+        EventComment.objects.create(
+            event=community_event, author=community_event.created_by, body="hi"
+        )
+        response = api_client.get(
+            f"/api/community/events/{community_event.id}/comments/",
+            **auth_headers_for(make_limited()),
+        )
+        assert response.status_code == 200, response.content
+        body = response.json()
+        assert body["items"] == []
+        assert body["can_post"] is False
+        assert body["cannot_post_reason"] == "members_only"
+
+    def test_limited_user_still_cannot_post(self, api_client, community_event):
+        tentative = make_user(membership_status=MembershipStatus.TENTATIVE)
+        response = api_client.post(
+            f"/api/community/events/{community_event.id}/comments/",
+            data=json.dumps({"body": "hi"}),
+            content_type="application/json",
+            **auth_headers_for(tentative),
+        )
+        assert response.status_code == 403, response.content
+        assert not EventComment.objects.filter(event=community_event).exists()

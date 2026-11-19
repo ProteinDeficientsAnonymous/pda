@@ -9,7 +9,7 @@ from django.db import connection
 from django.template.loader import render_to_string
 from django.utils import timezone
 from notifications.email_helpers import format_eastern_datetime
-from users.models import NonMemberRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 from users.roles import Role
 
 from community.event_feedback.send import feedback_url
@@ -72,7 +72,7 @@ def _seed_public_returning() -> dict:
     phone = random_phone()
     user = non_member_user(phone)
     EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
-    token = NonMemberRsvpToken.issue_or_extend(user)
+    token = PublicRsvpToken.issue_or_extend(user)
     return {
         "event_id": str(event.id),
         "event_title": event.title,
@@ -100,7 +100,7 @@ def _seed_comments() -> dict:
     phone = random_phone()
     user = non_member_user(phone)
     EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
-    token = NonMemberRsvpToken.issue_or_extend(user)
+    token = PublicRsvpToken.issue_or_extend(user)
     return {"event_id": str(event.id), "event_title": event.title, "rsvp_token": token.token}
 
 
@@ -109,7 +109,7 @@ def _seed_my_rsvps() -> dict:
     phone = random_phone()
     user = non_member_user(phone)
     EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.ATTENDING)
-    token = NonMemberRsvpToken.issue_or_extend(user)
+    token = PublicRsvpToken.issue_or_extend(user)
     return {"event_id": str(event.id), "event_title": event.title, "rsvp_token": token.token}
 
 
@@ -162,7 +162,9 @@ def month_end(now: datetime, *, months_ago: int = 0) -> datetime:
 
 
 def _screen_user(**fields) -> User:
-    user = User.objects.create_user(password=E2E_PASSWORD, is_member=True, **fields)
+    user = User.objects.create_user(
+        password=E2E_PASSWORD, membership_status=MembershipStatus.ACTIVE_MEMBER, **fields
+    )
     user.guidelines_consent_at = _CONSENT_AT
     user.sms_consent_at = _CONSENT_AT
     user.contact_privacy_consent_at = _CONSENT_AT
@@ -228,7 +230,7 @@ def _seed_member_screens() -> dict:
         first_name="River",
         last_name="Guest",
         email="river@example.com",
-        is_member=False,
+        membership_status=MembershipStatus.NONE,
         password=E2E_PASSWORD,
     )
     event = Event.objects.create(
@@ -251,7 +253,7 @@ def _seed_member_screens() -> dict:
     )
     EventRSVP.objects.create(event=event, user=seed, status=RSVPStatus.ATTENDING)
     EventRSVP.objects.create(event=event, user=guest, status=RSVPStatus.ATTENDING)
-    guest_token = NonMemberRsvpToken.issue_or_extend(guest)
+    guest_token = PublicRsvpToken.issue_or_extend(guest)
     hike = Event.objects.create(
         title="hike",
         slug="hike",
@@ -297,7 +299,7 @@ def _seed_member_screens() -> dict:
         first_name="Casey",
         last_name="Consent",
         email="casey@example.com",
-        is_member=True,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
         has_seen_veganniversary=True,
         guidelines_consent_at=None,
         password=E2E_PASSWORD,
@@ -384,7 +386,7 @@ def _seed_waitlist_screens() -> dict:
         first_name="Pat",
         last_name="Guest",
         email=None,
-        is_member=False,
+        membership_status=MembershipStatus.NONE,
     )
     event = Event.objects.create(
         title="supper club",
@@ -406,7 +408,7 @@ def _seed_waitlist_screens() -> dict:
     return {
         "password": E2E_PASSWORD,
         "wren_phone": wren.phone_number,
-        "guest_token": NonMemberRsvpToken.issue_or_extend(guest).token,
+        "guest_token": PublicRsvpToken.issue_or_extend(guest).token,
     }
 
 

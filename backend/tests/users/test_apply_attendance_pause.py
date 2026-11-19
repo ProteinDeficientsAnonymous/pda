@@ -3,6 +3,7 @@ from datetime import timedelta
 import pytest
 from audit.models import AuditLogEntry
 from community.models import (
+    CancelReason,
     CoHostInviteStatus,
     EventCoHostInvite,
     EventRSVP,
@@ -13,6 +14,7 @@ from community.models import (
 from django.utils import timezone
 from tests._events import make_event, make_rsvp
 from users._attendance_pause import apply_attendance_pause
+from users.models import MembershipStatus
 from users.roles import Role
 
 
@@ -26,18 +28,17 @@ class TestApplyAttendancePause:
 
         member.refresh_from_db()
         assert member.attendance_paused_at is not None
-        assert member.is_member is False
+        assert member.membership_status == MembershipStatus.ATTENDANCE_PAUSED
         assert member.has_joined_whatsapp is False
-        assert member.is_paused is False
 
-    def test_strips_every_role(self, rf, member):
+    def test_keeps_member_role_and_strips_elevated(self, rf, member):
         member_role, _ = Role.objects.get_or_create(name="member", is_default=True)
         vettor = Role.objects.create(name="vettor")
         member.roles.add(member_role, vettor)
 
         apply_attendance_pause(rf.get("/"), member)
 
-        assert member.roles.count() == 0
+        assert list(member.roles.all()) == [member_role]
 
     def test_removes_other_rsvp_and_promotes_waitlist(self, rf, member, other_user):
         event = make_event(created_by=other_user, max_attendees=1)
@@ -49,24 +50,32 @@ class TestApplyAttendancePause:
         rsvp = EventRSVP.objects.get(event=event, user=member)
         assert rsvp.status == RSVPStatus.CANT_GO
         assert rsvp.cancelled_at is not None
+        assert rsvp.cancel_reason == CancelReason.PAUSE
         waiting.refresh_from_db()
         assert waiting.status == RSVPStatus.ATTENDING
 
     @pytest.mark.parametrize("event_type", [EventType.OFFICIAL, EventType.CLUB])
-    def test_leaves_official_and_club_rsvp_and_hosting(self, rf, member, other_user, event_type):
+    def test_keeps_official_and_club_rsvp(self, rf, member, other_user, event_type):
         rsvped = make_event(created_by=other_user, event_type=event_type)
         make_rsvp(rsvped, member)
-        hosted = make_event(created_by=member, event_type=event_type)
 
         apply_attendance_pause(rf.get("/"), member)
 
         assert EventRSVP.objects.get(event=rsvped, user=member).status == RSVPStatus.ATTENDING
-        hosted.refresh_from_db()
-        assert hosted.status == EventStatus.ACTIVE
-        assert list(hosted.co_hosts.all()) == [member]
 
-    def test_steps_down_from_shared_hosting(self, rf, member, other_user):
-        event = make_event(created_by=other_user)
+    def test_keeps_official_rsvp_when_stepping_down_as_its_cohost(self, rf, member, other_user):
+        event = make_event(created_by=other_user, event_type=EventType.OFFICIAL)
+        event.co_hosts.add(member)
+        make_rsvp(event, member)
+
+        apply_attendance_pause(rf.get("/"), member)
+
+        assert list(event.co_hosts.all()) == [other_user]
+        assert EventRSVP.objects.get(event=event, user=member).status == RSVPStatus.ATTENDING
+
+    @pytest.mark.parametrize("event_type", list(EventType))
+    def test_steps_down_from_shared_hosting(self, rf, member, other_user, event_type):
+        event = make_event(created_by=other_user, event_type=event_type)
         event.co_hosts.add(member)
         EventCoHostInvite.objects.create(
             event=event, user=member, status=CoHostInviteStatus.ACCEPTED
@@ -78,19 +87,15 @@ class TestApplyAttendancePause:
         invite = EventCoHostInvite.objects.get(event=event, user=member)
         assert invite.status == CoHostInviteStatus.REMOVED
 
-    def test_rescinds_pending_invites_on_other_events_only(self, rf, member, other_user):
-        community = make_event(created_by=other_user)
-        official = make_event(created_by=other_user, event_type=EventType.OFFICIAL)
-        for event in (community, official):
-            EventCoHostInvite.objects.create(event=event, user=member)
+    @pytest.mark.parametrize("event_type", list(EventType))
+    def test_rescinds_pending_invites(self, rf, member, other_user, event_type):
+        event = make_event(created_by=other_user, event_type=event_type)
+        invite = EventCoHostInvite.objects.create(event=event, user=member)
 
         apply_attendance_pause(rf.get("/"), member)
 
-        statuses = dict(
-            EventCoHostInvite.objects.filter(user=member).values_list("event_id", "status")
-        )
-        assert statuses[community.pk] == CoHostInviteStatus.RESCINDED
-        assert statuses[official.pk] == CoHostInviteStatus.PENDING
+        invite.refresh_from_db()
+        assert invite.status == CoHostInviteStatus.RESCINDED
 
     def test_leaves_pending_invites_on_past_events(self, rf, member, other_user):
         past = make_event(created_by=other_user, start_datetime=timezone.now() - timedelta(days=3))
@@ -101,8 +106,11 @@ class TestApplyAttendancePause:
         invite = EventCoHostInvite.objects.get(event=past, user=member)
         assert invite.status == CoHostInviteStatus.PENDING
 
-    def test_moves_sole_hosted_event_to_draft_without_rsvps(self, rf, member, other_user):
-        event = make_event(created_by=member)
+    @pytest.mark.parametrize("event_type", list(EventType))
+    def test_moves_sole_hosted_event_to_draft_without_rsvps(
+        self, rf, member, other_user, event_type
+    ):
+        event = make_event(created_by=member, event_type=event_type)
         make_rsvp(event, member)
         make_rsvp(event, other_user)
 

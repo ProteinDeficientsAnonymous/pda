@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from users.helpers import visible_display_name
 
 from community.cohosts.invite_helpers import reject_non_member_cohosts
+from community.events._field_validators import check_rsvp_deadline
 from community.events._transitions import handle_status_update, set_event_participants
 from community.events._update import (
     apply_field_updates,
@@ -35,6 +36,10 @@ from community.events.helpers import (
     set_event_tags,
     validated_event_format,
 )
+from community.events.limited_access import (
+    event_viewer_for,
+    is_limited,
+)
 from community.events.listing import (
     EventListQuery,
     build_events_queryset,
@@ -44,12 +49,12 @@ from community.events.listing import (
     filter_window,
     list_count_annotations,
 )
-from community.events.nonmember_removal import (
-    email_removed_non_members,
-    guard_or_remove_ineligible_non_members,
-)
 from community.events.official_defaults import apply_official_defaults
 from community.events.price import parse_price
+from community.events.public_rsvper_removal import (
+    email_removed_public_rsvpers,
+    guard_or_remove_ineligible_public_rsvpers,
+)
 from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import (
     EventIn,
@@ -58,10 +63,6 @@ from community.events.schemas import (
     EventPatchIn,
     RSVPGuestOut,
     validate_event_rsvp_question,
-)
-from community.events.tentative_member_access import (
-    event_viewer_for,
-    is_tentative_member,
 )
 from community.events.viewer import resolve_event_viewer
 from community.models import (
@@ -205,7 +206,7 @@ def create_event(request, payload: EventIn):
     # Any authenticated member can create community or draft events.
     # Official/club events require their respective tag permission.
     # Subsequent draft saves use PATCH (no rate limit hit).
-    if is_tentative_member(request.auth):
+    if is_limited(request.auth):
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action="create_event")
     if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
         raise_validation(Code.Event.INVALID_CREATE_STATUS, field="status", status_code=400)
@@ -231,6 +232,8 @@ def create_event(request, payload: EventIn):
             check_past=True,
         )
 
+    check_rsvp_deadline(payload.rsvp_deadline, payload.start_datetime, payload.datetime_tbd)
+
     for question in payload.rsvp_questions:
         validate_event_rsvp_question(question)
     reject_non_member_cohosts(payload.co_host_ids)
@@ -254,6 +257,7 @@ def create_event(request, payload: EventIn):
         datetime_tbd=payload.datetime_tbd,
         allow_plus_ones=payload.allow_plus_ones,
         max_attendees=payload.max_attendees,
+        rsvp_deadline=payload.rsvp_deadline,
         event_type=payload.event_type,
         event_format=event_format,
         visibility=payload.visibility,
@@ -344,7 +348,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
         apply_official_defaults(event, was_official=was_official)
 
         if was_eligible and not event.is_public_rsvp_eligible:
-            removed_user_ids = guard_or_remove_ineligible_non_members(event, force)
+            removed_user_ids = guard_or_remove_ineligible_public_rsvpers(event, force)
 
         if new_status is not None:
             early = handle_status_update(request, event, new_status, notify_attendees)
@@ -354,7 +358,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
         promoted_user_ids = promote_if_capacity_increased(event, updates, old_max_attendees)
         hosts_rsvped = not was_official_or_club and auto_rsvp_hosts(event)
 
-    email_removed_non_members(request, event, removed_user_ids)
+    email_removed_public_rsvpers(request, event, removed_user_ids)
     _announce_rsvp_changes(request, event, promoted_user_ids, hosts_rsvped=hosts_rsvped)
 
     return Status(200, event_out(reload_event_or_404(event_id), request.auth))

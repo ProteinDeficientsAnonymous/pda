@@ -1,9 +1,10 @@
 import type { Event } from '@/models/event';
 import {
-  canTentativeMemberRsvp,
+  canLimitedRsvp,
   EventStatus,
   InvitePermission,
-  isTentativeMember,
+  isLimited,
+  isRsvpDeadlinePassed,
   RsvpStatus,
 } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
@@ -21,12 +22,15 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
   const hasRsvpd =
     user !== null && (event.myRsvp === RsvpStatus.Attending || event.myRsvp === RsvpStatus.Maybe);
   const canInvite =
+    !isLimited(user) &&
     isOpen &&
     event.rsvpEnabled &&
     (isHostOrEventManager || (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
   const showRsvp = event.rsvpEnabled;
-  const membershipBlocksRsvp = isTentativeMember(user) && !canTentativeMemberRsvp(event);
-  const rsvpLocked = !isOpen;
+  const membershipBlocksRsvp = isLimited(user) && !canLimitedRsvp(event);
+  // the backend refuses rsvps on a draft to anyone who can't edit it
+  const rsvpLocked = !isOpen || (event.status === EventStatus.Draft && !isHostOrEventManager);
+  const rsvpDeadlineClosed = isRsvpDeadlinePassed(event) && !isHostOrEventManager;
   const showStandaloneInvited = !showRsvp && isHostOrEventManager && event.invitedCount > 0;
   return {
     isHostOrEventManager,
@@ -34,6 +38,7 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
     canInvite,
     showRsvp,
     rsvpLocked,
+    rsvpDeadlineClosed,
     membershipBlocksRsvp,
     showStandaloneInvited,
   };

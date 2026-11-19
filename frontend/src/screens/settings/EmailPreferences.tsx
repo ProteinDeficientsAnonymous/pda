@@ -1,4 +1,5 @@
 import { Toggle } from '@/components/ui/Toggle';
+import { isLimited } from '@/models/event';
 import type { User } from '@/models/user';
 
 type EmailPreferenceKey =
@@ -9,7 +10,7 @@ type EmailPreferenceKey =
   | 'hostDigestOptOut';
 
 interface EmailPreferencesProps {
-  user: Pick<User, 'isMember' | EmailPreferenceKey>;
+  user: Pick<User, 'membershipStatus' | EmailPreferenceKey>;
   onChange: (patch: Partial<Pick<User, EmailPreferenceKey>>) => void;
 }
 
@@ -25,7 +26,7 @@ export function EmailPreferences({ user, onChange }: EmailPreferencesProps) {
       />
       <Toggle
         label={
-          user.isMember
+          !isLimited(user)
             ? 'monthly digest of events and veganniversaries'
             : 'monthly digest of events'
         }
@@ -41,7 +42,7 @@ export function EmailPreferences({ user, onChange }: EmailPreferencesProps) {
           onChange({ whatsappReminderOptOut: !v });
         }}
       />
-      {!user.isMember && (
+      {isLimited(user) && (
         <Toggle
           label="reminders to come to an event in person"
           checked={!user.attendanceNudgeOptOut}

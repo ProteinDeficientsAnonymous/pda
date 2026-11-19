@@ -142,7 +142,7 @@ class TestEventCapacity:
         assert resp.status_code == 400
         assert resp.json()["detail"][0]["code"] == "event.no_plus_one_spots"
 
-    def test_waitlisted_keeps_plus_one(  # noqa: PLR0913
+    def test_waitlisted_keeps_plus_one(
         self, api_client, capped_event, user3, headers1, headers2, headers3
     ):
         _rsvp(api_client, capped_event, headers1)
@@ -180,7 +180,7 @@ class TestCapacityCounts:
         assert resp.status_code == 200
         assert resp.json()["attending_count"] == 2  # 1 person + 1 guest
 
-    def test_waitlisted_count_in_detail(  # noqa: PLR0913
+    def test_waitlisted_count_in_detail(
         self, api_client, capped_event, headers1, headers2, headers3, auth_headers
     ):
         _rsvp(api_client, capped_event, headers1)
@@ -190,7 +190,7 @@ class TestCapacityCounts:
         assert resp.status_code == 200
         assert resp.json()["waitlisted_count"] == 1
 
-    def test_waitlisted_count_includes_plus_ones(  # noqa: PLR0913
+    def test_waitlisted_count_includes_plus_ones(
         self, api_client, capped_event, headers1, headers2, headers3, auth_headers
     ):
         _rsvp(api_client, capped_event, headers1)

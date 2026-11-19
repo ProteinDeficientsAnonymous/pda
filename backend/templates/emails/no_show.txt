@@ -1,0 +1,20 @@
+{% autoescape off %}hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+we missed you at {{ event_title|lower }}{% if event_date %} ({{ event_date }}){% endif %}. your host marked you as not making it.
+
+hosts plan around rsvps, so when someone doesn't show:
+
+- we wait to start movies or games for people who aren't coming
+- food we ordered for you goes to waste
+- reservations end up with the wrong headcount
+
+if your plans change next time, please update or cancel your rsvp.
+
+see upcoming events:
+
+{{ calendar_url }}
+
+— pda
+{% endautoescape %}
+
+{% include "emails/_no_reply_footer.txt" %}

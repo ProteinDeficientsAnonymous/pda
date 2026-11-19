@@ -6,23 +6,15 @@ import { useRoles } from '@/api/roles';
 import { useUsers } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
-import type { User } from '@/models/user';
+import { MembershipStatus, type User } from '@/models/user';
 import { setAuthed } from '@/test/auth';
 import { makeMember, makeUser, makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
 import MembersScreen from './MembersScreen';
 
-// Mock the users API module so we can drive loading / error / data states
-// without hitting the network. useCreateUser is only pulled in transitively
-// by MemberCreateDialog if it opens, but the default here is closed.
 vi.mock('@/api/users', () => ({
   useUsers: vi.fn(),
-  useCreateUser: vi.fn(() => ({
-    mutateAsync: vi.fn(),
-    isPending: false,
-    reset: vi.fn(),
-  })),
 }));
 
 vi.mock('@/api/roles', () => ({
@@ -39,6 +31,13 @@ const baseUser = makeUser({
   fullName: 'Admin User',
   email: 'admin@example.com',
   weekStart: 'monday',
+});
+
+const attendancePaused = makeMember({
+  id: 'm3',
+  fullName: 'Paused Member',
+  isMember: false,
+  membershipStatus: MembershipStatus.AttendancePaused,
 });
 
 function adminUser(permissions: string[] = [Permission.ManageUsers]): User {
@@ -146,26 +145,13 @@ describe('MembersScreen', () => {
     expect(screen.getByText('loading…')).toBeInTheDocument();
   });
 
-  it('renders the add-member button for an admin viewer', () => {
+  it('does not render add-member or bulk-add controls', () => {
     mockUsersResult({ data: [] });
 
     renderScreen();
 
-    expect(screen.getByRole('button', { name: /add member/i })).toBeInTheDocument();
-  });
-
-  // TODO(tier3-mismatch): Flutter gated the add-member button on the
-  // `manage_users` permission inside the screen. React's MembersScreen always
-  // renders the button — permission gating is enforced at the route/admin-hub
-  // level (see AdminHubScreen). Locking the current React behavior: the
-  // button is always present when the screen renders.
-  it('renders the add-member button even without manage_users permission (react gates at route level)', () => {
-    setAuthed(adminUser([]));
-    mockUsersResult({ data: [] });
-
-    renderScreen();
-
-    expect(screen.getByRole('button', { name: /add member/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add member/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /bulk add/i })).not.toBeInTheDocument();
   });
 
   it('renders the members/non-members/roles tab switcher for users with manage_roles', () => {
@@ -210,7 +196,13 @@ describe('MembersScreen', () => {
     mockUsersResult({
       data: [
         makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true }),
-        makeMember({ id: 'm2', fullName: 'Guest Rsvp', isMember: false }),
+        makeMember({
+          id: 'm2',
+          fullName: 'Guest Rsvp',
+          isMember: false,
+          membershipStatus: MembershipStatus.None,
+        }),
+        attendancePaused,
       ],
     });
 
@@ -220,8 +212,7 @@ describe('MembersScreen', () => {
 
     expect(screen.getByText('Guest Rsvp')).toBeInTheDocument();
     expect(screen.queryByText('Ada Member')).not.toBeInTheDocument();
-    // The non-members tab has no add-member controls.
-    expect(screen.queryByRole('button', { name: /add member/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Paused Member')).not.toBeInTheDocument();
   });
 
   it('shows the non-members empty state when there are no non-members', async () => {
@@ -295,7 +286,12 @@ describe('MembersScreen', () => {
     mockUsersResult({
       data: [
         makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true }),
-        makeMember({ id: 'm2', fullName: 'Guest Rsvp', isMember: false }),
+        makeMember({
+          id: 'm2',
+          fullName: 'Guest Rsvp',
+          isMember: false,
+          membershipStatus: MembershipStatus.None,
+        }),
       ],
     });
 
@@ -306,6 +302,26 @@ describe('MembersScreen', () => {
     const links = screen.getAllByRole('link');
     expect(links).toHaveLength(1);
     expect(links[0]?.textContent).toContain('Ada Member');
+  });
+
+  it('labels pause kinds and links attendance-paused members as members', () => {
+    mockUsersResult({
+      data: [
+        makeMember({
+          id: 'm1',
+          fullName: 'Ada Member',
+          membershipStatus: MembershipStatus.GuidelinesPaused,
+        }),
+        attendancePaused,
+      ],
+    });
+
+    renderScreen();
+
+    expect(screen.getByText('paused · guidelines')).toBeInTheDocument();
+    expect(screen.getByText('paused · event rqmt')).toBeInTheDocument();
+    expect(screen.queryByText('non-member')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(2);
   });
 
   it('shows total count when no filters are active', () => {

@@ -7,9 +7,9 @@ import { JoinToSeeNotice } from '@/components/JoinToSeeNotice';
 import { MembersOnlyNotice } from '@/components/MembersOnlyNotice';
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
-import { isTentativeMember } from '@/models/event';
-import { hasPermission, type PermissionKey } from '@/models/permissions';
-import { consentRedirect, passwordSetupRedirect } from '@/models/user';
+import { isLimited } from '@/models/event';
+import { type PermissionRule, satisfiesRule } from '@/models/permissions';
+import { consentRedirect, isAttendancePaused, passwordSetupRedirect } from '@/models/user';
 
 import { attemptDevAutoLogin, devAutoLoginConfigured } from './devLogin';
 import { useAuthStore } from './store';
@@ -136,7 +136,7 @@ export function RequireAuth() {
 // RequirePermission — authed + permission check.
 // ----------------------------------------------------------------------------
 
-export function RequirePermission({ perm }: { perm: PermissionKey }) {
+export function RequirePermission(rule: PermissionRule) {
   const user = useAuthStore((s) => s.user);
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const location = useLocation();
@@ -145,16 +145,16 @@ export function RequirePermission({ perm }: { perm: PermissionKey }) {
     const redirect = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?redirect=${redirect}`} replace />;
   }
-  if (!hasPermission(user, perm)) {
+  if (!satisfiesRule(user, rule)) {
     return <Navigate to="/calendar" replace />;
   }
   return <Outlet />;
 }
 
 // ----------------------------------------------------------------------------
-// RequireMember — authed + full membership. A tentatively-approved user is
-// signed in but not vetted, so these screens 403 server-side. Explain the gate
-// rather than redirecting: they get in by showing up to an event in person.
+// RequireMember — authed + full membership. Limited users (tentative or
+// attendance-paused) are signed in but these screens 403 server-side. Explain
+// the gate rather than redirecting: they get in by showing up in person.
 // ----------------------------------------------------------------------------
 
 export function RequireMember({ unlocks }: { unlocks: string }) {
@@ -167,8 +167,13 @@ export function RequireMember({ unlocks }: { unlocks: string }) {
     const redirect = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?redirect=${redirect}`} replace />;
   }
-  if (isTentativeMember(user)) {
-    return <MembersOnlyNotice unlocks={unlocks} />;
+  if (isLimited(user)) {
+    return (
+      <MembersOnlyNotice
+        unlocks={unlocks}
+        attendancePaused={user != null && isAttendancePaused(user)}
+      />
+    );
   }
   return <Outlet />;
 }

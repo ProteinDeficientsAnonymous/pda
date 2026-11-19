@@ -5,6 +5,7 @@ from datetime import timedelta
 
 import icalendar
 from config.auth import gated_jwt
+from django.conf import settings
 from django.db.models import Prefetch, Q
 from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
@@ -15,6 +16,7 @@ from users.models import CalendarFeedScope
 from users.models import User as UserModel
 
 from community.events.helpers import can_see_invite_only
+from community.events.limited_access import event_viewer_for, is_limited, limited_access_event_q
 from community.events.read_visibility import enforce_event_read_visibility
 from community.models import (
     DEFAULT_EVENT_DURATION,
@@ -22,6 +24,7 @@ from community.models import (
     EventStatus,
     PageVisibility,
     RSVPStatus,
+    event_lookup_q,
 )
 from community.shared import authenticated_user, gated, optional_jwt
 from community.validation import ValidationException
@@ -71,7 +74,7 @@ def generate_calendar_token(request):
 
 
 def _feed_events(user: UserModel):
-    """Events for a member's subscription feed, after scope and type filters.
+    """Events for a subscription feed, after scope, type and limited-access filters.
 
     user(UserModel): the feed's subscriber
     return(QuerySet): active, non-TBD events from the last 30 days onward
@@ -116,6 +119,9 @@ def _feed_events(user: UserModel):
     if user.calendar_feed_scope == CalendarFeedScope.MINE:
         events = events.filter(mine).distinct()
 
+    if is_limited(user):
+        events = events.filter(limited_access_event_q())
+
     return events
 
 
@@ -125,7 +131,7 @@ def _feed_user(token: str):
     if user is None or not user.calendar_token:
         return None
     # The feed carries member-only data, so it must stop when site access does.
-    if user.archived_at is not None or user.is_paused:
+    if user.archived_at is not None or user.is_guidelines_paused:
         return None
     return user
 
@@ -139,9 +145,7 @@ def calendar_feed(request, token: str = ""):
     if user is None:
         return HttpResponse("Invalid token.", status=403, content_type="text/plain")
 
-    cal = icalendar.Calendar()
-    cal.add("prodid", "-//PDA//PDA Calendar//EN")
-    cal.add("version", "2.0")
+    cal = _new_calendar()
     cal.add("x-wr-calname", "PDA Events")
 
     for event in _feed_events(user):
@@ -150,45 +154,37 @@ def calendar_feed(request, token: str = ""):
             invited_user_ids = {str(u.id) for u in event.invited_users.all()}
             if not can_see_invite_only(user, co_host_ids, invited_user_ids, event.created_by_id):
                 continue
-        # The feed is authenticated via the per-user calendar token, so the
-        # subscriber is a known member and gets full member-only data.
-        cal.add_component(_build_vevent(event, request, is_authed=True))
+        is_authed = event_viewer_for(user, event) is not None
+        cal.add_component(_build_vevent(event, request, is_authed=is_authed))
+    cal.add_missing_timezones()
 
     response = HttpResponse(cal.to_ical(), content_type="text/calendar")
     response["Content-Disposition"] = 'inline; filename="pda-calendar.ics"'
     return response
 
 
-# Intentionally public ("add to calendar"), but the optional JWT lets an
-# authenticated member receive full member-only data while anon callers get
-# only the public subset.
+# Public ("add to calendar"); a signed-in viewer gets the fields the event page shows them.
 @router.get("/events/{event_id}/ics/", auth=optional_jwt)
 def single_event_ics(request, event_id: str):
     try:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users")
-            .get(id=event_id)
+            .prefetch_related("co_hosts")
+            .get(event_lookup_q(event_id))
         )
     except Event.DoesNotExist:
         return HttpResponse("Event not found.", status=404, content_type="text/plain")
 
-    auth_user = authenticated_user(request.auth)
-    is_authed = auth_user is not None
+    viewer = event_viewer_for(authenticated_user(request.auth), event)
 
-    # Apply the canonical event-read visibility rules so the ICS gate stays in
-    # lockstep with the main get_event endpoint. This covers deleted (404),
-    # draft (403), members-only-non-official-for-anon (404), and invite-only
-    # (403) — not just the invite-only tier.
     try:
-        enforce_event_read_visibility(event, auth_user)
+        enforce_event_read_visibility(event, viewer)
     except ValidationException as exc:
         return HttpResponse("Event not found.", status=exc.status_code, content_type="text/plain")
 
-    cal = icalendar.Calendar()
-    cal.add("prodid", "-//PDA//PDA Calendar//EN")
-    cal.add("version", "2.0")
-    cal.add_component(_build_vevent(event, request, is_authed=is_authed))
+    cal = _new_calendar()
+    cal.add_component(_build_vevent(event, request, is_authed=viewer is not None))
+    cal.add_missing_timezones()
 
     response = HttpResponse(cal.to_ical(), content_type="text/calendar")
     response["Content-Disposition"] = f'inline; filename="{_ics_filename(event)}"'
@@ -204,16 +200,24 @@ def _ics_filename(event) -> str:
     return f"event-{event.id}.ics"
 
 
+def _new_calendar() -> icalendar.Calendar:
+    cal = icalendar.Calendar()
+    cal.add("prodid", "-//PDA//PDA Calendar//EN")
+    cal.add("version", "2.0")
+    cal.add("x-wr-timezone", settings.COMMUNITY_TZ.key)
+    return cal
+
+
 def _build_vevent(event, request: HttpRequest, is_authed: bool):
     vevent = icalendar.Event()
     vevent.add("uid", f"{event.id}@pda")
     vevent.add("dtstamp", timezone.now())
     if event.start_datetime:
-        vevent.add("dtstart", event.start_datetime)
-        vevent.add(
-            "dtend",
-            event.end_datetime or event.start_datetime + DEFAULT_EVENT_DURATION,
-        )
+        # UTC times make iOS Calendar duplicate events in GMT (#1993).
+        start = event.start_datetime.astimezone(settings.COMMUNITY_TZ)
+        end = event.end_datetime or event.start_datetime + DEFAULT_EVENT_DURATION
+        vevent.add("dtstart", start)
+        vevent.add("dtend", end.astimezone(settings.COMMUNITY_TZ))
     vevent.add("summary", event.title)
     target_url = request.build_absolute_uri(f"/events/{event.slug or event.id}")
     desc = _event_ics_description(event, target_url, is_authed)

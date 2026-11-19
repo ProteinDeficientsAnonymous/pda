@@ -77,13 +77,16 @@ async def to_event_in(fields: EventFields, user: User, **extra: Any) -> EventIn:
 async def to_event_patch(
     changes: dict[str, Any], user: User, **extra: Any
 ) -> tuple[EventPatchIn, dict[str, Any]]:
-    """return(tuple): the patch, and the changes with tags as their stored names."""
+    """return(tuple): the patch, and the changes with tags and price as stored."""
     data = {key: value for key, value in changes.items() if key != "tags"}
     if "tags" in changes:
         tags = await _tags(changes["tags"], user)
         data["tag_ids"] = list(tags.values())
         changes = {**changes, "tags": sorted(tags)}
-    return build(EventPatchIn, {**data, **extra}), changes
+    patch = build(EventPatchIn, {**data, **extra})
+    if "price" in changes:
+        changes = {**changes, "price": patch.price}
+    return patch, changes
 
 
 def event_summary(event: dict[str, Any]) -> dict[str, Any]:

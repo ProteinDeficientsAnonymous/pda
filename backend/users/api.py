@@ -10,6 +10,7 @@ from users._magic_login import router as magic_login_router
 from users._management import router as management_router
 from users._management import search_users, update_user  # re-exported
 from users._members import router as members_router
+from users._restored import router as restored_router
 from users._roles import router as roles_router
 from users._self_delete import router as self_delete_router
 from users._user_deletion import router as user_deletion_router
@@ -38,5 +39,6 @@ router.add_router("", auth_router)
 router.add_router("", self_delete_router)
 router.add_router("", members_router)
 router.add_router("", magic_login_router)
+router.add_router("", restored_router)
 router.add_router("", management_router)
 router.add_router("", magic_links_router)
