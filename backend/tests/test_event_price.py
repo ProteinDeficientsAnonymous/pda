@@ -17,6 +17,7 @@ from tests._time import future_iso
         ("   ", None),
         ("10", Decimal("10.00")),
         ("$10", Decimal("10.00")),
+        ("10.", Decimal("10.00")),
         (" $ 1,250.5 ", Decimal("1250.50")),
         (12.345, Decimal("12.35")),
     ],
@@ -29,6 +30,7 @@ def test_parse_price_accepts_amounts(raw, expected):
     "raw",
     [
         "free",
+        ".",
         "$10-20",
         "0",
         "-5",
