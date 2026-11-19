@@ -378,7 +378,7 @@ def _walk_first_request_to_closed(api_client, jr1_id: str, admin_headers: dict) 
 
 @pytest.mark.integration
 class TestJoinRequestLifecycleEndToEnd:
-    @pytest.mark.django_db(transaction=True)
+    @pytest.mark.django_db(transaction=True, serialized_rollback=True)
     def test_coupled_rsvp_vetting_archive_reapply_and_audit_trail(self, api_client, why_join_id):
         Role.objects.get_or_create(name="member", is_default=True)
         admin_user = make_user(
