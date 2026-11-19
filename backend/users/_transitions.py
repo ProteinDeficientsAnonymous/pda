@@ -2,93 +2,18 @@ from typing import TYPE_CHECKING, NoReturn
 
 from audit.models import AuditTargetType
 from community.validation import Code, InvalidStateTransition, TransitionFailure
-from django.db import models
 from django.utils import timezone
+
+from users.models import (
+    ALLOWED_MEMBERSHIP_TRANSITIONS,
+    PAUSED_STATUSES,
+    STATUS_CHANGE_FIELDS,
+    MembershipEvent,
+    MembershipStatus,
+)
 
 if TYPE_CHECKING:
     from users.models import User
-
-STATUS_CHANGE_FIELDS = (
-    "membership_status",
-    "membership_status_changed_at",
-    "membership_status_changed_by",
-)
-
-
-def status_change_stamp(by: "User | None") -> dict:
-    """Create kwargs that record who set a new account's first status."""
-    return {"membership_status_changed_at": timezone.now(), "membership_status_changed_by": by}
-
-
-class MembershipStatus(models.TextChoices):
-    NONE = "none", "none"
-    TENTATIVE = "tentative", "tentative"
-    ACTIVE_MEMBER = "active_member", "active member"
-    ATTENDANCE_PAUSED = "attendance_paused", "attendance paused"
-    ARCHIVED = "archived", "archived"
-    GUIDELINES_PAUSED = "guidelines_paused", "guidelines paused"
-
-
-class MembershipEvent(models.TextChoices):
-    MARK_TENTATIVE = "mark_tentative", "mark tentative"
-    APPROVE = "approve", "approve"
-    PROMOTE_ON_CHECK_IN = "promote_on_check_in", "promote on check-in"
-    PAUSE_FOR_ATTENDANCE = "pause_for_attendance", "pause for attendance"
-    LIFT_ATTENDANCE_PAUSE = "lift_attendance_pause", "lift attendance pause"
-    RESTORE_ON_CHECK_IN = "restore_on_check_in", "restore on check-in"
-    PAUSE_FOR_GUIDELINES = "pause_for_guidelines", "pause for guidelines"
-    LIFT_GUIDELINES_PAUSE = "lift_guidelines_pause", "lift guidelines pause"
-    ARCHIVE = "archive", "archive"
-
-
-# Paused members keep the member role; only active members get full access.
-MEMBER_STATUSES = (
-    MembershipStatus.ACTIVE_MEMBER,
-    MembershipStatus.GUIDELINES_PAUSED,
-    MembershipStatus.ATTENDANCE_PAUSED,
-)
-LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
-PAUSED_STATUSES = (MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED)
-# Members not limited to official/club events; a guidelines pause blocks login outright.
-FULL_MEMBER_STATUSES = (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.GUIDELINES_PAUSED)
-SIGN_IN_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
-MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
-# The admin members screen lists tentative people too, so they can be archived.
-MANAGED_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
-
-ALLOWED_MEMBERSHIP_TRANSITIONS: dict[tuple[MembershipStatus, MembershipEvent], MembershipStatus] = {
-    (MembershipStatus.NONE, MembershipEvent.MARK_TENTATIVE): MembershipStatus.TENTATIVE,
-    (MembershipStatus.NONE, MembershipEvent.APPROVE): MembershipStatus.ACTIVE_MEMBER,
-    (MembershipStatus.TENTATIVE, MembershipEvent.APPROVE): MembershipStatus.ACTIVE_MEMBER,
-    (
-        MembershipStatus.TENTATIVE,
-        MembershipEvent.PROMOTE_ON_CHECK_IN,
-    ): MembershipStatus.ACTIVE_MEMBER,
-    (MembershipStatus.TENTATIVE, MembershipEvent.ARCHIVE): MembershipStatus.ARCHIVED,
-    (
-        MembershipStatus.ACTIVE_MEMBER,
-        MembershipEvent.PAUSE_FOR_ATTENDANCE,
-    ): MembershipStatus.ATTENDANCE_PAUSED,
-    (
-        MembershipStatus.ACTIVE_MEMBER,
-        MembershipEvent.PAUSE_FOR_GUIDELINES,
-    ): MembershipStatus.GUIDELINES_PAUSED,
-    (MembershipStatus.ACTIVE_MEMBER, MembershipEvent.ARCHIVE): MembershipStatus.ARCHIVED,
-    (
-        MembershipStatus.ATTENDANCE_PAUSED,
-        MembershipEvent.RESTORE_ON_CHECK_IN,
-    ): MembershipStatus.ACTIVE_MEMBER,
-    (
-        MembershipStatus.ATTENDANCE_PAUSED,
-        MembershipEvent.PAUSE_FOR_GUIDELINES,
-    ): MembershipStatus.GUIDELINES_PAUSED,
-    (MembershipStatus.ATTENDANCE_PAUSED, MembershipEvent.ARCHIVE): MembershipStatus.ARCHIVED,
-    (
-        MembershipStatus.GUIDELINES_PAUSED,
-        MembershipEvent.LIFT_GUIDELINES_PAUSE,
-    ): MembershipStatus.ATTENDANCE_PAUSED,
-    (MembershipStatus.GUIDELINES_PAUSED, MembershipEvent.ARCHIVE): MembershipStatus.ARCHIVED,
-}
 
 _PAUSE_EVENTS = frozenset(
     {
@@ -99,16 +24,10 @@ _PAUSE_EVENTS = frozenset(
 )
 
 _EVENT_DEFAULT_TARGET: dict[MembershipEvent, MembershipStatus] = {
-    MembershipEvent.MARK_TENTATIVE: MembershipStatus.TENTATIVE,
-    MembershipEvent.APPROVE: MembershipStatus.ACTIVE_MEMBER,
-    MembershipEvent.PROMOTE_ON_CHECK_IN: MembershipStatus.ACTIVE_MEMBER,
-    MembershipEvent.PAUSE_FOR_ATTENDANCE: MembershipStatus.ATTENDANCE_PAUSED,
-    MembershipEvent.LIFT_ATTENDANCE_PAUSE: MembershipStatus.ACTIVE_MEMBER,
-    MembershipEvent.RESTORE_ON_CHECK_IN: MembershipStatus.ACTIVE_MEMBER,
-    MembershipEvent.PAUSE_FOR_GUIDELINES: MembershipStatus.GUIDELINES_PAUSED,
-    MembershipEvent.LIFT_GUIDELINES_PAUSE: MembershipStatus.ATTENDANCE_PAUSED,
-    MembershipEvent.ARCHIVE: MembershipStatus.ARCHIVED,
+    event: target for (_, event), target in ALLOWED_MEMBERSHIP_TRANSITIONS.items()
 }
+# Always-rejected; kept for audited PATCH refusal payloads.
+_EVENT_DEFAULT_TARGET[MembershipEvent.LIFT_ATTENDANCE_PAUSE] = MembershipStatus.ACTIVE_MEMBER
 
 
 def _reject(
@@ -118,7 +37,6 @@ def _reject(
     *,
     field: str | None = None,
 ) -> NoReturn:
-    to_status = _EVENT_DEFAULT_TARGET.get(event)
     raise InvalidStateTransition(
         code,
         TransitionFailure(
@@ -127,10 +45,19 @@ def _reject(
             target_id=str(user.pk),
             event=str(event),
             from_status=str(user.membership_status),
-            to_status=str(to_status) if to_status else None,
+            to_status=str(_EVENT_DEFAULT_TARGET[event]),
         ),
         field=field,
     )
+
+
+def _reject_lift_attendance(user: "User") -> NoReturn:
+    code = (
+        Code.User.ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN
+        if user.is_attendance_paused
+        else Code.User.INVALID_STATUS_TRANSITION
+    )
+    _reject(user, MembershipEvent.LIFT_ATTENDANCE_PAUSE, code, field="attendance_paused")
 
 
 def _stamp_status(user: "User", new_status: MembershipStatus, by: "User | None") -> list[str]:
@@ -160,17 +87,11 @@ def _unarchive_to(user: "User", fallback: MembershipStatus, by: "User | None") -
 def _park_archived_pause(user: "User", event: MembershipEvent) -> list[str]:
     if user.status_before_archive == MembershipStatus.NONE:
         _reject(user, event, Code.User.INVALID_STATUS_TRANSITION)
-    if event == MembershipEvent.PAUSE_FOR_GUIDELINES:
-        user.status_before_archive = MembershipStatus.GUIDELINES_PAUSED
-        return ["status_before_archive"]
-    if event == MembershipEvent.LIFT_GUIDELINES_PAUSE:
-        if not user.is_guidelines_paused:
-            _reject(user, event, Code.User.INVALID_STATUS_TRANSITION)
-        user.status_before_archive = MembershipStatus.ATTENDANCE_PAUSED
-        return ["status_before_archive"]
-    if user.is_guidelines_paused:
+    if event == MembershipEvent.LIFT_GUIDELINES_PAUSE and not user.is_guidelines_paused:
+        _reject(user, event, Code.User.INVALID_STATUS_TRANSITION)
+    if event == MembershipEvent.PAUSE_FOR_ATTENDANCE and user.is_guidelines_paused:
         _reject(user, event, Code.User.GUIDELINES_PAUSED, field="attendance_paused")
-    user.status_before_archive = MembershipStatus.ATTENDANCE_PAUSED
+    user.status_before_archive = _EVENT_DEFAULT_TARGET[event]
     return ["status_before_archive"]
 
 
@@ -184,12 +105,7 @@ def _handle_archived(user: "User", event: MembershipEvent, by: "User | None") ->
     if event == MembershipEvent.ARCHIVE:
         _reject(user, event, Code.User.ALREADY_ARCHIVED)
     if event == MembershipEvent.LIFT_ATTENDANCE_PAUSE:
-        code = (
-            Code.User.ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN
-            if user.is_attendance_paused
-            else Code.User.INVALID_STATUS_TRANSITION
-        )
-        _reject(user, event, code, field="attendance_paused")
+        _reject_lift_attendance(user)
     _reject(user, event, Code.User.INVALID_STATUS_TRANSITION)
 
 
@@ -197,12 +113,7 @@ def _reject_non_archived(user: "User", event: MembershipEvent) -> NoReturn:
     if event == MembershipEvent.PAUSE_FOR_ATTENDANCE and user.is_guidelines_paused:
         _reject(user, event, Code.User.GUIDELINES_PAUSED, field="attendance_paused")
     if event == MembershipEvent.LIFT_ATTENDANCE_PAUSE:
-        code = (
-            Code.User.ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN
-            if user.is_attendance_paused
-            else Code.User.INVALID_STATUS_TRANSITION
-        )
-        _reject(user, event, code, field="attendance_paused")
+        _reject_lift_attendance(user)
     _reject(user, event, Code.User.INVALID_STATUS_TRANSITION)
 
 
@@ -237,9 +148,12 @@ def _apply_side_fields(
 
 def transition_membership(user: "User", event: MembershipEvent, *, by: "User | None") -> list[str]:
     """Validate and apply a membership transition, returning changed update_fields."""
-    if user.is_archived or user.membership_status == MembershipStatus.ARCHIVED:
+    if user.is_archived:
         return _handle_archived(user, event, by)
-    current = MembershipStatus(user.membership_status)
+    try:
+        current = MembershipStatus(user.membership_status)
+    except ValueError:
+        _reject(user, event, Code.User.INVALID_STATUS_TRANSITION)
     target = ALLOWED_MEMBERSHIP_TRANSITIONS.get((current, event))
     if target is None:
         _reject_non_archived(user, event)

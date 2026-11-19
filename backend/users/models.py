@@ -10,51 +10,93 @@ from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from users._transitions import (
-    ALLOWED_MEMBERSHIP_TRANSITIONS,
-    FULL_MEMBER_STATUSES,
-    LIMITED_STATUSES,
-    MANAGED_STATUSES,
-    MEMBER_OR_ARCHIVED,
-    MEMBER_STATUSES,
-    PAUSED_STATUSES,
-    SIGN_IN_STATUSES,
-    STATUS_CHANGE_FIELDS,
-    MembershipEvent,
-    MembershipStatus,
-    status_change_stamp,
-    transition_membership,
-)
 from users.phone import normalize_phone_number
 from users.roles import Role
 
-__all__ = [
-    "ALLOWED_MEMBERSHIP_TRANSITIONS",
-    "CalendarFeedScope",
-    "FULL_MEMBER_STATUSES",
-    "HAS_EMAIL",
-    "LIMITED_STATUSES",
-    "MANAGED_STATUSES",
-    "MEMBER_OR_ARCHIVED",
-    "MEMBER_STATUSES",
-    "MagicLoginToken",
-    "MagicLoginTokenSource",
-    "MembershipEvent",
-    "MembershipStatus",
-    "PAUSED_STATUSES",
-    "PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS",
-    "PUBLIC_RSVP_TOKEN_TTL_DAYS",
-    "PublicRsvpToken",
-    "Role",
-    "SIGN_IN_STATUSES",
-    "STATUS_CHANGE_FIELDS",
-    "User",
-    "UserManager",
-    "WeekStart",
-    "can_sign_in_q",
-    "limited_q",
-    "status_change_stamp",
-]
+STATUS_CHANGE_FIELDS = (
+    "membership_status",
+    "membership_status_changed_at",
+    "membership_status_changed_by",
+)
+
+
+def status_change_stamp(by: "User | None") -> dict:
+    """Create kwargs that record who set a new account's first status."""
+    return {"membership_status_changed_at": timezone.now(), "membership_status_changed_by": by}
+
+
+class MembershipStatus(models.TextChoices):
+    NONE = "none", "none"
+    TENTATIVE = "tentative", "tentative"
+    ACTIVE_MEMBER = "active_member", "active member"
+    ATTENDANCE_PAUSED = "attendance_paused", "attendance paused"
+    ARCHIVED = "archived", "archived"
+    GUIDELINES_PAUSED = "guidelines_paused", "guidelines paused"
+
+
+class MembershipEvent(models.TextChoices):
+    MARK_TENTATIVE = "mark_tentative", "mark tentative"
+    APPROVE = "approve", "approve"
+    PROMOTE_ON_CHECK_IN = "promote_on_check_in", "promote on check-in"
+    PAUSE_FOR_ATTENDANCE = "pause_for_attendance", "pause for attendance"
+    LIFT_ATTENDANCE_PAUSE = "lift_attendance_pause", "lift attendance pause"
+    RESTORE_ON_CHECK_IN = "restore_on_check_in", "restore on check-in"
+    PAUSE_FOR_GUIDELINES = "pause_for_guidelines", "pause for guidelines"
+    LIFT_GUIDELINES_PAUSE = "lift_guidelines_pause", "lift guidelines pause"
+    ARCHIVE = "archive", "archive"
+
+
+# Paused members keep the member role; only active members get full access.
+MEMBER_STATUSES = (
+    MembershipStatus.ACTIVE_MEMBER,
+    MembershipStatus.GUIDELINES_PAUSED,
+    MembershipStatus.ATTENDANCE_PAUSED,
+)
+LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
+PAUSED_STATUSES = (MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED)
+# Members not limited to official/club events; a guidelines pause blocks login outright.
+FULL_MEMBER_STATUSES = (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.GUIDELINES_PAUSED)
+SIGN_IN_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
+MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
+# The admin members screen lists tentative people too, so they can be archived.
+MANAGED_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
+
+ALLOWED_MEMBERSHIP_TRANSITIONS: dict[tuple[MembershipStatus, MembershipEvent], MembershipStatus] = {
+    (MembershipStatus.NONE, MembershipEvent.MARK_TENTATIVE): MembershipStatus.TENTATIVE,
+    (MembershipStatus.NONE, MembershipEvent.APPROVE): MembershipStatus.ACTIVE_MEMBER,
+    (MembershipStatus.TENTATIVE, MembershipEvent.APPROVE): MembershipStatus.ACTIVE_MEMBER,
+    (
+        MembershipStatus.TENTATIVE,
+        MembershipEvent.PROMOTE_ON_CHECK_IN,
+    ): MembershipStatus.ACTIVE_MEMBER,
+    (MembershipStatus.TENTATIVE, MembershipEvent.ARCHIVE): MembershipStatus.ARCHIVED,
+    (
+        MembershipStatus.ACTIVE_MEMBER,
+        MembershipEvent.PAUSE_FOR_ATTENDANCE,
+    ): MembershipStatus.ATTENDANCE_PAUSED,
+    (
+        MembershipStatus.ACTIVE_MEMBER,
+        MembershipEvent.PAUSE_FOR_GUIDELINES,
+    ): MembershipStatus.GUIDELINES_PAUSED,
+    (MembershipStatus.ACTIVE_MEMBER, MembershipEvent.ARCHIVE): MembershipStatus.ARCHIVED,
+    (
+        MembershipStatus.ATTENDANCE_PAUSED,
+        MembershipEvent.RESTORE_ON_CHECK_IN,
+    ): MembershipStatus.ACTIVE_MEMBER,
+    (
+        MembershipStatus.ATTENDANCE_PAUSED,
+        MembershipEvent.PAUSE_FOR_GUIDELINES,
+    ): MembershipStatus.GUIDELINES_PAUSED,
+    (MembershipStatus.ATTENDANCE_PAUSED, MembershipEvent.ARCHIVE): MembershipStatus.ARCHIVED,
+    (
+        MembershipStatus.GUIDELINES_PAUSED,
+        MembershipEvent.LIFT_GUIDELINES_PAUSE,
+    ): MembershipStatus.ATTENDANCE_PAUSED,
+    (MembershipStatus.GUIDELINES_PAUSED, MembershipEvent.ARCHIVE): MembershipStatus.ARCHIVED,
+}
+
+# After enums/table exist so _transitions can import them without a cycle.
+from users._transitions import transition_membership  # noqa: E402
 
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
 
@@ -274,7 +316,7 @@ class User(AbstractUser):
         return self._pause_status() == MembershipStatus.ATTENDANCE_PAUSED
 
     def _pause_status(self) -> str | None:
-        if self.is_archived or self.membership_status == MembershipStatus.ARCHIVED:
+        if self.is_archived:
             return self.status_before_archive
         return self.membership_status
 

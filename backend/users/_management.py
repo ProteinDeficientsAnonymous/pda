@@ -175,15 +175,18 @@ def list_member_attended_events(request, user_id: str):
 def update_user(request, user_id: str, payload: UserPatchIn):
     require_manage_users(request, "update_user", user_id)
     editable = User.objects.members_or_archived().prefetch_related("roles")
-    try:
-        user = editable.get(pk=user_id)
-    except User.DoesNotExist:
-        raise_validation(Code.User.NOT_FOUND, status_code=404)
-
-    was_guidelines_paused = user.is_guidelines_paused
-    before_status = str(user.status_before_archive if user.is_archived else user.membership_status)
-    _apply_user_patch(user, user_id, payload, requester=request.auth)
     with transaction.atomic():
+        try:
+            # Row lock: concurrent pause/archive can't overwrite a stale in-memory status.
+            user = editable.select_for_update().get(pk=user_id)
+        except User.DoesNotExist:
+            raise_validation(Code.User.NOT_FOUND, status_code=404)
+
+        was_guidelines_paused = user.is_guidelines_paused
+        before_status = str(
+            user.status_before_archive if user.is_archived else user.membership_status
+        )
+        _apply_user_patch(user, user_id, payload, requester=request.auth)
         user.save()
         pause_details = _pause_transition_details(
             request, user, payload, was_guidelines_paused, before_status
@@ -304,17 +307,19 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester:
     _validate_pause_change(
         user, payload.attendance_paused, requester_id, MembershipEvent.PAUSE_FOR_ATTENDANCE
     )
+    # WhatsApp before pause toggles so a pause in the same PATCH still clears it.
+    if payload.has_joined_whatsapp is not None:
+        user.has_joined_whatsapp = payload.has_joined_whatsapp
+    # Attendance lift check uses pre-toggle state; lifting guidelines lands on attendance pause.
+    if payload.attendance_paused is False and user.is_attendance_paused:
+        user.lift_attendance_pause(by=requester)
     if (
         payload.guidelines_paused is not None
         and payload.guidelines_paused != user.is_guidelines_paused
     ):
         _toggle_guidelines_pause(user, payload.guidelines_paused, by=requester)
-    if payload.attendance_paused is False and user.is_attendance_paused:
-        user.lift_attendance_pause(by=requester)
     if payload.attendance_paused and user.is_guidelines_paused:
         user.apply_attendance_pause(by=requester)
-    if payload.has_joined_whatsapp is not None:
-        user.has_joined_whatsapp = payload.has_joined_whatsapp
 
 
 def _toggle_guidelines_pause(user: User, paused: bool, *, by: User) -> None:

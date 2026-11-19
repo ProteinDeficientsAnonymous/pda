@@ -111,6 +111,9 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
     return(PauseImpact): the impact as it stood when the pause was applied
     """
     with transaction.atomic():
+        # Row lock: concurrent pause/archive then see each other's status before writing.
+        User.objects.select_for_update().get(pk=user.pk)
+        user.refresh_from_db()
         before = str(user.status_before_archive if user.is_archived else user.membership_status)
         fields = user.apply_attendance_pause(by=getattr(request, "auth", None))
         impact, details = release_held_events(request, user, MembershipStatus.ATTENDANCE_PAUSED)

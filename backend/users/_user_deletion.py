@@ -18,6 +18,20 @@ from users.schemas import ErrorOut
 router = management_router
 
 
+def _raise_already_archived(user: User, user_id: str) -> None:
+    raise InvalidStateTransition(
+        Code.User.ALREADY_ARCHIVED,
+        TransitionFailure(
+            action="user_transition_rejected",
+            target_type=AuditTargetType.USER,
+            target_id=user_id,
+            event=MembershipEvent.ARCHIVE,
+            from_status=str(user.membership_status),
+            to_status=MembershipStatus.ARCHIVED,
+        ),
+    )
+
+
 @router.delete(
     "/users/{user_id}/",
     response={204: None, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
@@ -56,9 +70,12 @@ def delete_user(request, user_id: str):
             ),
         )
     if user.archived_at is not None:
-        user.archive(by=request.auth)
+        _raise_already_archived(user, user_id)
     previous_status = str(user.membership_status)
     released = archive_user(request, user)
+    # Concurrent archive wins the row lock and returns {}; do not audit a no-op as archived.
+    if not released:
+        _raise_already_archived(user, user_id)
     audit_log(
         logging.WARNING,
         "user_archived",

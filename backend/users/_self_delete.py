@@ -40,6 +40,19 @@ def delete_me(request, payload: DeleteAccountIn, response: HttpResponse):
     previous_status = str(user.membership_status)
     with transaction.atomic():
         released = archive_user(request, user)
+        # Concurrent archive wins the row lock and returns {}; do not audit a no-op.
+        if not released:
+            raise InvalidStateTransition(
+                Code.User.ALREADY_ARCHIVED,
+                TransitionFailure(
+                    action="user_transition_rejected",
+                    target_type=AuditTargetType.USER,
+                    target_id=str(user.pk),
+                    event=MembershipEvent.ARCHIVE,
+                    from_status=previous_status,
+                    to_status=MembershipStatus.ARCHIVED,
+                ),
+            )
         create_account_deleted_notifications(user)
     audit_log(
         logging.WARNING,

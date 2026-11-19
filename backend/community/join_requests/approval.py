@@ -128,26 +128,14 @@ def _promote_public_rsvper(user, join_request, by: User) -> str:
     return create_magic_token(user)
 
 
-def promote_tentative_member(user, join_request, by: User, *, via_check_in: bool = False) -> None:
+def promote_tentative_member(user, join_request, by: User) -> None:
     """Promote a tentatively-approved applicant in place; they onboarded already.
 
     Only membership changes: no token to mint, no needs_onboarding re-flag
     (that would lock them out of every endpoint), and their name stays theirs.
     """
-    if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
-        user.guidelines_consent_at = join_request.guidelines_consent_at
-    if join_request.sms_consent_at is not None and user.sms_consent_at is None:
-        user.sms_consent_at = join_request.sms_consent_at
-    status_fields = (
-        user.promote_on_check_in(by=by) if via_check_in else user.approve_membership(by=by)
-    )
-    user.save(
-        update_fields=[
-            *status_fields,
-            "guidelines_consent_at",
-            "sms_consent_at",
-        ]
-    )
+    consents = _apply_tentative_consents(user, join_request)
+    user.save(update_fields=[*user.approve_membership(by=by), *consents])
     grant_membership(user)
 
 
@@ -276,7 +264,14 @@ def maybe_promote_tentative(user, event, actor) -> JoinRequest | None:
     if join_request is None:
         return None
 
-    promote_tentative_member(user, join_request, actor, via_check_in=True)
+    # Row lock: concurrent check-ins then re-check tentative before promoting.
+    locked = User.objects.select_for_update().get(pk=user.pk)
+    if locked.membership_status != MembershipStatus.TENTATIVE:
+        return False
+    user.refresh_from_db()
+    consents = _apply_tentative_consents(user, join_request)
+    user.save(update_fields=[*user.promote_on_check_in(by=actor), *consents])
+    grant_membership(user)
     join_request.status = JoinRequestStatus.APPROVED
     join_request.status_changed_at = timezone.now()
     join_request.status_changed_by = actor

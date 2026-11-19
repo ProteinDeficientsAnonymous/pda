@@ -119,8 +119,13 @@ def _assert_side_fields(user: User, status: MembershipStatus, event: MembershipE
 
 class TestMembershipStateMachineUnit:
     @pytest.mark.unit
-    def test_raw_set_membership_status_not_exposed_on_user(self):
-        assert not hasattr(User, "set_membership_status")
+    def test_corrupt_membership_status_rejects_as_invalid_transition(self):
+        actor = _in_memory_user(MembershipStatus.ACTIVE_MEMBER)
+        user = _in_memory_user(MembershipStatus.ACTIVE_MEMBER)
+        user.membership_status = "not_a_real_status"
+        with pytest.raises(InvalidStateTransition) as exc_info:
+            user.archive(by=actor)
+        assert exc_info.value.code == Code.User.INVALID_STATUS_TRANSITION
 
     @pytest.mark.unit
     @pytest.mark.parametrize("status", _NON_ARCHIVED_STATUSES)
@@ -245,7 +250,6 @@ class TestMembershipStateMachineUnit:
 @dataclass
 class _ModelShadow:
     ever_left_none: bool = False
-    guidelines_paused: bool = False
 
 
 @settings(max_examples=75, stateful_step_count=25)
