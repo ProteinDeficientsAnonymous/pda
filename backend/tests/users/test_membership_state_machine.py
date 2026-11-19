@@ -355,7 +355,7 @@ def _check_in_past_event(
 
 @pytest.mark.integration
 class TestMembershipTransitionsEndToEnd:
-    @pytest.mark.django_db(transaction=True)
+    @pytest.mark.django_db(transaction=True, serialized_rollback=True)
     def test_full_user_lifecycle_and_rejected_transitions_persisted_in_audit_log(
         self, api_client, why_join_id
     ):
