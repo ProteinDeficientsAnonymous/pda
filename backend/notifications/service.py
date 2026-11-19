@@ -326,24 +326,13 @@ def create_payment_revoked_notification(event: Event, user_id: str) -> None:
     notify_users([user_id])
 
 
-def create_poll_seated_unpaid_notifications(event: Event, user_ids: Iterable[str]) -> None:
-    """Tell yes-voters a finalized poll seated them before they paid."""
-    user_ids = list(user_ids)
-    if not user_ids:
-        return
-    message = f"{event.title} is set — you're going, but your spot isn't confirmed until you pay."
-    Notification.objects.bulk_create(
-        [
-            Notification(
-                recipient_id=user_id,
-                notification_type=NotificationType.POLL_SEATED_UNPAID,
-                event=event,
-                message=message,
-            )
-            for user_id in user_ids
-        ]
+def create_poll_seated_unpaid_notifications(event: Event, user_ids: list[str]) -> None:
+    _create_event_notifications(
+        event,
+        user_ids,
+        NotificationType.POLL_SEATED_UNPAID,
+        f"{event.title} is set — you're going, but your spot isn't confirmed until you pay.",
     )
-    notify_users(user_ids)
 
 
 def notify_comment_reply(reply) -> None:
