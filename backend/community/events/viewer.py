@@ -26,8 +26,7 @@ def resolve_event_viewer(request: HttpRequest, event: Event) -> "User | None":
     user = PublicRsvpToken.resolve_user(token)
     if user is None:
         return None
-    # Re-derive eligibility per request so an event that drops out of public-RSVP
-    # eligibility (MEMBERS_ONLY, cancelled, past, …) stops unlocking immediately.
+    # Pass an event loaded this request so a MEMBERS_ONLY/cancelled/past flip locks at once.
     if not event.is_public_rsvp_eligible:
         return None
     return user
