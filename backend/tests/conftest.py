@@ -29,6 +29,9 @@ def pytest_runtest_teardown(item, nextitem):
     marker = item.get_closest_marker("django_db")
     if marker is not None and marker.kwargs.get("transaction"):
         blocker = item.funcargs.get("django_db_blocker")
+        # Skipped tests never get the fixture, so blocker is missing.
+        if blocker is None:
+            return
         with blocker.unblock():
             for conn in connections.all():
                 contents = getattr(conn, "_test_serialized_contents", None)

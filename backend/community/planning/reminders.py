@@ -132,7 +132,7 @@ def send_upcoming_notices(now: datetime) -> int:
             continue
         try:
             notify_upcoming(claimed)
-        except Exception:  # noqa: BLE001 — one bad notice must not abort the batch
+        except Exception:
             logger.exception("planning_upcoming_notice_failed", extra={"assignment": claimed.pk})
             SlotAssignment.objects.filter(pk=claimed.pk).update(upcoming_notified_at=None)
             continue
