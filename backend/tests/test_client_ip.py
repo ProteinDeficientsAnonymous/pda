@@ -1,14 +1,13 @@
-"""Unit tests for config.ratelimit.client_ip XFF-spoofing resistance.
+"""client_ip must key on Railway's edge hop, past internal proxies, never the spoofable left side."""
 
-On Railway a request reaches Django as client → Railway edge → Railway internal
-proxy (100.64.0.0/10) → in-container nginx (127.0.0.1) → gunicorn, and nginx
-appends the internal proxy to X-Forwarded-For. client_ip must skip those
-internal hops and never trust the attacker-controlled left side of the chain.
-"""
+import asyncio
 
 import pytest
+from config import gunicorn_conf
 from config.ratelimit import client_ip
 from django.test import RequestFactory
+from gunicorn.config import validate_string_to_addr_list
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 NGINX = "127.0.0.1"
 CLIENT = "198.51.100.7"
@@ -79,3 +78,25 @@ class TestClientIp:
 
     def test_ipv6_loopback_peer_is_trusted(self):
         assert client_ip(_request(xff=f"{CLIENT}, 100.64.0.3", remote_addr="::1")) == CLIENT
+
+    def test_ipv4_mapped_loopback_peer_is_trusted(self):
+        request = _request(xff=f"{CLIENT}, 100.64.0.3", remote_addr="::ffff:127.0.0.1")
+        assert client_ip(request) == CLIENT
+
+    def test_ipv4_mapped_internal_hops_are_skipped(self):
+        assert client_ip(_request(xff=f"{CLIENT}, ::ffff:100.64.0.5, ::ffff:10.0.0.1")) == CLIENT
+
+
+def test_uvicorn_leaves_nginx_as_the_peer():
+    # Otherwise REMOTE_ADDR becomes the 100.64 hop and client_ip never reads XFF.
+    seen = {}
+
+    async def app(scope, receive, send):
+        seen["client"] = scope["client"]
+
+    trusted = validate_string_to_addr_list(gunicorn_conf.forwarded_allow_ips)
+    middleware = ProxyHeadersMiddleware(app, trusted_hosts=trusted)
+    headers = [(b"x-forwarded-for", f"{CLIENT}, 100.64.0.7".encode())]
+    scope = {"type": "http", "client": (NGINX, 5000), "headers": headers}
+    asyncio.run(middleware(scope, None, None))
+    assert seen["client"][0] == NGINX

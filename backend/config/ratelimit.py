@@ -32,19 +32,23 @@ _INTERNAL_NETWORKS = tuple(
 )
 
 
+def _parse_ip(value: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
+    try:
+        addr = ipaddress.ip_address(value)
+    except ValueError:
+        return None
+    # ::ffff:10.0.0.1 doesn't match the IPv4 networks unless unwrapped.
+    return getattr(addr, "ipv4_mapped", None) or addr
+
+
 def _is_internal(hop: str) -> bool:
-    try:
-        addr = ipaddress.ip_address(hop)
-    except ValueError:
-        return False
-    return any(addr in net for net in _INTERNAL_NETWORKS)
+    addr = _parse_ip(hop)
+    return addr is not None and any(addr in net for net in _INTERNAL_NETWORKS)
 
 
-def _is_loopback(addr: str) -> bool:
-    try:
-        return ipaddress.ip_address(addr).is_loopback
-    except ValueError:
-        return False
+def _is_loopback(value: str) -> bool:
+    addr = _parse_ip(value)
+    return addr is not None and addr.is_loopback
 
 
 def client_ip(request) -> str:
