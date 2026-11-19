@@ -3,7 +3,7 @@ from django.template.loader import render_to_string
 from notifications.email_sender import EmailSender, SendResult
 
 
-def send_no_show_email(  # noqa: PLR0913
+def send_no_show_email(
     *,
     sender: EmailSender,
     to: str,

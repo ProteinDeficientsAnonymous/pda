@@ -115,7 +115,7 @@ help:
 	@echo "  make agent-frontend-ci  agent-ci frontend portion only"
 	@echo "  make agent-test-since Quiet test-since (same selection rules)"
 	@echo "  make diff-coverage    Run tests with coverage; fail if changed lines vs DIFF_COVER_BASE (origin/main) are <80% covered"
-	@echo "  make check-anti-tampering  Fail if diff adds lint/type suppressions or skipped tests"
+	@echo "  make check-anti-tampering  Fail if the tree has lint/type suppressions or skipped tests"
 	@echo "  make sast             Run bandit high-severity SAST scan on backend"
 	@echo "  make mutation         Run diff-scoped mutation testing on changed backend files"
 

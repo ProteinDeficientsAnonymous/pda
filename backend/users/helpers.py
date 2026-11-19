@@ -192,7 +192,7 @@ def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
         raise_validation(Code.Role.CANNOT_GRANT_ADMIN, field="role_id", status_code=403)
 
 
-def create_user_with_role(  # noqa: PLR0913
+def create_user_with_role(
     phone: str,
     first_name: str,
     last_name: str,

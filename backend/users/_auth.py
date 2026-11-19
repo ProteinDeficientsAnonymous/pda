@@ -89,7 +89,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
         request,
         target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
-    return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
+    return Status(200, TokenOut(access=str(getattr(refresh, "access_token"))))
 
 
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)

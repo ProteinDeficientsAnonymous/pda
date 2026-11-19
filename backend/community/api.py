@@ -25,19 +25,11 @@ from community.events.description_templates import (
 )
 from community.events.flags import router as event_flags_router
 from community.events.geocode import router as geocode_router
-
-# Re-export symbols imported directly in tests
-from community.events.helpers import (  # noqa: F401
-    build_guest_list,
-    find_my_rsvp,
-    is_cohost,
-)
 from community.events.host_actions import router as event_host_actions_router
 from community.events.invitations import router as event_invitations_router
 from community.events.official_defaults import router as official_event_defaults_router
 from community.events.photos import router as event_actions_router
 from community.events.report import router as event_report_router
-from community.events.schemas import EventPatchIn  # noqa: F401
 from community.events.tags import router as event_tags_router
 from community.join_requests.form import router as join_form_router
 from community.join_requests.manage import router as join_requests_router

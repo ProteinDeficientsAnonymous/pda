@@ -73,7 +73,8 @@ def test_call_tool_rechecks_permission(test_user, manage_users_user, as_user, ad
         async_to_sync(pda_mcp.call_tool)(admin_only_tool, {})
     as_user(manage_users_user)
     result = async_to_sync(pda_mcp.call_tool)(admin_only_tool, {})
-    assert result.content[0].text == "secret"  # type: ignore[union-attr]
+    assert result.content is not None
+    assert result.content[0].text == "secret"
 
 
 def test_tool_registered_outside_pda_tool_is_hidden_and_denied(test_user, as_user):
@@ -90,7 +91,7 @@ def test_tool_registered_outside_pda_tool_is_hidden_and_denied(test_user, as_use
 def test_whoami_reports_name_roles_and_permissions(manage_users_user, as_user):
     as_user(manage_users_user)
     result = async_to_sync(pda_mcp.call_tool)("whoami", {})
-    assert result.structured_content == {  # type: ignore[union-attr]
+    assert result.structured_content == {
         "name": "Admin User",
         "roles": ["admin_mgr"],
         "permissions": [PermissionKey.MANAGE_USERS],
@@ -109,4 +110,5 @@ def test_tool_call_reuses_the_user_the_token_lookup_loaded(
             result = async_to_sync(pda_mcp.call_tool)("whoami", {})
     finally:
         auth_context_var.reset(reset)
-    assert result.structured_content["roles"] == ["admin_mgr"]  # type: ignore[union-attr]
+    assert result.structured_content is not None
+    assert result.structured_content["roles"] == ["admin_mgr"]

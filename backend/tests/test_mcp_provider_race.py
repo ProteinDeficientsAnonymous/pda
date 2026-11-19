@@ -16,10 +16,13 @@ from mcp_gateway.tokens import hash_secret
 
 from tests._mcp_provider import client_info, connect_client, pending_request
 
-if db.connection.vendor != "postgresql":
-    pytest.skip("needs concurrent postgres writers", allow_module_level=True)
-
-pytestmark = pytest.mark.django_db(transaction=True, serialized_rollback=True)
+pytestmark = [
+    pytest.mark.skipif(
+        db.connection.vendor != "postgresql",
+        reason="needs concurrent postgres writers",
+    ),
+    pytest.mark.django_db(transaction=True, serialized_rollback=True),
+]
 
 RACERS = 8
 

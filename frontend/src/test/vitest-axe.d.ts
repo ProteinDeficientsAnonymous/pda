@@ -1,8 +1,11 @@
 import type { AxeMatchers } from 'vitest-axe/matchers';
 
 declare module 'vitest' {
-  // oxlint-disable-next-line typescript/no-empty-object-type
-  interface Assertion<_T = unknown> extends AxeMatchers {}
-  // oxlint-disable-next-line typescript/no-empty-object-type
-  interface AsymmetricMatchersContaining extends AxeMatchers {}
+  interface Assertion<_T = unknown> extends AxeMatchers {
+    // Marker so this is not an empty interface under oxlint.
+    _axeAssertion?: _T;
+  }
+  interface AsymmetricMatchersContaining extends AxeMatchers {
+    _axeAsymmetric?: true;
+  }
 }

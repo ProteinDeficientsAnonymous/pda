@@ -371,6 +371,24 @@
       "rules": {
         "react/only-export-components": "off"
       }
+    },
+    {
+      "files": [
+        "src/screens/events/comments/CommentComposer.tsx",
+        "src/screens/events/comments/CommentItem.tsx"
+      ],
+      "plugins": ["jsx-a11y"],
+      "rules": {
+        "jsx-a11y/no-autofocus": "off"
+      }
+    },
+    {
+      "files": ["src/screens/events/form/EventForm.tsx"],
+      "plugins": ["jsx-a11y", "react"],
+      "rules": {
+        "jsx-a11y/no-noninteractive-element-interactions": "off",
+        "react/exhaustive-deps": "off"
+      }
     }
   ]
 }

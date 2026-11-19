@@ -82,7 +82,7 @@ def _rsvp(api_client, event, headers, status="attending", has_plus_one=False):
 
 @pytest.mark.django_db
 class TestWaitlistPromotion:
-    def test_promote_on_status_change(  # noqa: PLR0913
+    def test_promote_on_status_change(
         self, api_client, capped_event, user3, headers1, headers2, headers3
     ):
         _rsvp(api_client, capped_event, headers1)
@@ -95,7 +95,7 @@ class TestWaitlistPromotion:
         rsvp3 = EventRSVP.objects.get(event=capped_event, user=user3)
         assert rsvp3.status == RSVPStatus.ATTENDING
 
-    def test_promote_on_delete(  # noqa: PLR0913
+    def test_promote_on_delete(
         self, api_client, capped_event, user3, headers1, headers2, headers3
     ):
         _rsvp(api_client, capped_event, headers1)
@@ -107,7 +107,7 @@ class TestWaitlistPromotion:
         rsvp3 = EventRSVP.objects.get(event=capped_event, user=user3)
         assert rsvp3.status == RSVPStatus.ATTENDING
 
-    def test_fifo_order(  # noqa: PLR0913
+    def test_fifo_order(
         self,
         api_client,
         capped_event,
@@ -130,7 +130,7 @@ class TestWaitlistPromotion:
         assert rsvp3.status == RSVPStatus.ATTENDING
         assert rsvp4.status == RSVPStatus.WAITLISTED
 
-    def test_promote_multiple_spots(  # noqa: PLR0913
+    def test_promote_multiple_spots(
         self,
         api_client,
         capped_event,
@@ -154,7 +154,7 @@ class TestWaitlistPromotion:
         assert rsvp3.status == RSVPStatus.ATTENDING
         assert rsvp4.status == RSVPStatus.WAITLISTED
 
-    def test_waitlisted_plus_one_party_promoted_together(  # noqa: PLR0913
+    def test_waitlisted_plus_one_party_promoted_together(
         self, api_client, capped_event, user3, headers1, headers3
     ):
         # max=2; user1 with +1 fills both seats. user3 requests attending +1
@@ -171,7 +171,7 @@ class TestWaitlistPromotion:
         assert rsvp3.status == RSVPStatus.ATTENDING
         assert rsvp3.has_plus_one is True
 
-    def test_waitlisted_plus_one_party_not_seated_solo_into_one_seat(  # noqa: PLR0913
+    def test_waitlisted_plus_one_party_not_seated_solo_into_one_seat(
         self, api_client, capped_event, user3, headers1, headers3
     ):
         # Only one seat frees up — the +1 party must wait, not be seated solo.
@@ -227,7 +227,7 @@ class TestWaitlistPromotion:
 
 @pytest.mark.django_db
 class TestWaitlistPromotionNotification:
-    def test_notification_created_on_promote(  # noqa: PLR0913
+    def test_notification_created_on_promote(
         self,
         api_client,
         capped_event,
@@ -269,7 +269,7 @@ class TestWaitlistPromotionNotification:
 
 @pytest.mark.django_db
 class TestPromoteOnCapacityIncrease:
-    def test_promote_on_max_attendees_increase(  # noqa: PLR0913
+    def test_promote_on_max_attendees_increase(
         self, api_client, capped_event, test_user, user3, headers1, headers2, headers3
     ):
         _rsvp(api_client, capped_event, headers1)
@@ -289,7 +289,7 @@ class TestPromoteOnCapacityIncrease:
         rsvp3 = EventRSVP.objects.get(event=capped_event, user=user3)
         assert rsvp3.status == RSVPStatus.ATTENDING
 
-    def test_no_promotion_on_max_attendees_decrease(  # noqa: PLR0913
+    def test_no_promotion_on_max_attendees_decrease(
         self, api_client, capped_event, test_user, user3, headers1, headers2, headers3
     ):
         _rsvp(api_client, capped_event, headers1)

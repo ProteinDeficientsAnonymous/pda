@@ -27,7 +27,7 @@ def send_weekly_digest_email(
     )
 
 
-def send_monthly_digest_email(  # noqa: PLR0913
+def send_monthly_digest_email(
     *,
     sender: EmailSender,
     to: str,

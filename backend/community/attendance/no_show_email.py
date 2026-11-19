@@ -55,7 +55,7 @@ def _send(sender: EmailSender, rsvp: EventRSVP, calendar_url: str) -> bool:
             event_date=event_date_label(rsvp.event),
             calendar_url=calendar_url,
         )
-    except Exception:  # noqa: BLE001 — one bad send must not abort the batch
+    except Exception:
         logger.warning("no_show_email_send_exception", exc_info=True)
         return False
     if not result.success:

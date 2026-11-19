@@ -256,9 +256,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check for added suppressions or skipped tests
-        env:
-          ANTI_TAMPER_BASE: origin/${{ github.base_ref }}
+      - name: Check for suppressions or skipped tests
         run: make check-anti-tampering
 
   secrets:
@@ -297,9 +295,8 @@ jobs:
       - name: Run bandit (high severity)
         run: make sast
 
-  # Not a required check. osv-scanner fails on the lockfiles as they stand
-  # (known vulnerabilities with fixes available). Requiring it would block
-  # every merge until those bumps land.
+  # Scans app lockfiles only. Root package-lock.json is release tooling whose
+  # nested `npm` CLI bundles minimatch/glob; those cannot be overridden.
   supply-chain:
     name: Supply chain
     runs-on: ubuntu-latest
@@ -314,5 +311,4 @@ jobs:
             ghcr.io/google/osv-scanner@sha256:a70ffffc2bfd33482953e5d6b64c6fcdb30239717a07b0f0d3ab2859ce3e4cde \
             scan source \
             --lockfile=/src/uv.lock \
-            --lockfile=/src/frontend/pnpm-lock.yaml \
-            --lockfile=/src/package-lock.json
+            --lockfile=/src/frontend/pnpm-lock.yaml

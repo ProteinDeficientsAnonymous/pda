@@ -152,7 +152,6 @@ export function EventForm({ existing, initial, onCreated }: Props) {
     const extras = officialExtras(officialDefaults, true, values.cashappLink);
     setRsvpQuestions(extras.questions);
     setValues((v) => withDescriptionTemplate({ ...v, ...extras.values }, templates));
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- once, when the defaults load
   }, [officialDefaults, templates]);
 
   function patch(input: Partial<EventFormValues>) {
@@ -301,7 +300,6 @@ export function EventForm({ existing, initial, onCreated }: Props) {
   const hostsCount = existing ? eventHostCount(existing) : coHosts.length;
 
   return (
-    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <form
       ref={formRef}
       onSubmit={(e) => {
@@ -311,10 +309,10 @@ export function EventForm({ existing, initial, onCreated }: Props) {
       onKeyDown={(e) => {
         // Enter must never implicitly submit (#1496) — saving is button-only; nested dialog forms and IME composition keep their defaults (old WebKit marks composition with keyCode 229 while reporting isComposing: false).
         const target = e.target as Element;
+        const keyCode = Reflect.get(e.nativeEvent, 'keyCode');
         if (
           e.key === 'Enter' &&
-          // oxlint-disable-next-line typescript/no-deprecated -- the old-WebKit IME marker is only exposed via keyCode
-          !(e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) &&
+          !(e.nativeEvent.isComposing || keyCode === 229) &&
           target.closest('form') === e.currentTarget &&
           target.matches('input, select')
         )

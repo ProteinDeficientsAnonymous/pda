@@ -79,7 +79,7 @@ def _send(
             url=feedback_url(request.token),
             reminder=reminder,
         )
-    except Exception:  # noqa: BLE001 — one bad send must not abort the batch
+    except Exception:
         logger.warning("event_feedback_email_send_exception", exc_info=True)
         return None
     if not result.success:

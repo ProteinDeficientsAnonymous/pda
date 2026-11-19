@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest, HttpResponse
 from ninja.security import HttpBearer
-from ninja_jwt.authentication import JWTAuth, JWTBaseAuthentication  # noqa: F401
+from ninja_jwt.authentication import JWTBaseAuthentication
 from ninja_jwt.exceptions import AuthenticationFailed, TokenError
 from pydantic import BaseModel
 from users.models import User as UserModel

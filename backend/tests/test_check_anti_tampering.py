@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 SCRIPT_PATH = Path(__file__).resolve().parents[2] / "scripts" / "check_anti_tampering.py"
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _load_module():
@@ -15,54 +16,43 @@ def _load_module():
 
 
 @pytest.mark.unit
-def test_scan_diff_flags_lint_and_type_suppressions():
+def test_scan_text_flags_lint_and_type_suppressions():
     mod = _load_module()
-    diff = "\n".join(
-        [
-            "+++ b/backend/community/views.py",
-            "@@ -1,3 +1,5 @@",
-            "+x = foo()  # noqa: F401",
-            "+y = bar()  # type: ignore[arg-type]",
-            "+++ b/frontend/src/App.tsx",
-            "@@ -10,2 +10,4 @@",
-            "+// @ts-expect-error",
-            "+// oxlint-disable-next-line no-console",
-        ]
+    findings = mod.scan_text(
+        "backend/community/views.py",
+        "x = foo()  # noqa: F401\ny = bar()  # type: ignore[arg-type]\n",
     )
-    findings = mod.scan_diff(diff)
-    assert len(findings) == 4
-    assert any("backend/community/views.py" in f and "noqa" in f for f in findings)
-    assert any("backend/community/views.py" in f and "type: ignore" in f for f in findings)
-    assert any("frontend/src/App.tsx" in f and "@ts-expect-error" in f for f in findings)
-    assert any("frontend/src/App.tsx" in f and "oxlint-disable" in f for f in findings)
-
-
-@pytest.mark.unit
-def test_scan_diff_flags_skipped_tests():
-    mod = _load_module()
-    diff = "\n".join(
-        [
-            "+++ b/backend/tests/test_events.py",
-            "@@ -1,2 +1,4 @@",
-            "+@pytest.mark.skip(reason='flaky')",
-            "+++ b/frontend/src/App.test.tsx",
-            "@@ -1,2 +1,4 @@",
-            "+it.skip('renders', () => {})",
-        ]
-    )
-    findings = mod.scan_diff(diff)
     assert len(findings) == 2
+    assert any("noqa" in f for f in findings)
+    assert any("type: ignore" in f for f in findings)
 
 
 @pytest.mark.unit
-def test_scan_diff_ignores_removed_lines_and_clean_additions():
+def test_scan_text_flags_skipped_tests_but_allows_skipif():
     mod = _load_module()
-    diff = "\n".join(
-        [
-            "+++ b/backend/community/views.py",
-            "@@ -1,3 +1,3 @@",
-            "-x = foo()  # noqa: F401",
-            "+x = foo()",
-        ]
+    findings = mod.scan_text(
+        "backend/tests/test_events.py",
+        "@pytest.mark.skip(reason='flaky')\n@pytest.mark.skipif(True, reason='env')\n",
     )
-    assert mod.scan_diff(diff) == []
+    assert len(findings) == 1
+    assert "skipped pytest test" in findings[0]
+
+
+@pytest.mark.unit
+def test_scan_tree_reports_repo_violations(tmp_path: Path):
+    mod = _load_module()
+    (tmp_path / "backend").mkdir()
+    bad = tmp_path / "backend" / "bad.py"
+    bad.write_text("x = 1  # noqa: F401\n", encoding="utf-8")
+    clean = tmp_path / "backend" / "clean.py"
+    clean.write_text("x = 1\n", encoding="utf-8")
+    findings = mod.scan_tree(tmp_path)
+    assert len(findings) == 1
+    assert "backend/bad.py" in findings[0]
+
+
+@pytest.mark.unit
+def test_repo_has_no_anti_tampering_violations():
+    mod = _load_module()
+    findings = mod.scan_tree(REPO_ROOT)
+    assert findings == [], "\n".join(findings)

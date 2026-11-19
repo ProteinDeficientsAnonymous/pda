@@ -1,12 +1,30 @@
 #!/usr/bin/env python3
-"""Fail on newly added lint/type suppressions or skipped tests in a git diff."""
+"""Fail when the tree contains lint/type suppressions or unconditional skipped tests."""
 
 from __future__ import annotations
 
-import os
-import re
-import subprocess
 import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+SKIP_DIR_NAMES = frozenset(
+    {
+        ".git",
+        ".venv",
+        "node_modules",
+        "__pycache__",
+        "dist",
+        "build",
+        "coverage",
+        "playwright-report",
+        "test-results",
+        "migrations",
+    }
+)
+
+SCAN_ROOTS = ("backend", "frontend", "scripts")
+SCAN_SUFFIXES = frozenset({".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"})
 
 EXEMPT_PATHS = frozenset(
     {
@@ -15,50 +33,66 @@ EXEMPT_PATHS = frozenset(
     }
 )
 
-PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
-    ("noqa suppression", re.compile(r"#\s*noqa\b")),
-    ("type: ignore suppression", re.compile(r"#\s*type:\s*ignore\b")),
-    ("pyright: ignore suppression", re.compile(r"#\s*pyright:\s*ignore\b")),
-    ("nosec suppression", re.compile(r"#\s*nosec\b")),
-    ("oxlint-disable suppression", re.compile(r"oxlint-disable")),
-    ("eslint-disable suppression", re.compile(r"eslint-disable")),
-    ("@ts-expect-error suppression", re.compile(r"@ts-expect-error")),
-    ("@ts-ignore suppression", re.compile(r"@ts-ignore")),
-    ("@ts-nocheck suppression", re.compile(r"@ts-nocheck")),
-    ("skipped pytest test", re.compile(r"@pytest\.mark\.skip\b|pytest\.skip\(")),
-    ("skipped unittest test", re.compile(r"@unittest\.skip\b")),
-    ("skipped JS/TS test", re.compile(r"\b(?:it|test|describe)\.skip\(")),
+PATTERNS: tuple[tuple[str, str], ...] = (
+    ("noqa suppression", r"#\s*noqa\b"),
+    ("type: ignore suppression", r"#\s*type:\s*ignore\b"),
+    ("pyright: ignore suppression", r"#\s*pyright:\s*ignore\b"),
+    ("nosec suppression", r"#\s*nosec\b"),
+    ("oxlint-disable suppression", r"oxlint-disable"),
+    ("eslint-disable suppression", r"eslint-disable"),
+    ("@ts-expect-error suppression", r"@ts-expect-error"),
+    ("@ts-ignore suppression", r"@ts-ignore"),
+    ("@ts-nocheck suppression", r"@ts-nocheck"),
+    # skipif is allowed; only unconditional skips are banned.
+    ("skipped pytest test", r"@pytest\.mark\.skip(?:\b|\()|pytest\.skip\("),
+    ("skipped unittest test", r"@unittest\.skip\b"),
+    ("skipped JS/TS test", r"\b(?:it|test|describe)\.skip\("),
 )
 
 
-def scan_diff(diff_text: str) -> list[str]:
+def _compile_patterns():
+    import re
+
+    return tuple((label, re.compile(pattern)) for label, pattern in PATTERNS)
+
+
+COMPILED = _compile_patterns()
+
+
+def scan_text(rel_path: str, text: str) -> list[str]:
+    if rel_path in EXEMPT_PATHS:
+        return []
     findings: list[str] = []
-    current_file = ""
-    for line in diff_text.splitlines():
-        if line.startswith("+++ b/"):
-            current_file = line[6:]
-            continue
-        if not line.startswith("+") or line.startswith("+++"):
-            continue
-        if current_file in EXEMPT_PATHS:
-            continue
-        added = line[1:]
-        for label, pattern in PATTERNS:
-            if pattern.search(added):
-                findings.append(f"{current_file}: {label} -> {added.strip()}")
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        for label, pattern in COMPILED:
+            if pattern.search(line):
+                findings.append(f"{rel_path}:{lineno}: {label} -> {line.strip()}")
     return findings
 
 
-def _git_diff(base: str | None) -> str:
-    cmd = ["git", "diff", "--unified=0"]
-    if base:
-        cmd.append(f"{base}...HEAD")
-    return subprocess.check_output(cmd, text=True)
+def _iter_files(root: Path):
+    for base_name in SCAN_ROOTS:
+        base = root / base_name
+        if not base.is_dir():
+            continue
+        for path in base.rglob("*"):
+            if not path.is_file() or path.suffix not in SCAN_SUFFIXES:
+                continue
+            if SKIP_DIR_NAMES.intersection(path.relative_to(root).parts):
+                continue
+            yield path
+
+
+def scan_tree(root: Path) -> list[str]:
+    findings: list[str] = []
+    for path in sorted(_iter_files(root)):
+        rel = str(path.relative_to(root))
+        findings.extend(scan_text(rel, path.read_text(encoding="utf-8")))
+    return findings
 
 
 def main() -> int:
-    base = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("ANTI_TAMPER_BASE")
-    findings = scan_diff(_git_diff(base))
+    findings = scan_tree(REPO_ROOT)
     for item in findings:
         print(item)
     if findings:
