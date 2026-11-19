@@ -53,8 +53,8 @@ export function DeleteAccountSection() {
             remove you from the pda whatsapp group.
           </p>
           <p>
-            you'll step down as co-host on events that have another host — events you host alone
-            stay listed under you, so hand them off first.
+            you'll step down as co-host on events that have another host. events you host alone go
+            back to draft and their guests are told, so hand them off first.
           </p>
           <p>
             your profile is hidden, not erased. ask an admin if you want your data removed, or send

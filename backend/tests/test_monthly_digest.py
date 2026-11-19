@@ -6,7 +6,7 @@ from community.management.commands import send_monthly_digest as digest_command
 from community.models import Event, EventType
 from django.core.management import call_command
 from django.utils import timezone
-from notifications.digest_emails import send_monthly_digest_email
+from notifications.digest_emails import MonthlyDigestMail, send_monthly_digest_email
 from notifications.email_sender import EmailStream, SendResult
 
 from tests._digest_helpers import make_event, make_tentative
@@ -245,13 +245,15 @@ class TestSendMonthlyDigestEmail:
         send_monthly_digest_email(
             sender=sender,
             to="ada@example.test",
-            display_name="Ada",
-            month="June",
-            events=[{"title": "Potluck", "when": "Friday", "url": "https://pda.test/events/p"}],
-            urls={
-                "calendar_url": "https://pda.test/calendar",
-                "settings_url": "https://pda.test/s",
-            },
+            mail=MonthlyDigestMail(
+                display_name="Ada",
+                month="June",
+                events=[{"title": "Potluck", "when": "Friday", "url": "https://pda.test/events/p"}],
+                urls={
+                    "calendar_url": "https://pda.test/calendar",
+                    "settings_url": "https://pda.test/s",
+                },
+            ),
         )
         kwargs = sender.send.call_args.kwargs
         assert kwargs["subject"] == "what's coming up in june at pda"
@@ -266,14 +268,16 @@ class TestSendMonthlyDigestEmail:
         send_monthly_digest_email(
             sender=sender,
             to="ada@example.test",
-            display_name="Ada",
-            month="June",
-            events=[],
-            urls={
-                "calendar_url": "https://pda.test/calendar",
-                "settings_url": "https://pda.test/s",
-            },
-            veganniversaries=[{"label": "1 year", "people": [{"name": "Bo", "url": "u"}]}],
+            mail=MonthlyDigestMail(
+                display_name="Ada",
+                month="June",
+                events=[],
+                urls={
+                    "calendar_url": "https://pda.test/calendar",
+                    "settings_url": "https://pda.test/s",
+                },
+                veganniversaries=[{"label": "1 year", "people": [{"name": "Bo", "url": "u"}]}],
+            ),
         )
         text = sender.send.call_args.kwargs["text"]
         assert "coming up in june:" not in text

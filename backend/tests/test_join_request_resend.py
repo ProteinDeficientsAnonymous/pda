@@ -101,8 +101,7 @@ class TestResendMagicLink:
     def test_paused_user_rejected(self, api_client, vettor_headers, sample_join_request):
         _approve(api_client, vettor_headers, sample_join_request)
         user = User.objects.get(phone_number=sample_join_request.phone_number)
-        user.is_paused = True
-        user.save(update_fields=["is_paused"])
+        user.save(update_fields=user.apply_guidelines_pause(by=None))
 
         response = api_client.post(
             f"/api/community/join-requests/{sample_join_request.id}/resend-magic-link/",
@@ -110,7 +109,7 @@ class TestResendMagicLink:
             **vettor_headers,
         )
         assert response.status_code == 403
-        assert_error_code(response, Code.Auth.ACCOUNT_PAUSED)
+        assert_error_code(response, Code.Auth.ACCOUNT_GUIDELINES_PAUSED)
 
     def test_not_found(self, api_client, vettor_headers):
         response = api_client.post(
