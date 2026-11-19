@@ -1,7 +1,9 @@
+from datetime import timedelta
 from itertools import count
 
 import pytest
-from community.models import EventType, JoinRequest, JoinRequestStatus
+from community.models import AttendanceStatus, EventType, JoinRequest, JoinRequestStatus
+from django.utils import timezone
 from users.models import User
 
 from tests._events import make_event, make_rsvp
@@ -27,10 +29,16 @@ def _seed_applicants(start: int, n: int) -> None:
 def _seed_linked_applicants(n: int) -> list[User]:
     """Requests linked via jr.user whose phone matches no user, so only that prefetch applies."""
     event = make_event(title="Picnic", event_type=EventType.OFFICIAL)
+    past = make_event(
+        title="Cookout",
+        event_type=EventType.OFFICIAL,
+        start_datetime=timezone.now() - timedelta(days=3),
+    )
     users = []
     for _ in range(n):
         user = make_user(first_name="Linked")
         make_rsvp(event, user)
+        make_rsvp(past, user, attendance=AttendanceStatus.ATTENDED)
         JoinRequest.objects.create(
             first_name="Linked", phone_number=f"+1202666{next(_unmatched_phones):04d}", user=user
         )
@@ -64,4 +72,6 @@ class TestJoinRequestListQueries:
         [row] = api_client.get(URL, **vettor_headers).json()
         assert row["user_id"] == str(user.id)
         assert row["upcoming_official_count"] == 1
-        assert len(row["rsvp_events"]) == 1
+        assert row["attended_official_count"] == 1
+        assert [e["title"] for e in row["attended_events"]] == ["Cookout"]
+        assert len(row["rsvp_events"]) == 2
