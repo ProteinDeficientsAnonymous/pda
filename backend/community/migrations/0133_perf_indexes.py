@@ -23,9 +23,22 @@ class Migration(migrations.Migration):
                 fields=["phone_number", "status"], name="joinrequest_phone_status_idx"
             ),
         ),
+        # On Postgres, dropping db_index also drops this partial unique index.
+        migrations.RemoveConstraint(
+            model_name="joinrequest",
+            name="unique_open_join_request_per_phone",
+        ),
         migrations.AlterField(
             model_name="joinrequest",
             name="phone_number",
             field=models.CharField(max_length=20),
+        ),
+        migrations.AddConstraint(
+            model_name="joinrequest",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("status__in", ["pending", "tentative"])),
+                fields=("phone_number",),
+                name="unique_open_join_request_per_phone",
+            ),
         ),
     ]
