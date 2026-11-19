@@ -1,7 +1,7 @@
 from typing import Any
 
 from asgiref.sync import sync_to_async
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import Event, EventRSVP, EventStatus, RSVPStatus
 from community.models.event_slug import event_lookup_q
 from community.rsvps.answers import can_see_guest_questionnaire_responses
 from mcp.server.mcpserver.exceptions import ToolError
@@ -28,7 +28,8 @@ def _response(rsvp: EventRSVP, labels: dict[str, str], viewer: User) -> dict[str
 
 def questionnaire_responses(user: User, event_ref: str) -> dict[str, Any]:
     event = (
-        Event.objects.filter(event_lookup_q(event_ref), deleted_at__isnull=True)
+        Event.objects.filter(event_lookup_q(event_ref))
+        .exclude(status=EventStatus.DELETED)
         .select_related("created_by")
         .prefetch_related("co_hosts", "rsvp_questions")
         .first()

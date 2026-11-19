@@ -1,6 +1,5 @@
 import pytest
-from community.models import EventRsvpQuestion, RsvpQuestionType, RSVPStatus
-from django.utils import timezone
+from community.models import EventRsvpQuestion, EventStatus, RsvpQuestionType, RSVPStatus
 
 from tests._events import make_event, make_rsvp
 from tests._mcp_members_helpers import make_member
@@ -87,8 +86,8 @@ def test_other_members_are_forbidden(event, photo_question):
 
 def test_unknown_or_deleted_event_is_an_error(test_user, event):
     assert tool_error(test_user, TOOL, event="nope") == "no event with that id or slug"
-    event.deleted_at = timezone.now()
-    event.save(update_fields=["deleted_at"])
+    event.status = EventStatus.DELETED
+    event.save(update_fields=["status"])
     assert tool_error(test_user, TOOL, event=str(event.id)) == "no event with that id or slug"
 
 
