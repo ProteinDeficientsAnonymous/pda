@@ -42,6 +42,19 @@ class TestSingleEventIcs:
         resp = api_client.get(f"/api/community/events/{uuid.uuid4()}/ics/")
         assert resp.status_code == 404
 
+    def test_resolves_event_by_slug(self, api_client, test_user):
+        event = Event.objects.create(
+            title="Slug Picnic", start_datetime=timezone.now(), created_by=test_user
+        )
+
+        resp = api_client.get(f"/api/community/events/{event.slug}/ics/")
+        assert resp.status_code == 200
+        assert "Slug Picnic" in resp.content.decode()
+
+    def test_returns_404_for_unknown_slug(self, api_client):
+        resp = api_client.get("/api/community/events/no-such-event/ics/")
+        assert resp.status_code == 404
+
     def test_anon_ics_omits_member_only_links(self, api_client, test_user):
         event = Event.objects.create(
             title="Linked Picnic",

@@ -12,7 +12,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.utils import timezone
 from notifications.email_sender import EmailStream, SendResult
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._digest_helpers import make_event, make_tentative
 from tests._users import make_attendance_paused, make_user
@@ -137,7 +137,7 @@ class TestSendWeeklyDigestCommand:
             phone_number="+12025550209",
             password="testpass123",
             email="guest@example.test",
-            is_member=False,
+            membership_status=MembershipStatus.NONE,
         )
         make_event("potluck", 2)
         call_command("send_weekly_digest")
@@ -150,7 +150,7 @@ class TestSendWeeklyDigestCommand:
         fake_email_sender.send.assert_not_called()
 
     def test_skips_paused_member(self, fake_email_sender):
-        make_user(phone_number="+12025550212", is_paused=True)
+        make_user(phone_number="+12025550212", membership_status=MembershipStatus.GUIDELINES_PAUSED)
         make_event("potluck", 2)
         call_command("send_weekly_digest")
         fake_email_sender.send.assert_not_called()
@@ -235,12 +235,6 @@ class TestWeeklyDigestTentativeMembers:
 
     def test_skips_tentative_member_opted_out(self, fake_email_sender):
         make_tentative("+12025550271", weekly_digest_opt_out=True)
-        make_event("potluck", 2)
-        call_command("send_weekly_digest")
-        fake_email_sender.send.assert_not_called()
-
-    def test_skips_paused_tentative_member(self, fake_email_sender):
-        make_tentative("+12025550272", is_paused=True)
         make_event("potluck", 2)
         call_command("send_weekly_digest")
         fake_email_sender.send.assert_not_called()

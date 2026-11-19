@@ -1,6 +1,6 @@
 [project]
 name = "pda"
-version = "0.227.1"
+version = "0.258.1"
 description = "protein deficients anonymous — vegan collective liberation community"
 requires-python = ">=3.13"
 dependencies = [
@@ -76,6 +76,12 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["F", "I", "UP", "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+
+[tool.ruff.lint.per-file-ignores]
+# Django shell convenience star-imports.
+"backend/shell_startup.py" = ["F401", "F403"]
+# Pytest fixtures are legitimate function parameters.
+"backend/tests/**/*.py" = ["PLR0913"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10

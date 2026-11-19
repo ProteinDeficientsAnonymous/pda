@@ -15,6 +15,7 @@ from community.validation import Code
 from django.db import transaction
 from django.utils import timezone
 from notifications.models import Notification
+from users.models import MembershipStatus
 
 from tests._asserts import assert_error_code
 from tests._payment_helpers import create_paid_event
@@ -34,7 +35,9 @@ class TestWaitlistPromotionBypass:
     ):
         event = _paid_event(test_user, max_attendees=1)
         seated = django_user_model.objects.create_user(
-            phone_number="+14155550111", first_name="Seated", is_member=True
+            phone_number="+14155550111",
+            first_name="Seated",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=seated, status=RSVPStatus.ATTENDING)
 
@@ -54,7 +57,9 @@ class TestWaitlistPromotionBypass:
     ):
         event = _paid_event(test_user, max_attendees=1)
         seated = django_user_model.objects.create_user(
-            phone_number="+14155550111", first_name="Seated", is_member=True
+            phone_number="+14155550111",
+            first_name="Seated",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         seat = EventRSVP.objects.create(event=event, user=seated, status=RSVPStatus.ATTENDING)
         api_client.post(
