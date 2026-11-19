@@ -2,9 +2,8 @@ export function buildMagicLinkUrl(token: string): string {
   return `${window.location.origin}/magic-login/${token}`;
 }
 
-// Legacy hardcoded body — still used by member-create / bulk-create /
-// member-detail flows. The join-request approval flow uses the editable
-// template via renderWelcomeMessage instead.
+// Legacy hardcoded body — still used by the member-detail flow. The join-request
+// approval flow uses the editable template via renderWelcomeMessage instead.
 export function buildWelcomeMessage(firstName: string | null | undefined, url: string): string {
   const name = (firstName ?? '').trim();
   const greeting = name ? `hi ${name} 🌱` : 'hi 🌱';

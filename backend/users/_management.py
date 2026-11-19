@@ -4,10 +4,10 @@ import logging
 import re
 
 from community.attendance.analytics import AttendedEventOut
+from community.events.limited_access import is_limited
 from community.models import AttendanceStatus, EventRSVP
 from community.rsvps.counts import attendance_q, reportable_events_q
-from community.shared import validate_display_name
-from community.validation import Code, ValidationException, raise_validation
+from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
@@ -16,33 +16,21 @@ from ninja import Router
 from ninja.responses import Status
 
 from users._attendance_pause import apply_attendance_pause_patch, release_held_events
-from users._unpause import has_pause, mark_unpaused
+from users._unpause import email_unpaused
 from users.helpers import (
     check_and_set_email,
-    create_magic_token,
-    create_user_with_role,
     is_admin,
     resolve_name_fields,
     validate_admin_role_change,
     validate_member_role_required,
     visible_name,
 )
-from users.models import (
-    ADMIN_ENTERED_PHONE_REGION,
-    MembershipStatus,
-    User,
-    status_change_stamp,
-    validate_phone,
-)
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
+from users.phone import ADMIN_ENTERED_PHONE_REGION, validate_phone
 from users.roles import Role
 from users.schemas import (
-    BulkUserCreateIn,
-    BulkUserCreateOut,
-    BulkUserResult,
     ErrorOut,
-    UserCreateIn,
-    UserCreateOut,
     UserOut,
     UserPatchIn,
     UserRolesIn,
@@ -71,127 +59,6 @@ def require_manage_users(request, endpoint: str, user_id: str | None = None) -> 
     _require_permission(request, PermissionKey.MANAGE_USERS, endpoint, user_id)
 
 
-@router.post(
-    "/create-user/",
-    response={201: UserCreateOut, 400: ErrorOut, 403: ErrorOut, 409: ErrorOut},
-    auth=gated_jwt,
-)
-def create_user(request, payload: UserCreateIn):
-    _require_permission(request, PermissionKey.CREATE_USER, "create_user")
-
-    if payload.last_name:
-        validate_display_name(payload.last_name, field="last_name")
-    first_name = payload.first_name.strip()
-    last_name = payload.last_name.strip()
-    validate_display_name(first_name, field="first_name")
-
-    user, magic_token = create_user_with_role(
-        payload.phone_number,
-        first_name,
-        last_name,
-        payload.email,
-        payload.role_id,
-        requesting_user=request.auth,
-    )
-
-    audit_log(
-        logging.INFO,
-        "user_created",
-        request,
-        target=AuditTarget(
-            type=AuditTargetType.USER,
-            id=str(user.id),
-            details={
-                "full_name": user.full_name,
-                "role_id": str(payload.role_id) if payload.role_id else None,
-            },
-        ),
-    )
-    return Status(
-        201,
-        UserCreateOut(
-            id=str(user.id),
-            phone_number=user.phone_number,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            full_name=user.full_name,
-            magic_link_token=magic_token,
-        ),
-    )
-
-
-@router.post(
-    "/bulk-create-users/",
-    response={200: BulkUserCreateOut, 403: ErrorOut},
-    auth=gated_jwt,
-)
-def bulk_create_users(request, payload: BulkUserCreateIn):
-    require_manage_users(request, "bulk_create_users")
-
-    member_role = Role.objects.filter(name="member", is_default=True).first()
-    results: list[BulkUserResult] = []
-    created = 0
-    failed = 0
-
-    for i, raw_phone in enumerate(payload.phone_numbers):
-        # Per-row errors are embedded in a 200 response, not raised as 4xx.
-        # We catch ValidationException and surface its code as the result's
-        # error field — the frontend maps codes → copy via messageForCode.
-        try:
-            validated_phone = validate_phone(raw_phone.strip(), ADMIN_ENTERED_PHONE_REGION)
-        except ValidationException as e:
-            results.append(
-                BulkUserResult(row=i + 1, phone_number=raw_phone, success=False, error=e.code)
-            )
-            failed += 1
-            continue
-
-        if User.objects.filter(phone_number=validated_phone).exists():
-            results.append(
-                BulkUserResult(
-                    row=i + 1,
-                    phone_number=raw_phone,
-                    success=False,
-                    error=Code.Phone.ALREADY_EXISTS,
-                )
-            )
-            failed += 1
-            continue
-
-        user = User.objects.create_user(
-            phone_number=validated_phone,
-            membership_status=MembershipStatus.ACTIVE_MEMBER,
-            needs_onboarding=True,
-            **status_change_stamp(request.auth),
-        )
-        user.set_unusable_password()
-        user.save(update_fields=["password"])
-        if member_role:
-            user.roles.add(member_role)
-
-        magic_token = create_magic_token(user)
-        results.append(
-            BulkUserResult(
-                row=i + 1,
-                phone_number=validated_phone,
-                success=True,
-                magic_link_token=magic_token,
-            )
-        )
-        created += 1
-
-    audit_log(
-        logging.INFO,
-        "users_bulk_created",
-        request,
-        target=AuditTarget(details={"count_created": created, "count_failed": failed}),
-    )
-    return Status(
-        200,
-        BulkUserCreateOut(results=results, created=created, failed=failed),
-    )
-
-
 def _matches_for_non_admin(u: User, q: str, digits: str) -> bool:
     """Whether a search hit is legitimate for a non-admin viewer.
 
@@ -207,18 +74,24 @@ def _matches_for_non_admin(u: User, q: str, digits: str) -> bool:
     return bool(u.show_phone and (q in u.phone_number or (digits and digits in u.phone_number)))
 
 
-@router.get("/users/search/", response={200: list[UserSearchOut]}, auth=gated_jwt)
-def search_users(request, q: str = ""):
-    qs = User.objects.active_members().filter(needs_onboarding=False).exclude(pk=request.auth.pk)
-    q = q.strip()
-    digits = re.sub(r"\D", "", q)
+def _search_queryset(viewer: User, q: str, digits: str):
+    qs = User.objects.active_members().filter(needs_onboarding=False).exclude(pk=viewer.pk)
     if q:
         phone_q = dj_models.Q(phone_number__icontains=q)
         if digits and digits != q:
             phone_q = phone_q | dj_models.Q(phone_number__icontains=digits)
         name_q = dj_models.Q(first_name__icontains=q) | dj_models.Q(last_name__icontains=q)
         qs = qs.filter(name_q | phone_q)
-    qs = qs.order_by("first_name", "last_name")
+    return qs.order_by("first_name", "last_name")
+
+
+@router.get("/users/search/", response={200: list[UserSearchOut], 403: ErrorOut}, auth=gated_jwt)
+def search_users(request, q: str = ""):
+    if is_limited(request.auth):
+        raise_validation(Code.Perm.DENIED, status_code=403, action="search_users")
+    q = q.strip()
+    digits = re.sub(r"\D", "", q)
+    qs = _search_queryset(request.auth, q, digits)
     needs_non_admin_filter = bool(q) and not is_admin(request.auth)
     # Non-admins post-filter in Python (the DB can match a hidden last name),
     # so fetch some headroom before capping to 10. Admins take the top 10
@@ -308,7 +181,6 @@ def update_user(request, user_id: str, payload: UserPatchIn):
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
     was_guidelines_paused = user.is_guidelines_paused
-    was_paused = has_pause(user)
     _apply_user_patch(user, user_id, payload, requester=request.auth)
     with transaction.atomic():
         user.save()
@@ -318,8 +190,8 @@ def update_user(request, user_id: str, payload: UserPatchIn):
         _audit_user_update(request, user_id, payload, was_guidelines_paused, released)
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
-    if was_paused and not has_pause(user):
-        mark_unpaused(user)
+    if was_guidelines_paused and not user.is_guidelines_paused:
+        email_unpaused(user)
     return Status(200, UserOut.from_user(user))
 
 
@@ -393,6 +265,11 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester:
     )
     if payload.attendance_paused and stays_guidelines_paused:
         raise_validation(Code.User.GUIDELINES_PAUSED, field="attendance_paused", status_code=400)
+    # Only a compliant in-person check-in lifts an attendance pause.
+    if payload.attendance_paused is False and user.is_attendance_paused:
+        raise_validation(
+            Code.User.ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN, field="attendance_paused", status_code=400
+        )
     if (
         payload.guidelines_paused is not None
         and payload.guidelines_paused != user.is_guidelines_paused

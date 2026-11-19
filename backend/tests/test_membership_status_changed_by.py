@@ -5,34 +5,9 @@ from users.models import MembershipStatus, User
 
 from tests._auth import auth_headers_for
 from tests._public_rsvp_helpers import make_official_event, post
-from tests._users import make_attendance_paused, make_user
+from tests._users import make_user
 
 pytestmark = pytest.mark.django_db
-
-NEW_PHONE = "+12025550777"
-
-
-@pytest.mark.parametrize(
-    ("path", "payload"),
-    [
-        (
-            "/api/auth/create-user/",
-            {"phone_number": NEW_PHONE, "first_name": "New", "email": "new@example.com"},
-        ),
-        ("/api/auth/bulk-create-users/", {"phone_numbers": [NEW_PHONE]}),
-    ],
-    ids=["single", "bulk"],
-)
-def test_admin_create_records_the_creator(
-    api_client, manage_users_user, manage_users_headers, path, payload
-):
-    response = api_client.post(
-        path, payload, content_type="application/json", **manage_users_headers
-    )
-    assert response.status_code in (200, 201)
-    created = User.objects.get(phone_number=NEW_PHONE)
-    assert created.membership_status_changed_by == manage_users_user
-    assert created.membership_status_changed_at is not None
 
 
 @pytest.mark.parametrize("decision", [JoinRequestStatus.TENTATIVE, JoinRequestStatus.APPROVED])
@@ -93,9 +68,12 @@ def test_unchanged_status_keeps_the_stamp():
     [
         (make_user, {"attendance_paused": True}),
         (make_user, {"guidelines_paused": True}),
-        (make_attendance_paused, {"attendance_paused": False}),
+        (
+            lambda: make_user(membership_status=MembershipStatus.GUIDELINES_PAUSED),
+            {"guidelines_paused": False},
+        ),
     ],
-    ids=["attendance-pause", "guidelines-pause", "unpause"],
+    ids=["attendance-pause", "guidelines-pause", "guidelines-unpause"],
 )
 def test_pause_changes_record_the_admin(
     api_client, manage_users_user, manage_users_headers, make, body

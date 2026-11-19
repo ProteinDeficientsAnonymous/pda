@@ -16,6 +16,7 @@ import {
 } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { buttonClass } from '@/components/ui/buttonClass';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
 import { useConfirm } from '@/components/ui/useConfirm';
@@ -56,7 +57,7 @@ function MemberDetailView({ member }: { member: Member }) {
       title: 'archive member',
       message: tentative
         ? `archive ${name}? this closes their tentative join request, so checking in won't approve them. they can apply to join again later.`
-        : `archive ${name}? they'll lose access immediately — you can restore them later by approving a new join request.`,
+        : `archive ${name}? they'll lose access immediately, and events they host alone go back to draft with their guests told. you can restore them later by approving a new join request.`,
       confirmLabel: 'archive',
       destructive: true,
     });
@@ -291,10 +292,7 @@ function MemberMagicLinkSection({ member }: { member: Member }) {
             <Button type="button" variant="secondary" onClick={() => void onCopy()}>
               {copied ? 'copied ✓' : 'copy link'}
             </Button>
-            <a
-              href={smsHref}
-              className="focus-visible:ring-brand-200 bg-surface text-foreground border-border-strong hover:bg-background inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            >
+            <a href={smsHref} className={buttonClass('secondary')}>
               send welcome message
             </a>
           </div>

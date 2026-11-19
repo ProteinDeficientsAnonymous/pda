@@ -118,7 +118,7 @@ def test_seed_staging_creates_one_role_per_permission():
 
 
 @pytest.mark.django_db
-def test_seed_staging_perm_users_hold_only_their_role_and_are_onboarded():
+def test_seed_staging_perm_users_hold_their_role_and_member_and_are_onboarded():
     call_command("seed_staging")
     for index, key in enumerate(PermissionKey.values):
         user = User.objects.get(phone_number=perm_phone(index))
@@ -127,7 +127,7 @@ def test_seed_staging_perm_users_hold_only_their_role_and_are_onboarded():
         assert user.onboarded_at is not None
         assert check_password(PASSWORD, user.password)
         role_names = set(user.roles.values_list("name", flat=True))
-        assert role_names == {f"perm: {key}"}
+        assert role_names == {f"perm: {key}", "member"}
         assert user.email == perm_email(key)
         assert user.guidelines_consent_at is not None
         assert user.sms_consent_at is not None

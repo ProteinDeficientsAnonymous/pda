@@ -1,6 +1,7 @@
 import pytest
 from audit.models import AuditLogEntry
 from community.models import (
+    CancelReason,
     CoHostInviteStatus,
     EventCoHostInvite,
     EventRSVP,
@@ -38,7 +39,8 @@ class TestGuidelinesPauseRelease:
 
         set_pause(member, True)
 
-        assert EventRSVP.objects.get(event=event, user=member).status == RSVPStatus.CANT_GO
+        rsvp = EventRSVP.objects.get(event=event, user=member)
+        assert (rsvp.status, rsvp.cancel_reason) == (RSVPStatus.CANT_GO, CancelReason.PAUSE)
 
     def test_releases_rsvps_an_attendance_pause_kept(self, set_pause, member, other_user):
         official = make_event(created_by=other_user, event_type=EventType.OFFICIAL)
@@ -74,6 +76,7 @@ class TestGuidelinesPauseRelease:
             "removed_rsvp_event_ids": [str(official.pk)],
             "removed_hosting_event_ids": [str(shared.pk)],
             "drafted_event_ids": [str(drafted.pk)],
+            "rescinded_invite_event_ids": [str(official.pk)],
         }
 
     def test_lifting_leaves_an_attendance_pause_with_the_member_role(self, set_pause, member):

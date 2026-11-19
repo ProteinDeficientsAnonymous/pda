@@ -1,0 +1,13 @@
+title = "pda"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "generic-api-key matches token field names in these files, not a literal secret"
+paths = [
+  '''backend/community/event_feedback/host\.py''',
+  '''backend/community/surveys/public\.py''',
+  '''backend/mcp_gateway/provider\.py''',
+]
+regexes = ['''token''']

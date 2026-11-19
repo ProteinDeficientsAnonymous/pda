@@ -273,41 +273,6 @@ class MemberDirectoryOut(BaseModel):
     profile_photo_url: str = ""
 
 
-class UserCreateIn(BaseModel):
-    phone_number: str = Field(max_length=FieldLimit.PHONE)
-    first_name: str = Field(default="", max_length=FieldLimit.FIRST_NAME)
-    last_name: str = Field(default="", max_length=FieldLimit.LAST_NAME)
-    email: EmailStr
-    role_id: str | None = None
-
-
-class UserCreateOut(BaseModel):
-    id: str
-    phone_number: str
-    first_name: str = ""
-    last_name: str = ""
-    full_name: str = ""
-    magic_link_token: str
-
-
-class BulkUserCreateIn(BaseModel):
-    phone_numbers: list[str]
-
-
-class BulkUserResult(BaseModel):
-    row: int
-    phone_number: str
-    success: bool
-    error: str | None = None
-    magic_link_token: str | None = None
-
-
-class BulkUserCreateOut(BaseModel):
-    results: list[BulkUserResult]
-    created: int
-    failed: int
-
-
 class UserPatchIn(BaseModel):
     phone_number: str | None = Field(default=None, max_length=FieldLimit.PHONE)
     first_name: str | None = Field(default=None, max_length=FieldLimit.FIRST_NAME)

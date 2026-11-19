@@ -51,6 +51,21 @@ describe('RequireMember', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/see the member list/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /see what.s coming up/i })).toBeInTheDocument();
+    expect(screen.queryByText(/your membership is paused/i)).toBeNull();
+  });
+
+  it('explains the attendance rule to an attendance-paused member', () => {
+    setAuthed(makeUser({ membershipStatus: MembershipStatus.AttendancePaused }));
+    renderGuard();
+
+    expect(screen.queryByText('directory contents')).toBeNull();
+    expect(
+      screen.getByText(
+        /your membership is paused .* 2 official or club events in the last 12 months, .* see the member list/i,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/come in person before we make you a full member/i)).toBeNull();
+    expect(screen.getByRole('link', { name: /see what.s coming up/i })).toBeInTheDocument();
   });
 
   it('sends an unauthed visitor to login with a redirect back', () => {

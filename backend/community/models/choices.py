@@ -3,6 +3,12 @@
 from django.db import models
 
 
+class ReserveEntryKind(models.TextChoices):
+    EVENT = "event", "Event"
+    COST = "cost", "Cost"
+    DONATION = "donation", "Donation"
+
+
 class PageVisibility(models.TextChoices):
     PUBLIC = "public", "Public"
     MEMBERS_ONLY = "members_only", "Members only"
@@ -29,6 +35,25 @@ class EventStatus(models.TextChoices):
     ACTIVE = "active", "Active"
     CANCELLED = "cancelled", "Cancelled"
     DELETED = "deleted", "Deleted"
+
+
+class PlanningSlotKind(models.TextChoices):
+    MONTHLY = "monthly", "Monthly"
+    BIANNUAL = "biannual", "Biannual"
+
+
+class BiannualInterest(models.TextChoices):
+    YES = "yes", "Yes"
+    MAYBE = "maybe", "Maybe"
+    NO = "no", "No"
+
+
+class AssignmentStatus(models.TextChoices):
+    DRAFT = "draft", "Draft"
+    PROPOSED = "proposed", "Proposed"
+    COMMITTED = "committed", "Committed"
+    DECLINED = "declined", "Declined"
+    WITHDRAWN = "withdrawn", "Withdrawn"
 
 
 class EventFlagStatus(models.TextChoices):
@@ -135,6 +160,13 @@ class RSVPStatus(models.TextChoices):
     CANT_GO = "cant_go", "Can't go"
     WAITLISTED = "waitlisted", "Waitlisted"
     REMOVED = "removed", "Removed"
+
+
+class CancelReason(models.TextChoices):
+    SELF = "self", "Self"
+    HOST = "host", "Host"
+    PAUSE = "pause", "Pause"
+    ARCHIVE = "archive", "Archive"
 
 
 # Guests a payment import can match and verify.
