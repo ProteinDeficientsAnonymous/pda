@@ -124,17 +124,17 @@ class TestNonStringExtraRedaction:
         f = SensitiveDataFilter()
         record = _record("done", count=42, ratio=1.5, ok=True, missing=None)
         f.filter(record)
-        assert getattr(record, "count") == 42  
-        assert getattr(record, "ratio") == 1.5  
-        assert getattr(record, "ok") is True  
-        assert getattr(record, "missing") is None  
+        assert getattr(record, "count") == 42
+        assert getattr(record, "ratio") == 1.5
+        assert getattr(record, "ok") is True
+        assert getattr(record, "missing") is None
 
     def test_redacts_sensitive_key_with_non_string_value(self):
         # A sensitive key name wins regardless of value type.
         f = SensitiveDataFilter()
         record = _record("auth", otp=123456)
         f.filter(record)
-        assert getattr(record, "otp") == "[REDACTED]"  
+        assert getattr(record, "otp") == "[REDACTED]"
 
 
 class TestFilterIdempotency:
@@ -148,7 +148,7 @@ class TestFilterIdempotency:
         first_header = dict(getattr(record, "header"))
         f.filter(record)
         assert record.msg == first_msg
-        assert getattr(record, "header") == first_header  
+        assert getattr(record, "header") == first_header
 
 
 class TestFullValueRedaction:
@@ -212,7 +212,7 @@ class TestRedactionFailsSafe:
         output = JsonFormatter().format(record)
         assert "REDACT" in output  # content was replaced with a redaction marker
         # The exploding object is gone (replaced before json.dumps stringifies it).
-        assert getattr(record, "payload") == "[REDACTED]"  
+        assert getattr(record, "payload") == "[REDACTED]"
 
     def test_raising_str_in_message_args_is_suppressed(self):
         class Boom:

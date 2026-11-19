@@ -1,22 +1,31 @@
+from dataclasses import dataclass
+
 from django.template.loader import render_to_string
 
 from notifications.email_sender import EmailSender, SendResult
+
+
+@dataclass(frozen=True)
+class DigestMail:
+    display_name: str
+    events: list[dict]
+    urls: dict[str, str]
+
+
+@dataclass(frozen=True)
+class MonthlyDigestMail(DigestMail):
+    month: str
+    veganniversaries: list[dict] | None = None
 
 
 def send_weekly_digest_email(
     *,
     sender: EmailSender,
     to: str,
-    display_name: str,
-    events: list[dict],
-    urls: dict[str, str],
+    mail: DigestMail,
 ) -> SendResult:
-    """Render and send the weekly "what's coming up" digest to one member.
-
-    param events(list[dict]): upcoming events, each with title/when/url keys
-    param urls: calendar_url and settings_url
-    """
-    context = {"display_name": display_name or "", "events": events, **urls}
+    """Render and send the weekly "what's coming up" digest to one member."""
+    context = {"display_name": mail.display_name or "", "events": mail.events, **mail.urls}
     html = render_to_string("emails/weekly_digest.html", context)
     text = render_to_string("emails/weekly_digest.txt", context)
     return sender.send(
@@ -31,26 +40,16 @@ def send_monthly_digest_email(
     *,
     sender: EmailSender,
     to: str,
-    display_name: str,
-    month: str,
-    events: list[dict],
-    urls: dict[str, str],
-    veganniversaries: list[dict] | None = None,
+    mail: MonthlyDigestMail,
 ) -> SendResult:
-    """Render and send the monthly "what's coming up" digest to one member.
-
-    param month(str): month name shown in the subject and intro
-    param events(list[dict]): this month's events, each with title/when/url keys
-    param urls: calendar_url and settings_url
-    param veganniversaries: year-grouped shout-out people, or empty
-    """
-    month = month.lower()
+    """Render and send the monthly "what's coming up" digest to one member."""
+    month = mail.month.lower()
     context = {
-        "display_name": display_name or "",
+        "display_name": mail.display_name or "",
         "month": month,
-        "events": events,
-        "veganniversaries": veganniversaries or [],
-        **urls,
+        "events": mail.events,
+        "veganniversaries": mail.veganniversaries or [],
+        **mail.urls,
     }
     html = render_to_string("emails/monthly_digest.html", context)
     text = render_to_string("emails/monthly_digest.txt", context)

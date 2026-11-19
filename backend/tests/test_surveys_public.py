@@ -415,7 +415,7 @@ class TestAnonymousSurveySubmit:
             )
         assert response.status_code == 201
         [record] = [r for r in middleware_caplog.records if r.name == "pda.middleware"]
-        assert getattr(record, "user_id") is None  
+        assert getattr(record, "user_id") is None
 
     def test_request_log_line_keeps_user_id_on_named_survey(
         self, api_client, auth_headers, test_user, public_text_survey, middleware_caplog
@@ -431,7 +431,7 @@ class TestAnonymousSurveySubmit:
             )
         assert response.status_code == 201
         [record] = [r for r in middleware_caplog.records if r.name == "pda.middleware"]
-        assert getattr(record, "user_id") == str(test_user.pk)  
+        assert getattr(record, "user_id") == str(test_user.pk)
 
     def test_tallies_omit_voters(self, api_client, survey_owner_headers, poll_survey):
         poll_survey.anonymous = True

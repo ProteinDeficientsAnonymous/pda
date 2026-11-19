@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from notifications.email_sender import get_email_sender
-from notifications.no_show_email import send_no_show_email
+from notifications.no_show_email import NoShowMail, send_no_show_email
 
 from community.event_feedback.send import event_date_label, feedback_cutoff
 from community.models import AttendanceStatus, EventRSVP, EventStatus, EventType, RSVPStatus
@@ -50,10 +50,12 @@ def _send(sender: EmailSender, rsvp: EventRSVP, calendar_url: str) -> bool:
         result = send_no_show_email(
             sender=sender,
             to=rsvp.user.email or "",
-            display_name=rsvp.user.first_name or "",
-            event_title=rsvp.event.title,
-            event_date=event_date_label(rsvp.event),
-            calendar_url=calendar_url,
+            mail=NoShowMail(
+                display_name=rsvp.user.first_name or "",
+                event_title=rsvp.event.title,
+                event_date=event_date_label(rsvp.event),
+                calendar_url=calendar_url,
+            ),
         )
     except Exception:
         logger.warning("no_show_email_send_exception", exc_info=True)

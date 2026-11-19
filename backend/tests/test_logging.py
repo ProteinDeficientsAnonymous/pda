@@ -55,9 +55,9 @@ class TestRequestLoggingMiddleware:
             middleware(request)
         assert len(caplog.records) >= 1
         record = caplog.records[0]
-        assert getattr(record, "method") == "GET"  
-        assert getattr(record, "path") == "/api/auth/me/"  
-        assert getattr(record, "status_code") == 200  
+        assert getattr(record, "method") == "GET"
+        assert getattr(record, "path") == "/api/auth/me/"
+        assert getattr(record, "status_code") == 200
         assert hasattr(record, "duration_ms")
 
 

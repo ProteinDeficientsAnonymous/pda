@@ -89,8 +89,7 @@ max-complexity = 10
 [tool.ruff.lint.pylint]
 max-returns = 6
 max-branches = 12
-# Keyword-heavy email/helpers APIs sit just over the old limit of 5.
-max-args = 7
+max-args = 5
 max-statements = 50
 
 [tool.ruff.format]

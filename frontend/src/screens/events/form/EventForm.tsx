@@ -152,7 +152,7 @@ export function EventForm({ existing, initial, onCreated }: Props) {
     const extras = officialExtras(officialDefaults, true, values.cashappLink);
     setRsvpQuestions(extras.questions);
     setValues((v) => withDescriptionTemplate({ ...v, ...extras.values }, templates));
-  }, [officialDefaults, templates]);
+  }, [officialDefaults, templates, values.cashappLink]);
 
   function patch(input: Partial<EventFormValues>) {
     let p = input;
@@ -299,24 +299,37 @@ export function EventForm({ existing, initial, onCreated }: Props) {
     values.zelleInfo.trim().length > 0;
   const hostsCount = existing ? eventHostCount(existing) : coHosts.length;
 
+  // Enter must never implicitly submit (#1496) — saving is button-only.
+  // Listener (not JSX onKeyDown) so the form stays a non-interactive element
+  // under jsx-a11y; old WebKit marks IME with keyCode 229 while isComposing is false.
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const keyCode = Reflect.get(e, 'keyCode');
+      if (
+        e.key === 'Enter' &&
+        !(e.isComposing || keyCode === 229) &&
+        target.closest('form') === form &&
+        target.matches('input, select')
+      ) {
+        e.preventDefault();
+      }
+    };
+    form.addEventListener('keydown', onKeyDown);
+    return () => {
+      form.removeEventListener('keydown', onKeyDown);
+    };
+  }, []);
+
   return (
     <form
       ref={formRef}
       onSubmit={(e) => {
         e.preventDefault();
         void submit('active');
-      }}
-      onKeyDown={(e) => {
-        // Enter must never implicitly submit (#1496) — saving is button-only; nested dialog forms and IME composition keep their defaults (old WebKit marks composition with keyCode 229 while reporting isComposing: false).
-        const target = e.target as Element;
-        const keyCode = Reflect.get(e.nativeEvent, 'keyCode');
-        if (
-          e.key === 'Enter' &&
-          !(e.nativeEvent.isComposing || keyCode === 229) &&
-          target.closest('form') === e.currentTarget &&
-          target.matches('input, select')
-        )
-          e.preventDefault();
       }}
       className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-4"
     >

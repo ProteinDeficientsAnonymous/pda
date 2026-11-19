@@ -95,9 +95,7 @@ class TestWaitlistPromotion:
         rsvp3 = EventRSVP.objects.get(event=capped_event, user=user3)
         assert rsvp3.status == RSVPStatus.ATTENDING
 
-    def test_promote_on_delete(
-        self, api_client, capped_event, user3, headers1, headers2, headers3
-    ):
+    def test_promote_on_delete(self, api_client, capped_event, user3, headers1, headers2, headers3):
         _rsvp(api_client, capped_event, headers1)
         _rsvp(api_client, capped_event, headers2)
         _rsvp(api_client, capped_event, headers3)  # waitlisted

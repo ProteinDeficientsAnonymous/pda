@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable
 import pytest
 from asgiref.sync import ThreadSensitiveContext, sync_to_async
 from django import db
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from mcp.server.auth.provider import TokenError
@@ -17,8 +18,10 @@ from mcp_gateway.tokens import hash_secret
 from tests._mcp_provider import client_info, connect_client, pending_request
 
 pytestmark = [
+    # Match test_sse: settings.DATABASES reflects DATABASE_URL; connection.vendor
+    # can still look like Postgres at import when .env pointed at it.
     pytest.mark.skipif(
-        db.connection.vendor != "postgresql",
+        "postgresql" not in settings.DATABASES["default"]["ENGINE"],
         reason="needs concurrent postgres writers",
     ),
     pytest.mark.django_db(transaction=True, serialized_rollback=True),

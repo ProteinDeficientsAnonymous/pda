@@ -253,8 +253,8 @@ class TestSensitiveDataFilter:
         setattr(record, "status_code", 200)
         setattr(record, "duration_ms", 12.5)
         f.filter(record)
-        assert getattr(record, "status_code") == 200  
-        assert getattr(record, "duration_ms") == 12.5  
+        assert getattr(record, "status_code") == 200
+        assert getattr(record, "duration_ms") == 12.5
 
     @pytest.mark.parametrize(
         "keyword",

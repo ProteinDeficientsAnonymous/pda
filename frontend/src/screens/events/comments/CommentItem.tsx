@@ -97,7 +97,7 @@ export function CommentItem({ comment, eventId, token }: Props) {
             onSubmit={handleSubmitReply}
             submitting={postReply.isPending}
             placeholder="reply…"
-            autoFocus
+            focusOnMount
             label="reply"
           />
         </div>

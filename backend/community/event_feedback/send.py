@@ -8,7 +8,7 @@ from uuid import UUID
 from django.conf import settings
 from django.utils import timezone
 from notifications.email_sender import EmailStream, SendResult, get_email_sender
-from notifications.event_feedback_email import send_event_feedback_email
+from notifications.event_feedback_email import EventFeedbackMail, send_event_feedback_email
 
 from community.models import (
     AttendanceStatus,
@@ -73,11 +73,13 @@ def _send(
         result = send_event_feedback_email(
             sender=sender,
             to=user.email or "",
-            display_name=user.first_name or "",
-            event_title=request.event.title,
-            event_date=event_date_label(request.event),
-            url=feedback_url(request.token),
-            reminder=reminder,
+            mail=EventFeedbackMail(
+                display_name=user.first_name or "",
+                event_title=request.event.title,
+                event_date=event_date_label(request.event),
+                url=feedback_url(request.token),
+                reminder=reminder,
+            ),
         )
     except Exception:
         logger.warning("event_feedback_email_send_exception", exc_info=True)
