@@ -1,6 +1,6 @@
 # User states
 
-Every path a person can take through the app, from visitor to archived. What each type can do once there: [user-capabilities.md](user-capabilities.md). Update both when a transition or gate changes.
+Every path a person can take through the app, from visitor to archived. What each type can do once there: [user-capabilities.md](user-capabilities.md). Update both when a transition or gate changes. How status changes are encoded in code: [adr/0001-event-driven-status-transitions.md](adr/0001-event-driven-status-transitions.md).
 
 ## Vocabulary
 
