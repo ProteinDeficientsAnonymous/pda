@@ -47,7 +47,7 @@ export interface EventComment extends EventCommentReply {
   replies: EventCommentReply[];
 }
 
-export type CannotPostReason = 'login_required' | 'rsvp_required';
+export type CannotPostReason = 'login_required' | 'rsvp_required' | 'members_only';
 
 export interface EventCommentList {
   items: EventComment[];

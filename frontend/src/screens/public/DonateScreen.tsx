@@ -7,6 +7,7 @@ import { EditableHtmlBlock } from '@/components/EditableHtmlBlock';
 import { hasPermission, Permission } from '@/models/permissions';
 
 import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
+import { ReserveTable } from './ReserveTable';
 
 export default function DonateScreen() {
   const { data, isPending, error } = useEditablePage('donate');
@@ -32,6 +33,7 @@ export default function DonateScreen() {
         onSave={(contentPm) => update.mutateAsync({ contentPm }).then(() => undefined)}
         placeholder="donate content"
       />
+      <ReserveTable />
     </ContentContainer>
   );
 }

@@ -16,17 +16,16 @@ from ninja.responses import Status
 from notifications.cohost_notifications import (
     create_cohost_invite_accepted_notification,
     create_cohost_invite_declined_notification,
-    create_cohost_invite_notifications,
     create_cohost_removed_notification,
 )
 from notifications.service import broadcast_cohost_change
 from pydantic import BaseModel, Field
+from users.models import MembershipStatus
 
 from community.cohosts.helpers import can_manage_cohost_invites
 from community.cohosts.invite_helpers import (
-    add_cohost_invites,
     expire_stale_cohost_invites,
-    send_cohost_invite_emails,
+    invite_cohosts_and_notify,
 )
 from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import EventOut
@@ -80,17 +79,8 @@ def add_cohosts(request, event_id: UUID, payload: AddCoHostsIn):
     if not can_manage_cohost_invites(request.auth, co_host_ids):
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
 
-    newly_invited = add_cohost_invites(event, payload.user_ids, request.auth)
-
+    invite_cohosts_and_notify(event, payload.user_ids, request.auth)
     event = _reload_event_for_response(event_id)
-    if newly_invited:
-        create_cohost_invite_notifications(event, newly_invited, request.auth)
-        send_cohost_invite_emails(event, newly_invited, request.auth)
-        broadcast_cohost_change(
-            event,
-            exclude_user_ids={str(request.auth.pk)},
-            extra_user_ids=set(newly_invited),
-        )
     return Status(200, event_out(event, request.auth))
 
 
@@ -110,7 +100,7 @@ def accept_cohost_invite(request, event_id: UUID, invite_id: UUID):
         raise_validation(Code.CoHostInvite.NOT_INVITEE, status_code=403)
     if invite.status != CoHostInviteStatus.PENDING:
         raise_validation(Code.CoHostInvite.NOT_PENDING, status_code=400)
-    if not request.auth.is_member:
+    if request.auth.membership_status != MembershipStatus.ACTIVE_MEMBER:
         raise_validation(Code.CoHostInvite.NOT_MEMBER, status_code=403)
 
     inviter_id = str(invite.invited_by_id) if invite.invited_by_id else None

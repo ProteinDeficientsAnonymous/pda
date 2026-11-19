@@ -6,6 +6,8 @@ import { useEvent } from '@/api/events';
 import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { Code } from '@/api/validationCodes';
 import { useAuthStore } from '@/auth/store';
+import { buttonClass } from '@/components/ui/buttonClass';
+import { useRerenderAt } from '@/hooks/useRerenderAt';
 import type { Event } from '@/models/event';
 import { canManageEvent, canPublicRsvp, eventPath, EventType } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
@@ -225,10 +227,7 @@ function ForbiddenNotice({
         <p className="text-foreground-tertiary mb-4 text-sm">{subtext}</p>
         <div className="flex flex-wrap gap-3">
           {loginRedirect ? (
-            <Link
-              to={`/login?redirect=${loginRedirect}`}
-              className="bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
-            >
+            <Link to={`/login?redirect=${loginRedirect}`} className={buttonClass()}>
               log in
             </Link>
           ) : null}
@@ -274,12 +273,11 @@ function MemberRsvpControl({
   rsvpToken: string | undefined;
 }) {
   const user = useAuthStore((s) => s.user);
+  useRerenderAt(event.rsvpDeadline);
   if (!isAuthed && !hasTokenUnlock) return null;
 
-  const { showRsvp, rsvpLocked, membershipBlocksRsvp } = eventMemberSectionFlags(
-    event,
-    isAuthed ? user : null,
-  );
+  const { showRsvp, rsvpLocked, rsvpDeadlineClosed, membershipBlocksRsvp } =
+    eventMemberSectionFlags(event, isAuthed ? user : null);
   if (!showRsvp) return null;
   if (membershipBlocksRsvp) {
     if (rsvpLocked) return null;
@@ -294,6 +292,7 @@ function MemberRsvpControl({
     <MyRsvpSection
       event={event}
       locked={rsvpLocked}
+      deadlineClosed={rsvpDeadlineClosed}
       {...(hasTokenUnlock ? { token: rsvpToken ?? '' } : {})}
     />
   );
@@ -315,7 +314,7 @@ function LoginOrJoinSection({ event }: { event: Event }) {
       <div className="flex flex-wrap gap-3">
         <Link
           to={`/login?redirect=${encodeURIComponent(eventPath(event))}`}
-          className="bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
+          className={buttonClass()}
         >
           sign in
         </Link>
