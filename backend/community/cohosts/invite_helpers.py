@@ -30,12 +30,7 @@ _EXPIRED_FLAG = "_stale_cohost_invites_expired"
 
 
 def expire_stale_cohost_invites(event: Event) -> None:
-    """Flip PENDING invites to EXPIRED once the event is past.
-
-    Called from any read path that returns invite data so the UI never sees
-    actionable invites for a past event. Runs once per loaded event instance,
-    since one read can reach it from several invite helpers.
-    """
+    """Expire a past event's PENDING invites, at most once per loaded instance."""
     if not event.is_past or getattr(event, _EXPIRED_FLAG, False):
         return
     EventCoHostInvite.objects.filter(event=event, status=CoHostInviteStatus.PENDING).update(

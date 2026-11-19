@@ -199,7 +199,7 @@ def list_comments(request, event_id: UUID):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    viewer = resolve_event_viewer(request, event_id)
+    viewer = resolve_event_viewer(request, event)
     enforce_event_read_visibility(event, viewer)
     return Status(200, _build_list_out(event, viewer))
 
@@ -219,7 +219,7 @@ def post_comment(request, event_id: UUID, payload: CommentBodyIn):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    user = resolve_event_viewer(request, event_id)
+    user = resolve_event_viewer(request, event)
     enforce_event_read_visibility(event, user)
     _require_rsvp_for_post(event, user)
     with transaction.atomic():
@@ -250,7 +250,7 @@ def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    user = resolve_event_viewer(request, event_id)
+    user = resolve_event_viewer(request, event)
     enforce_event_read_visibility(event, user)
     _require_rsvp_for_post(event, user)
     try:
@@ -285,7 +285,7 @@ def delete_comment(request, event_id: UUID, comment_id: UUID):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    user = resolve_event_viewer(request, event_id)
+    user = resolve_event_viewer(request, event)
     enforce_event_read_visibility(event, user)
     try:
         comment = EventComment.objects.get(id=comment_id, event=event)
@@ -325,7 +325,7 @@ def toggle_reaction(request, event_id: UUID, comment_id: UUID, payload: Reaction
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    user = resolve_event_viewer(request, event_id)
+    user = resolve_event_viewer(request, event)
     enforce_event_read_visibility(event, user)
     _require_rsvp_for_post(event, user)
     if payload.emoji not in _VALID_EMOJIS:
