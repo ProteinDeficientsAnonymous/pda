@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
@@ -12,14 +11,13 @@ from notifications.cohost_reminder_email import (
     send_cohost_reminder_email,
 )
 from notifications.email_helpers import format_eastern_datetime
-from notifications.email_sender import get_email_sender
+from notifications.email_sender import get_email_sender, send_best_effort
 
 from community.models import Event, EventStatus, EventType
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-logger = logging.getLogger(__name__)
 
 REMINDER_LEAD = timedelta(days=7)
 
@@ -55,22 +53,17 @@ def send_cohost_reminder(event: Event) -> bool:
     for host in hosts:
         if not host.email:
             continue
-        try:
-            result = send_cohost_reminder_email(
-                sender=sender,
-                details=CohostReminderEmailDetails(
-                    to=host.email,
-                    display_name=host.first_name or "",
-                    event_title=event.title,
-                    event_when=format_eastern_datetime(event.start_datetime),
-                    edit_url=edit_url,
-                ),
-            )
-        except Exception:  # noqa: BLE001 — one bad send must not abort the batch
-            logger.warning("cohost_reminder_email_send_exception", exc_info=True)
-            continue
-        if not result.success:
-            logger.warning("cohost_reminder_email_failed", extra={"error": result.error})
+        details = CohostReminderEmailDetails(
+            to=host.email,
+            display_name=host.first_name or "",
+            event_title=event.title,
+            event_when=format_eastern_datetime(event.start_datetime),
+            edit_url=edit_url,
+        )
+        send_best_effort(
+            lambda d=details: send_cohost_reminder_email(sender=sender, details=d),
+            "cohost_reminder_email",
+        )
     return True
 
 

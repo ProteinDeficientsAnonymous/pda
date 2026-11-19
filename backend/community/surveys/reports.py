@@ -14,9 +14,9 @@ from community._question_answers import checkbox_values, is_answer_empty
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from community.shared import ErrorOut, csv_response, csv_safe
 from community.surveys.responses import (
-    _day_only,
-    _load_survey_for_responses,
-    _ordered_responses,
+    day_only,
+    load_survey_for_responses,
+    ordered_responses,
 )
 from community.surveys.schemas import QuestionSummaryOut
 
@@ -67,7 +67,7 @@ def _rating_mean(counts: dict[str, int]) -> float | None:
     return round(sum(int(star) * n for star, n in counts.items()) / total, 2)
 
 
-def _summarize_question(q: SurveyQuestion, responses: list[SurveyResponse]) -> QuestionSummaryOut:
+def summarize_question(q: SurveyQuestion, responses: list[SurveyResponse]) -> QuestionSummaryOut:
     counts = dict.fromkeys(_summary_buckets(q), 0)
     # Choice options can be renamed/removed after responses exist; keep stale values as extra buckets.
     open_buckets = q.field_type in CHOICE_TYPES
@@ -89,7 +89,7 @@ def _summarize_question(q: SurveyQuestion, responses: list[SurveyResponse]) -> Q
     )
 
 
-def _csv_answer_cell(q: SurveyQuestion, answer) -> str:
+def csv_answer_cell(q: SurveyQuestion, answer) -> str:
     if isinstance(answer, dict):
         ordered = [opt for opt in (q.options or []) if opt in answer]
         ordered += [opt for opt in answer if opt not in ordered]
@@ -116,7 +116,7 @@ def _csv_event_cell(r: SurveyResponse) -> str:
 def _csv_row_prefix(r: SurveyResponse, survey: Survey, viewer) -> list[str]:
     event_cell = [_csv_event_cell(r)] if survey.feedback_event_type else []
     if survey.anonymous:
-        return [_day_only(r.submitted_at).isoformat(), *event_cell]
+        return [day_only(r.submitted_at).isoformat(), *event_cell]
     name = visible_display_name(r.user, viewer) if r.user else ""
     return [csv_safe(name), r.submitted_at.isoformat(), *event_cell]
 
@@ -127,10 +127,10 @@ def _csv_row_prefix(r: SurveyResponse, survey: Survey, viewer) -> list[str]:
     auth=gated_jwt,
 )
 def get_survey_summary(request, survey_id: UUID, event_id: UUID | None = None):
-    survey = _load_survey_for_responses(request, survey_id, "get_survey_summary")
+    survey = load_survey_for_responses(request, survey_id, "get_survey_summary")
     questions = [q for q in survey.questions.all() if q.field_type in SUMMARIZED_TYPES]
-    responses = _ordered_responses(survey, event_id)
-    return Status(200, [_summarize_question(q, responses) for q in questions])
+    responses = ordered_responses(survey, event_id)
+    return Status(200, [summarize_question(q, responses) for q in questions])
 
 
 @router.get(
@@ -139,7 +139,7 @@ def get_survey_summary(request, survey_id: UUID, event_id: UUID | None = None):
     auth=gated_jwt,
 )
 def get_survey_responses_csv(request, survey_id: UUID):
-    survey = _load_survey_for_responses(request, survey_id, "get_survey_responses_csv")
+    survey = load_survey_for_responses(request, survey_id, "get_survey_responses_csv")
     questions = [q for q in survey.questions.all() if q.field_type != SurveyQuestionType.SECTION]
     buf = io.StringIO()
     writer = csv.writer(buf)
@@ -148,9 +148,9 @@ def get_survey_responses_csv(request, survey_id: UUID):
     if survey.feedback_event_type:
         header.append("event")
     writer.writerow([*header, *labels])
-    for r in _ordered_responses(survey):
+    for r in ordered_responses(survey):
         cells = [
-            _csv_answer_cell(q, (r.answers.get(str(q.id)) or {}).get("answer")) for q in questions
+            csv_answer_cell(q, (r.answers.get(str(q.id)) or {}).get("answer")) for q in questions
         ]
         writer.writerow(_csv_row_prefix(r, survey, request.auth) + cells)
     return csv_response(buf.getvalue(), f"survey-responses-{survey.slug}.csv")

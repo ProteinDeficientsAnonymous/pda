@@ -13,7 +13,7 @@ from notifications.service import create_event_flag_notifications
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
-from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.read_visibility import enforce_event_read_visibility
 from community.field_limits import FieldLimit
 from community.models import Event, EventFlag, EventFlagStatus
 from community.shared import ErrorOut
@@ -78,7 +78,7 @@ def flag_event(request, event_id: UUID, data: EventFlagIn):
 
     # Don't let a caller flag (and thereby probe the existence of) an event
     # they can't even read — same gating the comment endpoints apply.
-    _enforce_event_read_visibility(event, request.auth)
+    enforce_event_read_visibility(event, request.auth)
 
     if EventFlag.objects.filter(event=event, flagged_by=request.auth).exists():
         raise_validation(Code.Event.FLAG_ALREADY_FLAGGED, status_code=409)

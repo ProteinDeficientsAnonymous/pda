@@ -32,6 +32,15 @@ class NotificationType(models.TextChoices):
     ACCOUNT_DELETED = "account_deleted", "Account Deleted"
     EVENT_FEEDBACK = "event_feedback", "Event Feedback"
     SURVEY_RESPONSE = "survey_response", "Survey Response"
+    EVENT_UNPUBLISHED = "event_unpublished", "Event Unpublished"
+    MEMBER_RESTORED = "member_restored", "Member Restored"
+    CHECK_IN_PROMOTION_FAILED = "check_in_promotion_failed", "Check-in Promotion Failed"
+    PLANNING_PROPOSED = "planning_proposed", "Planning Proposed"
+    PLANNING_WITHDRAWN = "planning_withdrawn", "Planning Withdrawn"
+    PLANNING_COMMITTED = "planning_committed", "Planning Committed"
+    PLANNING_DECLINED = "planning_declined", "Planning Declined"
+    PLANNING_UPCOMING = "planning_upcoming", "Planning Upcoming"
+    PLANNING_AVAILABILITY = "planning_availability", "Planning Availability"
 
 
 class Notification(models.Model):

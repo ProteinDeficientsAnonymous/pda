@@ -16,7 +16,7 @@ from ninja.responses import Status
 from pydantic import BaseModel, Field
 
 from community.models import FeedbackType
-from community.shared import ErrorOut, _optional_jwt, flatten_to_single_line, logger
+from community.shared import ErrorOut, flatten_to_single_line, logger, optional_jwt
 from community.validation import Code, raise_validation
 
 router = Router()
@@ -172,7 +172,7 @@ def _issue_labels(feedback_types: list[FeedbackType]) -> list[str]:
 @router.post(
     "/feedback/",
     response={201: FeedbackOut, 429: ErrorOut, 503: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 @rate_limit(key_func=auth_or_ip_key, rate="5/h")
 def submit_feedback(request, payload: FeedbackIn):

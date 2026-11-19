@@ -1,7 +1,7 @@
 """Document endpoints (CRUD + reorder).
 
 Folder endpoints live in ``docs.py``. Shared schemas and helpers
-(``DocumentOut``, ``_doc_to_out``, ``_has_manage_docs``, etc.) are imported
+(``DocumentOut``, ``doc_to_out``, ``has_manage_docs``, etc.) are imported
 from there — single source of truth.
 """
 
@@ -19,9 +19,9 @@ from community.content.docs import (
     DocumentOut,
     DocumentPatchIn,
     ReorderIn,
-    _apply_display_order,
-    _doc_to_out,
-    _has_manage_docs,
+    apply_display_order,
+    doc_to_out,
+    has_manage_docs,
 )
 from community.models import DocFolder, Document
 from community.shared import ErrorOut
@@ -39,7 +39,7 @@ router = Router()
     auth=gated_jwt,
 )
 def create_document(request, payload: DocumentIn):
-    if not _has_manage_docs(request.auth):
+    if not has_manage_docs(request.auth):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -78,7 +78,7 @@ def create_document(request, payload: DocumentIn):
             details={"title": doc.title, "folder_id": str(folder.id)},
         ),
     )
-    return Status(201, _doc_to_out(doc))
+    return Status(201, doc_to_out(doc))
 
 
 @router.put(
@@ -87,7 +87,7 @@ def create_document(request, payload: DocumentIn):
     auth=gated_jwt,
 )
 def reorder_documents(request, payload: ReorderIn):
-    if not _has_manage_docs(request.auth):
+    if not has_manage_docs(request.auth):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -102,7 +102,7 @@ def reorder_documents(request, payload: ReorderIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
-    _apply_display_order(Document, payload.ids)
+    apply_display_order(Document, payload.ids)
     audit_log(logging.INFO, "documents_reordered", request)
     return Status(200, {"detail": "Documents reordered."})
 
@@ -113,7 +113,7 @@ def reorder_documents(request, payload: ReorderIn):
     auth=gated_jwt,
 )
 def get_document(request, doc_id: str):
-    if not _has_manage_docs(request.auth):
+    if not has_manage_docs(request.auth):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -132,7 +132,7 @@ def get_document(request, doc_id: str):
     except Document.DoesNotExist:
         raise_validation(Code.Docs.DOCUMENT_NOT_FOUND, status_code=404)
 
-    return Status(200, _doc_to_out(doc))
+    return Status(200, doc_to_out(doc))
 
 
 @router.patch(
@@ -141,7 +141,7 @@ def get_document(request, doc_id: str):
     auth=gated_jwt,
 )
 def update_document(request, doc_id: str, payload: DocumentPatchIn):
-    if not _has_manage_docs(request.auth):
+    if not has_manage_docs(request.auth):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -191,7 +191,7 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
             details={"fields_changed": list(updates.keys())},
         ),
     )
-    return Status(200, _doc_to_out(doc))
+    return Status(200, doc_to_out(doc))
 
 
 @router.delete(
@@ -200,7 +200,7 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
     auth=gated_jwt,
 )
 def delete_document(request, doc_id: str):
-    if not _has_manage_docs(request.auth):
+    if not has_manage_docs(request.auth):
         audit_log(
             logging.WARNING,
             "permission_denied",

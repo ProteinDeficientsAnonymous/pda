@@ -11,15 +11,29 @@ from community.shared import validate_display_name
 from community.validation import Code, raise_validation
 from django.conf import settings
 from django.db.models import prefetch_related_objects
+from django.utils import timezone
 
 from users.models import (
-    ADMIN_ENTERED_PHONE_REGION,
     MagicLoginToken,
     MagicLoginTokenSource,
+    MembershipStatus,
+    PublicRsvpToken,
     User,
-    validate_phone,
+    status_change_stamp,
 )
+from users.phone import ADMIN_ENTERED_PHONE_REGION, validate_phone
 from users.roles import Role
+
+
+@dataclass(frozen=True)
+class NewMemberFields:
+    """Identity + role for ``create_user_with_role``."""
+
+    phone: str
+    first_name: str
+    last_name: str
+    email: str | None
+    role_id: str | None = None
 
 
 @dataclass
@@ -40,7 +54,7 @@ class NamePatchPayload(Protocol):
     last_name: str | None
 
 
-def _require_first_name(user: User) -> None:
+def require_first_name(user: User) -> None:
     """Raise REQUIRED if user.first_name is empty after a name patch (Issue 733)."""
     if not user.first_name.strip():
         raise_validation(Code.DisplayName.REQUIRED, field="first_name")
@@ -57,7 +71,7 @@ def _apply_split_names(user: User, payload: NamePatchPayload) -> None:
         user.last_name = payload.last_name.strip()
 
 
-def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
+def resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
     """Apply first/last name from a patch payload to user (in memory).
 
     Returns True if any name field was set. Raises REQUIRED when the resulting
@@ -67,11 +81,11 @@ def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
     if payload.first_name is None and payload.last_name is None:
         return False
     _apply_split_names(user, payload)
-    _require_first_name(user)
+    require_first_name(user)
     return True
 
 
-def _create_magic_token(
+def create_magic_token(
     user: User,
     *,
     requires_password_reset: bool = False,
@@ -90,11 +104,11 @@ def _create_magic_token(
     return str(magic.token)
 
 
-def _magic_login_url(token: str) -> str:
+def magic_login_url(token: str) -> str:
     return f"{settings.FRONTEND_BASE_URL}/magic-login/{token}"
 
 
-def _is_last_admin(user: User) -> bool:
+def is_last_admin(user: User) -> bool:
     try:
         admin_role = Role.objects.get(name="admin", is_default=True)
     except Role.DoesNotExist:
@@ -104,7 +118,7 @@ def _is_last_admin(user: User) -> bool:
     return admin_role.users.filter(archived_at__isnull=True).count() <= 1
 
 
-def _is_admin(user: User) -> bool:
+def is_admin(user: User) -> bool:
     """True if the user holds the built-in admin role; prefetches roles once so name lists don't query per row."""
     if "roles" not in getattr(user, "_prefetched_objects_cache", {}):
         prefetch_related_objects([user], "roles")
@@ -113,7 +127,7 @@ def _is_admin(user: User) -> bool:
 
 def _sees_full_name(target: User, viewer: User | None) -> bool:
     """Admins and the target themself always see the full name; None viewer is anonymous."""
-    return viewer is not None and (target.id == viewer.id or _is_admin(viewer))
+    return viewer is not None and (target.id == viewer.id or is_admin(viewer))
 
 
 def visible_name(target: User, viewer: User | None) -> tuple[str, str]:
@@ -140,7 +154,7 @@ def visible_display_name(target: User, viewer: User | None) -> str:
     return target.phone_number if target.show_phone else "member"
 
 
-def _normalize_email(raw: str | None) -> str | None:
+def normalize_email(raw: str | None) -> str | None:
     """Lowercase + strip an email. Returns None for blank input.
 
     Centralized so server-side enforcement is consistent across endpoints.
@@ -152,7 +166,7 @@ def _normalize_email(raw: str | None) -> str | None:
     return cleaned or None
 
 
-def _check_and_set_email(
+def check_and_set_email(
     user: User,
     raw: str | None,
     *,
@@ -166,7 +180,7 @@ def _check_and_set_email(
     Pass ``exclude_pk`` for the self-update case so users can re-submit
     their own current email without a false collision.
     """
-    normalized = _normalize_email(raw)
+    normalized = normalize_email(raw)
     if normalized:
         qs = User.objects.filter(email=normalized)
         if exclude_pk is not None:
@@ -179,22 +193,18 @@ def _check_and_set_email(
 def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
     """Block assigning the built-in admin role unless the requester is an admin.
 
-    Prevents privilege escalation when a user holds CREATE_USER but is not
+    Prevents privilege escalation when a user holds APPROVE_JOIN_REQUESTS but is not
     themselves an admin. No-op for any non-admin role (or no role).
     """
     if not role_id:
         return
     admin_role = Role.objects.filter(name="admin", is_default=True).first()
-    if admin_role and str(role_id) == str(admin_role.pk) and not _is_admin(requesting_user):
+    if admin_role and str(role_id) == str(admin_role.pk) and not is_admin(requesting_user):
         raise_validation(Code.Role.CANNOT_GRANT_ADMIN, field="role_id", status_code=403)
 
 
-def _create_user_with_role(  # noqa: PLR0913
-    phone: str,
-    first_name: str,
-    last_name: str,
-    email: str | None,
-    role_id: str | None,
+def create_user_with_role(
+    fields: NewMemberFields,
     *,
     requesting_user: User,
     consent: ConsentTimestamps | None = None,
@@ -203,25 +213,26 @@ def _create_user_with_role(  # noqa: PLR0913
 
     Raises ValidationException on validation failure (bad phone, duplicate, bad role).
     Assigning the built-in admin role is only permitted when ``requesting_user``
-    is themselves an admin (prevents escalation under CREATE_USER alone).
+    is themselves an admin (prevents escalation under APPROVE_JOIN_REQUESTS alone).
 
     Pass ``consent`` when the user was created from a join request that already
     captured consent — otherwise it defaults to None (e.g. admin-created users
     who have no prior consent record).
     """
-    validated_phone = validate_phone(phone, ADMIN_ENTERED_PHONE_REGION)
+    validated_phone = validate_phone(fields.phone, ADMIN_ENTERED_PHONE_REGION)
     if User.objects.filter(phone_number=validated_phone).exists():
         raise_validation(Code.Phone.ALREADY_EXISTS, field="phone_number", status_code=409)
-    normalized_email = _normalize_email(email)
+    normalized_email = normalize_email(fields.email)
     if normalized_email and User.objects.filter(email=normalized_email).exists():
         raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
-    _guard_admin_role_grant(role_id, requesting_user)
+    _guard_admin_role_grant(fields.role_id, requesting_user)
     user = User.objects.create_user(
         phone_number=validated_phone,
-        first_name=first_name,
-        last_name=last_name,
+        first_name=fields.first_name,
+        last_name=fields.last_name,
         email=normalized_email,
-        is_member=True,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
+        **status_change_stamp(requesting_user),
         needs_onboarding=True,
         guidelines_consent_at=consent.guidelines_consent_at if consent else None,
         sms_consent_at=consent.sms_consent_at if consent else None,
@@ -229,8 +240,8 @@ def _create_user_with_role(  # noqa: PLR0913
     user.set_unusable_password()
     user.save(update_fields=["password"])
     try:
-        if role_id:
-            role = Role.objects.get(pk=role_id)
+        if fields.role_id:
+            role = Role.objects.get(pk=fields.role_id)
             user.roles.add(role)
         else:
             member_role = Role.objects.filter(name="member", is_default=True).first()
@@ -239,11 +250,11 @@ def _create_user_with_role(  # noqa: PLR0913
     except Role.DoesNotExist:
         user.delete()
         raise_validation(Code.Role.NOT_FOUND, field="role_id", status_code=404)
-    magic_token = _create_magic_token(user)
+    magic_token = create_magic_token(user)
     return user, magic_token
 
 
-def _validate_admin_role_change(user: User, requesting_user: User, new_roles: list[Role]) -> None:
+def validate_admin_role_change(user: User, requesting_user: User, new_roles: list[Role]) -> None:
     """Raise ValidationException if an admin role change is invalid.
 
     Guards both directions:
@@ -260,17 +271,17 @@ def _validate_admin_role_change(user: User, requesting_user: User, new_roles: li
     removing_admin = admin_role not in new_roles
     adding_admin = admin_role in new_roles and not is_current_admin
 
-    if adding_admin and not _is_admin(requesting_user):
+    if adding_admin and not is_admin(requesting_user):
         raise_validation(Code.Role.CANNOT_GRANT_ADMIN, status_code=403)
 
     if is_self and is_current_admin and removing_admin:
         raise_validation(Code.Role.CANNOT_REMOVE_OWN_ADMIN, status_code=400)
 
-    if _is_last_admin(user) and removing_admin:
+    if is_last_admin(user) and removing_admin:
         raise_validation(Code.Role.CANNOT_REMOVE_LAST_ADMIN, status_code=400)
 
 
-def _validate_member_role_required(new_roles: list[Role]) -> None:
+def validate_member_role_required(new_roles: list[Role]) -> None:
     """Raise ValidationException if the new role set is missing the built-in member role."""
     member_role = Role.objects.filter(name="member", is_default=True).first()
     if not member_role:
@@ -279,14 +290,33 @@ def _validate_member_role_required(new_roles: list[Role]) -> None:
         raise_validation(Code.Role.MEMBER_ROLE_REQUIRED, status_code=400)
 
 
-def _strip_non_member_roles(user: User) -> list[str]:
+def elevated_roles(user: User):
+    return user.roles.exclude(name="member", is_default=True)
+
+
+def strip_elevated_roles(user: User) -> list[str]:
     """Remove every role from user except the built-in member role.
 
     Called on the pause transition so a paused member holds no elevated role.
     Returns the ids of the removed roles (for audit logging).
     """
-    removed = list(user.roles.exclude(name="member", is_default=True))
+    removed = list(elevated_roles(user))
     if not removed:
         return []
     user.roles.remove(*removed)
     return [str(r.id) for r in removed]
+
+
+def grant_membership(user: User) -> None:
+    """Add the default member role and revoke any scoped rsvp tokens."""
+    member_role = Role.objects.filter(name="member", is_default=True).first()
+    if member_role:
+        user.roles.add(member_role)
+    revoke_public_rsvp_tokens(user)
+
+
+def revoke_public_rsvp_tokens(user: User) -> None:
+    """Kill the user's live /my-rsvps links once they can sign in instead."""
+    PublicRsvpToken.objects.filter(user=user, revoked_at__isnull=True).update(
+        revoked_at=timezone.now()
+    )

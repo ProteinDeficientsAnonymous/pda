@@ -9,6 +9,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from mcp_gateway.fields import build
 from mcp_gateway.survey_edit_fields import normalize_settings, settings_diff
+from mcp_gateway.survey_fields import feedback_emails
 
 
 @dataclass(frozen=True)
@@ -42,13 +43,29 @@ def operation(number: int) -> Iterator[None]:
         raise ToolError(f"nothing was saved: operation {number}: {exc}") from exc
 
 
+def _force_anonymous(detail: dict[str, Any], changed: dict[str, Any]) -> dict[str, Any]:
+    # The website forces anonymous on a feedback survey, so any other value would never be saved.
+    if changed.get("anonymous") is False:
+        raise ToolError("feedback surveys are always anonymous")
+    if not detail["anonymous"] and detail["response_count"]:
+        raise ToolError(
+            "feedback surveys are always anonymous, and anonymous can't change once a survey "
+            "has responses"
+        )
+    return {**changed, "anonymous": True}
+
+
 def plan_settings(edit: Edit, detail: dict[str, Any], changed: dict[str, Any]) -> None:
     changed = normalize_settings(changed, detail["title"])
-    # The website forces anonymous on a feedback survey, so a change to it would never be saved.
-    forced = "anonymous" in changed and changed["anonymous"] != detail["anonymous"]
-    if detail["feedback_event_type"] and forced:
-        raise ToolError("feedback surveys are always anonymous")
+    feedback = changed.get("feedback_event_type", detail["feedback_event_type"])
+    if feedback:
+        changed = _force_anonymous(detail, changed)
     diff = settings_diff(detail, changed)
+    if "feedback_event_type" in diff and feedback and detail["is_active"]:
+        edit.notes.append(
+            f"making this the feedback survey for {feedback} events starts "
+            + feedback_emails(feedback)
+        )
     if detail["response_count"] and "anonymous" in diff:
         edit.blockers.append(
             "anonymous can't change once a survey has responses, so pda refuses it: "

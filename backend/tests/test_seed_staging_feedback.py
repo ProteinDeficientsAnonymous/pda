@@ -2,7 +2,7 @@ import pytest
 from community.management.commands._seed_staging_feedback import (
     FEEDBACK_EVENT_SPECS,
     FEEDBACK_SURVEY_SLUG,
-    _build_answers,
+    build_answers,
 )
 from community.models import (
     AttendanceStatus,
@@ -64,5 +64,5 @@ def test_checkbox_answers_are_seeded_as_lists():
     question = SurveyQuestion(
         label="interests", field_type=SurveyQuestionType.CHECKBOX, options=["a, b", "c"]
     )
-    answers = _build_answers([question], 0)
+    answers = build_answers([question], 0)
     assert answers[str(question.id)]["answer"] == ["a, b"]

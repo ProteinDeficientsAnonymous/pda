@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-def _can_manage_cohost_invites(
+def can_manage_cohost_invites(
     requesting_user,
     co_host_ids: set[str],
 ) -> bool:
@@ -31,10 +31,10 @@ def _can_manage_cohost_invites(
     return str(requesting_user.pk) in co_host_ids
 
 
-def _pending_cohost_invites_out(
+def pending_cohost_invites_out(
     event: Event, auth_user, co_host_ids: set[str]
 ) -> list[PendingCoHostInviteOut]:
-    if not _can_manage_cohost_invites(auth_user, co_host_ids):
+    if not can_manage_cohost_invites(auth_user, co_host_ids):
         return []
     return [
         PendingCoHostInviteOut(
@@ -48,7 +48,7 @@ def _pending_cohost_invites_out(
     ]
 
 
-def _update_co_hosts(
+def update_co_hosts(
     event: Event,
     co_host_ids: Iterable[str],
     updater: UserModel,

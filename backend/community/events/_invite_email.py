@@ -4,7 +4,7 @@ from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
 from notifications.email_helpers import (
     EventInviteEmailDetails,
-    format_eastern_datetime,
+    format_event_when,
     send_event_invite_email,
 )
 from notifications.email_sender import get_email_sender
@@ -13,12 +13,6 @@ from users.models import User as UserModel
 
 from community.models import Event
 from community.shared import logger
-
-
-def _format_event_when(event: Event) -> str:
-    if event.datetime_tbd or event.start_datetime is None:
-        return ""
-    return format_eastern_datetime(event.start_datetime)
 
 
 def email_invited_members(request, event: Event, new_user_ids: list[str], inviter) -> None:
@@ -34,7 +28,7 @@ def email_invited_members(request, event: Event, new_user_ids: list[str], invite
 
     sender = get_email_sender()
     inviter_name = visible_display_name(inviter, None)
-    event_when = _format_event_when(event)
+    event_when = format_event_when(event, tbd="")
     event_url = f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.id}"
 
     for user in recipients:

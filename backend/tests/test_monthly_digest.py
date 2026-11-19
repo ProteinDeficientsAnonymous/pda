@@ -6,11 +6,11 @@ from community.management.commands import send_monthly_digest as digest_command
 from community.models import Event, EventType
 from django.core.management import call_command
 from django.utils import timezone
-from notifications.digest_emails import send_monthly_digest_email
+from notifications.digest_emails import MonthlyDigestMail, send_monthly_digest_email
 from notifications.email_sender import EmailStream, SendResult
 
 from tests._digest_helpers import make_event, make_tentative
-from tests._users import make_user
+from tests._users import make_attendance_paused, make_user
 
 # The monthly cron runs at 12:00 UTC: early morning of the same day in eastern, any time of year.
 FIRST_OF_JUNE = datetime(2026, 6, 1, 12, 0, 0)
@@ -192,6 +192,14 @@ class TestMonthlyDigestTentativeMembers:
         fake_email_sender.send.assert_called_once()
         assert fake_email_sender.send.call_args.kwargs["to"] == tentative.email
 
+    def test_sends_to_attendance_paused_member(self, fake_email_sender, monkeypatch):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        paused = make_attendance_paused(phone_number="+12025550326")
+        make_event("potluck", 3)
+        call_command("send_monthly_digest")
+        fake_email_sender.send.assert_called_once()
+        assert fake_email_sender.send.call_args.kwargs["to"] == paused.email
+
     def test_omits_veganniversaries_for_tentative_member(self, fake_email_sender, monkeypatch):
         """Shoutouts link to member profiles, which a tentative member can't open."""
         _freeze(monkeypatch, FIRST_OF_JUNE)
@@ -237,13 +245,15 @@ class TestSendMonthlyDigestEmail:
         send_monthly_digest_email(
             sender=sender,
             to="ada@example.test",
-            display_name="Ada",
-            month="June",
-            events=[{"title": "Potluck", "when": "Friday", "url": "https://pda.test/events/p"}],
-            urls={
-                "calendar_url": "https://pda.test/calendar",
-                "settings_url": "https://pda.test/s",
-            },
+            mail=MonthlyDigestMail(
+                display_name="Ada",
+                month="June",
+                events=[{"title": "Potluck", "when": "Friday", "url": "https://pda.test/events/p"}],
+                urls={
+                    "calendar_url": "https://pda.test/calendar",
+                    "settings_url": "https://pda.test/s",
+                },
+            ),
         )
         kwargs = sender.send.call_args.kwargs
         assert kwargs["subject"] == "what's coming up in june at pda"
@@ -258,14 +268,16 @@ class TestSendMonthlyDigestEmail:
         send_monthly_digest_email(
             sender=sender,
             to="ada@example.test",
-            display_name="Ada",
-            month="June",
-            events=[],
-            urls={
-                "calendar_url": "https://pda.test/calendar",
-                "settings_url": "https://pda.test/s",
-            },
-            veganniversaries=[{"label": "1 year", "people": [{"name": "Bo", "url": "u"}]}],
+            mail=MonthlyDigestMail(
+                display_name="Ada",
+                month="June",
+                events=[],
+                urls={
+                    "calendar_url": "https://pda.test/calendar",
+                    "settings_url": "https://pda.test/s",
+                },
+                veganniversaries=[{"label": "1 year", "people": [{"name": "Bo", "url": "u"}]}],
+            ),
         )
         text = sender.send.call_args.kwargs["text"]
         assert "coming up in june:" not in text

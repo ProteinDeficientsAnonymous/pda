@@ -4,7 +4,7 @@ from itertools import count
 import pytest
 from community.models import AttendanceStatus, EventType, JoinRequest, JoinRequestStatus
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._events import make_event, make_rsvp
 from tests._query_counts import assert_constant_queries
@@ -28,7 +28,9 @@ def _seed_applicants(start: int, n: int) -> None:
     past = _past_official_event("Bake sale")
     for i in range(start, start + n):
         phone = f"+1202555{i:04d}"
-        user = make_user(phone_number=phone, first_name="Sprout", is_member=False)
+        user = make_user(
+            phone_number=phone, first_name="Sprout", membership_status=MembershipStatus.NONE
+        )
         make_rsvp(event, user)
         make_rsvp(past, user, attendance=AttendanceStatus.ATTENDED)
         JoinRequest.objects.create(

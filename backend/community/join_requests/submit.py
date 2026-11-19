@@ -1,25 +1,26 @@
 """Public join-request submission and phone-check endpoints (unauthenticated)."""
 
 import logging
+import uuid
+from datetime import datetime
 from enum import StrEnum
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
-from django.conf import settings
-from django.core.mail import send_mail
-from django.db import transaction
-from django.db.models import Q
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from notifications.service import create_join_request_notifications
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from users.models import PUBLIC_FORM_PHONE_REGION, User, validate_phone
+from users.models import User, can_sign_in_q
+from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community._question_answers import assert_single_choice_member, is_answer_empty
 from community.field_limits import FieldLimit
-from community.join_requests.manage import JoinRequestOut, _join_request_out
+from community.join_requests._vetting_email import send_vetting_email
 from community.models import (
+    OPEN_JOIN_REQUEST_STATUSES,
     JoinFormQuestion,
     JoinFormQuestionType,
     JoinRequest,
@@ -27,7 +28,6 @@ from community.models import (
 )
 from community.shared import (
     ErrorOut,
-    flatten_to_single_line,
     logger,
     validate_display_name,
 )
@@ -60,6 +60,25 @@ class JoinRequestIn(BaseModel):
                     max=FieldLimit.DESCRIPTION,
                 )
         return v
+
+
+class JoinRequestSubmittedOut(BaseModel):
+    id: str
+    first_name: str
+    full_name: str
+    status: str
+    submitted_at: datetime
+
+
+def submitted_join_request_out(jr: JoinRequest) -> JoinRequestSubmittedOut:
+    """Public echo of a submission — never the admin JoinRequestOut, which leaks matched-user history."""
+    return JoinRequestSubmittedOut(
+        id=str(jr.id),
+        first_name=jr.first_name,
+        full_name=jr.full_name,
+        status=jr.status,
+        submitted_at=jr.submitted_at,
+    )
 
 
 class CheckPhoneStatus(StrEnum):
@@ -114,36 +133,39 @@ def _build_custom_answers(
     return result
 
 
-def _send_join_request_email(full_name: str, phone: str, custom_answers: dict) -> None:
+def send_join_request_email(full_name: str, phone: str, custom_answers: dict) -> None:
     """Send vetting email for a new join request."""
-    if not settings.VETTING_EMAIL:
-        return
-    try:
-        # Flatten to single-line so a newline in the name can't forge email headers.
-        safe_subject = flatten_to_single_line(f"New PDA Join Request: {full_name}")
-        answer_lines = "\n".join(
-            f"{data['label']}: {data['answer']}" for data in custom_answers.values()
-        )
-        send_mail(
-            subject=safe_subject,
-            message=f"Name: {full_name}\nPhone: {phone}\n\n{answer_lines}",
-            from_email=settings.DEFAULT_FROM_EMAIL or "noreply@pda.org",
-            recipient_list=[settings.VETTING_EMAIL],
-        )
-    except Exception:
-        logger.exception("Failed to send vetting email for join request")
+    answer_lines = "\n".join(
+        f"{data['label']}: {data['answer']}" for data in custom_answers.values()
+    )
+    send_vetting_email(
+        f"New PDA Join Request: {full_name}",
+        f"Name: {full_name}\nPhone: {phone}\n\n{answer_lines}",
+    )
 
 
-def _honeypot_decoy_response(first_name: str, full_name: str, phone_number: str) -> JoinRequestOut:
+def _honeypot_decoy_response(first_name: str, full_name: str) -> JoinRequestSubmittedOut:
     """Mimic a real submission's shape so bots register success and stop retrying."""
-    return JoinRequestOut(
-        id="",
+    return JoinRequestSubmittedOut(
+        id=str(uuid.uuid4()),
         first_name=first_name,
         full_name=full_name,
-        phone_number=phone_number,
         submitted_at=timezone.now(),
         status=JoinRequestStatus.PENDING,
     )
+
+
+def _raise_if_open_request(validated_phone: str) -> None:
+    live_statuses = set(
+        JoinRequest.objects.filter(
+            phone_number=validated_phone,
+            status__in=OPEN_JOIN_REQUEST_STATUSES,
+        ).values_list("status", flat=True)
+    )
+    if JoinRequestStatus.PENDING in live_statuses:
+        raise_validation(Code.JoinRequest.PHONE_ALREADY_PENDING, status_code=400)
+    if JoinRequestStatus.TENTATIVE in live_statuses:
+        raise_validation(Code.JoinRequest.PHONE_ALREADY_TENTATIVE, status_code=400)
 
 
 def _resolve_submission_user(validated_phone: str, normalized_email: str):
@@ -154,8 +176,8 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
     different rows (spec: phone wins, log a warning).
 
     Raises:
-      - ALREADY_MEMBER (409) when the match is an active member — they should
-        sign in, not re-apply.
+      - ALREADY_MEMBER (409) when the match is a member or paused — they should
+        sign in, not re-apply; login tells a paused user they're paused.
       - PHONE_ALREADY_PENDING (400) when a pending request already exists.
       - PHONE_ALREADY_TENTATIVE (400) when a tentative request already exists —
         they have an account and should sign in. A rejected request is the only
@@ -181,16 +203,7 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
 
     if matched and matched.is_member:
         raise_validation(Code.JoinRequest.ALREADY_MEMBER, status_code=409)
-    live_statuses = set(
-        JoinRequest.objects.filter(
-            phone_number=validated_phone,
-            status__in=(JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE),
-        ).values_list("status", flat=True)
-    )
-    if JoinRequestStatus.PENDING in live_statuses:
-        raise_validation(Code.JoinRequest.PHONE_ALREADY_PENDING, status_code=400)
-    if JoinRequestStatus.TENTATIVE in live_statuses:
-        raise_validation(Code.JoinRequest.PHONE_ALREADY_TENTATIVE, status_code=400)
+    _raise_if_open_request(validated_phone)
 
     # The unique-email constraint ignores archived_at, so check across ALL rows
     # (archived included) — an archived account keeps its email and would still
@@ -205,7 +218,13 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
 
 @router.post(
     "/join-request/",
-    response={201: JoinRequestOut, 400: ErrorOut, 409: ErrorOut, 422: ErrorOut, 429: ErrorOut},
+    response={
+        201: JoinRequestSubmittedOut,
+        400: ErrorOut,
+        409: ErrorOut,
+        422: ErrorOut,
+        429: ErrorOut,
+    },
     auth=None,
     operation_id="submit_join_request",
 )
@@ -224,7 +243,7 @@ def submit_join_request(request, payload: JoinRequestIn):
             persist=False,
             target=AuditTarget(details={"full_name": full_name}),
         )
-        return Status(201, _honeypot_decoy_response(first_name, full_name, payload.phone_number))
+        return Status(201, _honeypot_decoy_response(first_name, full_name))
 
     if not payload.sms_consent:
         raise_validation(Code.JoinRequest.SMS_CONSENT_REQUIRED, field="sms_consent")
@@ -244,26 +263,33 @@ def submit_join_request(request, payload: JoinRequestIn):
 
     custom_answers = _build_custom_answers(payload.answers, questions)
 
-    with transaction.atomic():
-        # Backfill the non-member's missing email so the now-known contact
-        # carries onto the account when it's promoted. Skip when the email is
-        # already claimed by a different user (the ambiguity was logged in
-        # _resolve_submission_user) — writing it would break the unique-email
-        # constraint.
-        if matched_user and normalized_email and not matched_user.email and not email_claimed:
-            matched_user.email = normalized_email
-            matched_user.save(update_fields=["email"])
-
-        join_request = JoinRequest.objects.create(
-            first_name=first_name,
-            last_name=last_name,
-            phone_number=validated_phone,
-            email=normalized_email,
-            user=matched_user,
-            custom_answers=custom_answers,
-            sms_consent_at=timezone.now(),
-            guidelines_consent_at=timezone.now(),
-        )
+    now = timezone.now()
+    join_request = JoinRequest(
+        first_name=first_name,
+        last_name=last_name,
+        phone_number=validated_phone,
+        email=normalized_email,
+        user=matched_user,
+        custom_answers=custom_answers,
+        sms_consent_at=now,
+        guidelines_consent_at=now,
+        submitted_at=now,
+    )
+    try:
+        with transaction.atomic():
+            # Backfill the non-member's missing email so the now-known contact
+            # carries onto the account when it's promoted. Skip when the email is
+            # already claimed by a different user (the ambiguity was logged in
+            # _resolve_submission_user) — writing it would break the unique-email
+            # constraint.
+            if matched_user and normalized_email and not matched_user.email and not email_claimed:
+                matched_user.email = normalized_email
+                matched_user.save(update_fields=["email"])
+            join_request.save()
+    except IntegrityError:
+        # A concurrent submission won the open-request unique constraint.
+        _raise_if_open_request(validated_phone)
+        raise
 
     logger.info("Join request submitted by %s", full_name)
     audit_log(
@@ -276,13 +302,13 @@ def submit_join_request(request, payload: JoinRequestIn):
             details={"full_name": full_name},
         ),
     )
-    _send_join_request_email(full_name, validated_phone, custom_answers)
+    send_join_request_email(full_name, validated_phone, custom_answers)
     try:
         create_join_request_notifications(full_name)
     except Exception:
         logger.exception("Failed to create join request notifications")
 
-    return Status(201, _join_request_out(join_request))
+    return Status(201, submitted_join_request_out(join_request))
 
 
 @router.post("/check-phone/", response={200: CheckPhoneOut, 429: ErrorOut}, auth=None)
@@ -294,7 +320,7 @@ def check_phone(request, payload: CheckPhoneIn):
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.UNKNOWN))
     if (
         User.objects.filter(phone_number=normalized, archived_at__isnull=True)
-        .filter(Q(is_member=True) | Q(join_requests__status=JoinRequestStatus.TENTATIVE))
+        .filter(can_sign_in_q())
         .exists()
     ):
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.MEMBER))

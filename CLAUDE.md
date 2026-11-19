@@ -7,7 +7,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 PDA (Protein Deficients Anonymous) is a vegan collective liberation community platform. The Django backend is API-only (Django Ninja). The Vite + React + TypeScript frontend (Zustand + React Router + Axios + TanStack Query) handles all UI.
 
 **Key design decisions:**
-- No user self-signup — accounts are created by admins via the members screen
+- No user self-signup — accounts are created when a vetter approves a join request
 - Join requests are submitted publicly and routed to a vetting group via email
 - The community calendar is publicly accessible; member-only details (location, links, RSVP) are gated behind login
 - New users are redirected to `/onboarding` to set display name + password on first login
@@ -38,7 +38,7 @@ make agent-test-since # Run pytest subset from git diff
 make agent-lint       # Run ruff (lint + format; minimal output)
 make agent-typecheck  # Run ty type checker (minimal output)
 make agent-complexity # Run cognitive complexity check (minimal output)
-make agent-check-private-modules # Fail if a _module is imported from outside its package
+make agent-check-private-modules # Fail on cross-package _module or cross-module _symbol imports
 make agent-ci         # Full pre-commit check (minimal output — prefer this in agents)
 make diff-coverage    # Tests + coverage; fail if lines changed vs origin/main are <80% covered
 make agent-frontend-test      # Run Vitest suite (minimal output)
@@ -52,13 +52,15 @@ Use `make test`, `make lint`, `make ci`, etc. for verbose output when debugging.
 
 ## Architecture
 
-- **User** (`users/models.py`): `AbstractUser` with phone number as `USERNAME_FIELD`, UUID PK. Created by admins only via members screen.
+- **User** (`users/models.py`): `AbstractUser` with phone number as `USERNAME_FIELD`, UUID PK. Created only by join-request approval.
 
 ### API & Routes
 
 Full API: see `/api/openapi.json` when the server is running. Run `make frontend-types` to regenerate `frontend/src/api/types.gen.ts`.
 
 Routes: see `.claude/docs/routes.md`
+
+User states and transitions (public rsvper → member → paused/archived): see `.claude/docs/user-states.md`; what each type can do: `.claude/docs/user-capabilities.md`
 
 ## Environment
 

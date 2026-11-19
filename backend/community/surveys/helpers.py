@@ -24,7 +24,7 @@ from community.surveys.schemas import (
 from community.validation import Code, raise_validation
 
 
-def _survey_question_out(q: SurveyQuestion) -> SurveyQuestionOut:
+def survey_question_out(q: SurveyQuestion) -> SurveyQuestionOut:
     return SurveyQuestionOut(
         id=str(q.id),
         label=q.label,
@@ -51,7 +51,7 @@ def _find_my_response(
     return survey.responses.filter(user__isnull=True, anonymous_token=response_token).first()
 
 
-def _response_to_update(
+def response_to_update(
     survey: Survey, responder, response_token: str, response_id: UUID | None
 ) -> SurveyResponse | None:
     if survey.one_response_per_user:
@@ -65,14 +65,14 @@ def _response_to_update(
     return survey.responses.filter(id=response_id, user=responder).first()
 
 
-def _survey_out(
+def survey_out(
     survey: Survey,
     include_questions: bool = False,
     requesting_user=None,
     response_token: str = "",
 ) -> SurveyOut:
     questions = (
-        [_survey_question_out(q) for q in survey.questions.all()] if include_questions else []
+        [survey_question_out(q) for q in survey.questions.all()] if include_questions else []
     )
     # anonymous surveys never key on the member, so their row is found by token too
     responder = None if survey.anonymous else requesting_user
@@ -123,12 +123,12 @@ def survey_is_open(survey: Survey, now: datetime | None = None, *, check_cap: bo
     return not (check_cap and survey_at_cap(survey))
 
 
-def _validate_survey_window(opens_at: datetime | None, closes_at: datetime | None) -> None:
+def validate_survey_window(opens_at: datetime | None, closes_at: datetime | None) -> None:
     if opens_at and closes_at and closes_at <= opens_at:
         raise_validation(Code.Survey.CLOSES_BEFORE_OPENS, field="closes_at", status_code=400)
 
 
-def _validate_anonymous_change(survey: Survey, updates: dict) -> None:
+def validate_anonymous_change(survey: Survey, updates: dict) -> None:
     # Flipping either way after collection would mislead respondents about who sees their name.
     if "anonymous" not in updates or updates["anonymous"] == survey.anonymous:
         return
@@ -151,7 +151,7 @@ def _force_feedback_defaults(survey: Survey | None, data: dict) -> None:
         data["anonymous"] = True
 
 
-def _validate_feedback_type(survey: Survey | None, data: dict) -> dict:
+def validate_feedback_type(survey: Survey | None, data: dict) -> dict:
     """Normalize a survey write that sets or keeps a feedback event type.
 
     survey(Survey | None): the survey being updated, None on create.
@@ -168,7 +168,7 @@ def _validate_feedback_type(survey: Survey | None, data: dict) -> dict:
     return data
 
 
-def _submit_out(response: SurveyResponse, user_name: str | None) -> SurveySubmitOut:
+def submit_out(response: SurveyResponse, user_name: str | None) -> SurveySubmitOut:
     token = response.anonymous_token if response.user_id is None else None
     return SurveySubmitOut(
         id=str(response.id),
@@ -215,7 +215,7 @@ def _tally_str_answer(
                 voters[val].append(voter)
 
 
-def _tally_question(
+def tally_question(
     q: SurveyQuestion, responses: list[SurveyResponse], viewer=None, include_voters: bool = True
 ) -> PollResultsOut:
     options = q.options or []
@@ -242,7 +242,7 @@ def _tally_question(
     )
 
 
-def _has_finalize_permission(request, survey: Survey) -> bool:
+def has_finalize_permission(request, survey: Survey) -> bool:
     if request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
         return True
     if request.auth.has_permission(PermissionKey.MANAGE_EVENTS):

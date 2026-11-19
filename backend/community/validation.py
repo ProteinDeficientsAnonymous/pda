@@ -28,6 +28,8 @@ class Code:
         RSVPS_NOT_ENABLED = "event.rsvps_not_enabled"
         RSVPS_CLOSED_CANCELLED = "event.rsvps_closed_cancelled"
         RSVPS_CLOSED_PAST = "event.rsvps_closed_past"
+        RSVPS_CLOSED_DEADLINE = "event.rsvps_closed_deadline"
+        RSVP_DEADLINE_AFTER_START = "event.rsvp_deadline_after_start"
         RSVP_INVALID_STATUS = "event.rsvp_invalid_status"
         NO_PLUS_ONE_SPOTS = "event.no_plus_one_spots"
         RSVP_NOT_FOUND = "event.rsvp_not_found"
@@ -37,7 +39,9 @@ class Code:
         RSVP_COULD_NOT_BE_CREATED = "event.rsvp_could_not_be_created"  # generic, no-oracle
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         NO_PLUS_ONE_TO_CHECK_IN = "event.no_plus_one_to_check_in"
+        DIDNT_GO_REQUIRES_GOING = "event.didnt_go_requires_going"
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }
+        GUEST_NOT_ELIGIBLE = "event.guest_not_eligible"
         BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"
         BLAST_NO_RECIPIENTS = "event.blast_no_recipients"
         WOULD_REMOVE_NON_MEMBERS = "event.would_remove_non_members"  # params: { count: int }
@@ -56,6 +60,7 @@ class Code:
         )
         SLUG_INVALID = "event.slug_invalid"
         SLUG_TAKEN = "event.slug_taken"
+        INVALID_EVENT_FORMAT = "event.invalid_event_format"
 
     class Poll:
         NOT_FOUND = "poll.not_found"
@@ -75,6 +80,9 @@ class Code:
         NOT_FOUND = "tag.not_found"
         NAME_REQUIRED = "tag.name_required"
         NAME_ALREADY_EXISTS = "tag.name_already_exists"
+
+    class Reserve:
+        NOT_FOUND = "reserve.not_found"
 
     class Comment:
         NOT_FOUND = "comment.not_found"
@@ -113,7 +121,9 @@ class Code:
     class Auth:
         INVALID_CREDENTIALS = "auth.invalid_credentials"
         ACCOUNT_ARCHIVED = "auth.account_archived"
-        ACCOUNT_PAUSED = "auth.account_paused"
+        ACCOUNT_GUIDELINES_PAUSED = "auth.account_guidelines_paused"
+        ACCOUNT_REJECTED = "auth.account_rejected"
+        NOT_A_MEMBER = "auth.not_a_member"
         MAGIC_LINK_INVALID_OR_EXPIRED = "auth.magic_link_invalid_or_expired"
         MAGIC_LINK_ALREADY_USED = "auth.magic_link_already_used"
         ALREADY_SIGNED_IN_AS_DIFFERENT_USER = "auth.already_signed_in_as_different_user"
@@ -151,6 +161,8 @@ class Code:
         CANNOT_HARD_DELETE_LOGGED_IN = "user.cannot_hard_delete_logged_in"
         CANNOT_PAUSE_SELF = "user.cannot_pause_self"
         CANNOT_PAUSE_ADMIN = "user.cannot_pause_admin"
+        GUIDELINES_PAUSED = "user.guidelines_paused"
+        ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN = "user.attendance_pause_lifts_on_check_in"
         ROLE_IDS_NOT_FOUND = "user.role_ids_not_found"
         INVALID_BIRTHDAY = "user.invalid_birthday"
         INVALID_VEGANNIVERSARY = "user.invalid_veganniversary"
@@ -191,11 +203,13 @@ class Code:
     class JoinRequest:
         NOT_FOUND = "join_request.not_found"
         ALREADY_DECIDED = "join_request.already_decided"
+        TENTATIVE_CANNOT_BE_REJECTED = "join_request.tentative_cannot_be_rejected"
         ONLY_REJECTED_CAN_BE_UN_REJECTED = "join_request.only_rejected_can_be_un_rejected"
         ALREADY_MEMBER = "join_request.already_member"
         PHONE_ALREADY_INVITED = "join_request.phone_already_invited"
         PHONE_ALREADY_PENDING = "join_request.phone_already_pending"
         PHONE_ALREADY_TENTATIVE = "join_request.phone_already_tentative"
+        OPEN_REQUEST_EXISTS = "join_request.open_request_exists"
         ANSWER_REQUIRED = "join_request.answer_required"  # params: { label: str }
         ANSWER_TOO_LONG = "join_request.answer_too_long"  # params: { label: str, max: int }
         ANSWER_INVALID_OPTION = "join_request.answer_invalid_option"  # params: { label: str }
@@ -286,17 +300,47 @@ class Code:
         BODY_REQUIRED = "member_promotion_email.body_required"
         BODY_TOO_LONG = "member_promotion_email.body_too_long"  # params: { max_length: int }
 
+    class MemberRestoredEmail:
+        BODY_REQUIRED = "member_restored_email.body_required"
+        BODY_TOO_LONG = "member_restored_email.body_too_long"  # params: { max_length: int }
+
     class RejectionEmail:
         BODY_REQUIRED = "rejection_email.body_required"
         BODY_TOO_LONG = "rejection_email.body_too_long"  # params: { max_length: int }
         REASON_TEXT_REQUIRED = "rejection_email.reason_text_required"
         REASON_TEXT_TOO_LONG = "rejection_email.reason_text_too_long"  # params: { max_length: int }
 
+    class SpeechTemplate:
+        INVALID_DOC = "speech_template.invalid_doc"
+        TOO_MANY_ROLES = "speech_template.too_many_roles"  # params: { max: int }
+        ROLE_TOO_LONG = "speech_template.role_too_long"  # params: { max: int }
+
+    class Speech:
+        FORMAT_REQUIRED = "speech.format_required"
+        INVALID_VALUES = "speech.invalid_values"
+        HOSTS_ONLY = "speech.hosts_only"
+        OFFICIAL_EVENT_REQUIRED = "speech.official_event_required"
+
     class Connect:
         REQUEST_NOT_FOUND = "connect.request_not_found"
         REQUEST_EXPIRED = "connect.request_expired"
         REQUEST_ALREADY_USED = "connect.request_already_used"
         APP_NOT_FOUND = "connect.app_not_found"
+
+    class Planning:
+        YEAR_EXISTS = "planning.year_exists"
+        YEAR_NOT_FOUND = "planning.year_not_found"
+        SLOT_NOT_FOUND = "planning.slot_not_found"
+        SLOT_NOT_IN_YEAR = "planning.slot_not_in_year"
+        NOT_A_PLANNER = "planning.not_a_planner"
+        ALREADY_ASSIGNED = "planning.already_assigned"
+        ASSIGNMENT_NOT_FOUND = "planning.assignment_not_found"
+        NOT_PENDING = "planning.not_pending"
+        NOT_EVENT_HOST = "planning.not_event_host"
+        SLOT_HAS_EVENT = "planning.slot_has_event"
+        AVAILABILITY_ALREADY_OPEN = "planning.availability_already_open"
+        EVENT_ALREADY_LINKED = "planning.event_already_linked"
+        CHECKLIST_ITEM_NOT_FOUND = "planning.checklist_item_not_found"
 
 
 class ValidationException(Exception):

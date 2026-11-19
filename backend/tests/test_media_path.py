@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 from config.media_proxy import media_path
-from config.og_preview import _absolute
+from config.og_preview import absolute
 from django.core.cache import caches
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
@@ -89,15 +89,15 @@ class TestOgAbsolute:
     def test_prefixes_relative_media_path(self, settings):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
         assert (
-            _absolute("/media/event_photos/a.jpg")
+            absolute("/media/event_photos/a.jpg")
             == "https://pda.example.com/media/event_photos/a.jpg"
         )
 
     def test_passes_through_absolute_https_url(self, settings):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
         signed = "https://s3.us-west.example/bucket/event_photos/a.jpg?X-Amz-Signature=abc"
-        assert _absolute(signed) == signed
+        assert absolute(signed) == signed
 
     def test_empty_returns_empty(self, settings):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"
-        assert _absolute("") == ""
+        assert absolute("") == ""

@@ -3,6 +3,8 @@ import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
+import { Code } from '@/api/validationCodes';
+import { apiError } from '@/test/apiError';
 import { setAuthed } from '@/test/auth';
 import { creator, makeEvent, makeGuest, nonHost } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
@@ -40,6 +42,22 @@ beforeEach(() => {
 });
 
 describe('EventQuestionResponsesScreen', () => {
+  it('shows the forbidden notice on a 403', () => {
+    vi.mocked(useEvent).mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: apiError(403, Code.Event.PermDenied),
+    } as unknown as ReturnType<typeof useEvent>);
+    renderScreen();
+
+    expect(screen.getByText("you don't have permission to see this event")).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'back to event' })).toHaveAttribute(
+      'href',
+      '/events/ev1',
+    );
+  });
+
   it('shows a forbidden notice for a non-host', () => {
     setAuthed(nonHost);
     renderScreen();

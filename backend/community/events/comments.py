@@ -15,9 +15,11 @@ from notifications.service import (
     notify_event_comment,
 )
 from users.helpers import visible_display_name
+from users.models import LIMITED_STATUSES
 from users.permissions import PermissionKey
 
 from community.events._comment_schemas import (
+    CannotPostReason,
     CommentBodyIn,
     CommentReactionSummaryOut,
     EventCommentListOut,
@@ -26,7 +28,8 @@ from community.events._comment_schemas import (
     ReactionToggleIn,
     ReactorOut,
 )
-from community.events.read_visibility import _enforce_event_read_visibility
+from community.events.limited_access import enforce_limited_write_access, event_viewer_for
+from community.events.read_visibility import enforce_event_read_visibility
 from community.events.viewer import resolve_event_viewer
 from community.models import (
     Event,
@@ -35,7 +38,7 @@ from community.models import (
     EventRSVP,
     ReactionEmoji,
 )
-from community.shared import ErrorOut, _optional_jwt
+from community.shared import ErrorOut, optional_jwt
 from community.validation import Code, raise_validation
 
 router = Router()
@@ -151,19 +154,27 @@ def _comment_out(
     )
 
 
-def _build_list_out(event: Event, viewer) -> EventCommentListOut:
+def _cannot_post_reason(event: Event, viewer, user) -> CannotPostReason:
+    # event_viewer_for downgraded a signed-in limited user to anonymous; they're already logged in.
+    if viewer is None and user is not None and user.membership_status in LIMITED_STATUSES:
+        return "members_only"
+    # A signed-out visitor can still rsvp themselves onto a public event, so
+    # prompt for that rather than for a login they don't need.
+    if viewer is not None or event.is_public_rsvp_eligible:
+        return "rsvp_required"
+    return "login_required"
+
+
+def _build_list_out(event: Event, viewer, user) -> EventCommentListOut:
     co_host_pks = _co_host_pks(event)
     can_post = _can_post_comments(event, viewer, co_host_pks=co_host_pks)
     # Reading requires the same standing as posting — no peeking without an active rsvp.
     if not can_post:
-        # A signed-out visitor can still rsvp themselves onto a public event, so
-        # prompt for that rather than for a login they don't need.
-        reason = (
-            "rsvp_required"
-            if viewer is not None or event.is_public_rsvp_eligible
-            else "login_required"
+        return EventCommentListOut(
+            items=[],
+            can_post=False,
+            cannot_post_reason=_cannot_post_reason(event, viewer, user),
         )
-        return EventCommentListOut(items=[], can_post=False, cannot_post_reason=reason)
     comments = (
         EventComment.objects.filter(event=event, parent__isnull=True)
         .select_related("author")
@@ -178,6 +189,7 @@ def _build_list_out(event: Event, viewer) -> EventCommentListOut:
 
 
 def _require_rsvp_for_post(event: Event, user) -> None:
+    enforce_limited_write_access(user, event, "post_comment")
     if not _can_post_comments(event, user):
         raise_validation(Code.Comment.RSVP_REQUIRED, status_code=403)
 
@@ -188,7 +200,7 @@ def _require_rsvp_for_post(event: Event, user) -> None:
 @router.get(
     "/events/{event_id}/comments/",
     response={200: EventCommentListOut, 404: ErrorOut, 403: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 def list_comments(request, event_id: UUID):
     try:
@@ -199,15 +211,16 @@ def list_comments(request, event_id: UUID):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    viewer = resolve_event_viewer(request, event_id)
-    _enforce_event_read_visibility(event, viewer)
-    return Status(200, _build_list_out(event, viewer))
+    user = resolve_event_viewer(request, event_id)
+    viewer = event_viewer_for(user, event)
+    enforce_event_read_visibility(event, viewer)
+    return Status(200, _build_list_out(event, viewer, user))
 
 
 @router.post(
     "/events/{event_id}/comments/",
     response={201: EventCommentOut, 403: ErrorOut, 404: ErrorOut, 422: ErrorOut, 429: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 @rate_limit(key_func=client_ip, rate="10/m")
 def post_comment(request, event_id: UUID, payload: CommentBodyIn):
@@ -220,7 +233,7 @@ def post_comment(request, event_id: UUID, payload: CommentBodyIn):
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     user = resolve_event_viewer(request, event_id)
-    _enforce_event_read_visibility(event, user)
+    enforce_event_read_visibility(event, user)
     _require_rsvp_for_post(event, user)
     with transaction.atomic():
         comment = EventComment.objects.create(event=event, author=user, body=payload.body)
@@ -238,7 +251,7 @@ def post_comment(request, event_id: UUID, payload: CommentBodyIn):
         422: ErrorOut,
         429: ErrorOut,
     },
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 @rate_limit(key_func=client_ip, rate="10/m")
 def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn):
@@ -251,7 +264,7 @@ def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     user = resolve_event_viewer(request, event_id)
-    _enforce_event_read_visibility(event, user)
+    enforce_event_read_visibility(event, user)
     _require_rsvp_for_post(event, user)
     try:
         parent = EventComment.objects.get(id=comment_id, event=event)
@@ -273,7 +286,7 @@ def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn
 @router.delete(
     "/events/{event_id}/comments/{comment_id}/",
     response={204: None, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 @rate_limit(key_func=client_ip, rate="10/m")
 def delete_comment(request, event_id: UUID, comment_id: UUID):
@@ -286,7 +299,7 @@ def delete_comment(request, event_id: UUID, comment_id: UUID):
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     user = resolve_event_viewer(request, event_id)
-    _enforce_event_read_visibility(event, user)
+    enforce_event_read_visibility(event, user)
     try:
         comment = EventComment.objects.get(id=comment_id, event=event)
     except EventComment.DoesNotExist:
@@ -313,7 +326,7 @@ _VALID_EMOJIS = {e.value for e in ReactionEmoji}
         422: ErrorOut,
         429: ErrorOut,
     },
-    auth=_optional_jwt,
+    auth=optional_jwt,
 )
 @rate_limit(key_func=client_ip, rate="10/m")
 def toggle_reaction(request, event_id: UUID, comment_id: UUID, payload: ReactionToggleIn):
@@ -326,7 +339,7 @@ def toggle_reaction(request, event_id: UUID, comment_id: UUID, payload: Reaction
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     user = resolve_event_viewer(request, event_id)
-    _enforce_event_read_visibility(event, user)
+    enforce_event_read_visibility(event, user)
     _require_rsvp_for_post(event, user)
     if payload.emoji not in _VALID_EMOJIS:
         raise_validation(Code.Comment.INVALID_EMOJI, status_code=422)

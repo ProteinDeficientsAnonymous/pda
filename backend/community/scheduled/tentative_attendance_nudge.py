@@ -7,7 +7,7 @@ from django.utils import timezone
 from notifications.email_helpers import send_tentative_attendance_nudge_email
 from notifications.email_sender import EmailSender
 from users.member_status import NOT_SET_UP
-from users.models import HAS_EMAIL, User
+from users.models import HAS_EMAIL, MembershipStatus, User
 
 from community.models import (
     EventRSVP,
@@ -17,7 +17,7 @@ from community.models import (
     RSVPStatus,
     TentativeAttendanceNudge,
 )
-from community.models.event import _is_past_q
+from community.models.event import is_past_q
 
 # Just under 1w / 1w / 2w / 4w so a drifting weekly cron lands ~1 week, 2 weeks, 1 month, then monthly.
 _FIRST_GAPS = (timedelta(days=6), timedelta(days=6), timedelta(days=13))
@@ -37,17 +37,18 @@ def _candidates(now: datetime) -> QuerySet:
         status__in=_SIGNED_UP,
         event__event_type__in=(EventType.OFFICIAL, EventType.CLUB),
         event__status=EventStatus.ACTIVE,
-    ).exclude(_is_past_q(now, "event__"))
+    ).exclude(is_past_q(now, "event__"))
     return (
-        User.objects.active_tentative_members()
+        User.objects.active_limited_users()
         .filter(HAS_EMAIL, attendance_nudge_opt_out=False)
+        .filter(membership_status=MembershipStatus.TENTATIVE)
         .exclude(NOT_SET_UP)
         .exclude(Exists(upcoming_rsvp))
         .annotate(
             nudge_count=Count("attendance_nudges", distinct=True),
             last_nudged_at=Max("attendance_nudges__sent_at"),
             tentative_at=Max(
-                "join_requests__tentative_at",
+                "join_requests__status_changed_at",
                 filter=Q(join_requests__status=JoinRequestStatus.TENTATIVE),
             ),
         )

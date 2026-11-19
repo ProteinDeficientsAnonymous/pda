@@ -1,7 +1,7 @@
 """Document library — folder endpoints + shared schemas/helpers.
 
 Document (leaf) endpoints live in ``documents.py``; both routers are
-mounted by ``api.py``. The schemas and ``_doc_to_out`` / ``_has_manage_docs``
+mounted by ``api.py``. The schemas and ``doc_to_out`` / ``has_manage_docs``
 helpers stay here so they're imported from a single place.
 """
 
@@ -125,7 +125,7 @@ def _folder_to_out(folder: DocFolder) -> DocFolderOut:
     return _folder_trees(folder)[0]
 
 
-def _apply_display_order(model: type[DocFolder] | type[Document], ids: list[str]) -> None:
+def apply_display_order(model: type[DocFolder] | type[Document], ids: list[str]) -> None:
     rows = list(model.objects.filter(pk__in=ids).only("id", "display_order"))
     order = {UUID(pk): i for i, pk in enumerate(ids)}
     for row in rows:
@@ -133,7 +133,7 @@ def _apply_display_order(model: type[DocFolder] | type[Document], ids: list[str]
     model.objects.bulk_update(rows, ["display_order"])
 
 
-def _doc_to_out(doc: Document) -> DocumentOut:
+def doc_to_out(doc: Document) -> DocumentOut:
     return DocumentOut(
         id=str(doc.id),
         title=doc.title,
@@ -148,7 +148,7 @@ def _doc_to_out(doc: Document) -> DocumentOut:
     )
 
 
-def _has_manage_docs(user) -> bool:
+def has_manage_docs(user) -> bool:
     return user.has_permission(PermissionKey.MANAGE_DOCUMENTS)
 
 
@@ -163,7 +163,7 @@ def _has_manage_docs(user) -> bool:
     auth=gated_jwt,
 )
 def list_folders(request):
-    if not _has_manage_docs(request.auth):
+    if not has_manage_docs(request.auth):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -186,7 +186,7 @@ def list_folders(request):
     auth=gated_jwt,
 )
 def create_folder(request, payload: FolderIn):
-    if not _has_manage_docs(request.auth):
+    if not has_manage_docs(request.auth):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -228,7 +228,7 @@ def create_folder(request, payload: FolderIn):
     auth=gated_jwt,
 )
 def reorder_folders(request, payload: ReorderIn):
-    if not _has_manage_docs(request.auth):
+    if not has_manage_docs(request.auth):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -243,7 +243,7 @@ def reorder_folders(request, payload: ReorderIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
-    _apply_display_order(DocFolder, payload.ids)
+    apply_display_order(DocFolder, payload.ids)
     audit_log(logging.INFO, "doc_folders_reordered", request)
     return Status(200, {"detail": "Folders reordered."})
 
@@ -254,7 +254,7 @@ def reorder_folders(request, payload: ReorderIn):
     auth=gated_jwt,
 )
 def update_folder(request, folder_id: str, payload: FolderPatchIn):
-    if not _has_manage_docs(request.auth):
+    if not has_manage_docs(request.auth):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -311,7 +311,7 @@ def update_folder(request, folder_id: str, payload: FolderPatchIn):
     auth=gated_jwt,
 )
 def delete_folder(request, folder_id: str):
-    if not _has_manage_docs(request.auth):
+    if not has_manage_docs(request.auth):
         audit_log(
             logging.WARNING,
             "permission_denied",

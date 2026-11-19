@@ -6,9 +6,9 @@ from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import pda_mcp
-from mcp_gateway.tools.members_read import _page
+from mcp_gateway.tools.members_read import members_page
 from users.member_search import MemberFilters
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._mcp_members_helpers import (
     BUCKETS,
@@ -22,7 +22,7 @@ from tests._mcp_members_helpers import (
     member_totals,
 )
 from tests._mcp_tool_helpers import signed_in
-from tests._public_rsvp_helpers import make_non_member
+from tests._public_rsvp_helpers import make_public_rsvper
 
 pytestmark = pytest.mark.django_db
 
@@ -63,11 +63,11 @@ def test_bad_arguments_are_rejected(admin, arguments):
 def test_status_defaults_to_live_members_and_skips_non_members(admin):
     set_up = make_onboarded()
     new = make_onboarding()
-    paused = make_onboarding(is_paused=True)
+    paused = make_onboarding(membership_status=MembershipStatus.GUIDELINES_PAUSED)
     archived = make_onboarded(archived_at=timezone.now())
     make_onboarded(is_active=False)
-    make_non_member("+12025550198", "n@e.com")
-    make_member(is_member=False)
+    make_public_rsvper("+12025550198", "n@e.com")
+    make_member(membership_status=MembershipStatus.NONE)
     assert {row["id"]: row["status"] for row in find_members(admin)["members"]} == {
         **dict.fromkeys(ids_of(admin, set_up), "active"),
         str(new.id): "still_onboarding",
@@ -78,7 +78,7 @@ def test_status_defaults_to_live_members_and_skips_non_members(admin):
 def test_totals_match_member_totals_buckets(admin):
     make_onboarded()
     make_onboarding()
-    make_onboarding(is_paused=True)
+    make_onboarding(membership_status=MembershipStatus.GUIDELINES_PAUSED)
     make_onboarded(archived_at=timezone.now())
     make_onboarded(is_active=False)
     totals = member_totals(admin)
@@ -117,7 +117,10 @@ def test_one_page_is_two_queries(admin, django_assert_num_queries):
     for _ in range(3):
         make_onboarding()
     with django_assert_num_queries(2):
-        assert len(_page(MemberFilters(), limit=2, offset=0, include_contact=True)["members"]) == 2
+        assert (
+            len(members_page(MemberFilters(), limit=2, offset=0, include_contact=True)["members"])
+            == 2
+        )
 
 
 def test_joined_within_days_uses_membership_start(admin):
@@ -167,3 +170,11 @@ def test_paging_is_stable_with_ties(admin):
         seen += [row["id"] for row in page["members"]]
         offset = page["next_offset"]
     assert sorted(seen) == sorted(str(u.id) for u in User.objects.all())
+
+
+def test_name_filter_matches_every_word_in_first_or_last_name(admin):
+    leeds = make_member(last_name="Leeds")
+    samuels = make_member(last_name="Samuels")
+    assert member_ids(admin, name="lee") == ids_of(leeds)
+    assert member_ids(admin, name="m LEEDS") == ids_of(leeds)
+    assert member_ids(admin, name="sam") == ids_of(samuels)

@@ -8,7 +8,7 @@ from community.models import EventType, Survey, SurveyQuestion, SurveyQuestionTy
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import BASE_URL, pda_mcp
-from mcp_gateway.tools.surveys_read import _survey_id
+from mcp_gateway.tools.surveys_read import resolve_survey_id
 
 from tests._mcp_tool_helpers import signed_in, tool_names
 
@@ -25,7 +25,9 @@ def _survey(slug, days_ago=0, **fields):
 def _call(user, name, **arguments):
     token = signed_in(user)
     try:
-        return async_to_sync(pda_mcp.call_tool)(name, arguments).structured_content  # type: ignore[union-attr]
+        result = async_to_sync(pda_mcp.call_tool)(name, arguments)
+        assert result.structured_content is not None
+        return result.structured_content
     finally:
         auth_context_var.reset(token)
 
@@ -110,7 +112,7 @@ def test_slug_lookup_is_one_query(django_assert_num_queries):
     surveys = [_survey(f"s{i}") for i in range(3)]
     # async_to_sync keeps the ORM on this thread, so the query is counted.
     with django_assert_num_queries(1):
-        assert async_to_sync(_survey_id)("s1") == surveys[1].pk
+        assert async_to_sync(resolve_survey_id)("s1") == surveys[1].pk
 
 
 def test_get_survey_by_uppercase_uuid(surveys_admin):

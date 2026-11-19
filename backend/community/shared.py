@@ -1,12 +1,14 @@
 import logging
 import re
+from datetime import date, datetime, time
 from urllib.parse import urlparse
 
-from config.auth import _HARD_ACCOUNT_BLOCKS, account_block_code
+from config.auth import HARD_ACCOUNT_BLOCKS, account_block_code
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest, HttpResponse
 from ninja.security import HttpBearer
-from ninja_jwt.authentication import JWTAuth, JWTBaseAuthentication  # noqa: F401
+from ninja_jwt.authentication import JWTBaseAuthentication
 from ninja_jwt.exceptions import AuthenticationFailed, TokenError
 from pydantic import BaseModel
 from users.models import User as UserModel
@@ -43,7 +45,7 @@ class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
         if code is None:
             return user
         if request.method in _SAFE_METHODS or (
-            code not in _HARD_ACCOUNT_BLOCKS and _allows_anonymous_write(request.path)
+            code not in HARD_ACCOUNT_BLOCKS and _allows_anonymous_write(request.path)
         ):
             request.user = AnonymousUser()
             return AnonymousUser()
@@ -71,7 +73,7 @@ class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
         return result
 
 
-_optional_jwt = OptionalJWTAuth()
+optional_jwt = OptionalJWTAuth()
 
 
 class ErrorOut(BaseModel):
@@ -101,6 +103,10 @@ def validate_display_name(name: str, field: str = "display_name") -> None:
         raise_validation(Code.DisplayName.INVALID_CHARS, field=field)
     if all(c in " '-." for c in stripped):
         raise_validation(Code.DisplayName.NEEDS_A_LETTER, field=field)
+
+
+def local_midnight(day: date) -> datetime:
+    return datetime.combine(day, time.min, tzinfo=settings.COMMUNITY_TZ)
 
 
 def csv_safe(value: str) -> str:
@@ -180,13 +186,13 @@ def flatten_to_single_line(value: str) -> str:
     return " ".join(value.splitlines()).strip()
 
 
-def _authenticated_user(requesting_user) -> "UserModel | None":
+def authenticated_user(requesting_user) -> "UserModel | None":
     """Return the user if authenticated, None if anonymous."""
     if requesting_user is None or isinstance(requesting_user, AnonymousUser):
         return None
     return requesting_user
 
 
-def _gated(value, default, visible: bool):
+def gated(value, default, visible: bool):
     """Return value if visible, default otherwise."""
     return value if visible else default

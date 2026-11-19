@@ -3,7 +3,7 @@ from django.utils import timezone
 from notifications.service import create_waitlist_promoted_notifications
 
 from community.models import Event, EventRSVP, RSVPStatus
-from community.rsvps.counts import _attending_headcount_db
+from community.rsvps.counts import attending_headcount_db
 from community.rsvps.payment import payment_enforced_for_event
 
 WAITLIST_ORDER = (F("waitlist_position").asc(nulls_last=True), "created_at", "pk")
@@ -17,7 +17,7 @@ def waitlist_sort_key(rsvp: EventRSVP) -> tuple:
 
 def _promotable_waitlist_rsvps(event: Event) -> list[EventRSVP]:
     """Waitlisted RSVPs that fit under max_attendees, in line order; stops at the first that doesn't."""
-    headcount = _attending_headcount_db(event)
+    headcount = attending_headcount_db(event)
     promotable: list[EventRSVP] = []
     line = EventRSVP.objects.filter(event=event, status=RSVPStatus.WAITLISTED).order_by(
         *WAITLIST_ORDER

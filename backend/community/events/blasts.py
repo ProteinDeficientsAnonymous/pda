@@ -11,7 +11,7 @@ from notifications.email_helpers import EventBlastEmailDetails, send_event_blast
 from notifications.email_sender import EmailStream, get_email_sender
 from pydantic import Field
 
-from community.events.helpers import _can_edit_event
+from community.events.helpers import can_edit_event
 from community.models import Event, EventEmailBlast, RSVPStatus
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
@@ -88,7 +88,7 @@ def _send_blast(event: Event, subject: str, message: str, recipients: list) -> i
                     message=message,
                 ),
             )
-        except Exception:  # noqa: BLE001 — one bad send must not abort the batch
+        except Exception:
             logger.warning("event_blast_send_exception", exc_info=True)
             failed += 1
             continue
@@ -110,7 +110,7 @@ def send_email_blast(request, event_id: UUID, payload: EmailBlastIn):
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
-    if not _can_edit_event(request.auth, event):
+    if not can_edit_event(request.auth, event):
         audit_log(
             logging.WARNING,
             "permission_denied",

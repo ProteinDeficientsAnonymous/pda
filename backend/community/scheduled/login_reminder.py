@@ -5,7 +5,7 @@ from django.db.models import Count, Exists, Max, OuterRef, Q, QuerySet
 from django.utils import timezone
 from notifications.email_helpers import LoginLinkEmail, send_magic_login_email
 from notifications.email_sender import EmailSender
-from users.helpers import _magic_login_url
+from users.helpers import magic_login_url
 from users.member_status import NOT_SET_UP
 from users.models import HAS_EMAIL, MagicLoginToken, MagicLoginTokenSource, User
 
@@ -41,7 +41,7 @@ def _due_for_reminder(qs: QuerySet, now: datetime) -> QuerySet:
 def _users_to_remind(now: datetime) -> list[User]:
     return [
         user
-        for qs in (User.objects.active_members(), User.objects.active_tentative_members())
+        for qs in (User.objects.active_members(), User.objects.active_limited_users())
         for user in _due_for_reminder(qs, now)
     ]
 
@@ -61,7 +61,7 @@ def _send_reminder(sender: EmailSender, user: User, reminder: LoginReminder) -> 
         sender=sender,
         to=user.email,
         display_name=user.first_name,
-        magic_link_url=_magic_login_url(str(link.token)),
+        magic_link_url=magic_login_url(str(link.token)),
         email=_REMINDER_EMAIL,
     )
     if not result.success:

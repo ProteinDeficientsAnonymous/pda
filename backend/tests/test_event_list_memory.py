@@ -3,13 +3,13 @@
 import io
 
 import pytest
-from community.events.helpers import _event_out, load_event_with_stats_prefetch
+from community.events.helpers import event_out, load_event_with_stats_prefetch
 from community.models import Event, EventRSVP, PageVisibility, RSVPStatus
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from PIL import Image
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._auth import auth_headers_for
 from tests._time import future_iso
@@ -296,11 +296,11 @@ class TestGetEventMemory:
         ]
         maybe_member = make_user(first_name="MM")
         attending_nonmembers = [
-            make_user(first_name="N1", is_member=False),
-            make_user(first_name="N2", is_member=False),
-            make_user(first_name="N3", is_member=False),
+            make_user(first_name="N1", membership_status=MembershipStatus.NONE),
+            make_user(first_name="N2", membership_status=MembershipStatus.NONE),
+            make_user(first_name="N3", membership_status=MembershipStatus.NONE),
         ]
-        maybe_nonmember = make_user(first_name="NM", is_member=False)
+        maybe_nonmember = make_user(first_name="NM", membership_status=MembershipStatus.NONE)
         waitlisted = make_user(first_name="W")
         for guest in (
             *attending_members,
@@ -438,7 +438,7 @@ class TestGetEventMemory:
             )
         loaded = load_event_with_stats_prefetch(event.id)
         with CaptureQueriesContext(connection) as ctx:
-            out = _event_out(loaded, test_user)
+            out = event_out(loaded, test_user)
         rsvp_sql = [q["sql"] for q in ctx.captured_queries if "community_eventrsvp" in q["sql"]]
         assert out.attending_count == 8
         assert len(out.guests) == 8

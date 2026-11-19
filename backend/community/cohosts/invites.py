@@ -16,19 +16,18 @@ from ninja.responses import Status
 from notifications.cohost_notifications import (
     create_cohost_invite_accepted_notification,
     create_cohost_invite_declined_notification,
-    create_cohost_invite_notifications,
     create_cohost_removed_notification,
 )
 from notifications.service import broadcast_cohost_change
 from pydantic import BaseModel, Field
+from users.models import MembershipStatus
 
-from community.cohosts.helpers import _can_manage_cohost_invites
+from community.cohosts.helpers import can_manage_cohost_invites
 from community.cohosts.invite_helpers import (
-    add_cohost_invites,
     expire_stale_cohost_invites,
-    send_cohost_invite_emails,
+    invite_cohosts_and_notify,
 )
-from community.events.helpers import _event_out, broadcast_capacity_change
+from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.schemas import EventOut
 from community.models import CoHostInviteStatus, Event, EventCoHostInvite
 from community.rsvps.host_auto import auto_rsvp_host
@@ -77,21 +76,12 @@ def add_cohosts(request, event_id: UUID, payload: AddCoHostsIn):
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
     co_host_ids = {str(uid) for uid in event.co_hosts.values_list("pk", flat=True)}
-    if not _can_manage_cohost_invites(request.auth, co_host_ids):
+    if not can_manage_cohost_invites(request.auth, co_host_ids):
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
 
-    newly_invited = add_cohost_invites(event, payload.user_ids, request.auth)
-
+    invite_cohosts_and_notify(event, payload.user_ids, request.auth)
     event = _reload_event_for_response(event_id)
-    if newly_invited:
-        create_cohost_invite_notifications(event, newly_invited, request.auth)
-        send_cohost_invite_emails(event, newly_invited, request.auth)
-        broadcast_cohost_change(
-            event,
-            exclude_user_ids={str(request.auth.pk)},
-            extra_user_ids=set(newly_invited),
-        )
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
 
 
 @router.post(
@@ -110,7 +100,7 @@ def accept_cohost_invite(request, event_id: UUID, invite_id: UUID):
         raise_validation(Code.CoHostInvite.NOT_INVITEE, status_code=403)
     if invite.status != CoHostInviteStatus.PENDING:
         raise_validation(Code.CoHostInvite.NOT_PENDING, status_code=400)
-    if not request.auth.is_member:
+    if request.auth.membership_status != MembershipStatus.ACTIVE_MEMBER:
         raise_validation(Code.CoHostInvite.NOT_MEMBER, status_code=403)
 
     inviter_id = str(invite.invited_by_id) if invite.invited_by_id else None
@@ -126,7 +116,7 @@ def accept_cohost_invite(request, event_id: UUID, invite_id: UUID):
 
     event = _reload_event_for_response(event_id)
     broadcast_cohost_change(event, exclude_user_ids={str(request.auth.pk)})
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
 
 
 @router.post(
@@ -154,7 +144,7 @@ def decline_cohost_invite(request, event_id: UUID, invite_id: UUID):
     create_cohost_invite_declined_notification(invite.event, invite.user, inviter_id)
 
     event = _reload_event_for_response(event_id)
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
 
 
 @router.delete(
@@ -177,7 +167,7 @@ def remove_cohost(request, event_id: UUID, user_id: UUID):
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=404)
 
     is_self = str(user_id) == str(request.auth.pk)
-    if not (is_self or _can_manage_cohost_invites(request.auth, co_host_ids)):
+    if not (is_self or can_manage_cohost_invites(request.auth, co_host_ids)):
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
     # No past-event guard: cleaning up a stale roster after the fact is allowed.
     if co_host_ids <= {str(user_id)}:
@@ -198,7 +188,7 @@ def remove_cohost(request, event_id: UUID, user_id: UUID):
     broadcast_cohost_change(
         event, exclude_user_ids={str(request.auth.pk)}, extra_user_ids={str(user_id)}
     )
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))
 
 
 @router.delete(
@@ -215,7 +205,7 @@ def rescind_cohost_invite(request, event_id: UUID, invite_id: UUID):
 
     if invite.status != CoHostInviteStatus.PENDING:
         raise_validation(Code.CoHostInvite.NOT_REMOVABLE, status_code=400)
-    if not _can_manage_cohost_invites(request.auth, co_host_ids):
+    if not can_manage_cohost_invites(request.auth, co_host_ids):
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
     invite.status = CoHostInviteStatus.RESCINDED
     invite.decided_at = timezone.now()
@@ -227,4 +217,4 @@ def rescind_cohost_invite(request, event_id: UUID, invite_id: UUID):
         exclude_user_ids={str(request.auth.pk)},
         extra_user_ids={str(invite.user_id)},
     )
-    return Status(200, _event_out(event, request.auth))
+    return Status(200, event_out(event, request.auth))

@@ -9,7 +9,7 @@ import {
   RequirePermission,
 } from '@/auth/guards';
 import { AppShell } from '@/layout/AppShell';
-import { Permission } from '@/models/permissions';
+import { canViewPlanning, Permission } from '@/models/permissions';
 
 import { prefetchCalendarOnBoot, preloadCalendarChunk } from './bootPrefetch';
 import { lazyEl as el, lazyWithRetry } from './lazyRoute';
@@ -42,6 +42,7 @@ const EventQuestionResponses = lazyWithRetry(
 );
 const EventCheckInReport = lazyWithRetry(() => import('@/screens/events/EventCheckInReportScreen'));
 const EventFeedback = lazyWithRetry(() => import('@/screens/events/EventFeedbackScreen'));
+const EventSpeech = lazyWithRetry(() => import('@/screens/events/EventSpeechScreen'));
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
 const PublicRsvps = lazyWithRetry(() => import('@/screens/events/PublicRsvpsScreen'));
 const Notifications = lazyWithRetry(() => import('@/screens/notifications/NotificationsScreen'));
@@ -66,6 +67,8 @@ const SurveyBuilder = lazyWithRetry(() => import('@/screens/admin/SurveyBuilderS
 const SurveyCreate = lazyWithRetry(() => import('@/screens/admin/SurveyCreateScreen'));
 const SurveyResponses = lazyWithRetry(() => import('@/screens/admin/SurveyResponsesScreen'));
 const SurveyPreview = lazyWithRetry(() => import('@/screens/admin/SurveyPreviewScreen'));
+const SpeechTemplate = lazyWithRetry(() => import('@/screens/admin/SpeechTemplateScreen'));
+const Planning = lazyWithRetry(() => import('@/screens/admin/planning/PlanningScreen'));
 const Members = lazyWithRetry(() => import('@/screens/admin/MembersScreen'));
 const MemberDetail = lazyWithRetry(() => import('@/screens/admin/MemberDetailScreen'));
 const MemberProfile = lazyWithRetry(() => import('@/screens/members/MemberProfileScreen'));
@@ -130,6 +133,7 @@ export const router = createBrowserRouter([
                   { path: '/events/:id/check-in', element: el(<EventAttendance />) },
                   { path: '/events/:id/manage-rsvps', element: el(<EventManageRsvps />) },
                   { path: '/events/:id/responses', element: el(<EventQuestionResponses />) },
+                  { path: '/events/:id/speech', element: el(<EventSpeech />) },
                 ],
               },
 
@@ -193,6 +197,10 @@ export const router = createBrowserRouter([
                 children: [{ path: '/admin/join-form', element: el(<JoinFormAdmin />) }],
               },
               {
+                element: <RequirePermission perm={Permission.EditSpeechTemplate} />,
+                children: [{ path: '/admin/event-speech', element: el(<SpeechTemplate />) }],
+              },
+              {
                 element: <RequirePermission perm={Permission.ManageSurveys} />,
                 children: [
                   { path: '/admin/surveys', element: el(<SurveyAdminList />) },
@@ -201,6 +209,11 @@ export const router = createBrowserRouter([
                   { path: '/admin/surveys/:id/responses', element: el(<SurveyResponses />) },
                   { path: '/admin/surveys/:id/preview', element: el(<SurveyPreview />) },
                 ],
+              },
+
+              {
+                element: <RequirePermission allow={canViewPlanning} />,
+                children: [{ path: '/admin/planning', element: el(<Planning />) }],
               },
 
               // ---- catch-all ----

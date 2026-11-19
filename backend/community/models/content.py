@@ -207,6 +207,32 @@ class MemberPromotionEmailTemplate(models.Model):
         return obj
 
 
+class MemberRestoredEmailTemplate(models.Model):
+    """Singleton (pk=1) restore email; ${FIRST_NAME} and ${WHATSAPP_LINK} are filled server-side."""
+
+    body = models.TextField(
+        default=(
+            "thanks for coming out — it's good to have you back.\n\n"
+            "rejoin the whatsapp here: ${WHATSAPP_LINK}"
+        ),
+        max_length=4000,
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = "community"
+        verbose_name = "Member Restored Email Template"
+        verbose_name_plural = "Member Restored Email Template"
+
+    def __str__(self) -> str:
+        return "Member Restored Email Template"
+
+    @classmethod
+    def get(cls) -> "MemberRestoredEmailTemplate":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 class RejectionEmailTemplate(models.Model):
     """Singleton — only one row ever exists (pk=1).
 

@@ -11,7 +11,7 @@ from users.permissions import PermissionKey
 
 from mcp_gateway.fields import local_time
 from mcp_gateway.server import BASE_URL, current_user, pda_tool
-from mcp_gateway.view_calls import _tool_error, call_view
+from mcp_gateway.view_calls import call_view, tool_error
 
 _LIST_FIELDS = (
     *("id", "slug", "title", "is_active", "visibility", "max_responses"),
@@ -85,7 +85,7 @@ async def _surveys(user: User) -> list[dict[str, Any]]:
     )
 
 
-async def _survey_id(ref: str) -> UUID:
+async def resolve_survey_id(ref: str) -> UUID:
     try:
         parsed = UUID(ref)
     except ValueError:
@@ -95,7 +95,7 @@ async def _survey_id(ref: str) -> UUID:
         return parsed
     match = await Survey.objects.filter(slug=ref).values_list("id", flat=True).afirst()
     if match is None:
-        raise _tool_error(404, f"no survey with id or slug {ref}")
+        raise tool_error(404, f"no survey with id or slug {ref}")
     return match
 
 
@@ -134,7 +134,7 @@ async def get_survey(
     survey: Annotated[str, Field(description="survey id (uuid) or slug, e.g. from list_surveys")],
 ) -> dict[str, Any]:
     user = await current_user()
-    body = await call_view(get_survey_admin, user, survey_id=await _survey_id(survey))
+    body = await call_view(get_survey_admin, user, survey_id=await resolve_survey_id(survey))
     return survey_detail(body)
 
 

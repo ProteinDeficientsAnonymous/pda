@@ -12,17 +12,12 @@ from notifications.email_helpers import send_magic_login_email
 from notifications.email_sender import get_email_sender
 from notifications.service import create_magic_link_request_notifications
 from pydantic import BaseModel, Field
-from users.helpers import _create_magic_token, _magic_login_url
-from users.models import (
-    PUBLIC_FORM_PHONE_REGION,
-    MagicLoginToken,
-    MagicLoginTokenSource,
-    User,
-    validate_phone,
-)
+from users.helpers import create_magic_token, magic_login_url
+from users.models import MagicLoginToken, MagicLoginTokenSource, User, can_sign_in_q
+from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community.field_limits import FieldLimit
-from community.shared import ErrorOut, logger  # noqa: F401
+from community.shared import ErrorOut, logger
 from community.validation import ValidationException
 
 router = Router()
@@ -90,7 +85,9 @@ def request_login_link(request, payload: RequestLoginLinkIn):
         )
         return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
 
-    user = User.objects.filter(phone_number=normalized, archived_at__isnull=True).first()
+    user = User.objects.filter(
+        can_sign_in_q(), phone_number=normalized, archived_at__isnull=True
+    ).first()
     if user is None:
         audit_log(
             logging.INFO,
@@ -134,7 +131,7 @@ def request_login_link(request, payload: RequestLoginLinkIn):
     # Invalidate any prior unused links so only the newest one works — avoids
     # multiple valid links floating around the user's inbox.
     MagicLoginToken.objects.filter(user=user, used=False).update(used=True)
-    magic_token = _create_magic_token(
+    magic_token = create_magic_token(
         user,
         requires_password_reset=True,
         source=MagicLoginTokenSource.SELF_SERVICE,
@@ -181,7 +178,7 @@ def _try_email_delivery(*, request, user, magic_token) -> bool:
             sender=get_email_sender(),
             to=user.email,
             display_name=user.full_name or "",
-            magic_link_url=_magic_login_url(magic_token),
+            magic_link_url=magic_login_url(magic_token),
         )
         if send_result.success:
             audit_log(

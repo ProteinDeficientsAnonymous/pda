@@ -25,19 +25,11 @@ from community.events.description_templates import (
 )
 from community.events.flags import router as event_flags_router
 from community.events.geocode import router as geocode_router
-
-# Re-export symbols imported directly in tests
-from community.events.helpers import (  # noqa: F401
-    _build_guest_list,
-    _find_my_rsvp,
-    is_cohost,
-)
 from community.events.host_actions import router as event_host_actions_router
 from community.events.invitations import router as event_invitations_router
 from community.events.official_defaults import router as official_event_defaults_router
 from community.events.photos import router as event_actions_router
 from community.events.report import router as event_report_router
-from community.events.schemas import EventPatchIn  # noqa: F401
 from community.events.tags import router as event_tags_router
 from community.join_requests.form import router as join_form_router
 from community.join_requests.manage import router as join_requests_router
@@ -50,14 +42,25 @@ from community.message_templates.member_promotion_email import (
 from community.message_templates.member_promotion_message import (
     router as member_promotion_message_router,
 )
+from community.message_templates.member_restored_email import router as member_restored_email_router
 from community.message_templates.rejection_email import router as rejection_email_router
 from community.message_templates.tentative_approval import (
     router as tentative_approval_message_router,
 )
 from community.message_templates.welcome import router as welcome_template_router
 from community.message_templates.whatsapp_link import router as whatsapp_link_router
+from community.planning.availability import router as planning_availability_router
+from community.planning.checklist import router as planning_checklist_router
+from community.planning.event_link import router as planning_event_link_router
+from community.planning.grid import router as planning_grid_router
+from community.planning.mine import router as planning_mine_router
+from community.planning.proposals import router as planning_proposals_router
+from community.planning.responses import router as planning_responses_router
+from community.planning.years import router as planning_years_router
 from community.polls.crud import router as polls_router
 from community.polls.options import router as poll_options_router
+from community.reserve.manage import router as reserve_manage_router
+from community.reserve.read import router as reserve_read_router
 from community.rsvps.host import router as event_host_rsvps_router
 from community.rsvps.member import router as event_rsvps_router
 from community.rsvps.public_manage import router as public_rsvp_manage_router
@@ -65,6 +68,8 @@ from community.rsvps.public_resend import router as public_rsvp_resend_router
 from community.rsvps.public_submit import router as public_rsvp_submit_router
 from community.rsvps.questions import router as event_rsvp_questions_router
 from community.rsvps.waitlist_order import router as event_waitlist_order_router
+from community.speech.event_speech import router as event_speech_router
+from community.speech.template import router as speech_template_router
 from community.surveys.crud import router as surveys_router
 from community.surveys.public import router as surveys_public_router
 from community.surveys.reports import router as survey_reports_router
@@ -74,6 +79,8 @@ router = Router()
 router.add_router("", guidelines_router)
 router.add_router("", home_router)
 router.add_router("", pages_router)
+router.add_router("", reserve_read_router)
+router.add_router("", reserve_manage_router)
 router.add_router("", join_form_router)
 router.add_router("", join_requests_router)
 router.add_router("", join_request_submit_router)
@@ -112,8 +119,11 @@ router.add_router("", welcome_template_router)
 router.add_router("", tentative_approval_message_router)
 router.add_router("", member_promotion_message_router)
 router.add_router("", member_promotion_email_router)
+router.add_router("", member_restored_email_router)
 router.add_router("", rejection_email_router)
 router.add_router("", whatsapp_link_router)
+router.add_router("", speech_template_router)
+router.add_router("", event_speech_router)
 router.add_router("", polls_router)
 router.add_router("", poll_options_router)
 router.add_router("", event_comments_router)
@@ -123,6 +133,14 @@ router.add_router("", survey_reports_router)
 router.add_router("", surveys_responses_router)
 router.add_router("", docs_router)
 router.add_router("", docs_documents_router)
+router.add_router("", planning_years_router)
+router.add_router("", planning_availability_router)
+router.add_router("", planning_grid_router)
+router.add_router("", planning_mine_router)
+router.add_router("", planning_proposals_router)
+router.add_router("", planning_responses_router)
+router.add_router("", planning_event_link_router)
+router.add_router("", planning_checklist_router)
 router.add_router("", geocode_router)
 router.add_router("", giphy_router)
 router.add_router("", version_router)

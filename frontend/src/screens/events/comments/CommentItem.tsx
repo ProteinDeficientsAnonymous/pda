@@ -97,8 +97,7 @@ export function CommentItem({ comment, eventId, token }: Props) {
             onSubmit={handleSubmitReply}
             submitting={postReply.isPending}
             placeholder="reply…"
-            // oxlint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
+            focusOnMount
             label="reply"
           />
         </div>

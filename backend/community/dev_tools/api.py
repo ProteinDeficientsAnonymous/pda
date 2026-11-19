@@ -19,7 +19,7 @@ from community.dev_tools._populate import (
     populate_rsvps,
 )
 from community.dev_tools.seed_guard import is_seed_allowed
-from community.events.helpers import _event_out
+from community.events.helpers import event_out
 from community.events.schemas import EventOut
 from community.field_limits import FieldLimit
 from community.models import (
@@ -186,4 +186,4 @@ def create_dev_test_event(request, payload: DevTestEventIn):
         request,
         target=AuditTarget(type=AuditTargetType.EVENT, id=str(event.id)),
     )
-    return Status(201, _event_out(event, request.auth))
+    return Status(201, event_out(event, request.auth))

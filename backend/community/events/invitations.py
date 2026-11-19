@@ -23,27 +23,53 @@ from users.models import User as UserModel
 from users.permissions import PermissionKey
 
 from community.events._invite_email import email_invited_members
-from community.events.helpers import _event_out, reload_event_or_404
+from community.events.helpers import event_out, reload_event_or_404
+from community.events.limited_access import can_be_guest, is_limited
 from community.events.schemas import EventOut
-from community.models import Event, InvitePermission
+from community.models import Event, EventStatus, InvitePermission, RSVPStatus
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
 
 router = Router()
+_RSVPD = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE)
 
 
 class InviteIn(BaseModel):
     user_ids: list[str] = Field(..., min_length=1, max_length=100)
 
 
-def _can_invite_to_event(user, event: Event) -> bool:
-    """Permission gate only — the RSVP nudge for all_members is frontend UX,
-    intentionally not enforced here (Issue 688)."""
+def can_invite_to_event(user, event: Event) -> bool:
+    """Same rule as the frontend's invite button (eventMemberSectionFlags)."""
+    if is_limited(user):
+        return False
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
     if event.co_hosts.filter(pk=user.pk).exists():
         return True
-    return event.invite_permission == InvitePermission.ALL_MEMBERS
+    return (
+        event.invite_permission == InvitePermission.ALL_MEMBERS
+        and event.rsvps.filter(user=user, status__in=_RSVPD).exists()
+    )
+
+
+def closed_to_invites(event: Event) -> str | None:
+    """return(str | None): why nobody can be invited, as a denied action, or None."""
+    if event.status == EventStatus.CANCELLED:
+        return "invite_to_cancelled_event"
+    # Past events can still be edited, but new invitees make no sense.
+    if event.is_past:
+        return "invite_to_past_event"
+    if not event.rsvp_enabled:
+        return "invite_without_rsvp"
+    return None
+
+
+def _eligible_invitees(event: Event, user_ids: set[UUID]) -> list[UserModel]:
+    """All-or-nothing: one invitee who can't see the event refuses the whole batch."""
+    users = list(UserModel.objects.filter(pk__in=user_ids))
+    if not all(can_be_guest(user, event) for user in users):
+        raise_validation(Code.Event.GUEST_NOT_ELIGIBLE, status_code=400)
+    return users
 
 
 @router.post(
@@ -62,7 +88,7 @@ def invite_to_event(request, event_id: UUID, payload: InviteIn):
     if event.is_deleted:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
-    if not _can_invite_to_event(request.auth, event):
+    if not can_invite_to_event(request.auth, event):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -76,17 +102,16 @@ def invite_to_event(request, event_id: UUID, payload: InviteIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="invite_to_event")
 
-    # Past events can still be edited (description tweaks, etc.) but it makes
-    # no sense to add new invitees to something that's already happened.
-    if event.is_past:
-        raise_validation(Code.Perm.DENIED, status_code=403, action="invite_to_past_event")
+    closed = closed_to_invites(event)
+    if closed:
+        raise_validation(Code.Perm.DENIED, status_code=403, action=closed)
 
     existing_ids = set(event.invited_users.values_list("pk", flat=True))
     requested_ids = {UUID(uid) for uid in payload.user_ids}
     new_ids = requested_ids - existing_ids
 
     if new_ids:
-        new_users = UserModel.objects.filter(pk__in=new_ids)
+        new_users = _eligible_invitees(event, new_ids)
         event.invited_users.add(*new_users)
         if not event.is_draft:
             new_id_strs = [str(uid) for uid in new_ids]
@@ -106,4 +131,4 @@ def invite_to_event(request, event_id: UUID, payload: InviteIn):
             },
         ),
     )
-    return Status(200, _event_out(reload_event_or_404(event_id), request.auth))
+    return Status(200, event_out(reload_event_or_404(event_id), request.auth))

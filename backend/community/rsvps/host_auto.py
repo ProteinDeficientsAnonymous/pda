@@ -1,7 +1,7 @@
 from django.db import transaction
 
 from community.models import Event, EventRSVP, RSVPStatus, is_official_or_club
-from community.rsvps.member import _apply_rsvp_in_transaction, _RsvpApply
+from community.rsvps.member import RsvpApply, apply_rsvp_in_transaction
 from community.validation import ValidationException
 
 
@@ -15,8 +15,8 @@ def auto_rsvp_host(event: Event, user) -> bool:
             Event.objects.select_for_update().only("id").get(id=event.id)
             if EventRSVP.objects.filter(event_id=event.id, user=user).exists():
                 return False
-            _apply_rsvp_in_transaction(
-                event.id, user, _RsvpApply(status=RSVPStatus.ATTENDING, skip_host_gates=True)
+            apply_rsvp_in_transaction(
+                event.id, user, RsvpApply(status=RSVPStatus.ATTENDING, skip_host_gates=True)
             )
     except ValidationException:
         return False

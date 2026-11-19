@@ -1,9 +1,9 @@
 from datetime import UTC, datetime
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from community.field_limits import FieldLimit
-from community.models import QuestionType, ShowIfOperator, SurveyVisibility
+from community.models import EventType, QuestionType, ShowIfOperator, SurveyVisibility
 from community.surveys.schemas import SurveyIn, SurveyQuestionIn, scale_labels
 from django.utils.text import slugify
 from mcp.server.mcpserver.exceptions import ToolError
@@ -116,6 +116,20 @@ class SurveySettings(BaseModel):
     closes_at: NewYorkTime = Field(None, description=f"stops taking responses, {WHEN}")
     max_responses: int | None = Field(None, description="stop after this many; empty: unlimited")
     confirmation_message: str = Field("", description="shown to the respondent after submitting")
+    feedback_event_type: Literal[EventType.OFFICIAL, EventType.CLUB, ""] = Field(
+        "",
+        description=(
+            "make it the feedback survey emailed to members after they attend an event of this "
+            "type; one survey per type; feedback surveys are always anonymous. empty: not one"
+        ),
+    )
+
+
+def feedback_emails(event_type: str) -> str:
+    return (
+        f"the daily feedback emails, asking members who attended a {event_type} event in the "
+        "past week to fill it in, with a reminder 3 days later"
+    )
 
 
 def to_survey_in(settings: SurveySettings) -> SurveyIn:

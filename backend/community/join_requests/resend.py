@@ -13,8 +13,8 @@ from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from users.helpers import _create_magic_token
-from users.models import MagicLoginToken, User
+from users.helpers import create_magic_token
+from users.models import MagicLoginToken, MembershipStatus, User
 from users.permissions import PermissionKey
 
 from community.join_requests.manage import ApproveJoinRequestOut
@@ -67,8 +67,8 @@ def resend_magic_link(request, id: UUID):
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if user.archived_at is not None:
         raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
-    if user.is_paused:
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+    if user.membership_status == MembershipStatus.GUIDELINES_PAUSED:
+        raise_validation(Code.Auth.ACCOUNT_GUIDELINES_PAUSED, status_code=403)
     if not user.needs_onboarding:
         raise_validation(Code.JoinRequest.ALREADY_LOGGED_IN, status_code=400)
 
@@ -76,7 +76,7 @@ def resend_magic_link(request, id: UUID):
         invalidated = MagicLoginToken.objects.filter(
             user=user, used=False, expires_at__gt=timezone.now()
         ).update(used=True)
-        magic_token = _create_magic_token(user)
+        magic_token = create_magic_token(user)
     audit_log(
         logging.INFO,
         "join_request_magic_link_resent",

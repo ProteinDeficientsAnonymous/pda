@@ -1,7 +1,7 @@
 """Convert Quill Delta JSON to HTML for static rendering.
 
 Retained for historical data migrations (see 0037). Runtime writes use
-ProseMirror via ``community.content._prosemirror_html`` instead.
+ProseMirror via ``community.content.prosemirror_html`` instead.
 """
 
 import json

@@ -19,7 +19,13 @@ from users.permissions import PermissionKey
 
 from mcp_gateway.confirm import Confirmed, ConfirmToken, issue_confirm_token, use_confirm_token
 from mcp_gateway.server import BASE_URL, current_user, pda_tool
-from mcp_gateway.survey_fields import SurveyQuestions, SurveySettings, to_question_in, to_survey_in
+from mcp_gateway.survey_fields import (
+    SurveyQuestions,
+    SurveySettings,
+    feedback_emails,
+    to_question_in,
+    to_survey_in,
+)
 from mcp_gateway.tools.surveys_read import survey_detail
 from mcp_gateway.view_calls import call_view
 
@@ -99,8 +105,7 @@ def _publish_notes(feedback_event_type: str) -> list[str]:
         return []
     return [
         f"this is the feedback survey for {feedback_event_type} events: switching it on starts "
-        f"the daily feedback emails, asking members who attended a {feedback_event_type} event in "
-        "the past week to fill it in, with a reminder 3 days later"
+        + feedback_emails(feedback_event_type)
     ]
 
 

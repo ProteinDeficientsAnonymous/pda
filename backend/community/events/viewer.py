@@ -1,10 +1,10 @@
 from uuid import UUID
 
 from django.http import HttpRequest
-from users.models import NonMemberRsvpToken, User
+from users.models import PublicRsvpToken, User
 
 from community.models import Event
-from community.shared import _authenticated_user
+from community.shared import authenticated_user
 
 
 def resolve_event_viewer(request: HttpRequest, event_id: UUID) -> "User | None":
@@ -15,17 +15,17 @@ def resolve_event_viewer(request: HttpRequest, event_id: UUID) -> "User | None":
     same events an anonymous visitor could unlock by submitting the form — so a
     returning non-member reuses one token across events (issue #873). The token
     only unlocks fields gated purely on "is there a user object" (see
-    _event_out/_build_list_out); it never satisfies member/creator/co-host
+    event_out/_build_list_out); it never satisfies member/creator/co-host
     checks, and posting still requires an actual RSVP (see _can_post_comments).
     """
-    auth_user = _authenticated_user(getattr(request, "auth", None))
+    auth_user = authenticated_user(getattr(request, "auth", None))
     if auth_user is not None:
         return auth_user
 
     token = request.GET.get("token", "")
     if not token:
         return None
-    user = NonMemberRsvpToken.resolve_user(token)
+    user = PublicRsvpToken.resolve_user(token)
     if user is None:
         return None
     # Re-derive eligibility per request so an event that drops out of public-RSVP

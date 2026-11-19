@@ -21,13 +21,13 @@ from community.validation import Code, raise_validation
 router = Router()
 
 
-def _day_only(dt: datetime) -> datetime:
+def day_only(dt: datetime) -> datetime:
     return timezone.localtime(dt, settings.COMMUNITY_TZ).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
 
 
-def _ordered_responses(survey: Survey, event_id: UUID | None = None) -> list[SurveyResponse]:
+def ordered_responses(survey: Survey, event_id: UUID | None = None) -> list[SurveyResponse]:
     qs = survey.responses.select_related("user", "event")
     if event_id is not None:
         qs = qs.filter(event_id=event_id)
@@ -35,11 +35,11 @@ def _ordered_responses(survey: Survey, event_id: UUID | None = None) -> list[Sur
     if survey.anonymous:
         # Exact submit order would let someone who saw a member submit pick out their row.
         responses.sort(key=lambda r: str(r.id))
-        responses.sort(key=lambda r: _day_only(r.submitted_at), reverse=True)
+        responses.sort(key=lambda r: day_only(r.submitted_at), reverse=True)
     return responses
 
 
-def _load_survey_for_responses(request, survey_id: UUID, endpoint: str) -> Survey:
+def load_survey_for_responses(request, survey_id: UUID, endpoint: str) -> Survey:
     """Load a survey for an endpoint that exposes response data, gated on MANAGE_SURVEYS.
 
     request(HttpRequest): the authenticated request.
@@ -77,7 +77,7 @@ def _admin_response_out(r: SurveyResponse, viewer, attribute: bool) -> SurveyRes
         user_id=str(r.user_id) if show else None,
         user_name=visible_display_name(r.user, viewer) if show else None,
         answers=r.answers,
-        submitted_at=r.submitted_at if attribute else _day_only(r.submitted_at),
+        submitted_at=r.submitted_at if attribute else day_only(r.submitted_at),
         event_id=str(r.event_id) if r.event_id else None,
         event_title=r.event.title if r.event else None,
         event_start=r.event.start_datetime if r.event else None,
@@ -90,9 +90,9 @@ def _admin_response_out(r: SurveyResponse, viewer, attribute: bool) -> SurveyRes
     auth=gated_jwt,
 )
 def list_survey_responses(request, survey_id: UUID, event_id: UUID | None = None):
-    survey = _load_survey_for_responses(request, survey_id, "list_survey_responses")
+    survey = load_survey_for_responses(request, survey_id, "list_survey_responses")
     attribute = not survey.anonymous
-    responses = _ordered_responses(survey, event_id)
+    responses = ordered_responses(survey, event_id)
     return Status(200, [_admin_response_out(r, request.auth, attribute) for r in responses])
 
 

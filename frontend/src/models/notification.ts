@@ -19,6 +19,15 @@ export const NotificationType = {
   PaymentRevoked: 'payment_revoked',
   EventFeedback: 'event_feedback',
   SurveyResponse: 'survey_response',
+  EventUnpublished: 'event_unpublished',
+  MemberRestored: 'member_restored',
+  CheckInPromotionFailed: 'check_in_promotion_failed',
+  PlanningProposed: 'planning_proposed',
+  PlanningWithdrawn: 'planning_withdrawn',
+  PlanningCommitted: 'planning_committed',
+  PlanningDeclined: 'planning_declined',
+  PlanningUpcoming: 'planning_upcoming',
+  PlanningAvailability: 'planning_availability',
   AccountDeleted: 'account_deleted',
 } as const;
 

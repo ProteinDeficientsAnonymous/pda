@@ -6,6 +6,7 @@ import pytest
 from asgiref.sync import async_to_sync
 from community.events.crud import list_events
 from community.events.description_templates import (
+    CLUB_TEMPLATE,
     OFFICIAL_NON_WALK_TEMPLATE,
     OFFICIAL_WALK_TEMPLATE,
 )
@@ -16,11 +17,11 @@ from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.event_templates import template_slots
 from mcp_gateway.server import pda_mcp
-from mcp_gateway.tools.events_read import _my_events
+from mcp_gateway.tools.events_read import my_events
 from mcp_gateway.view_calls import call_view
 
 from tests._mcp_tool_helpers import signed_in
-from tests._public_rsvp_helpers import make_non_member, make_tentative_member
+from tests._public_rsvp_helpers import make_public_rsvper, make_tentative_member
 
 pytestmark = pytest.mark.django_db
 
@@ -33,7 +34,9 @@ def _event(user, title, days=7, **fields):
 def _call(user, name, **arguments):
     token = signed_in(user)
     try:
-        return async_to_sync(pda_mcp.call_tool)(name, arguments).structured_content  # type: ignore[union-attr]
+        result = async_to_sync(pda_mcp.call_tool)(name, arguments)
+        assert result.structured_content is not None
+        return result.structured_content
     finally:
         auth_context_var.reset(token)
 
@@ -49,7 +52,7 @@ def _error(user, name, **arguments) -> dict:
 
 
 def test_list_my_events_hosted_and_drafts_upcoming_first(test_user):
-    other = make_non_member("+12025550199", "o@e.com")
+    other = make_public_rsvper("+12025550199", "o@e.com")
     _event(test_user, "later", days=9)
     soon = _event(other, "soon", days=2)
     soon.co_hosts.add(test_user)
@@ -70,14 +73,14 @@ def test_list_my_events_hosted_and_drafts_upcoming_first(test_user):
 
 
 def test_list_my_events_bounds_the_page_in_sql(test_user, django_assert_num_queries):
-    other = make_non_member("+12025550199", "o@e.com")
+    other = make_public_rsvper("+12025550199", "o@e.com")
     for i in range(5):
         _event(test_user, f"mine {i}", days=i + 1)
         _event(other, f"public {i}", visibility=PageVisibility.PUBLIC)
     _event(test_user, "past", days=-3)
     _event(test_user, "draft", status=EventStatus.DRAFT)
     with django_assert_num_queries(2):
-        rows = _my_events(test_user, include_past=False, limit=2, offset=0)
+        rows = my_events(test_user, include_past=False, limit=2, offset=0)
     assert [r["title"] for r in rows] == ["mine 0", "mine 1", "mine 2"]
 
 
@@ -126,7 +129,7 @@ def test_get_event_by_slug_or_id(test_user):
 
 
 def test_get_event_hides_someone_elses_draft(test_user):
-    draft = _event(make_non_member("+12025550199", "o@e.com"), "x", status=EventStatus.DRAFT)
+    draft = _event(make_public_rsvper("+12025550199", "o@e.com"), "x", status=EventStatus.DRAFT)
     assert _error(test_user, "get_event", event=draft.slug)["status"] == 403
     assert _call(test_user, "list_my_events")["events"] == []
 
@@ -151,6 +154,15 @@ def test_official_templates_with_slots(test_user):
     walk = {"text": OFFICIAL_WALK_TEMPLATE, "slots": template_slots(OFFICIAL_WALK_TEMPLATE)}
     assert body["official_walk"] == walk and len(walk["slots"]) == 9
     assert body["official_non_walk"]["slots"] == ["WHAT WE'RE ORDERING, PER PERSON"]
+    assert body["club"] == {"text": CLUB_TEMPLATE, "slots": []}
+
+
+def test_official_templates_hint_is_driven_by_event_format(test_user):
+    token = signed_in(test_user)
+    tools = {tool.name: tool for tool in async_to_sync(pda_mcp.list_tools)()}
+    auth_context_var.reset(token)
+    description = tools["get_official_event_templates"].description or ""
+    assert "event_format" in description and "'walk' tag" not in description
 
 
 @pytest.mark.parametrize("template", [OFFICIAL_WALK_TEMPLATE, OFFICIAL_NON_WALK_TEMPLATE])

@@ -137,8 +137,10 @@ class TestCreateDraft:
         assert_error_code(response, Code.Event.INVALID_CREATE_STATUS, "status")
 
     def test_invite_to_draft_skips_invitee_notifications(
-        self, api_client, creator_headers, invitee, sample_draft
+        self, api_client, creator, creator_headers, invitee, sample_draft
     ):
+        Event.objects.filter(pk=sample_draft.pk).update(rsvp_enabled=True)
+        sample_draft.co_hosts.add(creator)
         response = api_client.post(
             f"/api/community/events/{sample_draft.id}/invitations/",
             data=json.dumps({"user_ids": [str(invitee.pk)]}),

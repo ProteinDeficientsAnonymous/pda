@@ -6,7 +6,7 @@ import type {
   EventTag,
   PendingCohostInvite,
 } from '@/models/event';
-import { AttendanceStatus, type QuestionnaireAnswer } from '@/models/event';
+import { AttendanceStatus, EventFormat, type QuestionnaireAnswer } from '@/models/event';
 
 import { mapRsvpQuestion } from './eventRsvpQuestions';
 
@@ -48,6 +48,7 @@ export interface WireEvent {
   rsvp_enabled?: boolean;
   allow_plus_ones?: boolean;
   max_attendees?: number | null;
+  rsvp_deadline?: string | null;
   attending_count?: number;
   waitlisted_count?: number;
   invited_count?: number;
@@ -85,6 +86,7 @@ export interface WireEvent {
   my_pending_cohost_invite_id?: string | null;
 
   event_type?: string;
+  event_format?: string | null;
   visibility?: string;
   photo_url?: string;
   photo_updated_at?: string | null;
@@ -109,6 +111,10 @@ interface WirePendingCohostInvite {
   user_name: string;
   user_photo_url?: string;
   invited_at: string;
+}
+
+function mapEventFormat(value: string | null | undefined): EventFormat | null {
+  return Object.values(EventFormat).find((format) => format === value) ?? null;
 }
 
 function mapAttendance(value: string | undefined): AttendanceStatusValue {
@@ -183,6 +189,7 @@ export function mapEvent(e: WireEvent): Event {
     rsvpEnabled: e.rsvp_enabled ?? false,
     allowPlusOnes: e.allow_plus_ones ?? false,
     maxAttendees: e.max_attendees ?? null,
+    rsvpDeadline: e.rsvp_deadline ? new Date(e.rsvp_deadline) : null,
     attendingCount: e.attending_count ?? 0,
     waitlistedCount: e.waitlisted_count ?? 0,
     invitedCount: e.invited_count ?? 0,
@@ -213,6 +220,7 @@ export function mapEvent(e: WireEvent): Event {
     myPendingCohostInviteId: e.my_pending_cohost_invite_id ?? null,
 
     eventType: e.event_type ?? 'community',
+    eventFormat: mapEventFormat(e.event_format),
     visibility: e.visibility ?? 'public',
     photoUrl: e.photo_url ?? '',
     photoUpdatedAt: e.photo_updated_at ?? null,

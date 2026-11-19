@@ -6,10 +6,12 @@ import pytest
 from audit.models import AuditLogEntry
 from community.models import Event, EventTag
 from community.validation import Code
-from users.models import User
+from users.models import MembershipStatus, User
+from users.permissions import PermissionKey
 
 from tests._http_helpers import FakeResp
 from tests._mcp_tool_helpers import run_tool, tool_error
+from tests._users import grant
 
 pytestmark = pytest.mark.django_db
 WALK = {"title": "prospect park walk", "start_datetime": "2099-11-07T11:00"}
@@ -28,9 +30,33 @@ def test_creates_draft_as_member_via_mcp(test_user):
     assert entry.details["via"] == "mcp"
 
 
+@pytest.fixture
+def official_planner(test_user):
+    grant(test_user, PermissionKey.TAG_OFFICIAL_EVENT)
+    return test_user
+
+
+def test_create_official_event_saves_format(official_planner):
+    fields = {**WALK, "event_type": "official", "event_format": "walk"}
+    summary = run_tool(official_planner, "create_event", fields=fields)
+    assert summary["event_format"] == "walk"
+    assert Event.objects.get(pk=summary["id"]).event_format == "walk"
+
+
+def test_create_refuses_format_on_non_official_event(test_user):
+    error = tool_error(test_user, "create_event", fields={**WALK, "event_format": "walk"})
+    assert json.loads(error)["status"] == 422
+
+
+def test_create_refuses_unknown_format(official_planner):
+    fields = {**WALK, "event_type": "official", "event_format": "picnic"}
+    assert "event_format" in tool_error(official_planner, "create_event", fields=fields)
+
+
 @pytest.mark.parametrize(("is_member", "event_type"), [(True, "official"), (False, "community")])
 def test_view_refuses_official_without_permission_and_tentative(test_user, is_member, event_type):
-    User.objects.filter(pk=test_user.pk).update(is_member=is_member)
+    status = MembershipStatus.ACTIVE_MEMBER if is_member else MembershipStatus.TENTATIVE
+    User.objects.filter(pk=test_user.pk).update(membership_status=status)
     error = tool_error(test_user, "create_event", fields={**WALK, "event_type": event_type})
     assert json.loads(error)["status"] == 403
 

@@ -6,6 +6,7 @@ import pytest
 from audit.models import AuditLogEntry
 from community.models import Survey, SurveyQuestion, SurveyResponse
 from community.surveys.crud import delete_survey_question, get_survey_admin
+from community.validation import Code
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 
 from tests._mcp_tool_helpers import run_tool, tool_error, tool_names
@@ -131,6 +132,46 @@ def test_feedback_survey_keeps_its_forced_settings(surveys_admin):
     survey = _survey(feedback_event_type="official", anonymous=True, responses=1)
     assert "always anonymous" in _refused(surveys_admin, survey, settings={"anonymous": False})
     assert _edit(surveys_admin, survey, settings={"anonymous": True, "title": "x"})["confirm_token"]
+
+
+def test_sets_and_clears_the_feedback_type_via_mcp(surveys_admin):
+    survey = _survey(is_active=False)
+    result = _edit(surveys_admin, survey, settings={"feedback_event_type": "club"})
+    assert (result["feedback_event_type"], result["anonymous"]) == ("club", True)
+    cleared = {"feedback_event_type": "", "anonymous": False}
+    result = _edit(surveys_admin, survey, settings=cleared)
+    assert (result["feedback_event_type"], result["anonymous"]) == ("", False)
+
+
+def test_live_feedback_type_previews_forced_anonymous_and_emails(surveys_admin):
+    survey = _survey()
+    preview = _edit(surveys_admin, survey, settings={"feedback_event_type": "official"})
+    assert preview["changes"]["settings"]["anonymous"] == {"before": False, "after": True}
+    assert "starts the daily feedback emails" in preview["notes"][0]
+    token = preview["confirm_token"]
+    _edit(surveys_admin, survey, settings={"feedback_event_type": "official"}, confirm_token=token)
+    assert Survey.objects.get().feedback_event_type == "official"
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"feedback_event_type": "club", "anonymous": False}, "always anonymous"),
+        ({"feedback_event_type": "club"}, "once a survey has responses"),
+    ],
+)
+def test_feedback_type_needs_anonymous(surveys_admin, changes, message):
+    survey = _survey(is_active=False, responses=1)
+    assert message in _refused(surveys_admin, survey, settings=changes)
+    assert not Survey.objects.get().feedback_event_type
+
+
+def test_taken_feedback_type_saves_nothing(surveys_admin, feedback_survey):
+    survey = _survey(is_active=False)
+    changes = {"feedback_event_type": "official", "title": "x"}
+    error = _refused(surveys_admin, survey, settings=changes)
+    assert "nothing was saved" in error and Code.Survey.FEEDBACK_TYPE_TAKEN in error
+    assert Survey.objects.get(pk=survey.pk).title == "retreat"
 
 
 def test_failed_save_says_nothing_was_saved(surveys_admin):
