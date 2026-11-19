@@ -132,8 +132,7 @@ class TestMagicLogin:
 
         caches["ratelimit"].clear()
         url = "/api/auth/magic-login/00000000-0000-0000-0000-000000000000/"
-        # Spoofed leftmost hop and the Railway proxy hop both rotate per request;
-        # the limiter must still bucket on the client and trip at the 6th attempt.
+        # Spoofed and Railway proxy hops rotate; the client's bucket must still trip.
         for i in range(5):
             xff = f"9.9.9.{i}, 198.51.100.7, 100.64.0.{i + 1}"
             resp = api_client.get(url, HTTP_X_FORWARDED_FOR=xff)
