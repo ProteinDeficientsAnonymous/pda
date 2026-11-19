@@ -353,7 +353,7 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
         request,
         target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey_id)),
     )
-    questions = SurveyQuestion.objects.filter(survey_id=survey_id)
+    questions = sorted(existing, key=lambda q: q.display_order)
     return Status(200, [survey_question_out(q) for q in questions])
 
 
