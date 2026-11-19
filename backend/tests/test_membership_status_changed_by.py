@@ -1,5 +1,6 @@
 import pytest
 from community.models import JoinRequestStatus
+from community.validation import InvalidStateTransition
 from django.utils import timezone
 from users.models import MembershipStatus, User
 
@@ -57,9 +58,10 @@ def test_public_rsvp_stamps_no_actor(api_client):
     assert rsvper.membership_status_changed_by is None
 
 
-def test_unchanged_status_keeps_the_stamp():
+def test_rejected_same_status_transition_keeps_the_stamp():
     member = make_user()
-    member.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=member)
+    with pytest.raises(InvalidStateTransition):
+        member.approve_membership(by=member)
     assert member.membership_status_changed_at is None
 
 

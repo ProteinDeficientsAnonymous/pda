@@ -4,7 +4,6 @@ from enum import StrEnum
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
 from django.db import transaction
-from django.utils import timezone
 from notifications.email_helpers import send_member_restored_email
 from notifications.email_sender import SendResult, get_email_sender, send_best_effort
 from notifications.service import (
@@ -12,7 +11,7 @@ from notifications.service import (
     create_member_restored_notifications,
 )
 from users.helpers import grant_membership
-from users.models import MembershipStatus, User
+from users.models import MembershipEvent, MembershipStatus, User
 
 from community.attendance.analytics import (
     EMPTY_MEMBER_STATS,
@@ -71,7 +70,7 @@ def _promote_or_restore(request, user: User, event) -> CheckInOutcome | None:
     if not is_official_or_club(event.event_type):
         return None
     if user.membership_status == MembershipStatus.ATTENDANCE_PAUSED:
-        return CheckInOutcome.RESTORED if _restore_attendance_paused(request, user) else None
+        return CheckInOutcome.RESTORED if _restore_attendance_paused(request, user, event) else None
     join_request = maybe_promote_tentative(user, event, request.auth)
     if join_request is None:
         return None
@@ -92,7 +91,7 @@ def _promote_or_restore(request, user: User, event) -> CheckInOutcome | None:
     return CheckInOutcome.PROMOTED
 
 
-def _restore_attendance_paused(request, user: User) -> bool:
+def _restore_attendance_paused(request, user: User, event) -> bool:
     # Row lock: concurrent check-ins then see each other's marks and only one restores.
     locked = User.objects.select_for_update().get(pk=user.pk)
     if locked.membership_status != MembershipStatus.ATTENDANCE_PAUSED:
@@ -101,24 +100,24 @@ def _restore_attendance_paused(request, user: User) -> bool:
     if not is_compliant(stats):
         return False
 
-    user.attendance_paused_at = None
-    user.attendance_grace_notified_at = None
-    user.restored_at = timezone.now()
+    user.refresh_from_db()
     # Saved before grant_membership: roles on non-members are rejected.
-    fields = ["attendance_paused_at", "attendance_grace_notified_at", "restored_at"]
-    user.save(
-        update_fields=[
-            *fields,
-            *user.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=request.auth),
-        ]
-    )
+    user.save(update_fields=user.restore_on_check_in(by=request.auth))
     grant_membership(user)
     audit_log(
         logging.WARNING,
         "user_attendance_restored",
         request,
         target=AuditTarget(
-            type=AuditTargetType.USER, id=str(user.pk), details={"full_name": user.full_name}
+            type=AuditTargetType.USER,
+            id=str(user.pk),
+            details={
+                "full_name": user.full_name,
+                "event": MembershipEvent.RESTORE_ON_CHECK_IN,
+                "from": MembershipStatus.ATTENDANCE_PAUSED,
+                "to": MembershipStatus.ACTIVE_MEMBER,
+                "event_id": str(event.pk),
+            },
         ),
     )
     return True

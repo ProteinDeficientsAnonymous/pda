@@ -164,6 +164,7 @@ export const Code = {
     CannotPauseAdmin: 'user.cannot_pause_admin',
     GuidelinesPaused: 'user.guidelines_paused',
     AttendancePauseLiftsOnCheckIn: 'user.attendance_pause_lifts_on_check_in',
+    InvalidStatusTransition: 'user.invalid_status_transition',
     RoleIdsNotFound: 'user.role_ids_not_found',
     InvalidBirthday: 'user.invalid_birthday',
     InvalidVeganniversary: 'user.invalid_veganniversary',
@@ -468,6 +469,7 @@ export type ValidationCode =
   | 'user.cannot_pause_admin'
   | 'user.guidelines_paused'
   | 'user.attendance_pause_lifts_on_check_in'
+  | 'user.invalid_status_transition'
   | 'user.role_ids_not_found'
   | 'user.invalid_birthday'
   | 'user.invalid_veganniversary'
@@ -720,6 +722,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'user.cannot_pause_admin': [],
   'user.guidelines_paused': [],
   'user.attendance_pause_lifts_on_check_in': [],
+  'user.invalid_status_transition': [],
   'user.role_ids_not_found': [],
   'user.invalid_birthday': [],
   'user.invalid_veganniversary': [],

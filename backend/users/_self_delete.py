@@ -1,6 +1,6 @@
 import logging
 
-from community.validation import Code, raise_validation
+from community.validation import Code, InvalidStateTransition, TransitionFailure, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
@@ -12,6 +12,7 @@ from notifications.service import create_account_deleted_notifications
 
 from users._archive_user import archive_user
 from users.helpers import is_last_admin
+from users.models import MembershipEvent, MembershipStatus
 from users.refresh_cookie import clear_refresh_cookie
 from users.schemas import DeleteAccountIn, ErrorOut
 
@@ -25,7 +26,18 @@ def delete_me(request, payload: DeleteAccountIn, response: HttpResponse):
     if not user.check_password(payload.password):
         raise_validation(Code.Auth.CURRENT_PASSWORD_INCORRECT, field="password", status_code=400)
     if is_last_admin(user):
-        raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
+        raise InvalidStateTransition(
+            Code.User.CANNOT_DELETE_LAST_ADMIN,
+            TransitionFailure(
+                action="user_transition_rejected",
+                target_type=AuditTargetType.USER,
+                target_id=str(user.pk),
+                event=MembershipEvent.ARCHIVE,
+                from_status=str(user.membership_status),
+                to_status=MembershipStatus.ARCHIVED,
+            ),
+        )
+    previous_status = str(user.membership_status)
     with transaction.atomic():
         released = archive_user(request, user)
         create_account_deleted_notifications(user)
@@ -36,7 +48,13 @@ def delete_me(request, payload: DeleteAccountIn, response: HttpResponse):
         target=AuditTarget(
             type=AuditTargetType.USER,
             id=str(user.pk),
-            details={"full_name": user.full_name, **released},
+            details={
+                "event": MembershipEvent.ARCHIVE,
+                "from": previous_status,
+                "to": MembershipStatus.ARCHIVED,
+                "full_name": user.full_name,
+                **released,
+            },
         ),
     )
     clear_refresh_cookie(response)

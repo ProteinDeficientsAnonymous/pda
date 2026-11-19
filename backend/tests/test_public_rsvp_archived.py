@@ -25,13 +25,7 @@ class TestArchivedMemberGate:
             last_name="Member",
             membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
-        member.archived_at = timezone.now()
-        member.save(
-            update_fields=[
-                "archived_at",
-                *member.set_membership_status(MembershipStatus.ARCHIVED, by=None),
-            ]
-        )
+        member.save(update_fields=member.archive(by=None))
 
         response = post(api_client, official_event)
 
@@ -48,13 +42,7 @@ class TestArchivedMemberGate:
             email="sam@example.com",
             membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
-        member.archived_at = timezone.now()
-        member.save(
-            update_fields=[
-                "archived_at",
-                *member.set_membership_status(MembershipStatus.ARCHIVED, by=None),
-            ]
-        )
+        member.save(update_fields=member.archive(by=None))
 
         response = post(api_client, official_event)
 
@@ -66,12 +54,8 @@ class TestArchivedMemberGate:
         self, api_client, official_event, fake_email_sender
     ):
         archived = make_public_rsvper("+14155550777", "sam@example.com", name="Archived")
-        archived.archived_at = timezone.now()
-        archived.save(
-            update_fields=[
-                "archived_at",
-                *archived.set_membership_status(MembershipStatus.ARCHIVED, by=None),
-            ]
+        User.objects.filter(pk=archived.pk).update(
+            archived_at=timezone.now(), membership_status=MembershipStatus.ARCHIVED
         )
 
         response = post(api_client, official_event)
@@ -88,12 +72,8 @@ class TestArchivedNonMemberGate:
         self, api_client, official_event, fake_email_sender
     ):
         archived = make_public_rsvper("+14155550123", "old@example.com", name="Archived NonMember")
-        archived.archived_at = timezone.now()
-        archived.save(
-            update_fields=[
-                "archived_at",
-                *archived.set_membership_status(MembershipStatus.ARCHIVED, by=None),
-            ]
+        User.objects.filter(pk=archived.pk).update(
+            archived_at=timezone.now(), membership_status=MembershipStatus.ARCHIVED
         )
 
         response = post(api_client, official_event)

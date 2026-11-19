@@ -1,6 +1,6 @@
 import logging
 
-from community.validation import Code, raise_validation
+from community.validation import Code, InvalidStateTransition, TransitionFailure, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db.models import ProtectedError
@@ -10,7 +10,7 @@ from users._archive_user import archive_user
 from users._management import require_manage_users
 from users._management import router as management_router
 from users.helpers import is_last_admin
-from users.models import MANAGED_STATUSES, MembershipStatus, User
+from users.models import MANAGED_STATUSES, MembershipEvent, MembershipStatus, User
 from users.schemas import ErrorOut
 
 # Ninja resolves paths before methods, so a second router here would shadow
@@ -32,11 +32,32 @@ def delete_user(request, user_id: str):
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if str(user.pk) == str(request.auth.pk):
-        raise_validation(Code.User.CANNOT_DELETE_SELF, status_code=400)
+        raise InvalidStateTransition(
+            Code.User.CANNOT_DELETE_SELF,
+            TransitionFailure(
+                action="user_transition_rejected",
+                target_type=AuditTargetType.USER,
+                target_id=user_id,
+                event=MembershipEvent.ARCHIVE,
+                from_status=str(user.membership_status),
+                to_status=MembershipStatus.ARCHIVED,
+            ),
+        )
     if is_last_admin(user):
-        raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
+        raise InvalidStateTransition(
+            Code.User.CANNOT_DELETE_LAST_ADMIN,
+            TransitionFailure(
+                action="user_transition_rejected",
+                target_type=AuditTargetType.USER,
+                target_id=user_id,
+                event=MembershipEvent.ARCHIVE,
+                from_status=str(user.membership_status),
+                to_status=MembershipStatus.ARCHIVED,
+            ),
+        )
     if user.archived_at is not None:
-        raise_validation(Code.User.ALREADY_ARCHIVED, status_code=400)
+        user.archive(by=request.auth)
+    previous_status = str(user.membership_status)
     released = archive_user(request, user)
     audit_log(
         logging.WARNING,
@@ -45,7 +66,13 @@ def delete_user(request, user_id: str):
         target=AuditTarget(
             type=AuditTargetType.USER,
             id=user_id,
-            details={"full_name": user.full_name, **released},
+            details={
+                "event": MembershipEvent.ARCHIVE,
+                "from": previous_status,
+                "to": MembershipStatus.ARCHIVED,
+                "full_name": user.full_name,
+                **released,
+            },
         ),
     )
     return Status(204, None)

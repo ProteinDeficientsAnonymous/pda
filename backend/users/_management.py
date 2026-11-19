@@ -7,7 +7,7 @@ from community.attendance.analytics import AttendedEventOut
 from community.events.limited_access import is_limited
 from community.models import AttendanceStatus, EventRSVP
 from community.rsvps.counts import attendance_q, reportable_events_q
-from community.validation import Code, raise_validation
+from community.validation import Code, InvalidStateTransition, TransitionFailure, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
@@ -25,7 +25,7 @@ from users.helpers import (
     validate_member_role_required,
     visible_name,
 )
-from users.models import MembershipStatus, User
+from users.models import MembershipEvent, MembershipStatus, User
 from users.permissions import PermissionKey
 from users.phone import ADMIN_ENTERED_PHONE_REGION, validate_phone
 from users.roles import Role
@@ -181,13 +181,14 @@ def update_user(request, user_id: str, payload: UserPatchIn):
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
     was_guidelines_paused = user.is_guidelines_paused
+    before_status = str(user.status_before_archive if user.is_archived else user.membership_status)
     _apply_user_patch(user, user_id, payload, requester=request.auth)
     with transaction.atomic():
         user.save()
-        released = None
-        if payload.guidelines_paused and not was_guidelines_paused:
-            released = release_held_events(request, user, MembershipStatus.GUIDELINES_PAUSED)[1]
-        _audit_user_update(request, user, payload, was_guidelines_paused, released)
+        pause_details = _pause_transition_details(
+            request, user, payload, was_guidelines_paused, before_status
+        )
+        _audit_user_update(request, user_id, payload, pause_details)
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
     if was_guidelines_paused and not user.is_guidelines_paused:
@@ -195,23 +196,52 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     return Status(200, UserOut.from_user(user))
 
 
-def _audit_user_update(
-    request, user: User, payload: UserPatchIn, was_guidelines_paused: bool, released: dict | None
-) -> None:
-    """Log user_paused/user_unpaused for a guidelines-pause change and user_updated for edits."""
-    user_id = str(user.pk)
-    is_pause_transition = (
-        payload.guidelines_paused is not None and payload.guidelines_paused != was_guidelines_paused
+def _pause_transition_details(
+    request,
+    user: User,
+    payload: UserPatchIn,
+    was_guidelines_paused: bool,
+    before_status: str,
+) -> dict | None:
+    if payload.guidelines_paused is None or payload.guidelines_paused == was_guidelines_paused:
+        return None
+    released = (
+        release_held_events(request, user, MembershipStatus.GUIDELINES_PAUSED)[1]
+        if payload.guidelines_paused
+        else {}
     )
-    if is_pause_transition:
+    event = (
+        MembershipEvent.PAUSE_FOR_GUIDELINES
+        if payload.guidelines_paused
+        else MembershipEvent.LIFT_GUIDELINES_PAUSE
+    )
+    after_status = str(user.status_before_archive if user.is_archived else user.membership_status)
+    return {
+        "full_name": user.full_name,
+        "event": event,
+        "from": before_status,
+        "to": after_status,
+        **released,
+    }
+
+
+def _audit_user_update(
+    request, user_id: str, payload: UserPatchIn, pause_details: dict | None
+) -> None:
+    """Emit the audit entry for an update_user PATCH.
+
+    A pause transition takes priority, recording what the pause released. Otherwise a
+    plain field change logs user_updated.
+    """
+    if pause_details is not None:
         action = "user_paused" if payload.guidelines_paused else "user_unpaused"
-        details = {"full_name": user.full_name, **(released or {})}
         audit_log(
             logging.WARNING,
             action,
             request,
-            target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=details),
+            target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=pause_details),
         )
+        return
 
     changed = [
         f
@@ -236,13 +266,28 @@ def _patch_phone(user: User, user_id: str, phone_number: str) -> None:
     user.phone_number = validate_phone(phone_number, ADMIN_ENTERED_PHONE_REGION)
 
 
-def _validate_pause_change(user: User, paused: bool | None, requester_id: str) -> None:
+def _validate_pause_change(
+    user: User, paused: bool | None, requester_id: str, event: MembershipEvent
+) -> None:
     if not paused:
         return
+    to_status = (
+        MembershipStatus.GUIDELINES_PAUSED
+        if event == MembershipEvent.PAUSE_FOR_GUIDELINES
+        else MembershipStatus.ATTENDANCE_PAUSED
+    )
+    failure = TransitionFailure(
+        action="user_transition_rejected",
+        target_type=AuditTargetType.USER,
+        target_id=str(user.pk),
+        event=event,
+        from_status=str(user.membership_status),
+        to_status=to_status,
+    )
     if requester_id == str(user.pk):
-        raise_validation(Code.User.CANNOT_PAUSE_SELF, status_code=400)
+        raise InvalidStateTransition(Code.User.CANNOT_PAUSE_SELF, failure)
     if is_admin(user):
-        raise_validation(Code.User.CANNOT_PAUSE_ADMIN, status_code=400)
+        raise InvalidStateTransition(Code.User.CANNOT_PAUSE_ADMIN, failure)
 
 
 def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester: User) -> None:
@@ -253,25 +298,21 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester:
     resolve_name_fields(user, payload)
     if payload.email is not None:
         check_and_set_email(user, payload.email, exclude_pk=user_id)
-    _validate_pause_change(user, payload.guidelines_paused, requester_id)
-    _validate_pause_change(user, payload.attendance_paused, requester_id)
-    stays_guidelines_paused = (
-        user.is_guidelines_paused
-        if payload.guidelines_paused is None
-        else payload.guidelines_paused
+    _validate_pause_change(
+        user, payload.guidelines_paused, requester_id, MembershipEvent.PAUSE_FOR_GUIDELINES
     )
-    if payload.attendance_paused and stays_guidelines_paused:
-        raise_validation(Code.User.GUIDELINES_PAUSED, field="attendance_paused", status_code=400)
-    # Only a compliant in-person check-in lifts an attendance pause.
-    if payload.attendance_paused is False and user.is_attendance_paused:
-        raise_validation(
-            Code.User.ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN, field="attendance_paused", status_code=400
-        )
+    _validate_pause_change(
+        user, payload.attendance_paused, requester_id, MembershipEvent.PAUSE_FOR_ATTENDANCE
+    )
     if (
         payload.guidelines_paused is not None
         and payload.guidelines_paused != user.is_guidelines_paused
     ):
         _toggle_guidelines_pause(user, payload.guidelines_paused, by=requester)
+    if payload.attendance_paused is False and user.is_attendance_paused:
+        user.lift_attendance_pause(by=requester)
+    if payload.attendance_paused and user.is_guidelines_paused:
+        user.apply_attendance_pause(by=requester)
     if payload.has_joined_whatsapp is not None:
         user.has_joined_whatsapp = payload.has_joined_whatsapp
 

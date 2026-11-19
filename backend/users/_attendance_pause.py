@@ -35,7 +35,7 @@ from users._archive import (
     upcoming_hosted_events,
 )
 from users.helpers import elevated_roles, strip_elevated_roles
-from users.models import HAS_EMAIL, MembershipStatus, User
+from users.models import HAS_EMAIL, MembershipEvent, MembershipStatus, User
 
 logger = logging.getLogger(__name__)
 
@@ -111,8 +111,11 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
     return(PauseImpact): the impact as it stood when the pause was applied
     """
     with transaction.atomic():
+        before = str(user.status_before_archive if user.is_archived else user.membership_status)
+        fields = user.apply_attendance_pause(by=getattr(request, "auth", None))
         impact, details = release_held_events(request, user, MembershipStatus.ATTENDANCE_PAUSED)
-        user.save(update_fields=user.apply_attendance_pause(by=getattr(request, "auth", None)))
+        user.save(update_fields=fields)
+        after = str(user.status_before_archive if user.is_archived else user.membership_status)
         audit_log(
             logging.WARNING,
             "user_attendance_paused",
@@ -120,7 +123,13 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
             target=AuditTarget(
                 type=AuditTargetType.USER,
                 id=str(user.pk),
-                details={"full_name": user.full_name, **details},
+                details={
+                    "full_name": user.full_name,
+                    "event": MembershipEvent.PAUSE_FOR_ATTENDANCE,
+                    "from": before,
+                    "to": after,
+                    **details,
+                },
             ),
         )
     return impact
