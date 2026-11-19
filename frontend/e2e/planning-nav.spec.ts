@@ -10,7 +10,7 @@ test('view-only planner reaches event planning from profile > admin', async ({ c
   await page.getByRole('link', { name: 'profile', exact: true }).click();
   await page.waitForURL('**/profile');
 
-  await page.getByRole('link', { name: 'admin' }).click();
+  await page.getByRole('link', { name: 'admin', exact: true }).click();
   await page.waitForURL('**/admin');
 
   await page.getByRole('link', { name: /event planning/ }).click();

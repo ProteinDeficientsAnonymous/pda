@@ -1,3 +1,6 @@
+import contextlib
+
+from django.db import IntegrityError
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.permissions import PermissionKey
@@ -9,7 +12,8 @@ from ._e2e_common import browser_user
 
 def seed_view_planner() -> dict:
     planner = browser_user([PermissionKey.VIEW_EVENT_PLANNING])
-    # the planning screen only shows its tabs once a year exists; year is unique, so reuse any
+    # planning tabs need a year; year is unique, so reuse any and tolerate a parallel seed's insert
     if not PlanningYear.objects.exists():
-        PlanningYear.create_with_default_slots(timezone.now().year)
+        with contextlib.suppress(IntegrityError):
+            PlanningYear.create_with_default_slots(timezone.now().year)
     return {"refresh_token": str(RefreshToken.for_user(planner))}
