@@ -1,7 +1,14 @@
 import json
 
 import pytest
-from community.models import Event, EventComment, EventRSVP, EventType, RSVPStatus
+from community.models import (
+    Event,
+    EventComment,
+    EventRSVP,
+    EventType,
+    PageVisibility,
+    RSVPStatus,
+)
 from django.utils import timezone
 from users.models import User
 
@@ -79,3 +86,16 @@ class TestLimitedUserComments:
         event = _event_with_released_rsvp(test_user, attendance_paused_user, EventType.OFFICIAL)
         response = _post(api_client, event, attendance_paused_user)
         assert response.status_code == 201, response.content
+
+    def test_paused_user_gets_404_on_members_only_community_event(
+        self, api_client, test_user, attendance_paused_user
+    ):
+        event = _event_with_released_rsvp(test_user, attendance_paused_user, EventType.COMMUNITY)
+        event.visibility = PageVisibility.MEMBERS_ONLY
+        event.save(update_fields=["visibility"])
+        response = api_client.get(
+            f"/api/community/events/{event.id}/comments/",
+            **auth_headers_for(attendance_paused_user),
+        )
+        assert response.status_code == 404
+        assert _post(api_client, event, attendance_paused_user).status_code == 404
