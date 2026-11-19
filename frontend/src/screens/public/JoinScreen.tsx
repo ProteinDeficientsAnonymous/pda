@@ -12,6 +12,7 @@ import {
   useSubmitJoinRequest,
 } from '@/api/join';
 import { useAuthStore } from '@/auth/store';
+import { checkboxValues } from '@/components/questions/checkboxAnswer';
 import { QuestionField } from '@/components/questions/QuestionField';
 import { Button } from '@/components/ui/Button';
 import { Honeypot } from '@/components/ui/Honeypot';
@@ -26,7 +27,7 @@ const MAX_NAME = 64;
 const MAX_ANSWER = 2000;
 
 function answerText(answer: JoinAnswer | undefined): string {
-  return Array.isArray(answer) ? answer.join('') : (answer ?? '').trim();
+  return Array.isArray(answer) ? checkboxValues(answer).join('') : (answer ?? '').trim();
 }
 
 export default function JoinScreen() {

@@ -124,7 +124,8 @@ def _build_custom_answers(
 
 
 def _format_answer(answer: ChoiceAnswer) -> str:
-    return ", ".join(answer) if isinstance(answer, list) else answer
+    # One option per line: option labels may contain commas.
+    return "".join(f"\n- {v}" for v in answer) if isinstance(answer, list) else answer
 
 
 def send_join_request_email(full_name: str, phone: str, custom_answers: dict) -> None:

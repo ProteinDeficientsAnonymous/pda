@@ -62,7 +62,7 @@ class TestJoinRequestCheckboxAnswers:
         settings.VETTING_EMAIL = "vetting@pda.org"
         q = _question()
         _submit(api_client, why_join_id, {str(q.id): ["friend", "instagram"]})
-        assert "how did you hear about us: friend, instagram" in mail.outbox[0].body
+        assert "how did you hear about us: \n- friend\n- instagram" in mail.outbox[0].body
 
     def test_admin_list_returns_list_answer(self, api_client, why_join_id, vettor_headers):
         q = _question()
