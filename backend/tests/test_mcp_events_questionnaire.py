@@ -12,6 +12,10 @@ pytestmark = pytest.mark.django_db
 TOOL = "event_questionnaire_responses"
 
 
+def _answers(*pairs):
+    return {str(q.id): {"label": q.label, "answer": a} for q, a in pairs}
+
+
 @pytest.fixture
 def event(test_user):
     return make_event(created_by=test_user, slug="photo-walk")
@@ -33,12 +37,12 @@ def test_host_sees_answers_keyed_by_label(test_user, event, photo_question):
     )
     shy = make_member(last_name="Shy")
     guest = make_public_rsvper("+12025559101", "g@e.com", name="Pat Guest")
-    make_rsvp(event, shy, questionnaire_responses={str(photo_question.id): "yes"})
+    make_rsvp(event, shy, questionnaire_responses=_answers((photo_question, "yes")))
     make_rsvp(
         event,
         guest,
         status=RSVPStatus.MAYBE,
-        questionnaire_responses={str(photo_question.id): "no", str(note.id): "hi"},
+        questionnaire_responses=_answers((photo_question, "no"), (note, "hi")),
     )
     make_rsvp(event, make_member(), status=RSVPStatus.REMOVED)
 
@@ -68,7 +72,7 @@ def test_host_sees_answers_keyed_by_label(test_user, event, photo_question):
 def test_co_host_and_event_manager_can_read(event, photo_question, manage_events_user):
     co_host = make_member()
     event.co_hosts.add(co_host)
-    make_rsvp(event, make_member(), questionnaire_responses={str(photo_question.id): "yes"})
+    make_rsvp(event, make_member(), questionnaire_responses=_answers((photo_question, "yes")))
 
     for user in (co_host, manage_events_user):
         body = run_tool(user, TOOL, event=str(event.id))
@@ -86,3 +90,15 @@ def test_unknown_or_deleted_event_is_an_error(test_user, event):
     event.deleted_at = timezone.now()
     event.save(update_fields=["deleted_at"])
     assert tool_error(test_user, TOOL, event=str(event.id)) == "no event with that id or slug"
+
+
+def test_answer_to_deleted_question_keeps_its_snapshot_label(test_user, event, photo_question):
+    gone = EventRsvpQuestion.objects.create(
+        event=event, label="old question", field_type=RsvpQuestionType.TEXTAREA
+    )
+    make_rsvp(event, make_member(), questionnaire_responses=_answers((gone, "kept")))
+    gone.delete()
+
+    body = run_tool(test_user, TOOL, event="photo-walk")
+
+    assert body["responses"][0]["answers"] == {"old question": "kept"}

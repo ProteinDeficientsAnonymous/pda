@@ -1,15 +1,15 @@
-from typing import Annotated, Any
+from typing import Any
 
 from asgiref.sync import sync_to_async
 from community.models import Event, EventRSVP, RSVPStatus
 from community.models.event_slug import event_lookup_q
 from community.rsvps.answers import can_see_guest_questionnaire_responses
 from mcp.server.mcpserver.exceptions import ToolError
-from pydantic import Field
 from users.helpers import visible_display_name
 from users.models import User
 
 from mcp_gateway.server import FORBIDDEN, current_user, pda_tool
+from mcp_gateway.tools.events_write import EventRef
 
 
 def _response(rsvp: EventRSVP, labels: dict[str, str], viewer: User) -> dict[str, Any]:
@@ -19,7 +19,10 @@ def _response(rsvp: EventRSVP, labels: dict[str, str], viewer: User) -> dict[str
         "name": visible_display_name(rsvp.user, viewer),
         "is_member": rsvp.user.is_member,
         "status": rsvp.status,
-        "answers": {label: answers[qid] for qid, label in labels.items() if qid in answers},
+        # snapshot label covers answers to since-deleted questions
+        "answers": {
+            labels.get(qid, snap["label"]): snap["answer"] for qid, snap in answers.items()
+        },
     }
 
 
@@ -61,6 +64,6 @@ def questionnaire_responses(user: User, event_ref: str) -> dict[str, Any]:
     )
 )
 async def event_questionnaire_responses(
-    event: Annotated[str, Field(description="event id (uuid) or slug, e.g. from list_my_events")],
+    event: EventRef,
 ) -> dict[str, Any]:
     return await sync_to_async(questionnaire_responses)(await current_user(), event)
