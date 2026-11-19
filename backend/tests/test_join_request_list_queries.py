@@ -15,11 +15,22 @@ URL = "/api/community/join-requests/"
 _unmatched_phones = count(1)
 
 
+def _past_official_event(title: str):
+    return make_event(
+        title=title,
+        event_type=EventType.OFFICIAL,
+        start_datetime=timezone.now() - timedelta(days=3),
+    )
+
+
 def _seed_applicants(start: int, n: int) -> None:
     event = make_event(title="Potluck", event_type=EventType.OFFICIAL)
+    past = _past_official_event("Bake sale")
     for i in range(start, start + n):
         phone = f"+1202555{i:04d}"
-        make_rsvp(event, make_user(phone_number=phone, first_name="Sprout", is_member=False))
+        user = make_user(phone_number=phone, first_name="Sprout", is_member=False)
+        make_rsvp(event, user)
+        make_rsvp(past, user, attendance=AttendanceStatus.ATTENDED)
         JoinRequest.objects.create(
             first_name="Sprout", phone_number=phone, status=JoinRequestStatus.REJECTED
         )
@@ -29,11 +40,7 @@ def _seed_applicants(start: int, n: int) -> None:
 def _seed_linked_applicants(n: int) -> list[User]:
     """Requests linked via jr.user whose phone matches no user, so only that prefetch applies."""
     event = make_event(title="Picnic", event_type=EventType.OFFICIAL)
-    past = make_event(
-        title="Cookout",
-        event_type=EventType.OFFICIAL,
-        start_datetime=timezone.now() - timedelta(days=3),
-    )
+    past = _past_official_event("Cookout")
     users = []
     for _ in range(n):
         user = make_user(first_name="Linked")
@@ -65,6 +72,8 @@ class TestJoinRequestListQueries:
         assert fresh["previously_rejected"] is True
         assert fresh["upcoming_official_count"] == 1
         assert fresh["user_id"] is not None
+        # Issue 1107: a bare phone match may be a different guest.
+        assert fresh["attended_events"] == []
         assert by_status[JoinRequestStatus.REJECTED]["previously_rejected"] is False
 
     def test_linked_user_rows(self, api_client, vettor_headers):
@@ -74,4 +83,4 @@ class TestJoinRequestListQueries:
         assert row["upcoming_official_count"] == 1
         assert row["attended_official_count"] == 1
         assert [e["title"] for e in row["attended_events"]] == ["Cookout"]
-        assert len(row["rsvp_events"]) == 2
+        assert [e["title"] for e in row["rsvp_events"]] == ["Cookout", "Picnic"]
