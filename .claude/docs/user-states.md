@@ -96,7 +96,7 @@ stateDiagram-v2
     tentative --> closed: admin archives them
 ```
 
-`tentative → rejected` is refused (400 `tentative_cannot_be_rejected`); a `manage_users` admin archives them from the members screen, which lists tentative people, instead. That closes the request. `approved`, `rejected` and `closed` are terminal through the management API (400 `already_decided`). One open (pending or tentative) request per phone. A rejected or archived applicant re-applies with a new request, and the vetter card shows the earlier rejection and any archive.
+`tentative → rejected` is refused (400 `tentative_cannot_be_rejected`); a `manage_users` admin archives them from the members screen, which lists tentative people, instead. That closes the request. `approved`, `rejected` and `closed` are terminal through the management API (400 `already_decided`). Transitions run through `JoinRequest`'s event methods (`mark_tentative`, `approve`, `promote_on_check_in`, `reject`, `unreject`, `close`) backed by `ALLOWED_JOIN_REQUEST_TRANSITIONS`; illegal transitions raise `InvalidStateTransition` and persist `join_request_transition_rejected` to `AuditLogEntry`. One open (pending or tentative) request per phone. A rejected or archived applicant re-applies with a new request, and the vetter card shows the earlier rejection and any archive.
 
 ## Getting in
 

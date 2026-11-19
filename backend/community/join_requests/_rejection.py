@@ -5,11 +5,9 @@ from typing import NamedTuple
 from notifications.email_helpers import send_join_rejection_email
 from notifications.email_sender import get_email_sender
 
-from community.field_limits import FieldLimit
 from community.message_templates.rejection_email import REASON_TEXT_FIELDS
 from community.models import JoinRequest, RejectionEmailTemplate, RejectionReason
 from community.shared import render_template_placeholders
-from community.validation import Code, raise_validation
 
 
 class Rejection(NamedTuple):
@@ -19,26 +17,8 @@ class Rejection(NamedTuple):
 
 def validate_rejection(reason: str, note: str) -> Rejection:
     """Normalize a vetter's optional rejection reason; the note is kept only for OTHER."""
-    if not reason:
-        return Rejection()
-    if reason not in RejectionReason.values:
-        raise_validation(
-            Code.JoinRequest.INVALID_REJECTION_REASON,
-            field="rejection_reason",
-            allowed=RejectionReason.values,
-        )
-    if reason != RejectionReason.OTHER:
-        return Rejection(reason=reason)
-    note = note.strip()
-    if not note:
-        raise_validation(Code.JoinRequest.REJECTION_NOTE_REQUIRED, field="rejection_note")
-    if len(note) > FieldLimit.REJECTION_NOTE:
-        raise_validation(
-            Code.JoinRequest.REJECTION_NOTE_TOO_LONG,
-            field="rejection_note",
-            max_length=FieldLimit.REJECTION_NOTE,
-        )
-    return Rejection(reason=reason, note=note)
+    normalized_reason, normalized_note = JoinRequest.normalize_rejection(reason, note)
+    return Rejection(reason=normalized_reason, note=normalized_note)
 
 
 def _reason_text(template: RejectionEmailTemplate, join_request: JoinRequest) -> str:
