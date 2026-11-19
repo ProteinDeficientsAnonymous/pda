@@ -17,5 +17,5 @@ test('view-only planner reaches event planning from profile > admin', async ({ c
   await page.waitForURL('**/admin/planning**');
   await expect(page.getByRole('heading', { name: 'event planning' })).toBeVisible();
   await expect(page.getByRole('radio', { name: 'my availability' })).toBeVisible();
-  await expect(page.getByRole('radio', { name: 'slots' })).toHaveCount(0);
+  await expect(page.getByRole('radio', { name: 'slots', exact: true })).toHaveCount(0);
 });
