@@ -43,6 +43,10 @@ def test_token_viewer_reuses_loaded_event(api_client):
     assert response.status_code == 200
     assert response.json()["location"] == event.location
     event_selects = [
-        q for q in ctx.captured_queries if q["sql"].startswith('SELECT "community_event"."id"')
+        q["sql"]
+        for q in ctx.captured_queries
+        if q["sql"].startswith("SELECT")
+        and 'FROM "community_event"' in q["sql"]
+        and 'WHERE "community_event"."id" =' in q["sql"]
     ]
     assert len(event_selects) == 1

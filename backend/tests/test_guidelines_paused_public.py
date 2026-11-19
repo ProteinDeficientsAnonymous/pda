@@ -78,7 +78,7 @@ class TestPausedRsvpToken:
         request = rf.get(f"/api/community/events/x/?token={token}")
         request.auth = None
 
-        assert resolve_event_viewer(request, official_event.id) is None
+        assert resolve_event_viewer(request, official_event) is None
 
     def test_manage_list_404s(self, api_client, token):
         response = api_client.get(f"/api/community/public/my-rsvps/?token={token}")
