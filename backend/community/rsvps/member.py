@@ -29,7 +29,8 @@ from community.events.limited_access import (
 )
 from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import EventOut, RSVPIn
-from community.models import Event, EventComment, EventRSVP, RSVPStatus
+from community.models import CancelReason, Event, EventComment, EventRSVP, RSVPStatus
+from community.rsvps._deadline import enforce_rsvp_deadline
 from community.rsvps.answers import (
     AnswersIn,
     answers_required_for_status,
@@ -136,28 +137,26 @@ def validate_rsvp_status(status: str) -> None:
         )
 
 
-def resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
-    """Timestamp the transition into CANT_GO; clear it on any other status.
+def resolve_cancel_fields(
+    existing: EventRSVP | None, final_status: str, reason: CancelReason
+) -> dict:
+    """Stamp the cancel fields entering cant_go, keep them on a re-save, clear them on leaving.
 
-    Preserves the original cancel time when a member re-saves while already
-    CANT_GO (e.g. toggling +1), so lead-time reflects the first cancellation.
+    Keeping them on a re-save (e.g. a +1 toggle) leaves lead time on the first cancellation.
     """
     if final_status != RSVPStatus.CANT_GO:
-        return None
+        return {"cancelled_at": None, "cancel_reason": None, "pre_cancel_status": None}
     if existing is not None and existing.status == RSVPStatus.CANT_GO:
-        return existing.cancelled_at
-    return timezone.now()
-
-
-def resolve_pre_cancel_status(existing: EventRSVP | None, final_status: str) -> str | None:
-    """Status before the first cant_go transition; cleared when leaving cant_go."""
-    if final_status != RSVPStatus.CANT_GO:
-        return None
-    if existing is None:
-        return None
-    if existing.status == RSVPStatus.CANT_GO:
-        return existing.pre_cancel_status
-    return existing.status
+        return {
+            "cancelled_at": existing.cancelled_at,
+            "cancel_reason": existing.cancel_reason,
+            "pre_cancel_status": existing.pre_cancel_status,
+        }
+    return {
+        "cancelled_at": timezone.now(),
+        "cancel_reason": reason,
+        "pre_cancel_status": existing.status if existing is not None else None,
+    }
 
 
 def post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -> bool:
@@ -316,6 +315,8 @@ def apply_rsvp_in_transaction(event_id, user, rsvp: RsvpApply) -> tuple[str, lis
 
     existing = EventRSVP.objects.filter(event=event, user=user).first()
     previous_status = existing.status if existing is not None else None
+    if not rsvp.skip_host_gates:
+        enforce_rsvp_deadline(user, event, existing, rsvp.status, rsvp.has_plus_one)
 
     # Gate on the *requested* status, not the post-capacity one — else it slips through unconfirmed.
     gate_exempt = rsvp.paid_confirmed or rsvp.skip_host_gates
@@ -347,8 +348,7 @@ def apply_rsvp_in_transaction(event_id, user, rsvp: RsvpApply) -> tuple[str, lis
         defaults={
             "status": final_status,
             "has_plus_one": final_plus_one,
-            "cancelled_at": resolve_cancelled_at(existing, final_status),
-            "pre_cancel_status": resolve_pre_cancel_status(existing, final_status),
+            **resolve_cancel_fields(existing, final_status, CancelReason.SELF),
             "paid_confirmed_at": new_confirmed_at,
             "questionnaire_responses": answers_snapshot,
         },
@@ -475,6 +475,7 @@ def _delete_rsvp_in_transaction(event_id, user) -> tuple[Event, list[str]]:
         raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
     if event.is_past and not can_edit_event(user, event):
         raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
+    enforce_rsvp_deadline(user, event, rsvp, RSVPStatus.CANT_GO)
 
     was_attending = rsvp.status == RSVPStatus.ATTENDING
     rsvp.delete()

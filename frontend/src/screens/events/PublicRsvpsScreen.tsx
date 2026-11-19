@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { getApiStatus } from '@/api/apiErrors';
 import { usePublicMyRsvps } from '@/api/publicRsvp';
@@ -16,6 +16,7 @@ import { EventRow } from './EventRow';
 import { ResendManageLinkForm } from './ResendManageLinkForm';
 
 const INVALID_TOKEN_COPY = "this link's expired or invalid — rsvp again to get a new one";
+const SIGN_IN_TO_MY_EVENTS = `/login?redirect=${encodeURIComponent('/events/mine')}`;
 
 export default function PublicRsvpsScreen() {
   const navigate = useNavigate();
@@ -47,6 +48,13 @@ export default function PublicRsvpsScreen() {
     return (
       <ContentContainer>
         <p className="text-foreground text-base">{INVALID_TOKEN_COPY}</p>
+        <p className="text-foreground-secondary mt-2 text-sm">
+          joined pda since you rsvp'd?{' '}
+          <Link to={SIGN_IN_TO_MY_EVENTS} className="text-info hover:underline">
+            sign in
+          </Link>{' '}
+          to see your rsvps
+        </p>
         <ResendManageLinkForm />
       </ContentContainer>
     );

@@ -1,7 +1,7 @@
 import secrets
 from dataclasses import dataclass
 
-from users.models import User
+from users.models import MembershipStatus, User
 
 from community.dev_tools._content import pick_question_templates, random_answer
 from community.models import EventCoHostInvite, EventRSVP, EventRsvpQuestion, RSVPStatus
@@ -70,25 +70,31 @@ def _random_name() -> tuple[str, str]:
     return secrets.choice(_FIRST_NAMES), secrets.choice(_LAST_NAMES)
 
 
-def _create_filler_user(*, is_member: bool) -> User:
+def _create_filler_user(*, membership_status: MembershipStatus) -> User:
     first_name, last_name = _random_name()
     phone_number = f"{FILLER_PHONE_PREFIX}{secrets.randbelow(10**7):07d}"
     return User.objects.create_user(
         phone_number=phone_number,
         first_name=first_name,
         last_name=last_name,
-        is_member=is_member,
+        membership_status=membership_status,
     )
 
 
-def pick_filler_users(count: int, *, is_member: bool, exclude_ids: set) -> list[User]:
-    pool = list(User.objects.filter(is_member=is_member).exclude(id__in=exclude_ids)[: count * 2])
+def pick_filler_users(
+    count: int, *, membership_status: MembershipStatus, exclude_ids: set
+) -> list[User]:
+    pool = list(
+        User.objects.filter(membership_status=membership_status).exclude(id__in=exclude_ids)[
+            : count * 2
+        ]
+    )
     picked: list[User] = []
     for _ in range(count):
         if pool:
             user = pool.pop(secrets.randbelow(len(pool)))
         else:
-            user = _create_filler_user(is_member=is_member)
+            user = _create_filler_user(membership_status=membership_status)
         picked.append(user)
         exclude_ids.add(user.id)
     return picked
@@ -96,10 +102,14 @@ def pick_filler_users(count: int, *, is_member: bool, exclude_ids: set) -> list[
 
 def populate_cohosts(event, *, accepted_count: int, invited_count: int, invited_by) -> None:
     exclude_ids = {event.created_by_id} if event.created_by_id else set()
-    accepted = pick_filler_users(accepted_count, is_member=True, exclude_ids=exclude_ids)
+    accepted = pick_filler_users(
+        accepted_count, membership_status=MembershipStatus.ACTIVE_MEMBER, exclude_ids=exclude_ids
+    )
     event.co_hosts.add(*accepted)
 
-    invited = pick_filler_users(invited_count, is_member=True, exclude_ids=exclude_ids)
+    invited = pick_filler_users(
+        invited_count, membership_status=MembershipStatus.ACTIVE_MEMBER, exclude_ids=exclude_ids
+    )
     EventCoHostInvite.objects.bulk_create(
         [
             EventCoHostInvite(
@@ -137,7 +147,9 @@ def populate_rsvps(event, counts: RsvpCounts) -> None:
         RSVPStatus.CANT_GO: counts.cant_go,
     }
     for status, count in member_counts.items():
-        for user in pick_filler_users(count, is_member=True, exclude_ids=exclude_ids):
+        for user in pick_filler_users(
+            count, membership_status=MembershipStatus.ACTIVE_MEMBER, exclude_ids=exclude_ids
+        ):
             rows.append(EventRSVP(event=event, user=user, status=status))
 
     non_member_counts = {
@@ -145,7 +157,9 @@ def populate_rsvps(event, counts: RsvpCounts) -> None:
         RSVPStatus.WAITLISTED: non_member_waitlisted,
     }
     for status, count in non_member_counts.items():
-        for user in pick_filler_users(count, is_member=False, exclude_ids=exclude_ids):
+        for user in pick_filler_users(
+            count, membership_status=MembershipStatus.NONE, exclude_ids=exclude_ids
+        ):
             rows.append(EventRSVP(event=event, user=user, status=status))
 
     # bulk_create skips EventRSVP.save(), which normally assigns waitlist positions.
@@ -159,7 +173,9 @@ def populate_rsvps(event, counts: RsvpCounts) -> None:
 def populate_invited_users(event, *, count: int) -> None:
     exclude_ids = {event.created_by_id} if event.created_by_id else set()
     exclude_ids |= set(event.rsvps.values_list("user_id", flat=True))
-    users = pick_filler_users(count, is_member=True, exclude_ids=exclude_ids)
+    users = pick_filler_users(
+        count, membership_status=MembershipStatus.ACTIVE_MEMBER, exclude_ids=exclude_ids
+    )
     event.invited_users.add(*users)
 
 

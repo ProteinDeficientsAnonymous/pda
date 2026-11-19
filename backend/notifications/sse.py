@@ -163,7 +163,8 @@ async def _stream_frames(scope: StreamScope, *, deadline: float | None):
     try:
         dsn = _build_async_dsn()
         async with await psycopg.AsyncConnection.connect(dsn, autocommit=True) as conn:
-            await conn.execute(f"LISTEN {_PG_CHANNEL}")
+            if scope.user_id is not None:
+                await conn.execute(f"LISTEN {_PG_CHANNEL}")
             await conn.execute(f"LISTEN {_EVENT_UPDATES_CHANNEL}")
             yield "event: connected\ndata: {}\n\n"
 
@@ -187,10 +188,6 @@ async def notification_stream(request):
     Auth is a single-use ticket (from POST /sse-ticket/), not the JWT, so the
     access token never appears in the URL.
     """
-    db = settings.DATABASES.get("default", {})
-    if "postgresql" not in db.get("ENGINE", ""):
-        return JsonResponse({"detail": "SSE requires PostgreSQL"}, status=503)
-
     ticket = request.GET.get("ticket")
     if not ticket:
         return JsonResponse({"detail": "ticket required"}, status=401)
@@ -198,6 +195,10 @@ async def notification_stream(request):
     scope = await consume_ticket(ticket)
     if scope is None:
         return JsonResponse({"detail": "invalid ticket"}, status=401)
+
+    db = settings.DATABASES.get("default", {})
+    if "postgresql" not in db.get("ENGINE", ""):
+        return JsonResponse({"detail": "SSE requires PostgreSQL"}, status=503)
 
     if scope.user_id is None and _anonymous_slots_full():
         return JsonResponse({"detail": "too many anonymous viewers"}, status=503)

@@ -23,6 +23,12 @@ describe('mapEvent', () => {
     expect(result.startDatetime!.getUTCHours()).toBe(18);
   });
 
+  it('maps rsvp_deadline to a date, or null when unset', () => {
+    const deadline = mapEvent(wireEvent({ rsvp_deadline: '2026-04-14T18:00:00Z' })).rsvpDeadline;
+    expect(deadline?.toISOString()).toBe('2026-04-14T18:00:00.000Z');
+    expect(mapEvent(wireEvent()).rsvpDeadline).toBeNull();
+  });
+
   it('maps my_paid_confirmed', () => {
     expect(mapEvent(wireEvent({ my_paid_confirmed: true })).myPaidConfirmed).toBe(true);
   });

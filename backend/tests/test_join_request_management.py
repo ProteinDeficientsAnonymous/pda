@@ -205,10 +205,8 @@ class TestJoinRequestManagement:
         )
         assert response.status_code == 200
         sample_join_request.refresh_from_db()
-        assert sample_join_request.approved_by == vettor_user
-        assert sample_join_request.approved_at is not None
-        assert sample_join_request.rejected_by is None
-        assert sample_join_request.rejected_at is None
+        assert sample_join_request.status_changed_by == vettor_user
+        assert sample_join_request.status_changed_at is not None
 
     def test_reject_records_actor_and_timestamp(
         self, api_client, vettor_headers, vettor_user, sample_join_request
@@ -221,10 +219,8 @@ class TestJoinRequestManagement:
         )
         assert response.status_code == 200
         sample_join_request.refresh_from_db()
-        assert sample_join_request.rejected_by == vettor_user
-        assert sample_join_request.rejected_at is not None
-        assert sample_join_request.approved_by is None
-        assert sample_join_request.approved_at is None
+        assert sample_join_request.status_changed_by == vettor_user
+        assert sample_join_request.status_changed_at is not None
 
     def test_approve_creates_user_with_member_role(
         self, api_client, vettor_headers, sample_join_request, db

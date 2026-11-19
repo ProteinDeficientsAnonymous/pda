@@ -2,7 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { Code } from '@/api/validationCodes.gen';
 import type { User } from '@/models/user';
+import { apiError } from '@/test/apiError';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 import MagicLoginScreen from './MagicLoginScreen';
@@ -54,6 +56,20 @@ describe('MagicLoginScreen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     currentUser = null;
+  });
+
+  it('offers a rejected applicant the join form instead of a new link', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.AccountRejected));
+    renderAt('tok-rejected');
+    expect(await screen.findByText(/request to join again/i)).toHaveAttribute('href', '/join');
+    expect(screen.queryByText(/send me a new link/i)).toBeNull();
+  });
+
+  it('tells a non-member they cannot sign in', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.NotAMember));
+    renderAt('tok-non-member');
+    expect(await screen.findByText("can't sign in")).toBeInTheDocument();
+    expect(screen.queryByText(/send me a new link/i)).toBeNull();
   });
 
   it('routes a needsPasswordReset user (has a name) to /new-password', async () => {
@@ -116,6 +132,21 @@ describe('MagicLoginScreen', () => {
     currentUser = makeUser();
     renderAt('tok-evil', '//evil.example/phish');
     expect(await screen.findByText('calendar page')).toBeInTheDocument();
+  });
+
+  it('should tell a paused user they cannot sign in', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.AccountGuidelinesPaused));
+    renderAt('tok-paused');
+    expect(await screen.findByText("can't sign in")).toBeInTheDocument();
+    expect(
+      screen.getByText("your membership is paused — you can't log in right now"),
+    ).toBeInTheDocument();
+  });
+
+  it('should keep the cross-user message for other 403s', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(403));
+    renderAt('tok-other');
+    expect(await screen.findByText('already signed in')).toBeInTheDocument();
   });
 
   it('should follow a same-app redirect when login is complete', async () => {

@@ -36,8 +36,8 @@ class TestJsonFormatter:
             args=None,
             exc_info=None,
         )
-        record.method = "GET"  # type: ignore[attr-defined]
-        record.path = "/api/test/"  # type: ignore[attr-defined]
+        setattr(record, "method", "GET")
+        setattr(record, "path", "/api/test/")
         output = formatter.format(record)
         parsed = json.loads(output)
         assert parsed["method"] == "GET"
@@ -198,7 +198,7 @@ class TestSensitiveDataFilter:
             args=None,
             exc_info=None,
         )
-        record.detail = "password=hunter2"  # type: ignore[attr-defined]
+        setattr(record, "detail", "password=hunter2")
         f.filter(record)
         output = JsonFormatter().format(record)
         assert "hunter2" not in output
@@ -216,7 +216,7 @@ class TestSensitiveDataFilter:
             exc_info=None,
         )
         # Simulates logger.info("login attempt", extra={"password": "hunter2"}).
-        record.password = "hunter2"  # type: ignore[attr-defined]
+        setattr(record, "password", "hunter2")
         f.filter(record)
         output = JsonFormatter().format(record)
         assert "hunter2" not in output
@@ -233,7 +233,7 @@ class TestSensitiveDataFilter:
             args=None,
             exc_info=None,
         )
-        record.headers = {"authorization": "Bearer topsecret"}  # type: ignore[attr-defined]
+        setattr(record, "headers", {"authorization": "Bearer topsecret"})
         f.filter(record)
         output = JsonFormatter().format(record)
         assert "topsecret" not in output
@@ -250,11 +250,11 @@ class TestSensitiveDataFilter:
             args=None,
             exc_info=None,
         )
-        record.status_code = 200  # type: ignore[attr-defined]
-        record.duration_ms = 12.5  # type: ignore[attr-defined]
+        setattr(record, "status_code", 200)
+        setattr(record, "duration_ms", 12.5)
         f.filter(record)
-        assert record.status_code == 200  # type: ignore[attr-defined]
-        assert record.duration_ms == 12.5  # type: ignore[attr-defined]
+        assert getattr(record, "status_code") == 200
+        assert getattr(record, "duration_ms") == 12.5
 
     @pytest.mark.parametrize(
         "keyword",
