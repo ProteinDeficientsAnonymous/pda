@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from audit.models import AuditLogEntry, AuditTargetType
+from community.models import Event
 from config.audit import (
     AuditTarget,
     audit_log,
@@ -12,7 +13,11 @@ from config.audit import (
 )
 from django.db import transaction
 from django.test import RequestFactory
-from users.models import MagicLoginToken
+from users.models import MagicLoginToken, User
+
+from tests._auth import auth_headers_for
+from tests._public_rsvp_helpers import make_official_event, make_public_rsvper, post
+from tests._time import future_iso
 
 
 @pytest.fixture
@@ -164,6 +169,34 @@ class TestSurviveRollback:
         assert response.status_code == 403
         entry = AuditLogEntry.objects.get(action=action)
         assert entry.target_id == str(test_user.pk)
+
+    def test_public_rsvp_email_collision_audit_persists(self, db, api_client):
+        event = make_official_event()
+        make_public_rsvper("+14155550123", "phone@example.com", name="Phone Row")
+        make_public_rsvper("+14155550888", "sam@example.com", name="Email Row")
+
+        response = post(api_client, event)
+
+        assert response.status_code == 409
+        assert AuditLogEntry.objects.filter(action="public_rsvp_email_collision").exists()
+
+    def test_rsvp_questions_permission_denied_audit_persists(self, api_client, test_user):
+        event = Event.objects.create(
+            title="Questions Event", start_datetime=future_iso(days=30), created_by=test_user
+        )
+        outsider = User.objects.create_user(
+            phone_number="+12025550999", password="otherpass", first_name="Other", last_name="Guest"
+        )
+
+        response = api_client.put(
+            f"/api/community/events/{event.id}/rsvp-questions/",
+            {"expected": [], "questions": []},
+            content_type="application/json",
+            **auth_headers_for(outsider),
+        )
+
+        assert response.status_code == 403
+        assert AuditLogEntry.objects.get(action="permission_denied").target_id == str(event.id)
 
 
 class TestAuditTargetTypeCoverage:
