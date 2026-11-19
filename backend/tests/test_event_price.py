@@ -40,6 +40,7 @@ def test_parse_price_accepts_amounts(raw, expected):
         "1_0",
         "0.004",
         "99999.999",
+        "\uff11\uff10",
     ],
 )
 def test_parse_price_rejects_non_amounts(raw):

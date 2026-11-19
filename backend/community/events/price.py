@@ -6,7 +6,7 @@ from community.validation import Code, raise_validation
 _CENT = Decimal("0.01")
 MAX_PRICE = Decimal("100000")
 # Commas only as thousands separators, so "12,50" is rejected rather than read as 1250.
-_AMOUNT = re.compile(r"(?:\d{1,3}(?:,\d{3})+|\d*)(?:\.\d+)?")
+_AMOUNT = re.compile(r"(?:\d{1,3}(?:,\d{3})+|\d*)(?:\.\d+)?", re.ASCII)
 
 
 def parse_price(v: object) -> Decimal | None:
