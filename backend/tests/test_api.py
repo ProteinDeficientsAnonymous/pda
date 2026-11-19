@@ -5,6 +5,7 @@ from users.api import (
     validate_admin_role_change,
     validate_member_role_required,
 )
+from users.helpers import NewMemberFields
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -158,68 +159,6 @@ class TestRolesAndPermissions:
 
 @pytest.mark.django_db
 class TestUserManagementAPI:
-    def test_create_user_requires_permission(self, api_client, auth_headers):
-        response = api_client.post(
-            "/api/auth/create-user/",
-            {"phone_number": "+12025550999", "first_name": "Denied", "email": "denied@e.com"},
-            content_type="application/json",
-            **auth_headers,
-        )
-        assert response.status_code == 403
-
-    def test_create_user_success(self, api_client, admin_headers):
-        response = api_client.post(
-            "/api/auth/create-user/",
-            {
-                "phone_number": "+12025551234",
-                "first_name": "New",
-                "last_name": "Member",
-                "email": "new.member@e.com",
-            },
-            content_type="application/json",
-            **admin_headers,
-        )
-        assert response.status_code == 201
-        data = response.json()
-        assert data["phone_number"] == "+12025551234"
-        assert "magic_link_token" in data
-        assert len(data["magic_link_token"]) == 36  # UUID format
-
-    def test_create_user_requires_email(self, api_client, admin_headers):
-        response = api_client.post(
-            "/api/auth/create-user/",
-            {"phone_number": "+12025551235", "first_name": "Noemail"},
-            content_type="application/json",
-            **admin_headers,
-        )
-        assert response.status_code == 422
-        assert any(e["field"] == "email" for e in response.json()["detail"])
-
-    def test_create_user_duplicate_phone(self, api_client, admin_headers, test_user):
-        response = api_client.post(
-            "/api/auth/create-user/",
-            {"phone_number": "+12025550101", "first_name": "Dupe", "email": "dupe@e.com"},
-            content_type="application/json",
-            **admin_headers,
-        )
-        assert response.status_code == 409
-        assert_error_code(response, Code.Phone.ALREADY_EXISTS)
-
-    def test_create_user_assigns_member_role_by_default(self, api_client, admin_headers):
-        response = api_client.post(
-            "/api/auth/create-user/",
-            {
-                "phone_number": "+12125551234",
-                "first_name": "Defaultrole",
-                "email": "defaultrole@e.com",
-            },
-            content_type="application/json",
-            **admin_headers,
-        )
-        assert response.status_code == 201
-        user = User.objects.get(phone_number="+12125551234")
-        assert user.roles.filter(name="member").exists()
-
     def test_list_users_requires_manage_users(self, api_client, auth_headers):
         response = api_client.get("/api/auth/users/", **auth_headers)
         assert response.status_code == 403
@@ -301,7 +240,8 @@ class TestCreateUserWithRole:
     def test_creates_user_with_default_member_role(self):
         Role.objects.get_or_create(name="member", defaults={"is_default": True})
         user, magic_token = create_user_with_role(
-            "+12025559999", "Test", "User", "t@e.com", None, requesting_user=self._requester()
+            NewMemberFields("+12025559999", "Test", "User", "t@e.com"),
+            requesting_user=self._requester(),
         )
         assert user.phone_number == "+12025559999"
         assert len(magic_token) == 36  # UUID format
@@ -310,11 +250,7 @@ class TestCreateUserWithRole:
     def test_creates_user_with_specific_role(self):
         role = Role.objects.create(name="custom_role")
         user, _ = create_user_with_role(
-            "+12025558888",
-            "Custom",
-            "User",
-            "c@e.com",
-            str(role.pk),
+            NewMemberFields("+12025558888", "Custom", "User", "c@e.com", str(role.pk)),
             requesting_user=self._requester(),
         )
         assert user.roles.filter(pk=role.pk).exists()
@@ -323,25 +259,29 @@ class TestCreateUserWithRole:
         User.objects.create_user(phone_number="+12025557777", password="pass123")
         with pytest.raises(ValidationException) as exc_info:
             create_user_with_role(
-                "+12025557777", "Dup", "", None, None, requesting_user=self._requester()
+                NewMemberFields("+12025557777", "Dup", "", None),
+                requesting_user=self._requester(),
             )
         assert exc_info.value.code == Code.Phone.ALREADY_EXISTS
 
     def test_raises_on_invalid_phone(self):
         with pytest.raises(ValidationException) as exc_info:
             create_user_with_role(
-                "not-a-phone", "Bad", "Phone", None, None, requesting_user=self._requester()
+                NewMemberFields("not-a-phone", "Bad", "Phone", None),
+                requesting_user=self._requester(),
             )
         assert exc_info.value.code == Code.Phone.INVALID
 
     def test_raises_on_bad_role_and_deletes_user(self):
         with pytest.raises(ValidationException) as exc_info:
             create_user_with_role(
-                "+12025556666",
-                "Bad Role",
-                "User",
-                "b@e.com",
-                "00000000-0000-0000-0000-000000000000",
+                NewMemberFields(
+                    "+12025556666",
+                    "Bad Role",
+                    "User",
+                    "b@e.com",
+                    "00000000-0000-0000-0000-000000000000",
+                ),
                 requesting_user=self._requester(),
             )
         assert exc_info.value.code == Code.Role.NOT_FOUND
@@ -352,11 +292,7 @@ class TestCreateUserWithRole:
         non_admin = self._requester()
         with pytest.raises(ValidationException) as exc_info:
             create_user_with_role(
-                "+12025554444",
-                "Sneaky",
-                "Admin",
-                None,
-                str(admin_role.pk),
+                NewMemberFields("+12025554444", "Sneaky", "Admin", None, str(admin_role.pk)),
                 requesting_user=non_admin,
             )
         assert exc_info.value.code == Code.Role.CANNOT_GRANT_ADMIN
@@ -368,11 +304,7 @@ class TestCreateUserWithRole:
         requester = self._requester()
         requester.roles.add(admin_role)
         user, _ = create_user_with_role(
-            "+12025553333",
-            "New",
-            "Admin",
-            None,
-            str(admin_role.pk),
+            NewMemberFields("+12025553333", "New", "Admin", None, str(admin_role.pk)),
             requesting_user=requester,
         )
         assert user.roles.filter(pk=admin_role.pk).exists()

@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models import Case, CharField, Count, F, OuterRef, Q, QuerySet, Subquery, Value, When
 from django.db.models.functions import Coalesce, Greatest
 
-from users.models import User
+from users.models import PAUSED_STATUSES, User
 
 # Members created before onboarded_at existed never got it set, so their resets re-flag needs_onboarding.
 _ONBOARDED_AT_TRACKED_SINCE = datetime(2026, 4, 26, tzinfo=UTC)
@@ -29,7 +29,7 @@ def with_status(qs: QuerySet[User]) -> QuerySet[User]:
     """
     status = Case(
         When(archived_at__isnull=False, then=Value(MemberStatus.ARCHIVED)),
-        When(is_paused=True, then=Value(MemberStatus.PAUSED)),
+        When(membership_status__in=PAUSED_STATUSES, then=Value(MemberStatus.PAUSED)),
         When(is_active=False, then=Value(None)),
         When(NOT_SET_UP, then=Value(MemberStatus.STILL_ONBOARDING)),
         default=Value(MemberStatus.ACTIVE),
@@ -49,10 +49,10 @@ def with_member_since(qs: QuerySet[User]) -> QuerySet[User]:
         JoinRequest.objects.filter(
             Q(user=OuterRef("pk")) | Q(user__isnull=True, phone_number=OuterRef("phone_number")),
             status=JoinRequestStatus.APPROVED,
-            approved_at__isnull=False,
+            status_changed_at__isnull=False,
         )
-        .order_by("-approved_at")
-        .values("approved_at")[:1]
+        .order_by("-status_changed_at")
+        .values("status_changed_at")[:1]
     )
     joined = F("date_joined")
     # Greatest is NULL on SQLite if any arg is NULL, hence the Coalesce.
@@ -65,7 +65,7 @@ def count_members_by_status(since: datetime) -> dict[str, int]:
     param(since): start of the window for new_in_period
     return(dict[str, int]): total, the four status buckets, and new_in_period
     """
-    members = User.objects.members()
+    members = User.objects.members_or_archived()
     grouped = with_status(members).values("status").annotate(n=Count("pk")).order_by()
     counts = {row["status"]: row["n"] for row in grouped}
     return {

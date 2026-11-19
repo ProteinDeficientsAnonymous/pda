@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEvent } from '@/api/events';
 import { EventType, InvitePermission } from '@/models/event';
 import { Permission } from '@/models/permissions';
-import type { User } from '@/models/user';
+import { MembershipStatus, type User } from '@/models/user';
 import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeEvent, makeUser, makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
@@ -175,7 +175,11 @@ describe('EventDetailScreen', () => {
   });
 
   describe('tentative member rsvp gate', () => {
-    const TENTATIVE_USER = makeUser({ ...AUTHED_USER, isMember: false });
+    const TENTATIVE_USER = makeUser({
+      ...AUTHED_USER,
+      isMember: false,
+      membershipStatus: MembershipStatus.Tentative,
+    });
 
     function renderAs(user: User, eventType: string) {
       setAuthed(user);

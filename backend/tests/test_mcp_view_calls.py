@@ -36,7 +36,7 @@ def _tool_error(view, user, *args) -> dict:
 
 def test_unwraps_status_models_and_lists(test_user):
     body = _call(templates, test_user)
-    assert set(body) == {"official_walk", "official_non_walk"}
+    assert set(body) == {"official_walk", "official_non_walk", "club"}
     assert _call(lambda r: Status(200, [templates(r).value]), test_user) == [body]
 
 

@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from community.models import EventType, JoinFormQuestion, JoinRequest, Survey
+from community.models import EventType, JoinFormQuestion, JoinRequest, PlanningYear, Survey
 from django.conf import settings as django_settings
 from django.core.cache import caches
 from django.db import DatabaseError, connections
@@ -9,11 +9,12 @@ from django.test import Client
 from django.utils import timezone
 from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
-from users.models import User, UserManager
+from users.models import MembershipStatus, User, UserManager
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 def pytest_configure() -> None:
@@ -28,11 +29,23 @@ def pytest_runtest_teardown(item, nextitem):
     marker = item.get_closest_marker("django_db")
     if marker is not None and marker.kwargs.get("transaction"):
         blocker = item.funcargs.get("django_db_blocker")
+        # Skipped tests never get the fixture, so blocker is missing.
+        if blocker is None:
+            return
         with blocker.unblock():
             for conn in connections.all():
                 contents = getattr(conn, "_test_serialized_contents", None)
                 if contents:
                     conn.creation.deserialize_db_from_string(contents)
+
+
+def _default_status(fields: dict) -> MembershipStatus:
+    """A member, unless the test's own pause or archive fields say otherwise."""
+    if fields.get("archived_at") is not None:
+        return MembershipStatus.ARCHIVED
+    if fields.get("attendance_paused_at") is not None:
+        return MembershipStatus.ATTENDANCE_PAUSED
+    return MembershipStatus.ACTIVE_MEMBER
 
 
 @pytest.fixture(autouse=True)
@@ -91,7 +104,7 @@ def _default_test_users_consented(monkeypatch):
 
     def create_user(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("guidelines_consent_at", timezone.now())
-        extra_fields.setdefault("is_member", True)
+        extra_fields.setdefault("membership_status", _default_status(extra_fields))
         return original(self, phone_number, password=password, **extra_fields)
 
     monkeypatch.setattr(UserManager, "create_user", create_user)
@@ -162,7 +175,7 @@ def manage_users_user(db):
     )
     role = Role.objects.create(
         name="admin_mgr",
-        permissions=[PermissionKey.MANAGE_USERS, PermissionKey.CREATE_USER],
+        permissions=[PermissionKey.MANAGE_USERS],
     )
     user.roles.add(role)
     return user
@@ -276,3 +289,23 @@ def fake_email_sender(monkeypatch):
     )
     yield fake
     # monkeypatch auto-cleans up.
+
+
+@pytest.fixture
+def year(db):
+    return PlanningYear.create_with_default_slots(2027)
+
+
+@pytest.fixture
+def slot(year):
+    return year.slots.first()
+
+
+@pytest.fixture
+def planner(db):
+    return make_user(PermissionKey.VIEW_EVENT_PLANNING)
+
+
+@pytest.fixture
+def coordinator(db):
+    return make_user(PermissionKey.MANAGE_EVENT_PLANNING)
