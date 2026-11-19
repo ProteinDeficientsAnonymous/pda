@@ -104,6 +104,11 @@ describe('goingWouldWaitlist', () => {
     expect(goingWouldWaitlist(event, false)).toBe(true);
   });
 
+  it('ignores a +1 the event no longer allows', () => {
+    const event = makeEvent({ maxAttendees: 2, attendingCount: 1, allowPlusOnes: false });
+    expect(goingWouldWaitlist(event, true)).toBe(false);
+  });
+
   it('never waitlists on an uncapped event', () => {
     const event = makeEvent({ maxAttendees: null, myRsvp: RsvpServerStatus.Waitlisted });
     expect(goingWouldWaitlist(event, true)).toBe(false);

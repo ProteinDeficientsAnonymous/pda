@@ -316,7 +316,7 @@ describe('RsvpBox payment confirmation gate', () => {
 
   it('waitlists a +1 party without the payment step when only one spot is left', async () => {
     const onConfirm = vi.fn();
-    const event = makePaidEvent({ maxAttendees: 2, attendingCount: 1 });
+    const event = makePaidEvent({ maxAttendees: 2, attendingCount: 1, allowPlusOnes: true });
     render(<RsvpBox {...base} event={event} mode="create" onConfirm={onConfirm} />);
     await userEvent.click(screen.getByRole('button', { name: /^add \+1$/i }));
     const confirmButton = screen.getAllByRole('button', { name: /^join the waitlist$/i }).at(-1);

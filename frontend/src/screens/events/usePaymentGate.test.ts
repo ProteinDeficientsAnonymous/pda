@@ -21,7 +21,7 @@ describe('usePaymentGate', () => {
 
   it('does not gate a +1 party that only fits on the waitlist', () => {
     const { result } = renderHook(() =>
-      usePaymentGate(makePaidEvent({ maxAttendees: 2, attendingCount: 1 })),
+      usePaymentGate(makePaidEvent({ maxAttendees: 2, attendingCount: 1, allowPlusOnes: true })),
     );
     expect(result.current(RsvpStatus.Attending, true)).toBe(false);
     expect(result.current(RsvpStatus.Attending, false)).toBe(true);

@@ -282,7 +282,7 @@ export function goingWouldWaitlist(e: Event, hasPlusOne: boolean): boolean {
   if (e.myRsvp === RsvpServerStatus.Attending) return false;
   const left = spotsLeft(e);
   if (left !== null && e.myRsvp === RsvpServerStatus.Waitlisted) return true;
-  return left !== null && left < (hasPlusOne ? 2 : 1);
+  return left !== null && left < (hasPlusOne && e.allowPlusOnes ? 2 : 1);
 }
 
 export function myRsvpLabel(e: Event): string | null {
