@@ -35,7 +35,7 @@ def test_question_reorder_is_constant(api_client, surveys_admin_headers, surveys
                 survey=survey, label=f"q{i}", field_type=SurveyQuestionType.TEXT, display_order=i
             )
 
-    def reorder() -> int:
+    def reorder() -> tuple[int, list[str]]:
         ids = [str(q) for q in survey.questions.values_list("id", flat=True)]
         url = f"/api/community/surveys/{survey.id}/questions/order/"
         with CaptureQueriesContext(connection) as ctx:
@@ -46,11 +46,13 @@ def test_question_reorder_is_constant(api_client, surveys_admin_headers, surveys
                 **surveys_admin_headers,
             )
         assert response.status_code == 200
-        return len(ctx.captured_queries)
+        return len(ctx.captured_queries), [q["label"] for q in response.json()]
 
     add_questions(2)
-    small = reorder()
+    small, _ = reorder()
     add_questions(6)
     before = [q.label for q in survey.questions.order_by("display_order")]
-    assert reorder() == small
+    count, returned = reorder()
+    assert count == small
+    assert returned == before[::-1]
     assert [q.label for q in survey.questions.order_by("display_order")] == before[::-1]
