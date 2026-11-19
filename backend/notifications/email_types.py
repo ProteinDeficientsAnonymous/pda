@@ -12,7 +12,7 @@ from django.core.validators import validate_email
 from pydantic import BaseModel
 
 # Seeded staging users use this domain; RoutingEmailSender sends them to console.
-TEST_EMAIL_DOMAIN = "proteindeficienttestdomain.com"
+TEST_EMAIL_DOMAIN = "staging.example"
 
 
 class SendResult(BaseModel):

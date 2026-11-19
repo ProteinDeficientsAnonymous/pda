@@ -87,8 +87,8 @@ def test_condition_label_is_deterministic_and_descriptive():
 
 
 def test_emails_are_distinct_and_key_derived():
-    assert perm_email("manage_events") == "perm.manage_events@proteindeficienttestdomain.com"
-    assert cond_email(3) == "cond03@proteindeficienttestdomain.com"
+    assert perm_email("manage_events") == "perm.manage_events@staging.example"
+    assert cond_email(3) == "cond03@staging.example"
 
 
 def test_is_seed_allowed_guard():
