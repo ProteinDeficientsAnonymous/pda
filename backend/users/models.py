@@ -11,7 +11,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from users._transitions import transition_membership
-from users.membership import (  # noqa: F401 — re-exported public membership API
+from users.membership import (
     ALLOWED_MEMBERSHIP_TRANSITIONS,
     FULL_MEMBER_STATUSES,
     LIMITED_STATUSES,
@@ -26,7 +26,24 @@ from users.membership import (  # noqa: F401 — re-exported public membership A
     status_change_stamp,
 )
 from users.phone import normalize_phone_number
-from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
+from users.roles import Role
+
+# Re-exports kept public on users.models for existing imports.
+__all__ = [
+    "ALLOWED_MEMBERSHIP_TRANSITIONS",
+    "FULL_MEMBER_STATUSES",
+    "LIMITED_STATUSES",
+    "MANAGED_STATUSES",
+    "MEMBER_OR_ARCHIVED",
+    "MEMBER_STATUSES",
+    "PAUSED_STATUSES",
+    "SIGN_IN_STATUSES",
+    "STATUS_CHANGE_FIELDS",
+    "MembershipEvent",
+    "MembershipStatus",
+    "Role",
+    "status_change_stamp",
+]
 
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
 
