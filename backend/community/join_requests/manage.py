@@ -1,5 +1,4 @@
 import logging
-from collections import Counter
 from collections.abc import Iterable
 from datetime import datetime, timedelta
 from typing import NamedTuple
@@ -18,6 +17,14 @@ from users.permissions import PermissionKey
 
 from community.attendance.analytics import AttendedEventOut, attended_events
 from community.field_limits import FieldLimit
+from community.join_requests._history import (
+    PhoneLookups,
+    PreviousArchiveOut,
+    PreviousRejectionOut,
+    phone_history,
+    phone_lookups,
+    previous_rejection_out,
+)
 from community.join_requests._rejection import Rejection, send_join_rejection, validate_rejection
 from community.join_requests.approval import (
     provision_approved_user,
@@ -26,6 +33,7 @@ from community.join_requests.approval import (
 )
 from community.join_requests.grace import WHATSAPP_GRACE_DAYS
 from community.models import (
+    OPEN_JOIN_REQUEST_STATUSES,
     AttendanceStatus,
     EventRSVP,
     EventType,
@@ -64,17 +72,15 @@ class JoinRequestOut(BaseModel):
     status: str
     user_id: str | None = None
     previously_archived: bool = False
+    previous_archive: PreviousArchiveOut | None = None
     # A prior request from this number was rejected — rejected applicants may
     # re-apply, so vettors need the history on the fresh request.
     previously_rejected: bool = False
-    tentative_at: datetime | None = None
-    tentative_by_name: str | None = None
-    approved_at: datetime | None = None
-    approved_by_name: str | None = None
+    previous_rejection: PreviousRejectionOut | None = None
+    status_changed_at: datetime | None = None
+    status_changed_by_name: str | None = None
     approved_via_event_id: str | None = None
     approved_via_event_title: str | None = None
-    rejected_at: datetime | None = None
-    rejected_by_name: str | None = None
     rejection_reason: str = ""
     rejection_note: str = ""
     onboarded_at: datetime | None = None
@@ -187,39 +193,6 @@ def _rsvp_events(user: User | None) -> list[JoinRequestRsvpOut]:
     ]
 
 
-class PhoneLookups(NamedTuple):
-    users_by_phone: dict[str, User]
-    rejected_counts: Counter[str]
-
-
-def _phone_lookups(join_requests: Iterable[JoinRequest]) -> PhoneLookups:
-    """Users (with rsvps) and rejected-request counts for every phone in the batch."""
-    phones = {jr.phone_number for jr in join_requests}
-    users = User.objects.filter(phone_number__in=phones).prefetch_related(
-        Prefetch("event_rsvps", queryset=EventRSVP.objects.select_related("event"))
-    )
-    rejected = JoinRequest.objects.filter(
-        phone_number__in=phones, status=JoinRequestStatus.REJECTED
-    ).values_list("phone_number", flat=True)
-    return PhoneLookups({u.phone_number: u for u in users}, Counter(rejected))
-
-
-class PhoneHistory(NamedTuple):
-    phone_user: User | None
-    previously_archived: bool
-    previously_rejected: bool
-
-
-def _phone_history(jr: JoinRequest, lookups: PhoneLookups) -> PhoneHistory:
-    phone_user = lookups.users_by_phone.get(jr.phone_number)
-    own_rejection = 1 if jr.status == JoinRequestStatus.REJECTED else 0
-    return PhoneHistory(
-        phone_user=phone_user,
-        previously_archived=phone_user is not None and phone_user.archived_at is not None,
-        previously_rejected=lookups.rejected_counts[jr.phone_number] > own_rejection,
-    )
-
-
 def _approving_event_fields(jr: JoinRequest) -> dict[str, str | None]:
     event = jr.approved_via_event
     if event is None:
@@ -232,7 +205,7 @@ def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> Jo
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
         for qid, data in (jr.custom_answers or {}).items()
     ]
-    history = _phone_history(jr, lookups or _phone_lookups([jr]))
+    history = phone_history(jr, lookups or phone_lookups([jr]))
     user = jr.user or history.phone_user
     breakdown = _rsvp_breakdown(user)
     return JoinRequestOut(
@@ -246,15 +219,13 @@ def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> Jo
         submitted_at=jr.submitted_at,
         status=jr.status,
         user_id=str(user.id) if user else None,
-        previously_archived=history.previously_archived,
-        previously_rejected=history.previously_rejected,
-        tentative_at=jr.tentative_at,
-        tentative_by_name=jr.tentative_by.full_name if jr.tentative_by else None,
-        approved_at=jr.approved_at,
-        approved_by_name=jr.approved_by.full_name if jr.approved_by else None,
+        previously_archived=history.previous_archive is not None,
+        previous_archive=history.previous_archive,
+        previously_rejected=history.previous_rejection is not None,
+        previous_rejection=previous_rejection_out(history.previous_rejection),
+        status_changed_at=jr.status_changed_at,
+        status_changed_by_name=jr.status_changed_by.full_name if jr.status_changed_by else None,
         **_approving_event_fields(jr),
-        rejected_at=jr.rejected_at,
-        rejected_by_name=jr.rejected_by.full_name if jr.rejected_by else None,
         rejection_reason=jr.rejection_reason,
         rejection_note=jr.rejection_note,
         onboarded_at=user.onboarded_at if user else None,
@@ -278,7 +249,7 @@ def _superseded_by_pause(jr: JoinRequest, lookups: PhoneLookups) -> bool:
     user = lookups.users_by_phone.get(jr.phone_number)
     if user is None or jr.status not in _ADMITTED_STATUSES:
         return False
-    decided_at = jr.approved_at or jr.tentative_at or jr.submitted_at
+    decided_at = jr.status_changed_at or jr.submitted_at
     stamps = (user.attendance_paused_at, user.restored_at)
     return any(stamp is not None and stamp > decided_at for stamp in stamps)
 
@@ -313,29 +284,22 @@ def list_join_requests(request):
             status__in=_ADMITTED_STATUSES,
             phone_number__in=expired_phones,
         )
-        .select_related("user", "tentative_by", "approved_by", "approved_via_event", "rejected_by")
+        .select_related("user", "status_changed_by", "approved_via_event")
         .prefetch_related(
             Prefetch("user__event_rsvps", queryset=EventRSVP.objects.select_related("event"))
         )
     )
     join_requests = list(join_requests)
-    lookups = _phone_lookups(join_requests)
+    lookups = phone_lookups(join_requests)
     rows = [jr for jr in join_requests if not _superseded_by_pause(jr, lookups)]
     return Status(200, [join_request_out(jr, lookups) for jr in rows])
 
 
 def _stamp_decision(join_request: JoinRequest, status: str, actor, rejection: Rejection) -> None:
-    now = timezone.now()
     join_request.status = status
-    if status == JoinRequestStatus.TENTATIVE:
-        join_request.tentative_at = now
-        join_request.tentative_by = actor
-    elif status == JoinRequestStatus.APPROVED:
-        join_request.approved_at = now
-        join_request.approved_by = actor
-    elif status == JoinRequestStatus.REJECTED:
-        join_request.rejected_at = now
-        join_request.rejected_by = actor
+    join_request.status_changed_at = timezone.now()
+    join_request.status_changed_by = actor
+    if status == JoinRequestStatus.REJECTED:
         join_request.rejection_reason, join_request.rejection_note = rejection
     join_request.save()
 
@@ -361,12 +325,13 @@ def _apply_status_transition(
         except JoinRequest.DoesNotExist:
             raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
 
-        # TENTATIVE is not a final decision — it may still transition to
-        # approved/rejected, so only the two terminal states are locked.
-        if join_request.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED):
+        if join_request.status not in OPEN_JOIN_REQUEST_STATUSES:
             raise_validation(Code.JoinRequest.ALREADY_DECIDED, status_code=400)
-
         was_tentative = join_request.status == JoinRequestStatus.TENTATIVE
+        # A tentative person who shouldn't stay is archived from the members screen instead.
+        if was_tentative and status == JoinRequestStatus.REJECTED:
+            raise_validation(Code.JoinRequest.TENTATIVE_CANNOT_BE_REJECTED, status_code=400)
+
         _stamp_decision(join_request, status, actor, rejection)
         if status == JoinRequestStatus.TENTATIVE:
             _, magic_token = provision_tentative_user(join_request, actor)

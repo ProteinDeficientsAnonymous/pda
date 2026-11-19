@@ -111,11 +111,11 @@ class TestRequestLoggingRss:
             middleware(request)
 
         record = caplog.records[0]
-        assert record.rss_kb >= 0  # type: ignore[attr-defined]
+        assert getattr(record, "rss_kb") >= 0
         assert hasattr(record, "rss_delta_kb")
-        assert record.media_path_calls == 0  # type: ignore[attr-defined]
+        assert getattr(record, "media_path_calls") == 0
         body = JsonResponse({"ok": True})
-        assert record.response_bytes == len(body.content)  # type: ignore[attr-defined]
+        assert getattr(record, "response_bytes") == len(body.content)
 
     def test_counts_media_path_calls_for_the_request(self, caplog, monkeypatch):
         monkeypatch.setenv("PDA_MEMORY_PROFILE", "1")
@@ -133,7 +133,7 @@ class TestRequestLoggingRss:
         with caplog.at_level(logging.INFO, logger="pda.middleware"):
             middleware(request)
 
-        assert caplog.records[0].media_path_calls == 3  # type: ignore[attr-defined]
+        assert getattr(caplog.records[0], "media_path_calls") == 3
 
     def test_omits_response_bytes_for_streaming(self, caplog, monkeypatch):
         monkeypatch.setenv("PDA_MEMORY_PROFILE", "1")

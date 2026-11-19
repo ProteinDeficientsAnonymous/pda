@@ -133,37 +133,48 @@ def broadcast_event_update(
         _ping_event_update(recipients, str(event.pk))
 
 
-def create_join_request_notifications(full_name: str) -> None:
-    recipients = User.objects.with_permission(PermissionKey.APPROVE_JOIN_REQUESTS)
-
-    Notification.objects.bulk_create(
-        [
-            Notification(
-                recipient=user,
-                notification_type=NotificationType.JOIN_REQUEST,
-                message=f"new join request from {full_name}",
-            )
-            for user in recipients
-        ]
-    )
-    notify_users(str(user.pk) for user in recipients)
-
-
-def create_member_restored_notifications(user: User) -> None:
-    name = (user.full_name or user.phone_number).lower()
+def _notify_join_request_approvers(
+    notification_type: NotificationType,
+    message: str,
+    *,
+    related_user: User | None = None,
+    event: Event | None = None,
+) -> None:
     recipients = list(User.objects.with_permission(PermissionKey.APPROVE_JOIN_REQUESTS))
     Notification.objects.bulk_create(
         [
             Notification(
                 recipient=recipient,
-                notification_type=NotificationType.MEMBER_RESTORED,
-                related_user=user,
-                message=f"{name} checked in and is a member again",
+                notification_type=notification_type,
+                related_user=related_user,
+                event=event,
+                message=message,
             )
             for recipient in recipients
         ]
     )
     notify_users(str(recipient.pk) for recipient in recipients)
+
+
+def create_join_request_notifications(full_name: str) -> None:
+    _notify_join_request_approvers(
+        NotificationType.JOIN_REQUEST, f"new join request from {full_name}"
+    )
+
+
+def create_member_restored_notifications(user: User) -> None:
+    name = (user.full_name or user.phone_number).lower()
+    _notify_join_request_approvers(
+        NotificationType.MEMBER_RESTORED,
+        f"{name} checked in and is a member again",
+        related_user=user,
+    )
+
+
+def create_check_in_promotion_failed_notifications(user: User, event: Event, message: str) -> None:
+    _notify_join_request_approvers(
+        NotificationType.CHECK_IN_PROMOTION_FAILED, message, related_user=user, event=event
+    )
 
 
 def create_event_flag_notifications(event: Event, flagger: User) -> None:

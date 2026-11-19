@@ -9,22 +9,16 @@ from community.models import (
     PageVisibility,
     RSVPStatus,
 )
-from django.utils import timezone
 from users.models import User
 
 from tests._auth import auth_headers_for
 from tests._time import future_iso
+from tests._users import make_attendance_paused
 
 
 @pytest.fixture
 def attendance_paused_user(db):
-    return User.objects.create_user(
-        phone_number="+12025550930",
-        password="pausedpass",
-        first_name="Paused",
-        is_member=False,
-        attendance_paused_at=timezone.now(),
-    )
+    return make_attendance_paused(first_name="Paused")
 
 
 def _event_with_released_rsvp(host: User, user: User, event_type: EventType) -> Event:
@@ -55,7 +49,7 @@ class TestLimitedUserComments:
         event = _event_with_released_rsvp(test_user, attendance_paused_user, EventType.COMMUNITY)
         response = _post(api_client, event, attendance_paused_user)
         assert response.status_code == 403
-        assert response.json()["detail"][0]["code"] == "comment.rsvp_required"
+        assert response.json()["detail"][0]["code"] == "event.perm_denied"
 
     def test_paused_user_cannot_reply_on_community_event(
         self, api_client, test_user, attendance_paused_user

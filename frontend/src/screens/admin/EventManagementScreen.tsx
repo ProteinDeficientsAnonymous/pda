@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { buttonClass } from '@/components/ui/buttonClass';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
@@ -75,10 +76,7 @@ export default function EventManagementScreen() {
     <ContentContainer>
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-medium tracking-tight">manage events</h1>
-        <Link
-          to="/events/add"
-          className="bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
-        >
+        <Link to="/events/add" className={buttonClass()}>
           new event
         </Link>
       </header>

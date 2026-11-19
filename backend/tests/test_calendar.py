@@ -12,7 +12,7 @@ from community.models import (
 )
 from django.conf import settings
 from django.utils import timezone
-from users.models import CalendarFeedScope, User
+from users.models import CalendarFeedScope, MembershipStatus, User
 
 
 @pytest.mark.django_db
@@ -144,7 +144,13 @@ class TestCalendarFeed:
         resp = api_client.get("/api/community/calendar/feed/")
         assert resp.status_code == 403
 
-    @pytest.mark.parametrize("field,value", [("archived_at", timezone.now()), ("is_paused", True)])
+    @pytest.mark.parametrize(
+        "field,value",
+        [
+            ("archived_at", timezone.now()),
+            ("membership_status", MembershipStatus.GUIDELINES_PAUSED),
+        ],
+    )
     def test_feed_rejects_blocked_account(self, api_client, auth_headers, test_user, field, value):
         token = api_client.post("/api/community/calendar/token/", **auth_headers).json()["token"]
         setattr(test_user, field, value)

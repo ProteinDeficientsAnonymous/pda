@@ -6,11 +6,11 @@ from config.auth import gated_jwt
 from django.db.models import ProtectedError
 from ninja.responses import Status
 
-from users._archive import archive_user
+from users._archive_user import archive_user
 from users._management import require_manage_users
 from users._management import router as management_router
 from users.helpers import is_last_admin
-from users.models import User
+from users.models import MANAGED_STATUSES, MembershipStatus, User
 from users.schemas import ErrorOut
 
 # Ninja resolves paths before methods, so a second router here would shadow
@@ -26,7 +26,9 @@ router = management_router
 def delete_user(request, user_id: str):
     require_manage_users(request, "delete_user", user_id)
     try:
-        user = User.objects.members_or_attendance_paused().get(pk=user_id)
+        # Archived users are found too, so they get ALREADY_ARCHIVED rather than a 404.
+        statuses = (*MANAGED_STATUSES, MembershipStatus.ARCHIVED)
+        user = User.objects.filter(membership_status__in=statuses).get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if str(user.pk) == str(request.auth.pk):
@@ -35,7 +37,7 @@ def delete_user(request, user_id: str):
         raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
     if user.archived_at is not None:
         raise_validation(Code.User.ALREADY_ARCHIVED, status_code=400)
-    removed_role_ids = archive_user(request, user)
+    released = archive_user(request, user)
     audit_log(
         logging.WARNING,
         "user_archived",
@@ -43,7 +45,7 @@ def delete_user(request, user_id: str):
         target=AuditTarget(
             type=AuditTargetType.USER,
             id=user_id,
-            details={"full_name": user.full_name, "removed_role_ids": removed_role_ids},
+            details={"full_name": user.full_name, **released},
         ),
     )
     return Status(204, None)
@@ -63,7 +65,7 @@ def hard_delete_user(request, user_id: str):
     """
     require_manage_users(request, "hard_delete_user", user_id)
     try:
-        user = User.objects.members_or_attendance_paused().get(pk=user_id)
+        user = User.objects.members_or_archived().get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if str(user.pk) == str(request.auth.pk):
