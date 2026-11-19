@@ -1,3 +1,10 @@
+# [0.258.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.257.1...v0.258.0) (2026-11-19)
+
+
+### Features
+
+* **notifications:** log-only emails for seeded test domain ([#2581](https://github.com/ProteinDeficientsAnonymous/pda/issues/2581)) ([bbffdf0](https://github.com/ProteinDeficientsAnonymous/pda/commit/bbffdf0544855820013a861440985b5c32a21a1d))
+
 ## [0.257.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.257.0...v0.257.1) (2026-11-19)
 
 
