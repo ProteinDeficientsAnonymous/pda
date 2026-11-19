@@ -23,9 +23,10 @@ from notifications.sse import (
     sse_generator,
     try_acquire_anonymous_slot,
 )
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken
 
 from tests._auth import auth_headers_for
+from tests._public_rsvp_helpers import make_public_rsvper
 from tests._time import future_iso
 
 _MEMBER = StreamScope(user_id="user-2", event_id=None)
@@ -215,8 +216,8 @@ class TestSseTicketMint:
         assert not SseTicket.objects.exists()
 
     def test_paused_user_returns_403(self, test_user, api_client):
-        test_user.is_paused = True
-        test_user.save(update_fields=["is_paused"])
+        test_user.membership_status = MembershipStatus.GUIDELINES_PAUSED
+        test_user.save(update_fields=["membership_status"])
         response = api_client.post("/api/notifications/sse-ticket/", **auth_headers_for(test_user))
         assert response.status_code == 403
         assert not SseTicket.objects.exists()
@@ -236,15 +237,7 @@ def public_event(db, test_user):
 
 @pytest.fixture
 def non_member(db):
-    user = User.objects.create_user(
-        phone_number="+12025550188",
-        first_name="Non",
-        last_name="Member",
-        is_member=False,
-    )
-    user.set_unusable_password()
-    user.save(update_fields=["password"])
-    return user
+    return make_public_rsvper("+12025550188", "non.member@example.com", name="Non Member")
 
 
 @pytest.fixture
