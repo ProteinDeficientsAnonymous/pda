@@ -249,12 +249,13 @@ def get_event_poll(request, event_id: UUID):
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
 def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
-    enforce_event_read_visibility(_get_visible_event(event_id), request.auth)
+    event = _get_visible_event(event_id)
+    enforce_event_read_visibility(event, request.auth)
     try:
-        poll = EventPoll.objects.select_related("event").get(event_id=event_id, is_active=True)
+        poll = EventPoll.objects.get(event=event, is_active=True)
     except EventPoll.DoesNotExist:
         raise_validation(Code.Poll.NOT_FOUND, status_code=404)
-    if poll.event.status == EventStatus.CANCELLED:
+    if event.status == EventStatus.CANCELLED:
         raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
     for availability in payload.votes.values():
         if availability not in PollAvailability.VALID:
@@ -404,10 +405,7 @@ def delete_event_poll(request, event_id: UUID):
 def _get_poll_and_option(event, winning_option_id) -> tuple[EventPoll, PollOption]:
     """Return (poll, winning_option) for finalize_event_poll. Raises on failure."""
     try:
-        # winning_option is a nullable FK, so select_related on it produces an outer
-        # join — Postgres rejects FOR UPDATE there. Lock the poll row on its own first.
-        EventPoll.objects.select_for_update().get(event=event)
-        poll = EventPoll.objects.get(event=event)
+        poll = EventPoll.objects.select_for_update().get(event=event)
     except EventPoll.DoesNotExist:
         raise_validation(Code.Poll.NOT_FOUND, status_code=404)
     if poll.winning_option_id is not None:
