@@ -3,13 +3,14 @@ from datetime import timedelta
 
 import pytest
 from audit.models import AuditLogEntry, AuditTargetType
-from community._payment_verification import MISCLICK_WINDOW, apply_payment_verification
 from community.models import EventRSVP, RSVPStatus
+from community.rsvps._payment_verification import MISCLICK_WINDOW, apply_payment_verification
 from django.apps import apps
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
+from users.models import MembershipStatus
 
+from tests._auth import auth_headers_for
 from tests._payment_helpers import create_paid_event
 
 pytestmark = pytest.mark.django_db
@@ -28,12 +29,10 @@ def event(test_user):
 @pytest.fixture
 def guest(django_user_model):
     return django_user_model.objects.create_user(
-        phone_number="+14155550501", first_name="Guest", is_member=True
+        phone_number="+14155550501",
+        first_name="Guest",
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
-
-
-def _headers(user):
-    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
 
 
 def _host_set(api_client, auth_headers, event, guest, body):
@@ -244,13 +243,15 @@ class TestHostSetRsvpVerifies:
             payment_verified_by=test_user,
         )
         cohost = django_user_model.objects.create_user(
-            phone_number="+14155550503", first_name="Cohost", is_member=True
+            phone_number="+14155550503",
+            first_name="Cohost",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         event.co_hosts.add(cohost)
 
         _host_set(
             api_client,
-            _headers(cohost),
+            auth_headers_for(cohost),
             event,
             guest,
             {"status": RSVPStatus.ATTENDING, "paid_confirmed": True},
@@ -444,7 +445,9 @@ class TestBackfill:
 
     def test_other_guests_entries_do_not_leak(self, rsvp, event, test_user, django_user_model):
         other = django_user_model.objects.create_user(
-            phone_number="+14155550502", first_name="Other", is_member=True
+            phone_number="+14155550502",
+            first_name="Other",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         _log(
             "guest_payment_changed",

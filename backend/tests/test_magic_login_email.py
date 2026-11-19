@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from notifications._console_sender import ConsoleSender
-from notifications._email_helpers import (
+from notifications.email_helpers import (
     MAGIC_LOGIN_EMAIL,
     LoginLinkEmail,
     send_magic_login_email,

@@ -2,6 +2,7 @@ name: CI
 
 on:
   pull_request:
+  merge_group:
   push:
     branches: [main]
 
@@ -187,8 +188,24 @@ jobs:
       - name: Install frontend dependencies
         run: cd frontend && pnpm install --frozen-lockfile
 
+      - name: Get Playwright version
+        id: playwright-version
+        run: |
+          version=$(cd frontend && pnpm exec playwright --version | awk '{print $2}')
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-chromium-shell
+
+      # No --with-deps: the runner has chromium's libs; the apt step only added fonts and sometimes crawled for minutes
       - name: Install Playwright browsers
-        run: cd frontend && pnpm exec playwright install --with-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: cd frontend && pnpm exec playwright install --only-shell chromium
 
       # Only migrate — each spec seeds its own data via the e2e_seed command;
       # the global demo seed isn't needed and would just add a failure surface.
@@ -229,3 +246,69 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report/
           retention-days: 7
+
+  anti-tampering:
+    name: Anti-tampering
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for suppressions or skipped tests
+        run: make check-anti-tampering
+
+  secrets:
+    name: Secrets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: gitleaks
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            range="${{ github.event.pull_request.base.sha }}..HEAD"
+          elif [ "${{ github.event_name }}" = "merge_group" ]; then
+            range="${{ github.event.merge_group.base_sha }}..HEAD"
+          elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            range="-1"
+          else
+            range="${{ github.event.before }}..HEAD"
+          fi
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            zricethezav/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+            detect --redact --config .gitleaks.toml --log-opts="$range"
+
+  sast:
+    name: SAST
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Run bandit (high severity)
+        run: make sast
+
+  # Scans app lockfiles only. Root package-lock.json is release tooling whose
+  # nested `npm` CLI bundles minimatch/glob; those cannot be overridden.
+  supply-chain:
+    name: Supply chain
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: osv-scanner
+        run: |
+          docker run --rm -v "$PWD:/src" \
+            ghcr.io/google/osv-scanner@sha256:a70ffffc2bfd33482953e5d6b64c6fcdb30239717a07b0f0d3ab2859ce3e4cde \
+            scan source \
+            --lockfile=/src/uv.lock \
+            --lockfile=/src/frontend/pnpm-lock.yaml

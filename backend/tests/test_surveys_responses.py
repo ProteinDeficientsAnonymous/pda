@@ -2,7 +2,6 @@ import json
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from community._validation import Code
 from community.models import (
     Event,
     EventType,
@@ -11,23 +10,18 @@ from community.models import (
     SurveyQuestionType,
     SurveyResponse,
 )
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
+from community.validation import Code
+from django.conf import settings
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 @pytest.fixture
 def admin_headers(db):
-    user = User.objects.create_user(
-        phone_number="+12025557020", password="x", first_name="Surveys", last_name="Admin"
-    )
-    role = Role.objects.create(name="surveys_admin", permissions=[PermissionKey.MANAGE_SURVEYS])
-    user.roles.add(role)
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(make_user(PermissionKey.MANAGE_SURVEYS))
 
 
 @pytest.fixture
@@ -126,16 +120,17 @@ class TestListSurveyResponsesAnonymity:
         assert row["user_id"] is None
         assert row["user_name"] is None
 
-    def test_anonymous_submitted_at_is_day_only(self, api_client, admin_headers):
+    def test_anonymous_submitted_at_is_community_day_only(self, api_client, admin_headers):
         survey = Survey.objects.create(title="Anon", slug="anon-day-1466", anonymous=True)
         r = SurveyResponse.objects.create(survey=survey, answers={})
+        # 10:30pm in new york is already the next day in utc
         SurveyResponse.objects.filter(id=r.id).update(
-            submitted_at=datetime(2026, 3, 4, 15, 27, 11, tzinfo=UTC)
+            submitted_at=datetime(2026, 10, 26, 2, 30, tzinfo=UTC)
         )
         resp = api_client.get(self._url(survey.id), **admin_headers)
         assert resp.status_code == 200
         submitted = datetime.fromisoformat(resp.json()[0]["submitted_at"])
-        assert submitted == datetime(2026, 3, 4, tzinfo=UTC)
+        assert submitted == datetime(2026, 10, 25, tzinfo=settings.COMMUNITY_TZ)
 
 
 @pytest.mark.django_db

@@ -1,11 +1,9 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import type * as EventWritesModule from '@/api/eventWrites';
 import { useAuthStore } from '@/auth/store';
 import { makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 type EventWrites = typeof EventWritesModule;
 
@@ -26,14 +24,7 @@ import { EventForm } from './EventForm';
 describe('EventForm layout', () => {
   it('fields column has min-w-0', () => {
     useAuthStore.setState({ user: makeUser(), status: 'authed' });
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const { container } = render(
-      <QueryClientProvider client={qc}>
-        <MemoryRouter>
-          <EventForm />
-        </MemoryRouter>
-      </QueryClientProvider>,
-    );
+    const { container } = renderWithProviders(<EventForm />);
     const form = container.querySelector('form');
     const fields = form?.querySelector(':scope > div:nth-child(2)');
     expect(fields).toHaveClass('min-w-0');

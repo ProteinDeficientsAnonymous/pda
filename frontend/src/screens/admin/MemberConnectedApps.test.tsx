@@ -8,7 +8,8 @@ import {
   useRevokeMemberConnectedApp,
 } from '@/api/connect';
 import { useAuthStore } from '@/auth/store';
-import { makeUser } from '@/test/fixtures';
+import { setAuthed } from '@/test/auth';
+import { makeUserWithPermissions } from '@/test/fixtures';
 
 import { MemberConnectedApps } from './MemberConnectedApps';
 
@@ -27,10 +28,7 @@ const claude: ConnectedApp = {
 };
 
 function setViewer(permissions: string[]) {
-  useAuthStore.setState({
-    status: 'authed',
-    user: makeUser({ roles: [{ id: 'r1', name: 'vetter', isDefault: false, permissions }] }),
-  });
+  setAuthed(makeUserWithPermissions(permissions));
 }
 
 describe('MemberConnectedApps', () => {

@@ -6,12 +6,12 @@ from uuid import UUID
 
 import anyio
 import anyio.lowlevel
-from community._survey_schemas import SurveyPatchIn
-from community._surveys import create_survey as create_survey_view
-from community._surveys import create_survey_question as create_question_view
-from community._surveys import delete_survey as delete_survey_view
-from community._surveys import get_survey_admin as get_survey_view
-from community._surveys import update_survey as update_survey_view
+from community.surveys.crud import create_survey as create_survey_view
+from community.surveys.crud import create_survey_question as create_question_view
+from community.surveys.crud import delete_survey as delete_survey_view
+from community.surveys.crud import get_survey_admin as get_survey_view
+from community.surveys.crud import update_survey as update_survey_view
+from community.surveys.schemas import SurveyPatchIn
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 from users.models import User
@@ -19,7 +19,13 @@ from users.permissions import PermissionKey
 
 from mcp_gateway.confirm import Confirmed, ConfirmToken, issue_confirm_token, use_confirm_token
 from mcp_gateway.server import BASE_URL, current_user, pda_tool
-from mcp_gateway.survey_fields import SurveyQuestions, SurveySettings, to_question_in, to_survey_in
+from mcp_gateway.survey_fields import (
+    SurveyQuestions,
+    SurveySettings,
+    feedback_emails,
+    to_question_in,
+    to_survey_in,
+)
 from mcp_gateway.tools.surveys_read import survey_detail
 from mcp_gateway.view_calls import call_view
 
@@ -99,8 +105,7 @@ def _publish_notes(feedback_event_type: str) -> list[str]:
         return []
     return [
         f"this is the feedback survey for {feedback_event_type} events: switching it on starts "
-        f"the daily feedback emails, asking members who attended a {feedback_event_type} event in "
-        "the past week to fill it in, with a reminder 3 days later"
+        + feedback_emails(feedback_event_type)
     ]
 
 

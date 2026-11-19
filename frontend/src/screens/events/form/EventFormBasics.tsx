@@ -17,7 +17,6 @@ interface Props {
   errors: Partial<Record<keyof EventFormValues, string>>;
   canTagOfficial: boolean;
   canTagClub: boolean;
-  showWalkToggle?: boolean;
   timeLocked?: boolean;
   existingEventId?: string | undefined;
   existingHasPoll?: boolean;
@@ -31,7 +30,6 @@ export function EventFormBasics({
   errors,
   canTagOfficial,
   canTagClub,
-  showWalkToggle = false,
   timeLocked = false,
   existingEventId,
   existingHasPoll = false,
@@ -72,7 +70,6 @@ export function EventFormBasics({
         onChange={onChange}
         canTagOfficial={canTagOfficial}
         canTagClub={canTagClub}
-        showWalkToggle={showWalkToggle}
       />
 
       {timeLocked ? (

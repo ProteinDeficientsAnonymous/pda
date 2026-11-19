@@ -2,7 +2,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from community._checkin_nudge import send_due_checkin_nudges
+from community.scheduled.checkin_nudge import send_due_checkin_nudges
 
 logger = logging.getLogger(__name__)
 

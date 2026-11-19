@@ -2,7 +2,7 @@
 
 POST /api/community/public/events/{event_id}/rsvp/ — no auth. Backs each RSVP
 with a non-member User row so the existing RSVP machinery is reused, issues a
-scoped NonMemberRsvpToken, and emails a confirmation with a /my-rsvps magic link.
+scoped PublicRsvpToken, and emails a confirmation with a /my-rsvps magic link.
 
 Capacity / waitlist / robustness cases live in test_public_rsvp_capacity.py.
 """
@@ -11,7 +11,6 @@ import uuid
 from unittest.mock import patch
 
 import pytest
-from community._validation import Code
 from community.models import (
     EventComment,
     EventRSVP,
@@ -22,18 +21,20 @@ from community.models import (
     RsvpQuestionType,
     RSVPStatus,
 )
+from community.validation import Code
 from notifications.models import Notification, NotificationType
-from users.models import NonMemberRsvpToken, User
+from users.models import MEMBER_STATUSES, MembershipStatus, PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import (
     URL_TEMPLATE,
     first_code,
-    make_non_member,
     make_official_event,
+    make_public_rsvper,
     payload,
     post,
 )
-from tests.conftest import future_iso, past_iso
+from tests._time import future_iso, past_iso
+from tests._users import make_user
 
 
 @pytest.fixture
@@ -64,7 +65,7 @@ class TestPublicRsvpHappyPath:
         assert user.full_name == "Sam Green"
         assert not user.has_usable_password()
         assert EventRSVP.objects.filter(event=official_event, user=user).count() == 1
-        assert NonMemberRsvpToken.objects.filter(user=user).count() == 1
+        assert PublicRsvpToken.objects.filter(user=user).count() == 1
 
         fake_email_sender.send.assert_called_once()
         sent = fake_email_sender.send.call_args.kwargs
@@ -72,11 +73,11 @@ class TestPublicRsvpHappyPath:
         assert "you're in" in sent["subject"]
         assert "hi sam —" in sent["text"]
         assert "green" not in sent["text"]
-        token = NonMemberRsvpToken.objects.get(user=user)
+        token = PublicRsvpToken.objects.get(user=user)
         assert token.token in sent["text"]
 
     def test_broadcasts_event_update(self, api_client, official_event, fake_email_sender):
-        with patch("community._public_rsvp_submit.broadcast_capacity_change") as mock_broadcast:
+        with patch("community.rsvps.public_submit.broadcast_capacity_change") as mock_broadcast:
             post(api_client, official_event)
         mock_broadcast.assert_called_once()
         assert mock_broadcast.call_args.args[0] == official_event.id
@@ -104,7 +105,7 @@ class TestPublicRsvpHappyPath:
 @pytest.mark.django_db
 class TestPublicRsvpDedup:
     def test_returning_by_phone_reuses_row(self, api_client, official_event, fake_email_sender):
-        existing = make_non_member("+14155550123", "old@example.com")
+        existing = make_public_rsvper("+14155550123", "old@example.com")
 
         response = post(api_client, official_event, email="new@example.com")
 
@@ -114,10 +115,10 @@ class TestPublicRsvpDedup:
         existing.refresh_from_db()
         # Email already set → never overwritten.
         assert existing.email == "old@example.com"
-        assert NonMemberRsvpToken.objects.filter(user=existing).count() == 1
+        assert PublicRsvpToken.objects.filter(user=existing).count() == 1
 
     def test_email_match_alone_is_not_adopted(self, api_client, official_event, fake_email_sender):
-        existing = make_non_member("+14155550999", "sam@example.com")
+        existing = make_public_rsvper("+14155550999", "sam@example.com")
 
         response = post(api_client, official_event, phone_number="+14155550123")
 
@@ -127,21 +128,21 @@ class TestPublicRsvpDedup:
         assert not EventRSVP.objects.filter(user=existing).exists()
 
     def test_both_match_same_row_no_change(self, api_client, official_event, fake_email_sender):
-        existing = make_non_member("+14155550123", "sam@example.com")
+        existing = make_public_rsvper("+14155550123", "sam@example.com")
 
         response = post(api_client, official_event)
 
         assert response.status_code == 200
         assert response.json()["rsvp_token"] == ""
-        assert User.objects.filter(is_member=False).count() == 1
+        assert User.objects.exclude(membership_status__in=MEMBER_STATUSES).count() == 1
         existing.refresh_from_db()
         assert existing.email == "sam@example.com"
 
     def test_phone_and_email_match_different_rows_is_email_collision(
         self, api_client, official_event, fake_email_sender
     ):
-        phone_row = make_non_member("+14155550123", "phone@example.com", name="Phone Row")
-        email_row = make_non_member("+14155550888", "sam@example.com", name="Email Row")
+        phone_row = make_public_rsvper("+14155550123", "phone@example.com", name="Phone Row")
+        email_row = make_public_rsvper("+14155550888", "sam@example.com", name="Email Row")
 
         response = post(api_client, official_event)
 
@@ -168,22 +169,31 @@ class TestPublicRsvpDedup:
             title="Second Official", start_datetime=future_iso(days=20)
         )
         post(api_client, official_event)
-        first_token = NonMemberRsvpToken.objects.get(user__phone_number="+14155550123").token
+        first_token = PublicRsvpToken.objects.get(user__phone_number="+14155550123").token
         post(api_client, other_event)
 
         user = User.objects.get(phone_number="+14155550123")
         assert EventRSVP.objects.filter(user=user).count() == 2
-        tokens = NonMemberRsvpToken.objects.filter(user=user)
+        tokens = PublicRsvpToken.objects.filter(user=user)
         assert tokens.count() == 1
         assert tokens.first().token == first_token
 
 
 @pytest.mark.django_db
 class TestPublicRsvpMemberCollision:
-    def test_phone_belongs_to_member(self, api_client, official_event, fake_email_sender):
-        User.objects.create_user(
-            phone_number="+14155550123", first_name="A", last_name="Member", is_member=True
-        )
+    @pytest.mark.parametrize(
+        "status",
+        [
+            MembershipStatus.ACTIVE_MEMBER,
+            MembershipStatus.GUIDELINES_PAUSED,
+            MembershipStatus.ATTENDANCE_PAUSED,
+            MembershipStatus.TENTATIVE,
+        ],
+    )
+    def test_phone_that_can_sign_in_must_sign_in(
+        self, api_client, official_event, fake_email_sender, status
+    ):
+        make_user(phone_number="+14155550123", membership_status=status)
 
         response = post(api_client, official_event)
 
@@ -198,7 +208,7 @@ class TestPublicRsvpMemberCollision:
             first_name="A",
             last_name="Member",
             email="sam@example.com",
-            is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         response = post(api_client, official_event)
@@ -216,7 +226,7 @@ class TestPublicRsvpMemberCollision:
             first_name="A",
             last_name="Member",
             email="Sam@Example.COM",
-            is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         response = post(api_client, official_event, email="sam@example.com")
@@ -229,7 +239,10 @@ class TestPublicRsvpMemberCollision:
         self, api_client, official_event, fake_email_sender
     ):
         User.objects.create_user(
-            phone_number="(415) 555-0123", first_name="A", last_name="Member", is_member=True
+            phone_number="(415) 555-0123",
+            first_name="A",
+            last_name="Member",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         response = post(api_client, official_event, email="different@example.com")
@@ -360,7 +373,7 @@ class TestPublicRsvpHoneypot:
         assert body["rsvp"]["has_plus_one"] is False
         assert not User.objects.filter(phone_number="+14155550123").exists()
         assert not EventRSVP.objects.exists()
-        assert not NonMemberRsvpToken.objects.exists()
+        assert not PublicRsvpToken.objects.exists()
         fake_email_sender.send.assert_not_called()
 
 
@@ -388,7 +401,7 @@ class TestPublicRsvpToken:
         assert isinstance(body["rsvp_token"], str)
         assert len(body["rsvp_token"]) > 20  # secrets.token_urlsafe(32) output
 
-        assert NonMemberRsvpToken.objects.filter(token=body["rsvp_token"]).exists()
+        assert PublicRsvpToken.objects.filter(token=body["rsvp_token"]).exists()
 
 
 @pytest.mark.django_db

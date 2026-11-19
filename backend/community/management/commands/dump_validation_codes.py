@@ -1,6 +1,6 @@
 """Dump the Code catalog to a JSON file for frontend codegen.
 
-Reads ``community/_validation.py`` via AST (not import) so we can pick up the
+Reads ``community/validation.py`` via AST (not import) so we can pick up the
 ``# params: { ... }`` annotations that sit next to each code constant, then
 writes ``community/validation_codes.json``. The frontend generator consumes
 that file to produce ``validationCodes.gen.ts``.
@@ -15,7 +15,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
-VALIDATION_MODULE = Path(__file__).resolve().parents[2] / "_validation.py"
+VALIDATION_MODULE = Path(__file__).resolve().parents[2] / "validation.py"
 OUTPUT_PATH = Path(__file__).resolve().parents[2] / "validation_codes.json"
 
 _PARAMS_COMMENT_RE = re.compile(r"#\s*params:\s*(\{[^}]*\})")
@@ -48,7 +48,7 @@ class Command(BaseCommand):
 
 
 def _extract_catalog(module_path: Path) -> dict:
-    """Parse _validation.py and return ``{domain: [{name, value, params}]}``.
+    """Parse validation.py and return ``{domain: [{name, value, params}]}``.
 
     AST parsing (rather than import + introspection) lets us capture the
     trailing ``# params: { ... }`` comments, which encode what keys the FE
@@ -60,7 +60,7 @@ def _extract_catalog(module_path: Path) -> dict:
 
     code_class = _find_class(tree, "Code")
     if code_class is None:
-        raise RuntimeError("Code class not found in _validation.py")
+        raise RuntimeError("Code class not found in validation.py")
 
     domains: dict[str, list[dict]] = {}
     for domain_node in code_class.body:

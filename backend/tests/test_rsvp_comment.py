@@ -1,25 +1,17 @@
 from unittest.mock import patch
 
 import pytest
-from community.models import Event, EventComment, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
+from community.models import EventComment, RSVPStatus
 from notifications.models import Notification, NotificationType
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._auth import auth_headers_for
+from tests._events import make_event
 
 
 @pytest.fixture
 def rsvp_event(db, test_user):
-    return Event.objects.create(
-        title="RSVP Event",
-        description="An event with RSVPs enabled",
-        start_datetime=future_iso(days=30),
-        end_datetime=future_iso(days=30, hours=2),
-        location="Community Space",
-        rsvp_enabled=True,
-        created_by=test_user,
-    )
+    return make_event(title="RSVP Event", rsvp_enabled=True, created_by=test_user)
 
 
 @pytest.fixture
@@ -31,8 +23,7 @@ def member(db):
 
 @pytest.fixture
 def member_headers(member):
-    refresh = RefreshToken.for_user(member)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(member)
 
 
 def _rsvp(api_client, headers, event, status, comment=None):
@@ -116,7 +107,7 @@ class TestRSVPCommentRouting:
     def test_going_comment_broadcasts_live_update(
         self, api_client, member_headers, member, rsvp_event
     ):
-        with patch("community._event_rsvps.broadcast_event_comment_update") as mock_broadcast:
+        with patch("community.rsvps.member.broadcast_event_comment_update") as mock_broadcast:
             resp = _rsvp(
                 api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "bringing snacks"
             )
@@ -126,7 +117,7 @@ class TestRSVPCommentRouting:
     def test_comment_post_failure_does_not_fail_the_rsvp(
         self, api_client, member_headers, member, rsvp_event
     ):
-        with patch("community._event_rsvps.notify_event_comment", side_effect=RuntimeError("boom")):
+        with patch("community.rsvps.member.notify_event_comment", side_effect=RuntimeError("boom")):
             resp = _rsvp(
                 api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "bringing snacks"
             )

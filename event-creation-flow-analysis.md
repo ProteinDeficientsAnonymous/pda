@@ -45,7 +45,7 @@ No other entry points exist (no FAB, no day-tap, no long-press, no keyboard shor
 | Co-hosts | No | empty | |
 | Invited members | No | empty | |
 
-Backend required fields: `title` + `start_datetime` only (`community/_event_schemas.py:83-103`).
+Backend required fields: `title` + `start_datetime` only (`community/events/schemas.py:83-103`).
 
 ## Submission Flow
 

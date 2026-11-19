@@ -1,30 +1,21 @@
 import pytest
 from community.models import Event, EventType
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
+
+from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 @pytest.fixture
 def club_event_user(db):
     """A user with tag_club_event permission."""
-    user = User.objects.create_user(
-        phone_number="+14155558888",
-        password="clubpass123",
-        first_name="Club",
-        last_name="Tagger",
-    )
-    role = Role.objects.create(name="club_tagger", permissions=[PermissionKey.TAG_CLUB_EVENT])
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.TAG_CLUB_EVENT)
 
 
 @pytest.fixture
 def club_event_headers(club_event_user):
-    refresh = RefreshToken.for_user(club_event_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(club_event_user)
 
 
 class TestClubEventVisibility:

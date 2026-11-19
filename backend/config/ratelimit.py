@@ -1,7 +1,7 @@
 import inspect
 from functools import wraps
 
-from community._validation import Code, raise_validation
+from community.validation import Code, raise_validation
 from django.conf import settings
 from django.core.cache import caches
 

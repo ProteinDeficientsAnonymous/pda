@@ -3,6 +3,8 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { setStoredRsvpToken } from '@/api/rsvpTokenStorage';
+import { MembershipStatus } from '@/models/user';
+import { setAuthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
 
 import { RequireAuth, RequireMember } from './guards';
@@ -33,21 +35,13 @@ describe('RequireMember', () => {
   });
 
   it('lets a full member through', () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: makeUser({ isMember: true }),
-      accessToken: 'tok',
-    });
+    setAuthed(makeUser({ isMember: true }));
     renderGuard();
     expect(screen.getByText('directory contents')).toBeInTheDocument();
   });
 
   it('explains the gate to a tentatively-approved user instead of redirecting', () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: makeUser({ isMember: false }),
-      accessToken: 'tok',
-    });
+    setAuthed(makeUser({ isMember: false, membershipStatus: MembershipStatus.Tentative }));
     renderGuard();
 
     expect(screen.queryByText('directory contents')).toBeNull();
@@ -56,6 +50,21 @@ describe('RequireMember', () => {
       screen.getByText(/come in person before we make you a full member/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/see the member list/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /see what.s coming up/i })).toBeInTheDocument();
+    expect(screen.queryByText(/your membership is paused/i)).toBeNull();
+  });
+
+  it('explains the attendance rule to an attendance-paused member', () => {
+    setAuthed(makeUser({ membershipStatus: MembershipStatus.AttendancePaused }));
+    renderGuard();
+
+    expect(screen.queryByText('directory contents')).toBeNull();
+    expect(
+      screen.getByText(
+        /your membership is paused .* 2 official or club events in the last 12 months, .* see the member list/i,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/come in person before we make you a full member/i)).toBeNull();
     expect(screen.getByRole('link', { name: /see what.s coming up/i })).toBeInTheDocument();
   });
 
@@ -116,7 +125,7 @@ describe('RequireAuth join notice', () => {
 
   it('renders the outlet when authed even with an rsvp token', () => {
     setStoredRsvpToken('rsvp-tok');
-    useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok' });
+    setAuthed(makeUser());
     renderAuth();
     expect(screen.getByText('profile contents')).toBeInTheDocument();
   });

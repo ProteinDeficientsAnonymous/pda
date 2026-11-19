@@ -1,0 +1,80 @@
+import logging
+from datetime import datetime
+
+from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.auth import gated_jwt
+from ninja import Router
+from ninja.responses import Status
+from pydantic import BaseModel, Field
+from users.permissions import PermissionKey
+
+from community.field_limits import FieldLimit
+from community.models import TentativeApprovalMessageTemplate
+from community.shared import ErrorOut
+from community.validation import Code, raise_validation, validate_template_body
+
+router = Router()
+
+
+class TentativeApprovalMessageOut(BaseModel):
+    body: str
+    updated_at: datetime
+
+
+class TentativeApprovalMessagePatchIn(BaseModel):
+    body: str | None = Field(default=None)
+
+
+def _out(obj: TentativeApprovalMessageTemplate) -> TentativeApprovalMessageOut:
+    return TentativeApprovalMessageOut(body=obj.body, updated_at=obj.updated_at)
+
+
+@router.get(
+    "/tentative-approval-message/",
+    response={200: TentativeApprovalMessageOut},
+    auth=gated_jwt,
+)
+def get_tentative_approval_message(request):
+    return Status(200, _out(TentativeApprovalMessageTemplate.get()))
+
+
+@router.patch(
+    "/tentative-approval-message/",
+    response={200: TentativeApprovalMessageOut, 403: ErrorOut, 422: ErrorOut},
+    auth=gated_jwt,
+)
+def update_tentative_approval_message(request, payload: TentativeApprovalMessagePatchIn):
+    if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "update_tentative_approval_message",
+                    "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+                }
+            ),
+        )
+        raise_validation(
+            Code.Perm.DENIED, status_code=403, action="edit_tentative_approval_message"
+        )
+
+    validate_template_body(
+        payload.body,
+        required_code=Code.TentativeApprovalMessage.BODY_REQUIRED,
+        too_long_code=Code.TentativeApprovalMessage.BODY_TOO_LONG,
+        max_length=FieldLimit.TENTATIVE_APPROVAL_MESSAGE,
+    )
+
+    template = TentativeApprovalMessageTemplate.get()
+    template.body = payload.body
+    template.save()
+    audit_log(
+        logging.INFO,
+        "tentative_approval_message_updated",
+        request,
+        target=AuditTarget(type=AuditTargetType.TENTATIVE_APPROVAL_MESSAGE),
+    )
+    return Status(200, _out(template))

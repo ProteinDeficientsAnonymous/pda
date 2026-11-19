@@ -83,6 +83,40 @@ describe('EventRsvpResponsesSection', () => {
     expect(tallies).not.toHaveTextContent(/bike/);
   });
 
+  it('tallies and renders checkbox list answers', () => {
+    const event = makeEvent({
+      rsvpQuestions: [
+        {
+          id: 'q1',
+          label: 'bringing',
+          fieldType: QuestionType.Checkbox,
+          options: ['mains, sides', 'desserts'],
+          required: false,
+        },
+      ],
+      guests: [
+        makeGuest({
+          userId: 'a',
+          name: 'alice',
+          status: RsvpServerStatus.Attending,
+          questionnaireResponses: {
+            q1: { label: 'bringing', answer: ['mains, sides', 'desserts'] },
+          },
+        }),
+      ],
+    });
+
+    render(<EventRsvpResponsesSection event={event} />);
+
+    expect(screen.getByRole('cell', { name: /mains, sides/ })).toHaveTextContent(
+      /^mains, sides\ndesserts$/,
+      { normalizeWhitespace: false },
+    );
+    const tallies = screen.getByRole('list');
+    expect(tallies).toHaveTextContent(/mains, sides\s*1/);
+    expect(tallies).toHaveTextContent(/desserts\s*1/);
+  });
+
   it('shows empty state when no going or waitlisted guests', () => {
     render(
       <EventRsvpResponsesSection

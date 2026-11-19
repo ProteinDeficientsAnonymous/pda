@@ -1,37 +1,35 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
 import { getStoredSurveyToken, setStoredSurveyToken } from '@/api/surveyTokenStorage';
+import { makeQueryClient, renderWithProviders } from '@/test/render';
 
 import SurveyScreen from './SurveyScreen';
 import SurveyThanksScreen from './SurveyThanksScreen';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn(), put: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
+vi.mock('@/api/client');
+
+const toastError = vi.fn();
+vi.mock('sonner', () => ({
+  toast: {
+    error: (m: string, opts?: { id?: string }) => {
+      toastError(m, opts);
+    },
+  },
 }));
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
 
-function makeQueryClient() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 function renderScreen(slug = 'feedback', qc = makeQueryClient()) {
-  render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[`/surveys/${slug}`]}>
-        <Routes>
-          <Route path="/surveys/:slug" element={<SurveyScreen />} />
-          <Route path="/surveys/:slug/thanks" element={<SurveyThanksScreen />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  renderWithProviders(
+    <Routes>
+      <Route path="/surveys/:slug" element={<SurveyScreen />} />
+      <Route path="/surveys/:slug/thanks" element={<SurveyThanksScreen />} />
+    </Routes>,
+    { route: `/surveys/${slug}`, qc },
   );
 }
 
@@ -46,7 +44,6 @@ const baseWireSurvey = {
   ],
   my_response_id: null,
   my_answers: null,
-  poll_result: null,
 };
 
 beforeEach(() => {
@@ -55,13 +52,20 @@ beforeEach(() => {
 
 describe('SurveyScreen', () => {
   it('shows a required error and blocks submit when a required question is empty', async () => {
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
     mockedGet.mockResolvedValueOnce({ data: baseWireSurvey });
     renderScreen();
 
     fireEvent.click(await screen.findByRole('button', { name: 'submit' }));
 
     expect(await screen.findByText('required', { selector: 'p' })).toBeInTheDocument();
+    expect(toastError).toHaveBeenCalledWith('answer the required questions before submitting', {
+      id: 'survey-required',
+    });
+    expect(scroll).toHaveBeenCalled();
+    expect(screen.getByLabelText('thoughts · required')).toHaveFocus();
     expect(mockedPost).not.toHaveBeenCalled();
+    scroll.mockRestore();
   });
 
   it('submits answers for a first-time response', async () => {
@@ -102,6 +106,25 @@ describe('SurveyScreen', () => {
       },
     });
     renderScreen();
+
+    expect(await screen.findByRole('button', { name: 'update response' })).toBeInTheDocument();
+    expect(screen.getByLabelText('thoughts · required')).toHaveValue('previous answer');
+  });
+
+  it('loads the answer when the response arrives after the form mounted from a stale cache', async () => {
+    mockedGet.mockResolvedValueOnce({ data: baseWireSurvey });
+    mockedGet.mockResolvedValueOnce({
+      data: {
+        ...baseWireSurvey,
+        my_response_id: 'resp-1',
+        my_answers: { q1: { label: 'thoughts', answer: 'previous answer' } },
+      },
+    });
+    const qc = makeQueryClient();
+    renderScreen('feedback', qc);
+    await screen.findByRole('button', { name: 'submit' });
+
+    await qc.invalidateQueries({ queryKey: ['survey', 'feedback'] });
 
     expect(await screen.findByRole('button', { name: 'update response' })).toBeInTheDocument();
     expect(screen.getByLabelText('thoughts · required')).toHaveValue('previous answer');
@@ -162,25 +185,6 @@ describe('SurveyScreen', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
-  it('keeps the finalized-poll view for an inactive survey with a poll result', async () => {
-    mockedGet.mockResolvedValueOnce({
-      data: {
-        ...baseWireSurvey,
-        is_active: false,
-        poll_result: {
-          id: 'r1',
-          winning_datetime: '2030-01-01T10:00:00Z',
-          finalized_by_id: null,
-          finalized_at: '2029-12-01T10:00:00Z',
-        },
-      },
-    });
-    renderScreen();
-
-    expect(await screen.findByText(/this poll has been finalized/)).toBeInTheDocument();
-    expect(screen.queryByText(/this survey is closed/)).not.toBeInTheDocument();
-  });
-
   it('refetches the survey when a submit is rejected because it closed', async () => {
     mockedGet.mockResolvedValue({ data: baseWireSurvey });
     mockedPost.mockRejectedValueOnce({
@@ -203,10 +207,14 @@ describe('SurveyScreen', () => {
 });
 
 describe('SurveyScreen post-submit confirmation', () => {
-  async function submitWith(confirmationMessage: string) {
-    mockedGet.mockResolvedValue({
-      data: { ...baseWireSurvey, confirmation_message: confirmationMessage },
-    });
+  async function submitWith(
+    confirmationMessage: string,
+    savedResponseId: string | null = 'resp-1',
+  ) {
+    const survey = { ...baseWireSurvey, confirmation_message: confirmationMessage };
+    mockedGet
+      .mockResolvedValueOnce({ data: survey })
+      .mockResolvedValue({ data: { ...survey, my_response_id: savedResponseId } });
     mockedPost.mockResolvedValueOnce({
       data: {
         id: 'resp-1',
@@ -229,10 +237,17 @@ describe('SurveyScreen post-submit confirmation', () => {
       await screen.findByRole('heading', { name: 'thanks for your feedback!' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'submit' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'edit your response' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: 'edit your response' })).toHaveAttribute(
       'href',
       '/surveys/feedback',
     );
+    expect(screen.getByRole('link', { name: 'back to home' })).toHaveAttribute('href', '/');
+  });
+
+  it('hides the edit link when the response cannot be found again', async () => {
+    await submitWith('thanks!', null);
+    expect(await screen.findByRole('heading', { name: 'thanks!' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'edit your response' })).not.toBeInTheDocument();
   });
 
   it('falls back to the default thank-you message when none is set', async () => {
@@ -284,6 +299,64 @@ describe('SurveyScreen post-submit confirmation', () => {
   });
 });
 
+describe('SurveyScreen multi-response survey', () => {
+  const answeredSurvey = {
+    ...baseWireSurvey,
+    one_response_per_user: false,
+    my_response_id: 'resp-1',
+    my_answers: { q1: { label: 'thoughts', answer: 'previous answer' } },
+  };
+  const submitted = {
+    data: { id: 'resp-2', user_id: 'u1', user_name: 'x', answers: {}, submitted_at: '2026-01-01' },
+  };
+
+  it('updates the loaded response instead of adding a new one', async () => {
+    mockedGet.mockResolvedValue({ data: answeredSurvey });
+    mockedPost.mockResolvedValueOnce(submitted);
+    renderScreen();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'update response' }));
+
+    await waitFor(() => {
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/api/community/surveys/view/feedback/respond/',
+        { answers: { q1: 'previous answer' } },
+        { params: { response_id: 'resp-1' } },
+      );
+    });
+  });
+
+  it('starts a blank response that is submitted as a new one', async () => {
+    mockedGet.mockResolvedValue({ data: answeredSurvey });
+    mockedPost.mockResolvedValueOnce(submitted);
+    renderScreen();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'submit another response' }));
+    const field = screen.getByLabelText('thoughts · required');
+    expect(field).toHaveValue('');
+    fireEvent.change(field, { target: { value: 'second take' } });
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/api/community/surveys/view/feedback/respond/',
+        { answers: { q1: 'second take' } },
+        { params: undefined },
+      );
+    });
+  });
+
+  it('hides submit-another on a one-response-per-person survey', async () => {
+    mockedGet.mockResolvedValueOnce({ data: { ...answeredSurvey, one_response_per_user: true } });
+    renderScreen();
+
+    expect(await screen.findByRole('button', { name: 'update response' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'submit another response' }),
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe('SurveyScreen anonymous response token', () => {
   const respondedSurvey = {
     ...baseWireSurvey,
@@ -317,7 +390,7 @@ describe('SurveyScreen anonymous response token', () => {
       expect(mockedPost).toHaveBeenCalledWith(
         '/api/community/surveys/view/feedback/respond/',
         { answers: { q1: 'previous answer' } },
-        { params: { response_token: 'tok-1' } },
+        { params: { response_token: 'tok-1', response_id: 'resp-1' } },
       );
     });
     expect(mockedGet).toHaveBeenCalledWith('/api/community/surveys/view/feedback/', {

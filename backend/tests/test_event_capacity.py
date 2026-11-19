@@ -4,71 +4,57 @@ import json
 from datetime import timedelta
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventRSVP, RSVPStatus
+from community.validation import Code
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
 
-from tests.conftest import future_iso
+from tests._auth import auth_headers_for
+from tests._time import future_iso
+from tests._users import make_user
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
 
-def _make_user(phone, name):
-    return User.objects.create_user(
-        phone_number=phone,
-        password="Testpass123!",
-        first_name=name,
-        last_name="",
-    )
-
-
-def _jwt_headers(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
-
-
 @pytest.fixture
 def user1(db):
-    return _make_user("+14155559001", "User One")
+    return make_user(first_name="User One")
 
 
 @pytest.fixture
 def user2(db):
-    return _make_user("+14155559002", "User Two")
+    return make_user(first_name="User Two")
 
 
 @pytest.fixture
 def user3(db):
-    return _make_user("+14155559003", "User Three")
+    return make_user(first_name="User Three")
 
 
 @pytest.fixture
 def user4(db):
-    return _make_user("+14155559004", "User Four")
+    return make_user(first_name="User Four")
 
 
 @pytest.fixture
 def headers1(user1):
-    return _jwt_headers(user1)
+    return auth_headers_for(user1)
 
 
 @pytest.fixture
 def headers2(user2):
-    return _jwt_headers(user2)
+    return auth_headers_for(user2)
 
 
 @pytest.fixture
 def headers3(user3):
-    return _jwt_headers(user3)
+    return auth_headers_for(user3)
 
 
 @pytest.fixture
 def headers4(user4):
-    return _jwt_headers(user4)
+    return auth_headers_for(user4)
 
 
 @pytest.fixture
@@ -156,7 +142,7 @@ class TestEventCapacity:
         assert resp.status_code == 400
         assert resp.json()["detail"][0]["code"] == "event.no_plus_one_spots"
 
-    def test_waitlisted_keeps_plus_one(  # noqa: PLR0913
+    def test_waitlisted_keeps_plus_one(
         self, api_client, capped_event, user3, headers1, headers2, headers3
     ):
         _rsvp(api_client, capped_event, headers1)
@@ -194,7 +180,7 @@ class TestCapacityCounts:
         assert resp.status_code == 200
         assert resp.json()["attending_count"] == 2  # 1 person + 1 guest
 
-    def test_waitlisted_count_in_detail(  # noqa: PLR0913
+    def test_waitlisted_count_in_detail(
         self, api_client, capped_event, headers1, headers2, headers3, auth_headers
     ):
         _rsvp(api_client, capped_event, headers1)
@@ -204,7 +190,7 @@ class TestCapacityCounts:
         assert resp.status_code == 200
         assert resp.json()["waitlisted_count"] == 1
 
-    def test_waitlisted_count_includes_plus_ones(  # noqa: PLR0913
+    def test_waitlisted_count_includes_plus_ones(
         self, api_client, capped_event, headers1, headers2, headers3, auth_headers
     ):
         _rsvp(api_client, capped_event, headers1)

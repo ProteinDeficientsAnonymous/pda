@@ -23,7 +23,7 @@ There is a third event type, **community** (`EventType.COMMUNITY`) — see optio
 `EventRSVP` has BOTH a time dimension (event start/end vs now) AND an explicit
 `attendance` field (`AttendanceStatus`: unknown / attended / no_show) that a host marks
 after check-in closes. The codebase already has `_is_attended` =
-`status==ATTENDING AND attendance==ATTENDED` (backend/community/_rsvp_counts.py).
+`status==ATTENDING AND attendance==ATTENDED` (backend/community/rsvps/counts.py).
 
 ## Options
 

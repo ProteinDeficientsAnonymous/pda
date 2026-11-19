@@ -1,0 +1,145 @@
+"""Convert ProseMirror JSON (emitted by TipTap) to HTML for static rendering."""
+
+from __future__ import annotations
+
+import json
+from html import escape
+from typing import Any
+
+from community.speech.blanks import BLANKS
+
+
+def parse_prosemirror_doc(pm_json: str) -> dict | None:
+    """Parse a ProseMirror JSON string; empty, blank, or malformed input returns None."""
+    if not pm_json or not pm_json.strip():
+        return None
+    try:
+        doc = json.loads(pm_json)
+    except ValueError:
+        return None
+    if not isinstance(doc, dict) or doc.get("type") != "doc":
+        return None
+    return doc
+
+
+def prosemirror_to_html(pm_json: str) -> str:
+    """Convert a TipTap/ProseMirror JSON string to HTML.
+
+    Empty, blank, or malformed input returns "".
+    """
+    doc = parse_prosemirror_doc(pm_json)
+    return render_nodes(doc.get("content") or []) if doc else ""
+
+
+def render_nodes(nodes: list[Any]) -> str:
+    return "".join(_render_node(n) for n in nodes if isinstance(n, dict))
+
+
+def _text_align_attr(attrs: dict) -> str:
+    alignment = attrs.get("textAlign")
+    if alignment not in ("left", "center", "right"):
+        return ""
+    return f' style="text-align: {alignment}"'
+
+
+def _render_paragraph(content: list[Any], attrs: dict) -> str:
+    inner = _render_inline(content)
+    align = _text_align_attr(attrs)
+    if not inner:
+        return f"<p{align}><br></p>"
+    return f"<p{align}>{inner}</p>"
+
+
+def _render_heading(content: list[Any], attrs: dict) -> str:
+    level = attrs.get("level", 1)
+    if level not in (1, 2, 3):
+        level = 1
+    align = _text_align_attr(attrs)
+    return f"<h{level}{align}>{_render_inline(content)}</h{level}>"
+
+
+def _render_list_item(content: list[Any], _attrs: dict) -> str:
+    # A listItem's content is block nodes (usually one paragraph). Inline the
+    # paragraph's text into the <li> so HTML matches the Delta renderer.
+    if len(content) == 1 and isinstance(content[0], dict) and content[0].get("type") == "paragraph":
+        return f"<li>{_render_inline(content[0].get('content') or [])}</li>"
+    return f"<li>{render_nodes(content)}</li>"
+
+
+def _render_cta(_content: list[Any], attrs: dict) -> str:
+    href = escape(attrs.get("href") or "")
+    label = escape(attrs.get("label") or "")
+    variant = attrs.get("variant")
+    if variant not in ("primary", "secondary"):
+        variant = "primary"
+    anchor = (
+        f'<a class="cta cta--{variant}" href="{href}" '
+        f'target="_blank" rel="noopener noreferrer" role="button">{label}</a>'
+    )
+    align = _text_align_attr(attrs)
+    return f"<p{align}>{anchor}</p>"
+
+
+_BLOCK_RENDERERS = {
+    "paragraph": _render_paragraph,
+    "heading": _render_heading,
+    "bulletList": lambda c, _a: f"<ul>{render_nodes(c)}</ul>",
+    "orderedList": lambda c, _a: f"<ol>{render_nodes(c)}</ol>",
+    "listItem": _render_list_item,
+    "blockquote": lambda c, _a: f"<blockquote>{render_nodes(c)}</blockquote>",
+    "horizontalRule": lambda _c, _a: "<hr>",
+    "hardBreak": lambda _c, _a: "<br>",
+    "image": lambda _c, a: f'<img src="{escape(a.get("src", ""))}">',
+    "cta": _render_cta,
+}
+
+
+def _render_node(node: dict) -> str:
+    renderer = _BLOCK_RENDERERS.get(node.get("type", ""))
+    if renderer is None:
+        return ""
+    return renderer(node.get("content") or [], node.get("attrs") or {})
+
+
+def _render_inline_node(n: dict) -> str:
+    t = n.get("type")
+    if t == "text":
+        return _apply_marks(escape(n.get("text", "")), n.get("marks") or [])
+    if t == "hardBreak":
+        return "<br>"
+    if t == "image":
+        return f'<img src="{escape((n.get("attrs") or {}).get("src", ""))}">'
+    if t == "speechBlank":
+        return _render_speech_blank(n.get("attrs") or {})
+    return ""
+
+
+def _render_inline(nodes: list[Any]) -> str:
+    return "".join(_render_inline_node(n) for n in nodes if isinstance(n, dict))
+
+
+def _render_speech_blank(attrs: dict) -> str:
+    blank = BLANKS.get(attrs.get("key", ""))
+    if blank is None:
+        return ""
+    return f'<span class="speech-blank">{escape(blank.label)}</span>'
+
+
+def _apply_marks(chunk: str, marks: list[Any]) -> str:
+    # Order matches delta_html.py so the HTML output is identical for
+    # equivalent documents.
+    has = {m.get("type"): m for m in marks if isinstance(m, dict)}
+    if "bold" in has:
+        chunk = f"<strong>{chunk}</strong>"
+    if "italic" in has:
+        chunk = f"<em>{chunk}</em>"
+    if "underline" in has:
+        chunk = f"<u>{chunk}</u>"
+    if "strike" in has:
+        chunk = f"<s>{chunk}</s>"
+    if "code" in has:
+        chunk = f"<code>{chunk}</code>"
+    if "link" in has:
+        href = ((has["link"].get("attrs") or {}).get("href")) or ""
+        chunk = f'<a href="{escape(href)}">{chunk}</a>'
+    return chunk

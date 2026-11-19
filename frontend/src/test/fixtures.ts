@@ -1,6 +1,7 @@
 import type { EventAttendanceRow } from '@/api/attendanceReport';
 import type { JoinRequestSummary } from '@/api/join';
 import { JoinRequestStatus } from '@/api/join';
+import type { Assignment, PlannerColumn, PlanningGrid, PlanningSlot } from '@/api/planning';
 import type { Member } from '@/api/users';
 import type { Event, EventGuest } from '@/models/event';
 import {
@@ -13,7 +14,7 @@ import {
 } from '@/models/event';
 import type { AppNotification } from '@/models/notification';
 import { NotificationType } from '@/models/notification';
-import type { User } from '@/models/user';
+import { MembershipStatus, type User } from '@/models/user';
 
 export function makeGuest(overrides: Partial<EventGuest> = {}): EventGuest {
   return {
@@ -54,13 +55,13 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     rsvpEnabled: true,
     allowPlusOnes: false,
     maxAttendees: null,
+    rsvpDeadline: null,
     attendingCount: 1,
     waitlistedCount: 0,
     invitedCount: 0,
     guestRsvpCount: 1,
     datetimeTbd: false,
     hasPoll: false,
-    datetimePollSlug: null,
     createdById: 'creator',
     createdByName: 'Creator',
     createdByPhotoUrl: '',
@@ -81,7 +82,6 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     myQuestionnaireResponses: {},
     rsvpQuestions: [],
     viewerUserId: null,
-    linkedSurveys: [],
     invitedUserIds: [],
     invitedUserNames: [],
     invitedUserPhotoUrls: [],
@@ -89,6 +89,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     pendingCohostInvites: [],
     myPendingCohostInviteId: null,
     eventType: EventType.Community,
+    eventFormat: null,
     visibility: EventVisibility.Public,
     photoUrl: '',
     photoUpdatedAt: null,
@@ -125,6 +126,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     birthday: null,
     veganniversary: null,
     isMember: true,
+    membershipStatus: MembershipStatus.ActiveMember,
     isSuperuser: false,
     isStaff: false,
     needsOnboarding: false,
@@ -154,6 +156,61 @@ export function makeUser(overrides: Partial<User> = {}): User {
   };
 }
 
+export function makeUserWithPermissions(
+  permissions: string[],
+  overrides: Partial<User> = {},
+): User {
+  return makeUser({
+    ...overrides,
+    roles: [{ id: 'role-test', name: 'test', isDefault: false, permissions }],
+  });
+}
+
+export const creator = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
+export const nonHost = makeUser({ id: 'user-non-host', firstName: 'Casey', fullName: 'Casey' });
+
+export function makeSlot(overrides: Partial<PlanningSlot> = {}): PlanningSlot {
+  return {
+    id: 's1',
+    label: 'march',
+    month: 3,
+    kind: 'monthly',
+    order: 3,
+    eventId: null,
+    eventSlug: null,
+    eventStatus: null,
+    ...overrides,
+  };
+}
+
+export function makePlanner(overrides: Partial<PlannerColumn> = {}): PlannerColumn {
+  return {
+    userId: 'u1',
+    name: 'ada',
+    isPlanner: true,
+    hasEmail: true,
+    submitted: true,
+    biannualInterest: null,
+    monthlyCount: 1,
+    availableSlotIds: [],
+    ...overrides,
+  };
+}
+
+export function makeAssignment(overrides: Partial<Assignment> = {}): Assignment {
+  return { id: 'a1', slotId: 's1', userId: 'u1', status: 'draft', ...overrides };
+}
+
+export function makePlanningGrid(overrides: Partial<PlanningGrid> = {}): PlanningGrid {
+  return {
+    year: 2999,
+    slots: [makeSlot()],
+    planners: [makePlanner()],
+    assignments: [],
+    ...overrides,
+  };
+}
+
 export function makeMember(overrides: Partial<Member> = {}): Member {
   return {
     id: 'member-1',
@@ -167,8 +224,8 @@ export function makeMember(overrides: Partial<Member> = {}): Member {
     showPhone: true,
     showEmail: true,
     isMember: true,
+    membershipStatus: MembershipStatus.ActiveMember,
     isSuperuser: false,
-    isPaused: false,
     hasJoinedWhatsapp: false,
     needsOnboarding: false,
     loginLinkRequested: false,
@@ -191,13 +248,13 @@ export function makeRequest(overrides: Partial<JoinRequestSummary> = {}): JoinRe
     status: JoinRequestStatus.PENDING,
     userId: null,
     previouslyArchived: false,
+    previousArchive: null,
     previouslyRejected: false,
-    tentativeAt: null,
-    tentativeByName: null,
-    approvedAt: null,
-    approvedByName: null,
-    rejectedAt: null,
-    rejectedByName: null,
+    previousRejection: null,
+    statusChangedAt: null,
+    statusChangedByName: null,
+    approvedViaEventId: null,
+    approvedViaEventTitle: null,
     rejectionReason: null,
     rejectionNote: '',
     onboardedAt: null,

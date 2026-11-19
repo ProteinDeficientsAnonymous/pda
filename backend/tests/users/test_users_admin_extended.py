@@ -1,13 +1,12 @@
-"""Tests for user update, profile, delete, and magic link."""
-
 import logging
 
 import pytest
-from community._validation import Code
+from community.validation import Code
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from tests._asserts import assert_error_code
-from users.models import MagicLoginToken, User
+from tests._users import make_user
+from users.models import MagicLoginToken, MembershipStatus, User
 from users.roles import Role
 
 
@@ -59,13 +58,13 @@ class TestUpdateUser:
     def test_update_user_pause(self, api_client, manage_users_headers, other_user):
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"is_paused": True},
+            {"guidelines_paused": True},
             content_type="application/json",
             **manage_users_headers,
         )
         assert response.status_code == 200
         other_user.refresh_from_db()
-        assert other_user.is_paused is True
+        assert other_user.membership_status == MembershipStatus.GUIDELINES_PAUSED
 
     def test_update_user_has_joined_whatsapp(self, api_client, manage_users_headers, other_user):
         response = api_client.patch(
@@ -79,7 +78,7 @@ class TestUpdateUser:
         other_user.refresh_from_db()
         assert other_user.has_joined_whatsapp is True
 
-    def test_pause_strips_non_member_roles(
+    def test_pause_strips_elevated_roles(
         self, api_client, manage_users_headers, other_user, caplog
     ):
         member_role = Role.objects.get(name="member", is_default=True)
@@ -90,7 +89,7 @@ class TestUpdateUser:
             with caplog.at_level(logging.WARNING, logger="pda.audit"):
                 response = api_client.patch(
                     f"/api/auth/users/{other_user.pk}/",
-                    {"is_paused": True},
+                    {"guidelines_paused": True},
                     content_type="application/json",
                     **manage_users_headers,
                 )
@@ -101,7 +100,7 @@ class TestUpdateUser:
         assert role_names == {"member"}
         paused_logs = [r for r in caplog.records if getattr(r, "action", None) == "user_paused"]
         assert len(paused_logs) == 1
-        assert paused_logs[0].details == {"removed_role_ids": [str(extra_role.id)]}
+        assert paused_logs[0].details["removed_role_ids"] == [str(extra_role.id)]
 
     def test_pause_member_only_is_noop_for_roles(
         self, api_client, manage_users_headers, other_user, caplog
@@ -113,7 +112,7 @@ class TestUpdateUser:
             with caplog.at_level(logging.WARNING, logger="pda.audit"):
                 response = api_client.patch(
                     f"/api/auth/users/{other_user.pk}/",
-                    {"is_paused": True},
+                    {"guidelines_paused": True},
                     content_type="application/json",
                     **manage_users_headers,
                 )
@@ -124,24 +123,23 @@ class TestUpdateUser:
         assert role_names == {"member"}
         paused_logs = [r for r in caplog.records if getattr(r, "action", None) == "user_paused"]
         assert len(paused_logs) == 1
-        assert paused_logs[0].details == {"removed_role_ids": []}
+        assert paused_logs[0].details["removed_role_ids"] == []
 
     def test_unpause_does_not_restore_roles(self, api_client, manage_users_headers, other_user):
         member_role = Role.objects.get(name="member", is_default=True)
         extra_role = Role.objects.create(name="organizer")
         other_user.roles.add(member_role, extra_role)
-        other_user.is_paused = True
         other_user.roles.remove(extra_role)
-        other_user.save(update_fields=["is_paused"])
+        other_user.save(update_fields=other_user.apply_guidelines_pause(by=None))
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"is_paused": False},
+            {"guidelines_paused": False},
             content_type="application/json",
             **manage_users_headers,
         )
         assert response.status_code == 200
         other_user.refresh_from_db()
-        assert other_user.is_paused is False
+        assert other_user.membership_status != MembershipStatus.GUIDELINES_PAUSED
         role_names = set(other_user.roles.values_list("name", flat=True))
         assert role_names == {"member"}
 
@@ -162,50 +160,75 @@ class TestUpdateUser:
         )
         assert response.status_code == 403
 
-    def test_cannot_pause_own_account(self, api_client, manage_users_headers, manage_users_user):
+    @pytest.mark.parametrize("payload", [{"guidelines_paused": True}, {"attendance_paused": True}])
+    def test_cannot_pause_own_account(
+        self, api_client, manage_users_headers, manage_users_user, payload
+    ):
         response = api_client.patch(
             f"/api/auth/users/{manage_users_user.pk}/",
-            {"is_paused": True},
+            payload,
             content_type="application/json",
             **manage_users_headers,
         )
         assert response.status_code == 400
 
-    def test_cannot_pause_admin(self, api_client, manage_users_headers, other_user):
+    @pytest.mark.parametrize("payload", [{"guidelines_paused": True}, {"attendance_paused": True}])
+    def test_cannot_pause_admin(self, api_client, manage_users_headers, other_user, payload):
         admin_role = Role.objects.get(name="admin", is_default=True)
         other_user.roles.add(admin_role)
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"is_paused": True},
+            payload,
             content_type="application/json",
             **manage_users_headers,
         )
         assert response.status_code == 400
         assert_error_code(response, Code.User.CANNOT_PAUSE_ADMIN)
         other_user.refresh_from_db()
-        assert other_user.is_paused is False
+        assert other_user.membership_status != MembershipStatus.GUIDELINES_PAUSED
+        assert other_user.attendance_paused_at is None
 
     def test_admin_list_includes_paused_users(self, api_client, manage_users_headers, other_user):
-        other_user.is_paused = True
-        other_user.save(update_fields=["is_paused"])
+        other_user.save(update_fields=other_user.apply_guidelines_pause(by=None))
         response = api_client.get("/api/auth/users/", **manage_users_headers)
         assert response.status_code == 200
         ids = [u["id"] for u in response.json()]
         assert str(other_user.pk) in ids
 
     def test_admin_list_excludes_non_members(self, api_client, manage_users_headers, other_user):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
+        )
         response = api_client.get("/api/auth/users/", **manage_users_headers)
         assert response.status_code == 200
         ids = [u["id"] for u in response.json()]
         assert str(other_user.pk) not in ids
 
+    @pytest.mark.parametrize("archived", [False, True])
+    def test_admin_list_includes_attendance_paused_unless_archived(
+        self, api_client, manage_users_headers, other_user, archived
+    ):
+        other_user.attendance_paused_at = timezone.now()
+        other_user.archived_at = timezone.now() if archived else None
+        status = MembershipStatus.ARCHIVED if archived else MembershipStatus.ATTENDANCE_PAUSED
+        other_user.save(
+            update_fields=[
+                "attendance_paused_at",
+                "archived_at",
+                *other_user.set_membership_status(status, by=None),
+            ]
+        )
+        response = api_client.get("/api/auth/users/", **manage_users_headers)
+        assert response.status_code == 200
+        ids = [u["id"] for u in response.json()]
+        assert (str(other_user.pk) in ids) is not archived
+
     def test_admin_list_includes_non_members_when_opted_in(
         self, api_client, manage_users_headers, other_user
     ):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
+        )
         response = api_client.get(
             "/api/auth/users/?include_non_members=true", **manage_users_headers
         )
@@ -217,8 +240,9 @@ class TestUpdateUser:
     def test_admin_update_non_member_returns_404(
         self, api_client, manage_users_headers, other_user
     ):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
+        )
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
             {"first_name": "Renamed"},
@@ -231,14 +255,14 @@ class TestUpdateUser:
 @pytest.mark.django_db
 class TestMemberProfile:
     def test_member_profile_returns_404_for_paused_user(self, api_client, auth_headers, other_user):
-        other_user.is_paused = True
-        other_user.save(update_fields=["is_paused"])
+        other_user.save(update_fields=other_user.apply_guidelines_pause(by=None))
         response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
         assert response.status_code == 404
 
     def test_member_profile_returns_404_for_non_member(self, api_client, auth_headers, other_user):
-        other_user.is_member = False
-        other_user.save(update_fields=["is_member"])
+        other_user.save(
+            update_fields=other_user.set_membership_status(MembershipStatus.NONE, by=None)
+        )
         response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
         assert response.status_code == 404
 
@@ -414,7 +438,7 @@ class TestGenerateMagicLink:
         self, api_client, manage_users_headers, other_user
     ):
         """When admin generates the link, MAGIC_LINK_REQUEST notifications are marked read."""
-        approver = User.objects.create_user(phone_number="+12025557788", password="pass")
+        approver = make_user()
         Notification.objects.create(
             recipient=approver,
             notification_type=NotificationType.MAGIC_LINK_REQUEST,
@@ -464,13 +488,7 @@ class TestSearchUsersRespectsShowPhone:
         # A genuinely nameless member (e.g. pre-onboarding) must not leak the
         # private phone via the name fields — full_name stays empty rather than
         # falling back to the phone number.
-        nameless_user = User.objects.create_user(
-            phone_number="+12025550999",
-            password="namelesspass123",
-            first_name="",
-            last_name="",
-            show_phone=False,
-        )
+        nameless_user = make_user(first_name="", show_phone=False)
         response = api_client.get("/api/auth/users/search/?q=", **manage_users_headers)
         assert response.status_code == 200
         match = self._find(response, nameless_user.pk)

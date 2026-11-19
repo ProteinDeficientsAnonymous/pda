@@ -1,11 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEventStats } from '@/api/eventStats';
 import type { Event, EventStats } from '@/models/event';
 import { AttendanceStatus, RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { EventAttendancePanel } from './EventAttendancePanel';
 
@@ -62,16 +62,8 @@ const MIXED_RSVP_EVENT = makeEvent({
   ],
 });
 
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 function renderPanel(event: Event) {
-  return render(
-    <QueryClientProvider client={makeQc()}>
-      <EventAttendancePanel event={event} />
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<EventAttendancePanel event={event} />);
 }
 
 function mockStats(stats: EventStats | null, state: 'loading' | 'error' | 'success' = 'success') {
@@ -183,6 +175,49 @@ describe('EventAttendancePanel', () => {
     expect(screen.getByText('alice')).toBeInTheDocument();
     expect(screen.getByText('mabel')).toBeInTheDocument();
     expect(screen.getByText('cassie')).toBeInTheDocument();
+  });
+
+  it("offers didn't attend only for guests who rsvp'd going", () => {
+    mockStats(BASE_STATS);
+    renderPanel(MIXED_RSVP_EVENT);
+
+    expect(screen.getAllByRole('button', { name: /^attended$/i })).toHaveLength(3);
+    const [didntAttend, ...rest] = screen.getAllByRole('button', { name: /^didn't attend$/i });
+    expect(rest).toHaveLength(0);
+    expect(didntAttend?.closest('li')).toHaveTextContent('alice');
+  });
+
+  it("fires didn't go for a going guest and their +1, and hides it for a maybe +1", () => {
+    mockStats(BASE_STATS);
+    renderPanel(
+      makeEvent({
+        isPast: true,
+        guests: [
+          makeGuest({ userId: 'alice', name: 'alice', hasPlusOne: true }),
+          makeGuest({
+            userId: 'mabel',
+            name: 'mabel',
+            status: RsvpServerStatus.Maybe,
+            hasPlusOne: true,
+          }),
+        ],
+      }),
+    );
+
+    const didntAttend = screen.getAllByRole('button', { name: /^didn't attend$/i });
+    expect(didntAttend).toHaveLength(2);
+    didntAttend.forEach((btn) => {
+      fireEvent.click(btn);
+    });
+
+    expect(setAttendanceMutate).toHaveBeenCalledWith(
+      { userId: 'alice', attendance: AttendanceStatus.DidntGo, forPlusOne: false },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+    expect(setAttendanceMutate).toHaveBeenCalledWith(
+      { userId: 'alice', attendance: AttendanceStatus.DidntGo, forPlusOne: true },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 
   it('narrows the list to one rsvp status when a filter chip is picked', () => {

@@ -1,32 +1,26 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { format } from 'date-fns';
+import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { makeQueryClient, renderWithProviders } from '@/test/render';
 
 import SurveyResponsesScreen from './SurveyResponsesScreen';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn(), put: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedDelete = vi.mocked(apiClient.delete);
 
 function renderScreen(surveyId = 'srv-1') {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[`/admin/surveys/${surveyId}/responses`]}>
-        <Routes>
-          <Route path="/admin/surveys/:id/responses" element={<SurveyResponsesScreen />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  const qc = makeQueryClient();
+  renderWithProviders(
+    <Routes>
+      <Route path="/admin/surveys/:id/responses" element={<SurveyResponsesScreen />} />
+    </Routes>,
+    { route: `/admin/surveys/${surveyId}/responses`, qc },
   );
 }
 
@@ -57,7 +51,6 @@ const wireSurvey = {
   ],
   my_response_id: null,
   my_answers: null,
-  poll_result: null,
 };
 
 const wireResponse = {
@@ -90,7 +83,9 @@ describe('SurveyResponsesScreen', () => {
     expect(screen.getByText('great')).toBeInTheDocument();
     expect(screen.getByText('vanilla,choc')).toBeInTheDocument();
     expect(
-      screen.getByRole('cell', { name: '2030-01-01T18:00:00+00:00: yes' }),
+      screen.getByRole('cell', {
+        name: `${format(new Date('2030-01-01T18:00:00+00:00'), 'MMM d, yyyy h:mm a').toLowerCase()}: yes`,
+      }),
     ).toBeInTheDocument();
 
     expect(screen.getByRole('columnheader', { name: 'mood' })).toBeInTheDocument();

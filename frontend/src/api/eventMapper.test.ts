@@ -23,6 +23,12 @@ describe('mapEvent', () => {
     expect(result.startDatetime!.getUTCHours()).toBe(18);
   });
 
+  it('maps rsvp_deadline to a date, or null when unset', () => {
+    const deadline = mapEvent(wireEvent({ rsvp_deadline: '2026-04-14T18:00:00Z' })).rsvpDeadline;
+    expect(deadline?.toISOString()).toBe('2026-04-14T18:00:00.000Z');
+    expect(mapEvent(wireEvent()).rsvpDeadline).toBeNull();
+  });
+
   it('maps my_paid_confirmed', () => {
     expect(mapEvent(wireEvent({ my_paid_confirmed: true })).myPaidConfirmed).toBe(true);
   });
@@ -136,7 +142,6 @@ describe('mapEvent', () => {
   it('defaults array fields to empty arrays', () => {
     const result = mapEvent(wireEvent());
     expect(result.guests).toEqual([]);
-    expect(result.linkedSurveys).toEqual([]);
     expect(result.coHostIds).toEqual([]);
     expect(result.invitedUserIds).toEqual([]);
     expect(result.invitedUserNames).toEqual([]);
@@ -179,6 +184,12 @@ describe('mapEvent', () => {
     expect(result.eventType).toBe('official');
     expect(result.visibility).toBe('members_only');
     expect(result.isPast).toBe(true);
+  });
+
+  it('maps event_format, null when absent', () => {
+    expect(mapEvent(wireEvent({ event_format: 'restaurant' })).eventFormat).toBe('restaurant');
+    expect(mapEvent(wireEvent()).eventFormat).toBeNull();
+    expect(mapEvent(wireEvent({ event_format: 'bogus' })).eventFormat).toBeNull();
   });
 
   it('maps nested guests array', () => {

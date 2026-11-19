@@ -1,16 +1,16 @@
 import json
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventRSVP, EventStatus, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
+from community.validation import Code
 from notifications.models import Notification, NotificationType
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
-from tests.conftest import future_iso, past_iso
+from tests._auth import auth_headers_for
+from tests._time import future_iso, past_iso
+from tests._users import grant
 
 
 @pytest.fixture
@@ -25,8 +25,7 @@ def creator(db):
 
 @pytest.fixture
 def creator_headers(creator):
-    refresh = RefreshToken.for_user(creator)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(creator)
 
 
 @pytest.fixture
@@ -41,8 +40,7 @@ def other_member(db):
 
 @pytest.fixture
 def other_headers(other_member):
-    refresh = RefreshToken.for_user(other_member)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(other_member)
 
 
 @pytest.fixture
@@ -57,8 +55,7 @@ def cohost(db):
 
 @pytest.fixture
 def cohost_headers(cohost):
-    refresh = RefreshToken.for_user(cohost)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(cohost)
 
 
 @pytest.fixture
@@ -134,8 +131,7 @@ class TestUnpublishActive:
     def test_manager_without_host_role_can_unpublish(
         self, api_client, future_active_event, other_member, other_headers
     ):
-        role = Role.objects.create(name="unpublish_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
-        other_member.roles.add(role)
+        grant(other_member, PermissionKey.MANAGE_EVENTS)
         response = api_client.patch(
             f"/api/community/events/{future_active_event.id}/",
             data=json.dumps({"status": "draft"}),
@@ -313,11 +309,11 @@ class TestUnpublishActive:
             lambda fn, using=None, robust=False: callbacks.append(fn),
         )
         monkeypatch.setattr(
-            "community._event_transitions.broadcast_event_created",
+            "community.events.unpublish.broadcast_event_created",
             lambda event: pinged.append(event.pk),
         )
         monkeypatch.setattr(
-            "community._event_transitions.notify_users",
+            "community.events.unpublish.notify_users",
             lambda ids: bell.append([str(uid) for uid in ids]),
         )
         response = api_client.patch(

@@ -1,9 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { SyntheticEvent } from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
+import { extractApiErrorOr, getApiStatus, hasErrorCode } from '@/api/apiErrors';
 import { type AnswerValue, type Survey, useSubmitSurvey, useSurvey } from '@/api/surveys';
 import { clearStoredSurveyToken, getStoredSurveyToken } from '@/api/surveyTokenStorage';
 import { Code } from '@/api/validationCodes';
@@ -14,20 +15,29 @@ import { Button } from '@/components/ui/Button';
 import { type SurveyStatus, surveyStatus } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { SurveyLoginLink, SurveyLoginNotice } from './SurveyLoginPrompt';
+
 export default function SurveyScreen() {
   const { slug } = useParams<{ slug: string }>();
-  const { data: survey, isPending, isError } = useSurvey(slug);
+  const { data: survey, isPending, isError, error } = useSurvey(slug);
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
   const navigate = useNavigate();
   if (isPending) return <ContentLoading />;
-  if (isError) return <ContentError message="couldn't load the survey — try refreshing" />;
+  if (isError) {
+    // members-only surveys 404 for signed-out visitors, indistinguishable from a missing one
+    if (!isAuthed && getApiStatus(error) === 404) return <SurveyLoginNotice />;
+    return <ContentError message="couldn't load the survey — try refreshing" />;
+  }
   const status = surveyStatus(survey, { checkCap: survey.myResponseId === null });
-  // A finalized poll keeps rendering its result rather than a shut-door message.
-  if (status !== 'active' && survey.pollResult === null) {
+  if (status !== 'active') {
     return <SurveyUnavailable survey={survey} status={status} />;
   }
   return (
     <SurveyForm
+      // remount to re-hydrate when the response lands after mounting from a stale cache
+      key={survey.myResponseId ?? ''}
       survey={survey}
+      isAuthed={isAuthed}
       onSubmitted={() => {
         void navigate(`/surveys/${survey.slug}/thanks`);
       }}
@@ -73,19 +83,23 @@ function hydrateAnswers(survey: Survey): Record<string, AnswerValue> {
   return out;
 }
 
-function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () => void }) {
+function SurveyForm({
+  survey,
+  isAuthed,
+  onSubmitted,
+}: {
+  survey: Survey;
+  isAuthed: boolean;
+  onSubmitted: () => void;
+}) {
   const qc = useQueryClient();
-  const submit = useSubmitSurvey(survey.slug);
-  const isAuthed = useAuthStore((s) => s.status === 'authed');
-  // Lazy init so the user's prior response loads exactly once when the form
-  // mounts. Subsequent server updates (e.g. poll finalized) re-render the
-  // parent but preserve what the user is currently typing.
+  const [editingId, setEditingId] = useState(survey.myResponseId);
+  const submit = useSubmitSurvey(survey.slug, editingId);
+  // lazy init: later server updates keep what the user is typing
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>(() => hydrateAnswers(survey));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
-
-  const finalized = survey.pollResult !== null;
-  const readOnly = finalized;
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   const visible = visibleQuestionIds(survey.questions, answers);
   const shownQuestions = survey.questions.filter((q) => visible.has(q.id));
@@ -104,7 +118,15 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
       }
     }
     setErrors(next);
-    return Object.keys(next).length === 0;
+    const firstMissing = shownQuestions.find((q) => next[q.id]);
+    if (!firstMissing) return true;
+    toast.error('answer the required questions before submitting', { id: 'survey-required' });
+    const field = formRef.current?.querySelector(`[data-question-id="${firstMissing.id}"]`);
+    field?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    field
+      ?.querySelector<HTMLElement>('input, select, textarea, button')
+      ?.focus({ preventScroll: true });
+    return false;
   }
 
   async function onSubmit(e: SyntheticEvent) {
@@ -131,16 +153,22 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
     }
   }
 
-  const submitLabel = survey.myResponseId ? 'update response' : 'submit';
+  const submitLabel = editingId ? 'update response' : 'submit';
+  const canSubmitAnother = !survey.oneResponsePerUser && editingId !== null;
   const canStartFresh =
-    !isAuthed && !readOnly && survey.myResponseId !== null && getStoredSurveyToken(survey.slug);
+    !isAuthed && survey.myResponseId !== null && getStoredSurveyToken(survey.slug);
 
-  function startNewResponse() {
-    clearStoredSurveyToken(survey.slug);
+  function resetForm() {
+    setEditingId(null);
     setAnswers({});
     setErrors({});
     setServerError(null);
     submit.reset();
+  }
+
+  function startNewResponse() {
+    clearStoredSurveyToken(survey.slug);
+    resetForm();
     void qc.invalidateQueries({ queryKey: ['survey', survey.slug] });
   }
 
@@ -151,30 +179,31 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
         <p className="text-foreground-tertiary mb-6 text-sm">{survey.description}</p>
       ) : null}
 
+      {!isAuthed ? <SurveyLoginLink anonymous={survey.anonymous} /> : null}
+
       {survey.anonymous ? (
         <p className="text-foreground-secondary mb-6 text-sm">
           responses are anonymous — your name isn't saved with your answers
         </p>
       ) : null}
 
-      {finalized ? (
-        <div className="bg-surface-dim text-foreground-secondary mb-6 rounded-md px-3 py-2 text-sm">
-          this poll has been finalized — responses are locked
-        </div>
-      ) : null}
-
-      <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-5" noValidate>
+      <form
+        ref={formRef}
+        onSubmit={(e) => void onSubmit(e)}
+        className="flex flex-col gap-5"
+        noValidate
+      >
         {shownQuestions.map((q) => (
-          <QuestionField
-            key={q.id}
-            question={q}
-            value={answers[q.id]}
-            onChange={(v) => {
-              setAnswers((a) => ({ ...a, [q.id]: v }));
-            }}
-            error={errors[q.id]}
-            readOnly={readOnly}
-          />
+          <div key={q.id} data-question-id={q.id}>
+            <QuestionField
+              question={q}
+              value={answers[q.id]}
+              onChange={(v) => {
+                setAnswers((a) => ({ ...a, [q.id]: v }));
+              }}
+              error={errors[q.id]}
+            />
+          </div>
         ))}
 
         {serverError ? (
@@ -183,10 +212,18 @@ function SurveyForm({ survey, onSubmitted }: { survey: Survey; onSubmitted: () =
           </p>
         ) : null}
 
-        {!readOnly ? (
-          <Button type="submit" disabled={submit.isPending}>
-            {submit.isPending ? 'saving…' : submitLabel}
-          </Button>
+        <Button type="submit" disabled={submit.isPending}>
+          {submit.isPending ? 'saving…' : submitLabel}
+        </Button>
+
+        {canSubmitAnother ? (
+          <button
+            type="button"
+            onClick={resetForm}
+            className="text-foreground-tertiary self-start text-sm underline"
+          >
+            submit another response
+          </button>
         ) : null}
 
         {canStartFresh ? (

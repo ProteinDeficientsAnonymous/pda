@@ -132,7 +132,7 @@ the route subtree with an unpermitted user and assert the screen does not appear
 
 ### Step 5 — Gated endpoint: `backend/community/_sponsors.py` (new file)
 
-The **real gate.** Copy the `backend/community/_docs.py` shape — a `_has_x` helper plus a GET
+The **real gate.** Copy the `backend/community/content/docs.py` shape — a `_has_x` helper plus a GET
 that 403s before returning any data:
 
 ```python
@@ -146,8 +146,8 @@ from ninja import Router
 from ninja.responses import Status
 from users.permissions import PermissionKey
 
-from community._shared import ErrorOut
-from community._validation import Code, raise_validation
+from community.shared import ErrorOut
+from community.validation import Code, raise_validation
 
 router = Router()
 
@@ -174,7 +174,7 @@ def list_sponsors(request):
 ```
 
 This 403-before-data is the difference from an editable page (where GET is open). Define
-`SponsorOut` and any model the same way the existing `_docs.py` / models do.
+`SponsorOut` and any model the same way the existing `content/docs.py` / models do.
 
 > **Use `auth=gated_jwt`, never `auth=JWTAuth()`.** `gated_jwt` (from `config.auth`) is the
 > project's single chokepoint that also rejects tokens for blocked/inactive accounts — every
@@ -232,7 +232,7 @@ make ci
 | Route wrap pattern | `frontend/src/router/routes.tsx` |
 | AdminHub tiles | `frontend/src/screens/admin/AdminHubScreen.tsx` |
 | Admin screen example | `frontend/src/screens/admin/JoinRequestsScreen.tsx` |
-| Backend gated read (403) | `backend/community/_docs.py` (`_has_manage_docs` + GET 403) |
+| Backend gated read (403) | `backend/community/content/docs.py` (`_has_manage_docs` + GET 403) |
 | Auth (`gated_jwt`) | `backend/config/auth.py` (account-state chokepoint — use this, not `JWTAuth()`) |
 | Router registration | `backend/community/api.py` |
 | Backend tests | `backend/tests/test_community.py` |

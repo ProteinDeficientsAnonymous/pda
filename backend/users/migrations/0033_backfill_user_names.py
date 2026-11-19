@@ -1,6 +1,6 @@
 from django.db import migrations
 
-from users._name_parsing import parse_display_name
+from users.name_parsing import parse_display_name
 
 
 def backfill(apps, schema_editor):

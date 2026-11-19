@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from community.models import PageVisibility, RSVPStatus
 from django.db import DatabaseError, connection
-from users._helpers import visible_display_name
+from users.helpers import visible_display_name
 from users.models import User
 from users.permissions import PermissionKey
 
@@ -21,10 +21,14 @@ def notify_users(user_ids: Iterable[str]) -> None:
     """Fire pg_notify on the notifications channel (for new notification rows)."""
     if connection.vendor != "postgresql":
         return
+    payloads = [str(uid) for uid in user_ids]
+    if not payloads:
+        return
 
     with connection.cursor() as cursor:
-        for uid in user_ids:
-            cursor.execute("SELECT pg_notify('notifications', %s)", [str(uid)])
+        cursor.execute(
+            "SELECT pg_notify('notifications', uid) FROM unnest(%s::text[]) AS uid", [payloads]
+        )
 
 
 _EVENT_UPDATES_CHANNEL = "event_updates"
@@ -129,20 +133,48 @@ def broadcast_event_update(
         _ping_event_update(recipients, str(event.pk))
 
 
-def create_join_request_notifications(full_name: str) -> None:
-    recipients = User.objects.with_permission(PermissionKey.APPROVE_JOIN_REQUESTS)
-
+def _notify_join_request_approvers(
+    notification_type: NotificationType,
+    message: str,
+    *,
+    related_user: User | None = None,
+    event: Event | None = None,
+) -> None:
+    recipients = list(User.objects.with_permission(PermissionKey.APPROVE_JOIN_REQUESTS))
     Notification.objects.bulk_create(
         [
             Notification(
-                recipient=user,
-                notification_type=NotificationType.JOIN_REQUEST,
-                message=f"new join request from {full_name}",
+                recipient=recipient,
+                notification_type=notification_type,
+                related_user=related_user,
+                event=event,
+                message=message,
             )
-            for user in recipients
+            for recipient in recipients
         ]
     )
-    notify_users(str(user.pk) for user in recipients)
+    notify_users(str(recipient.pk) for recipient in recipients)
+
+
+def create_join_request_notifications(full_name: str) -> None:
+    _notify_join_request_approvers(
+        NotificationType.JOIN_REQUEST, f"new join request from {full_name}"
+    )
+
+
+def create_member_restored_notifications(user: User) -> None:
+    name = (user.full_name or user.phone_number).lower()
+    _notify_join_request_approvers(
+        NotificationType.MEMBER_RESTORED,
+        f"{name} checked in and is a member again",
+        related_user=user,
+    )
+
+
+def create_check_in_promotion_failed_notifications(user: User, event: Event, message: str) -> None:
+    _notify_join_request_approvers(
+        NotificationType.CHECK_IN_PROMOTION_FAILED, message, related_user=user, event=event
+    )
 
 
 def create_event_flag_notifications(event: Event, flagger: User) -> None:
@@ -204,6 +236,26 @@ def create_account_deleted_notifications(user: User) -> None:
     notify_users(str(recipient.pk) for recipient in recipients)
 
 
+def _create_event_notifications(
+    event: Event,
+    recipient_ids: list[str],
+    notification_type: NotificationType,
+    message: str,
+) -> None:
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient_id=user_id,
+                notification_type=notification_type,
+                event=event,
+                message=message,
+            )
+            for user_id in recipient_ids
+        ]
+    )
+    notify_users(recipient_ids)
+
+
 def create_event_cancellation_notifications(event: Event, canceller: User) -> None:
     canceller_id = str(canceller.pk)
     invited_ids = {str(u.pk) for u in event.invited_users.all()}
@@ -215,18 +267,18 @@ def create_event_cancellation_notifications(event: Event, canceller: User) -> No
     recipient_ids = list((invited_ids | rsvp_ids) - {canceller_id})
     if not recipient_ids:
         return
-    Notification.objects.bulk_create(
-        [
-            Notification(
-                recipient_id=user_id,
-                notification_type=NotificationType.EVENT_CANCELLED,
-                event=event,
-                message=f"{event.title} was cancelled",
-            )
-            for user_id in recipient_ids
-        ]
+    _create_event_notifications(
+        event, recipient_ids, NotificationType.EVENT_CANCELLED, f"{event.title} was cancelled"
     )
-    notify_users(recipient_ids)
+
+
+def create_event_unpublished_notifications(event: Event, recipient_ids: list[str]) -> None:
+    _create_event_notifications(
+        event,
+        recipient_ids,
+        NotificationType.EVENT_UNPUBLISHED,
+        f"{event.title} was unpublished",
+    )
 
 
 def create_event_invite_notifications(
@@ -237,18 +289,12 @@ def create_event_invite_notifications(
     inviter_id = str(inviter.pk)
     inviter_name = visible_display_name(inviter, None)
     notified_ids = [uid for uid in new_user_ids if str(uid) != inviter_id]
-    Notification.objects.bulk_create(
-        [
-            Notification(
-                recipient_id=user_id,
-                notification_type=NotificationType.EVENT_INVITE,
-                event=event,
-                message=f"{inviter_name} invited you to {event.title}",
-            )
-            for user_id in notified_ids
-        ]
+    _create_event_notifications(
+        event,
+        notified_ids,
+        NotificationType.EVENT_INVITE,
+        f"{inviter_name} invited you to {event.title}",
     )
-    notify_users(notified_ids)
 
 
 def create_waitlist_promoted_notifications(
@@ -330,7 +376,7 @@ def notify_comment_reaction(comment, reactor: User) -> None:
     notify_users([str(comment.author_id)])
 
 
-def _event_recipient_ids(event, *, exclude: str) -> list[str]:
+def event_recipient_ids(event, *, exclude: str) -> list[str]:
     """Host + co-hosts, excluding `exclude` (usually the actor triggering the notification)."""
     recipient_ids: set[str] = set()
     if event.created_by_id is not None:
@@ -342,7 +388,7 @@ def _event_recipient_ids(event, *, exclude: str) -> list[str]:
 
 def notify_rsvp_declined_note(event, author, note: str) -> None:
     """Notify host + co-hosts that someone who can't go left a note. Ephemeral: not stored elsewhere."""
-    recipient_id_list = _event_recipient_ids(event, exclude=str(author.pk))
+    recipient_id_list = event_recipient_ids(event, exclude=str(author.pk))
     if not recipient_id_list:
         return
     name = visible_display_name(author, None)
@@ -368,7 +414,7 @@ def notify_rsvp_declined_note(event, author, note: str) -> None:
 
 def notify_checkin_reminder(event: Event) -> None:
     """Notify creator + co-hosts that a club/official event just started — go check people in."""
-    recipient_id_list = _event_recipient_ids(event, exclude="")
+    recipient_id_list = event_recipient_ids(event, exclude="")
     if not recipient_id_list:
         return
     message = f"{event.title} just started — head to check-in to check people in."
@@ -391,7 +437,7 @@ def notify_event_comment(comment) -> None:
     if comment.parent_id is not None:
         return
     event = comment.event
-    recipient_id_list = _event_recipient_ids(event, exclude=str(comment.author_id))
+    recipient_id_list = event_recipient_ids(event, exclude=str(comment.author_id))
     if not recipient_id_list:
         return
     commenter_name = visible_display_name(comment.author, None)
@@ -428,7 +474,7 @@ def notify_rsvp_status_changed(event: Event, rsvper: User, status: str) -> None:
     status_word = _RSVP_STATUS_WORDS.get(status)
     if status_word is None:
         return
-    recipient_id_list = _event_recipient_ids(event, exclude=str(rsvper.pk))
+    recipient_id_list = event_recipient_ids(event, exclude=str(rsvper.pk))
     if not recipient_id_list:
         return
     rsvper_name = visible_display_name(rsvper, None)

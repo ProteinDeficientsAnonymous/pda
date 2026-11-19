@@ -1,32 +1,20 @@
 import pytest
 from community.models import MemberPromotionEmailTemplate, MemberPromotionMessageTemplate
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 @pytest.fixture
 def edit_promotion_email_user(db):
-    user = User.objects.create_user(
-        phone_number="+15550003004",
-        password="vetterpass123",
-        first_name="Vetter",
-        last_name="Four",
-    )
-    role = Role.objects.create(
-        name="promotion_email_editor", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS]
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.APPROVE_JOIN_REQUESTS)
 
 
 @pytest.fixture
 def edit_promotion_email_headers(edit_promotion_email_user):
-    refresh = RefreshToken.for_user(edit_promotion_email_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(edit_promotion_email_user)
 
 
 @pytest.mark.django_db

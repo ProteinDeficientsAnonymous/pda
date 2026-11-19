@@ -14,7 +14,7 @@ _CONTENT_MODELS = (
 
 
 def resanitize(apps, schema_editor):
-    from community._html_sanitize import sanitize_content_html
+    from community.content.html_sanitize import sanitize_content_html
 
     for model_name in _CONTENT_MODELS:
         model = apps.get_model("community", model_name)

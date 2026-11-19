@@ -43,7 +43,7 @@ export function useFreshMyVotes(eventId: string) {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return async (): Promise<Record<string, VoteChoice>> => {
-    const poll = await qc.fetchQuery({
+    const poll = await qc.query({
       queryKey: eventPollKeys.detail(eventId, isAuthed),
       queryFn: () => fetchEventPoll(eventId),
     });

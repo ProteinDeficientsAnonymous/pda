@@ -1,0 +1,116 @@
+from datetime import timedelta
+
+import pytest
+from community.models import (
+    AttendanceStatus,
+    EventComment,
+    EventCommentReaction,
+    EventFlag,
+    JoinFormQuestion,
+    ReactionEmoji,
+    Survey,
+    SurveyQuestion,
+    SurveyQuestionType,
+    SurveyResponse,
+)
+from django.utils import timezone
+from users.permissions import PermissionKey
+
+from tests._auth import auth_headers_for
+from tests._events import make_event, make_rsvp
+from tests._query_counts import assert_constant_queries
+from tests._users import make_user
+
+
+@pytest.mark.django_db
+class TestEventEndpointsQueryCount:
+    def test_comments(self, api_client):
+        host = make_user(first_name="Host")
+        event = make_event(created_by=host)
+
+        def grow(n: int) -> None:
+            for _ in range(n):
+                author = make_user(first_name="Author", hide_last_name=True)
+                make_rsvp(event, author)
+                comment = EventComment.objects.create(event=event, author=author, body="hi")
+                reply = EventComment.objects.create(
+                    event=event, author=host, parent=comment, body="yo"
+                )
+                for c in (comment, reply):
+                    EventCommentReaction.objects.create(
+                        comment=c, user=author, emoji=ReactionEmoji.HEART
+                    )
+
+        url = f"/api/community/events/{event.id}/comments/"
+        assert_constant_queries(api_client, url, grow, auth_headers_for(host))
+
+    @pytest.mark.parametrize("suffix", ["stats/", "text-recipients/"])
+    def test_host_rsvp_views(self, api_client, suffix):
+        host = make_user(first_name="Host")
+        event = make_event(created_by=host)
+
+        def grow(n: int) -> None:
+            for _ in range(n):
+                make_rsvp(event, make_user(first_name="Guest"))
+                event.invited_users.add(make_user(first_name="Invitee"))
+
+        url = f"/api/community/events/{event.id}/{suffix}"
+        assert_constant_queries(api_client, url, grow, auth_headers_for(host))
+
+    def test_event_flags(self, api_client):
+        admin = make_user(PermissionKey.MANAGE_EVENTS)
+
+        def grow(n: int) -> None:
+            for _ in range(n):
+                flagger = make_user(first_name="Flagger")
+                EventFlag.objects.create(
+                    event=make_event(created_by=flagger), flagged_by=flagger, reason="spam"
+                )
+
+        assert_constant_queries(
+            api_client, "/api/community/event-flags/", grow, auth_headers_for(admin)
+        )
+
+    @pytest.mark.parametrize(
+        "path", ["events/attendance-report/", "events/attendance-analytics/members/"]
+    )
+    def test_attendance_reports(self, api_client, path):
+        admin = make_user(PermissionKey.MANAGE_EVENTS)
+
+        def grow(n: int) -> None:
+            for _ in range(n):
+                member = make_user(first_name="Member")
+                past = make_event(
+                    created_by=member, start_datetime=timezone.now() - timedelta(days=3)
+                )
+                make_rsvp(past, member, attendance=AttendanceStatus.ATTENDED)
+
+        assert_constant_queries(api_client, f"/api/community/{path}", grow, auth_headers_for(admin))
+
+
+@pytest.mark.django_db
+class TestContentEndpointsQueryCount:
+    def test_survey_summary(self, api_client):
+        admin = make_user(PermissionKey.MANAGE_SURVEYS)
+        survey = Survey.objects.create(title="Summary", slug="summary")
+        q = SurveyQuestion.objects.create(
+            survey=survey, label="Rate it", field_type=SurveyQuestionType.STARS
+        )
+
+        def grow(n: int) -> None:
+            for _ in range(n):
+                SurveyResponse.objects.create(
+                    survey=survey,
+                    user=make_user(first_name="Responder"),
+                    answers={str(q.id): {"label": "Rate it", "answer": "4"}},
+                )
+
+        url = f"/api/community/surveys/{survey.id}/summary/"
+        assert_constant_queries(api_client, url, grow, auth_headers_for(admin))
+
+    def test_join_form(self, api_client):
+        def grow(n: int) -> None:
+            for _ in range(n):
+                JoinFormQuestion.objects.create(label="Why?")
+
+        assert_constant_queries(api_client, "/api/community/join-form/", grow)

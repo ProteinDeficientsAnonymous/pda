@@ -1,6 +1,10 @@
 """Static data + pure helpers for the `seed_staging` command."""
 
 from dataclasses import dataclass
+from datetime import datetime
+
+from notifications.email_types import TEST_EMAIL_DOMAIN
+from users.models import MembershipStatus
 
 from community.models.choices import EventType, JoinRequestStatus, PageVisibility
 
@@ -27,15 +31,15 @@ def reset_member_phone() -> str:
 
 
 def reset_member_email() -> str:
-    return "reset.member@staging.example"
+    return f"reset.member@{TEST_EMAIL_DOMAIN}"
 
 
 def perm_email(key: str) -> str:
-    return f"perm.{key}@staging.example"
+    return f"perm.{key}@{TEST_EMAIL_DOMAIN}"
 
 
 def cond_email(index: int) -> str:
-    return f"cond{index:02d}@staging.example"
+    return f"cond{index:02d}@{TEST_EMAIL_DOMAIN}"
 
 
 def nonmember_phone(index: int) -> str:
@@ -43,7 +47,7 @@ def nonmember_phone(index: int) -> str:
 
 
 def nonmember_email(index: int) -> str:
-    return f"nonmember{index:02d}@staging.example"
+    return f"nonmember{index:02d}@{TEST_EMAIL_DOMAIN}"
 
 
 def joinreq_phone(index: int) -> str:
@@ -51,7 +55,27 @@ def joinreq_phone(index: int) -> str:
 
 
 def joinreq_email(index: int) -> str:
-    return f"joinreq{index:02d}@staging.example"
+    return f"joinreq{index:02d}@{TEST_EMAIL_DOMAIN}"
+
+
+def status_phone(index: int) -> str:
+    return f"+170255507{index:02d}"
+
+
+def status_email(index: int) -> str:
+    return f"status{index:02d}@{TEST_EMAIL_DOMAIN}"
+
+
+def onboarded_member_defaults(first_name: str, email: str, now: datetime) -> dict:
+    return {
+        "first_name": first_name,
+        "email": email,
+        "membership_status": MembershipStatus.ACTIVE_MEMBER,
+        "needs_onboarding": False,
+        "onboarded_at": now,
+        "guidelines_consent_at": now,
+        "sms_consent_at": now,
+    }
 
 
 NON_MEMBER_EVENT_TITLE = "[staging] official public rsvp demo"
@@ -82,13 +106,6 @@ def condition_label(combo: tuple[bool, bool, bool]) -> str:
     if not sms_done:
         parts.append("needs-sms")
     return "cond: " + ("complete" if not parts else "+".join(parts))
-
-
-def is_seed_allowed(env_name: str | None, force: bool) -> bool:
-    """Allow local/unset and staging; refuse any other env unless forced."""
-    if not env_name or env_name == "staging":
-        return True
-    return force
 
 
 @dataclass

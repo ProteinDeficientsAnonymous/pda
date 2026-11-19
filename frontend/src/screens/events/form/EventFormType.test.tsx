@@ -78,7 +78,7 @@ describe('EventFormType', () => {
         canTagClub={false}
       />,
     );
-    await userEvent.click(screen.getByRole('switch'));
+    await userEvent.click(screen.getByRole('switch', { name: 'make it an official pda event' }));
     expect(onChange).toHaveBeenCalledWith({ eventType: EventType.Community });
   });
 
@@ -91,27 +91,24 @@ describe('EventFormType', () => {
         canTagClub
       />,
     );
-    const switches = screen.getAllByRole('switch');
-    expect(switches).toHaveLength(2);
-    // official checked, club unchecked — single-value type is mutually exclusive
-    expect(switches[0]).toHaveAttribute('aria-checked', 'true');
-    expect(switches[1]).toHaveAttribute('aria-checked', 'false');
+    // single-value type is mutually exclusive
+    expect(screen.getByRole('switch', { name: 'make it an official pda event' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'make it a pda club event' })).not.toBeChecked();
   });
 
-  it('shows the walk toggle, on by default, for a new official event', () => {
+  it('shows the walk toggle, on by default, for an official event', () => {
     render(
       <EventFormType
         values={values({ eventType: EventType.Official })}
         onChange={vi.fn()}
         canTagOfficial
         canTagClub={false}
-        showWalkToggle
       />,
     );
     expect(screen.getByRole('switch', { name: "it's a walk" })).toBeChecked();
   });
 
-  it('turning the walk toggle off patches isWalk', async () => {
+  it('turning the walk toggle off patches eventFormat to restaurant', async () => {
     const onChange = vi.fn();
     render(
       <EventFormType
@@ -119,21 +116,26 @@ describe('EventFormType', () => {
         onChange={onChange}
         canTagOfficial
         canTagClub={false}
-        showWalkToggle
       />,
     );
     await userEvent.click(screen.getByRole('switch', { name: "it's a walk" }));
-    expect(onChange).toHaveBeenCalledWith({ isWalk: false });
+    expect(onChange).toHaveBeenCalledWith({ eventFormat: 'restaurant' });
   });
 
   it('hides the walk toggle unless the event is official', () => {
     render(
+      <EventFormType values={values()} onChange={vi.fn()} canTagOfficial canTagClub={false} />,
+    );
+    expect(screen.queryByRole('switch', { name: "it's a walk" })).not.toBeInTheDocument();
+  });
+
+  it('hides the walk toggle without the official tag permission', () => {
+    render(
       <EventFormType
-        values={values()}
+        values={values({ eventType: EventType.Official })}
         onChange={vi.fn()}
-        canTagOfficial
-        canTagClub={false}
-        showWalkToggle
+        canTagOfficial={false}
+        canTagClub
       />,
     );
     expect(screen.queryByRole('switch', { name: "it's a walk" })).not.toBeInTheDocument();

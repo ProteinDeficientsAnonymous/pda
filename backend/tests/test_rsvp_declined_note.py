@@ -4,7 +4,7 @@ from notifications.models import Notification, NotificationType
 from notifications.service import notify_rsvp_declined_note
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 @pytest.mark.django_db

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { MembershipStatus } from '@/models/user';
 import { makeEvent, makeUser } from '@/test/fixtures';
 
 import {
@@ -7,7 +8,7 @@ import {
   EventStatus,
   EventType,
   EventVisibility,
-  isTentativeMember,
+  isLimited,
   myRsvpLabel,
   RsvpServerStatus,
   spotsLeft,
@@ -110,16 +111,19 @@ describe('myRsvpLabel', () => {
   });
 });
 
-describe('isTentativeMember', () => {
-  it('is true for a signed-in non-member', () => {
-    expect(isTentativeMember(makeUser({ isMember: false }))).toBe(true);
-  });
+describe('isLimited', () => {
+  it.each([MembershipStatus.Tentative, MembershipStatus.AttendancePaused])(
+    'is true for a signed-in %s user',
+    (membershipStatus) => {
+      expect(isLimited(makeUser({ isMember: false, membershipStatus }))).toBe(true);
+    },
+  );
 
   it('is false for a member', () => {
-    expect(isTentativeMember(makeUser())).toBe(false);
+    expect(isLimited(makeUser())).toBe(false);
   });
 
   it('is false when signed out', () => {
-    expect(isTentativeMember(null)).toBe(false);
+    expect(isLimited(null)).toBe(false);
   });
 });

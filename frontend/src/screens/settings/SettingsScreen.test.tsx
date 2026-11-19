@@ -1,37 +1,13 @@
-// localStorage must be available before Zustand `persist` loads.
-// vi.hoisted runs at the top of the module, before any imports are evaluated.
-const storageMock = vi.hoisted(() => {
-  let store: Record<string, string> = {};
-  const mock = {
-    getItem: (key: string): string | null => store[key] ?? null,
-    setItem: (key: string, value: string): void => {
-      store[key] = value;
-    },
-    removeItem: (key: string): void => {
-      delete store[key];
-    },
-    clear: (): void => {
-      store = {};
-    },
-    get length(): number {
-      return Object.keys(store).length;
-    },
-    key: (index: number): string | null => Object.keys(store)[index] ?? null,
-  };
-  Object.defineProperty(window, 'localStorage', { value: mock, writable: true });
-  return mock;
-});
-
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAccessibilityStore } from '@/accessibility/store';
 import * as authApi from '@/api/auth';
 import { useAuthStore } from '@/auth/store';
+import { setAuthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import SettingsScreen from './SettingsScreen';
 
@@ -80,23 +56,12 @@ const TEST_USER = makeUser({
   email: 'test@example.com',
 });
 
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 function renderSettings() {
-  return render(
-    <QueryClientProvider client={makeQc()}>
-      <MemoryRouter>
-        <SettingsScreen />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<SettingsScreen />);
 }
 
 beforeEach(() => {
-  storageMock.clear();
-  useAuthStore.setState({ status: 'authed', user: TEST_USER, accessToken: 'tok' });
+  setAuthed(TEST_USER);
   useAccessibilityStore.setState({ themeMode: 'system', dyslexiaFont: false, textScale: 1.0 });
   vi.clearAllMocks();
   // The store's updateProfile reads .id off the resolved user; resolve a real one

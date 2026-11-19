@@ -1,7 +1,6 @@
 """Regression tests for payment-gate bypasses caught in code review."""
 
 import pytest
-from community._validation import Code
 from community.models import (
     Event,
     EventPoll,
@@ -11,11 +10,13 @@ from community.models import (
     PollVote,
     RSVPStatus,
 )
+from community.validation import Code
 from django.utils import timezone
+from users.models import MembershipStatus
 
 from tests._asserts import assert_error_code
 from tests._payment_helpers import create_paid_event
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 RSVP_URL = "/api/community/events/{event_id}/rsvp/"
 
@@ -31,7 +32,9 @@ class TestWaitlistPromotionBypass:
     ):
         event = _paid_event(test_user, max_attendees=1)
         seated = django_user_model.objects.create_user(
-            phone_number="+14155550111", first_name="Seated", is_member=True
+            phone_number="+14155550111",
+            first_name="Seated",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         EventRSVP.objects.create(event=event, user=seated, status=RSVPStatus.ATTENDING)
 

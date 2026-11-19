@@ -4,15 +4,15 @@ import secrets
 from datetime import timedelta
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
+from community.validation import Code
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 
 
 @pytest.fixture
@@ -33,28 +33,7 @@ def official_event_user(db):
 
 @pytest.fixture
 def official_event_headers(official_event_user):
-    refresh = RefreshToken.for_user(official_event_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
-
-
-@pytest.fixture
-def manage_events_user(db):
-    """A non-superuser with only manage_events permission."""
-    user = User.objects.create_user(
-        phone_number="+14155551234",
-        password="eventmanagerpass123",
-        first_name="Event",
-        last_name="Manager",
-    )
-    role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
-    user.roles.add(role)
-    return user
-
-
-@pytest.fixture
-def manage_events_headers(manage_events_user):
-    refresh = RefreshToken.for_user(manage_events_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(official_event_user)
 
 
 @pytest.mark.django_db
@@ -68,28 +47,6 @@ class TestEventVisibility:
         response = api_client.get("/api/community/events/", **auth_headers)
         assert response.status_code == 200
         assert isinstance(response.json(), list)
-
-    def test_events_strips_private_fields_for_anonymous(self, api_client, auth_headers, test_user):
-        event = Event.objects.create(
-            title="Test",
-            start_datetime=timezone.now(),
-            end_datetime=timezone.now(),
-            location="",
-            whatsapp_link="https://chat.whatsapp.com/abc",
-            partiful_link="https://partiful.com/e/abc",
-            rsvp_enabled=False,
-            created_by=test_user,
-        )
-        anon_res = api_client.get("/api/community/events/")
-        authed_res = api_client.get("/api/community/events/", **auth_headers)
-
-        anon_event = next(e for e in anon_res.json() if e["id"] == str(event.id))
-        authed_event = next(e for e in authed_res.json() if e["id"] == str(event.id))
-
-        assert anon_event["whatsapp_link"] == ""
-        assert anon_event["partiful_link"] == ""
-        assert authed_event["whatsapp_link"] == "https://chat.whatsapp.com/abc"
-        assert authed_event["partiful_link"] == "https://partiful.com/e/abc"
 
     def test_events_hide_location_from_anonymous(self, api_client, auth_headers, test_user):
         event = Event.objects.create(
@@ -105,13 +62,15 @@ class TestEventVisibility:
         def pick(path, **headers):
             body = api_client.get(path, **headers).json()
             body = next(row for row in body if row["id"] == eid) if isinstance(body, list) else body
-            return body["location"], body["latitude"], body["longitude"]
+            return body["location"], body.get("latitude"), body.get("longitude")
 
-        for path in ("/api/community/events/", f"/api/community/events/{eid}/"):
-            assert pick(path) == ("", None, None)
-            location, latitude, longitude = pick(path, **auth_headers)
-            assert location == "18 Willow House"
-            assert (latitude, longitude) == pytest.approx((40.712776, -74.005974))
+        assert pick("/api/community/events/") == ("", None, None)
+        assert pick("/api/community/events/", **auth_headers)[0] == "18 Willow House"
+        path = f"/api/community/events/{eid}/"
+        assert pick(path) == ("", None, None)
+        location, latitude, longitude = pick(path, **auth_headers)
+        assert location == "18 Willow House"
+        assert (latitude, longitude) == pytest.approx((40.712776, -74.005974))
         ics = api_client.get(f"/api/community/events/{eid}/ics/").content
         assert b"18 Willow House" not in ics and b"LOCATION" not in ics
 
@@ -138,14 +97,10 @@ class TestInviteOnlyVisibility:
     def _make_user(self, phone, name):
         return User.objects.create_user(phone_number=phone, password="pass123", first_name=name)
 
-    def _auth_headers(self, user):
-        refresh = RefreshToken.for_user(user)
-        return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
-
     def test_list_hides_invite_only_from_non_invited(self, api_client, test_user):
         creator = self._make_user("+12025550201", "Creator")
         event = self._make_invite_only_event(creator)
-        response = api_client.get("/api/community/events/", **self._auth_headers(test_user))
+        response = api_client.get("/api/community/events/", **auth_headers_for(test_user))
         assert response.status_code == 200
         ids = [e["id"] for e in response.json()]
         assert str(event.id) not in ids
@@ -160,7 +115,7 @@ class TestInviteOnlyVisibility:
 
     def test_list_shows_invite_only_to_creator(self, api_client, test_user):
         event = self._make_invite_only_event(test_user)
-        response = api_client.get("/api/community/events/", **self._auth_headers(test_user))
+        response = api_client.get("/api/community/events/", **auth_headers_for(test_user))
         assert response.status_code == 200
         ids = [e["id"] for e in response.json()]
         assert str(event.id) in ids
@@ -168,7 +123,7 @@ class TestInviteOnlyVisibility:
     def test_list_shows_invite_only_to_co_host(self, api_client, test_user):
         creator = self._make_user("+12025550203", "Creator3")
         event = self._make_invite_only_event(creator, co_host=test_user)
-        response = api_client.get("/api/community/events/", **self._auth_headers(test_user))
+        response = api_client.get("/api/community/events/", **auth_headers_for(test_user))
         assert response.status_code == 200
         ids = [e["id"] for e in response.json()]
         assert str(event.id) in ids
@@ -176,7 +131,7 @@ class TestInviteOnlyVisibility:
     def test_list_shows_invite_only_to_invited_user(self, api_client, test_user):
         creator = self._make_user("+12025550204", "Creator4")
         event = self._make_invite_only_event(creator, invited_user=test_user)
-        response = api_client.get("/api/community/events/", **self._auth_headers(test_user))
+        response = api_client.get("/api/community/events/", **auth_headers_for(test_user))
         assert response.status_code == 200
         ids = [e["id"] for e in response.json()]
         assert str(event.id) in ids
@@ -195,7 +150,7 @@ class TestInviteOnlyVisibility:
         creator = self._make_user("+12025550206", "Creator6")
         event = self._make_invite_only_event(creator)
         response = api_client.get(
-            f"/api/community/events/{event.id}/", **self._auth_headers(test_user)
+            f"/api/community/events/{event.id}/", **auth_headers_for(test_user)
         )
         assert response.status_code == 403
         err = assert_error_code(response, Code.Event.PERM_DENIED)
@@ -213,14 +168,14 @@ class TestInviteOnlyVisibility:
         creator = self._make_user("+12025550208", "Creator8")
         event = self._make_invite_only_event(creator, invited_user=test_user)
         response = api_client.get(
-            f"/api/community/events/{event.id}/", **self._auth_headers(test_user)
+            f"/api/community/events/{event.id}/", **auth_headers_for(test_user)
         )
         assert response.status_code == 200
 
     def test_get_event_200_for_creator(self, api_client, test_user):
         event = self._make_invite_only_event(test_user)
         response = api_client.get(
-            f"/api/community/events/{event.id}/", **self._auth_headers(test_user)
+            f"/api/community/events/{event.id}/", **auth_headers_for(test_user)
         )
         assert response.status_code == 200
 
@@ -228,7 +183,7 @@ class TestInviteOnlyVisibility:
         creator = self._make_user("+12025550209", "Creator9")
         event = self._make_invite_only_event(creator, co_host=test_user)
         response = api_client.get(
-            f"/api/community/events/{event.id}/", **self._auth_headers(test_user)
+            f"/api/community/events/{event.id}/", **auth_headers_for(test_user)
         )
         assert response.status_code == 200
 
@@ -239,7 +194,7 @@ class TestInviteOnlyVisibility:
         creator = self._make_user("+12025550210", "Creator10")
         event = self._make_invite_only_event(creator, invited_user=test_user)
         response = api_client.get(
-            f"/api/community/events/{event.id}/", **self._auth_headers(test_user)
+            f"/api/community/events/{event.id}/", **auth_headers_for(test_user)
         )
         assert response.status_code == 200
         assert response.json()["invited_user_ids"] == []
@@ -255,7 +210,7 @@ class TestInviteOnlyVisibility:
         )
         event.invited_users.add(test_user)
         response = api_client.get(
-            f"/api/community/events/{event.id}/", **self._auth_headers(test_user)
+            f"/api/community/events/{event.id}/", **auth_headers_for(test_user)
         )
         assert response.status_code == 200
         assert response.json()["invited_user_ids"] == []
@@ -269,7 +224,7 @@ class TestInviteOnlyVisibility:
             f"/api/community/events/{event.id}/rsvp/",
             {"status": "attending"},
             content_type="application/json",
-            **self._auth_headers(test_user),
+            **auth_headers_for(test_user),
         )
         # RSVP now reuses the same read-visibility enforcement as get_event, so
         # an invite-only event a member can't see returns 403 (consistent with
@@ -285,7 +240,7 @@ class TestInviteOnlyVisibility:
             f"/api/community/events/{event.id}/rsvp/",
             {"status": "attending"},
             content_type="application/json",
-            **self._auth_headers(test_user),
+            **auth_headers_for(test_user),
         )
         assert response.status_code == 200
 
@@ -340,10 +295,6 @@ class TestTextRecipients:
     def _make_user(self, phone, name):
         return User.objects.create_user(phone_number=phone, password="pass123", first_name=name)
 
-    def _auth_headers(self, user):
-        refresh = RefreshToken.for_user(user)
-        return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
-
     def _make_event(self, creator, co_host=None, invited_user=None):
         future = timezone.now() + timedelta(days=7)
         event = Event.objects.create(
@@ -371,7 +322,7 @@ class TestTextRecipients:
 
         response = api_client.get(
             f"/api/community/events/{event.id}/text-recipients/",
-            **self._auth_headers(creator),
+            **auth_headers_for(creator),
         )
         assert response.status_code == 200
         body = response.json()
@@ -387,7 +338,7 @@ class TestTextRecipients:
 
         response = api_client.get(
             f"/api/community/events/{event.id}/text-recipients/",
-            **self._auth_headers(co_host),
+            **auth_headers_for(co_host),
         )
         assert response.status_code == 200
 
@@ -398,7 +349,7 @@ class TestTextRecipients:
 
         response = api_client.get(
             f"/api/community/events/{event.id}/text-recipients/",
-            **self._auth_headers(member),
+            **auth_headers_for(member),
         )
         assert response.status_code == 403
 

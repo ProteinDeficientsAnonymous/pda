@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -87,6 +87,7 @@ export function EventHostSection({
                 void removeCohost(h);
               }}
               isSelf={isSelf}
+              linkToProfile={viewerId !== null}
             />
           );
         })}
@@ -133,20 +134,40 @@ export function EventHostSection({
   );
 }
 
+function ProfileLink({
+  userId,
+  linked,
+  children,
+}: {
+  userId: string;
+  linked: boolean;
+  children: ReactNode;
+}) {
+  const className = 'inline-flex items-center gap-2';
+  if (!linked) return <span className={className}>{children}</span>;
+  return (
+    <Link to={`/members/${userId}`} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 function HostChip({
   host,
   canRemove,
   onRemove,
   isSelf,
+  linkToProfile,
 }: {
   host: HostRow;
   canRemove: boolean;
   onRemove: () => void;
   isSelf: boolean;
+  linkToProfile: boolean;
 }) {
   return (
     <span className="bg-surface-dim hover:bg-surface-dim/70 inline-flex items-center gap-2 rounded-full px-2 py-1 text-sm">
-      <Link to={`/members/${host.userId}`} className="inline-flex items-center gap-2">
+      <ProfileLink userId={host.userId} linked={linkToProfile}>
         {host.photoUrl ? (
           <img
             src={host.photoUrl}
@@ -163,7 +184,7 @@ function HostChip({
           </span>
         )}
         {host.name}
-      </Link>
+      </ProfileLink>
       {canRemove ? (
         <button
           type="button"

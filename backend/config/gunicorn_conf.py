@@ -6,6 +6,8 @@ import time
 
 bind = "0.0.0.0:8000"
 worker_class = "uvicorn.workers.UvicornWorker"
+# >1 so a max-age recycle never leaves the app with no worker accepting requests.
+workers = int(os.environ.get("WEB_CONCURRENCY", "2"))
 # Sized above observed production bursts (~1900 req/hour); max-age bounds RSS.
 max_requests = 2000
 max_requests_jitter = 200

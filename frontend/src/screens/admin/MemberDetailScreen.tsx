@@ -16,6 +16,7 @@ import {
 } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { buttonClass } from '@/components/ui/buttonClass';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
 import { useConfirm } from '@/components/ui/useConfirm';
@@ -26,6 +27,9 @@ import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/we
 
 import { attendedCountLabel } from './attendedCountLabel';
 import { MemberConnectedApps } from './MemberConnectedApps';
+import { isAttendancePaused, isGuidelinesPaused, isTentative } from './memberPause';
+import { MemberPauseToggles } from './MemberPauseToggles';
+import { PauseBadges } from './PauseBadges';
 
 export default function MemberDetailScreen() {
   const { id = '' } = useParams<{ id: string }>();
@@ -45,11 +49,15 @@ function MemberDetailView({ member }: { member: Member }) {
   const navigate = useNavigate();
   const archive = useArchiveUser();
   const { confirm, element: confirmElement } = useConfirm();
+  const tentative = isTentative(member);
 
   async function onArchive() {
+    const name = member.fullName || formatPhone(member.phoneNumber);
     const confirmed = await confirm({
       title: 'archive member',
-      message: `archive ${member.fullName || formatPhone(member.phoneNumber)}? they'll lose access immediately — you can restore them later by approving a new join request.`,
+      message: tentative
+        ? `archive ${name}? this closes their tentative join request, so checking in won't approve them. they can apply to join again later.`
+        : `archive ${name}? they'll lose access immediately, and events they host alone go back to draft with their guests told. you can restore them later by approving a new join request.`,
       confirmLabel: 'archive',
       destructive: true,
     });
@@ -79,23 +87,28 @@ function MemberDetailView({ member }: { member: Member }) {
           {member.email ? (
             <p className="text-foreground-secondary text-sm">{member.email}</p>
           ) : null}
-          {member.isPaused ? (
-            <span className="bg-warning-subtle text-warning mt-1 rounded-full px-2 py-0.5 text-xs">
-              paused
-            </span>
-          ) : null}
+          <div className="mt-1 flex flex-wrap justify-center gap-1">
+            <PauseBadges member={member} />
+          </div>
         </div>
       </header>
 
-      <MemberRolesSection
-        key={`${member.id}:${member.roles
-          .map((r) => r.id)
-          .sort()
-          .join(',')}`}
-        member={member}
-      />
-
-      <MemberWhatsappSection member={member} />
+      {tentative ? (
+        <p className="text-muted mb-4 text-sm">
+          tentative: approve them from join requests, or archive them here
+        </p>
+      ) : (
+        <>
+          <MemberRolesSection
+            key={`${member.id}:${member.roles
+              .map((r) => r.id)
+              .sort()
+              .join(',')}`}
+            member={member}
+          />
+          <MemberWhatsappSection member={member} />
+        </>
+      )}
 
       <MemberMagicLinkSection member={member} />
 
@@ -126,13 +139,15 @@ function MemberDetailView({ member }: { member: Member }) {
           <Button variant="secondary" onClick={() => void onArchive()} disabled={archive.isPending}>
             {archive.isPending ? 'archiving…' : 'archive'}
           </Button>
-          <Button
-            onClick={() => {
-              setEditing(true);
-            }}
-          >
-            edit
-          </Button>
+          {tentative ? null : (
+            <Button
+              onClick={() => {
+                setEditing(true);
+              }}
+            >
+              edit
+            </Button>
+          )}
         </div>
       )}
 
@@ -160,6 +175,11 @@ function MemberRolesSection({ member }: { member: Member }) {
     }
   }
 
+  if (isAttendancePaused(member)) {
+    return (
+      <p className="text-muted mb-4 text-sm">roles are locked to member while event rqmt paused</p>
+    );
+  }
   if (isPending) {
     return <p className="text-muted mb-4 text-sm">loading roles…</p>;
   }
@@ -272,10 +292,7 @@ function MemberMagicLinkSection({ member }: { member: Member }) {
             <Button type="button" variant="secondary" onClick={() => void onCopy()}>
               {copied ? 'copied ✓' : 'copy link'}
             </Button>
-            <a
-              href={smsHref}
-              className="focus-visible:ring-brand-200 bg-surface text-foreground border-border-strong hover:bg-background inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            >
+            <a href={smsHref} className={buttonClass('secondary')}>
               send welcome message
             </a>
           </div>
@@ -364,7 +381,10 @@ function MemberEditForm({
   const [lastName, setLastName] = useState(member.lastName);
   const [phoneNumber, setPhoneNumber] = useState(member.phoneNumber);
   const [email, setEmail] = useState(member.email);
-  const [isPaused, setIsPaused] = useState(member.isPaused);
+  const [pause, setPause] = useState({
+    guidelinesPaused: isGuidelinesPaused(member),
+    attendancePaused: isAttendancePaused(member),
+  });
   const [error, setError] = useState<string | null>(null);
   const targetIsAdmin = member.roles.some((r) => r.name === ADMIN_ROLE_NAME && r.isDefault);
 
@@ -381,7 +401,11 @@ function MemberEditForm({
     if (lastName.trim() !== member.lastName) patch.lastName = lastName.trim();
     if (phoneNumber !== member.phoneNumber) patch.phoneNumber = phoneNumber.trim();
     if (email !== member.email) patch.email = email.trim();
-    if (isPaused !== member.isPaused) patch.isPaused = isPaused;
+    if (pause.guidelinesPaused !== isGuidelinesPaused(member))
+      patch.guidelinesPaused = pause.guidelinesPaused;
+    const wasAttendancePaused = isAttendancePaused(member);
+    if (pause.attendancePaused !== wasAttendancePaused)
+      patch.attendancePaused = pause.attendancePaused;
 
     if (Object.keys(patch).length === 0) {
       onSaved();
@@ -438,13 +462,12 @@ function MemberEditForm({
           setEmail(e.target.value);
         }}
       />
-      <Toggle
-        label="pause account"
-        checked={isPaused}
-        onChange={setIsPaused}
-        disabled={targetIsAdmin}
+      <MemberPauseToggles
+        memberId={member.id}
+        value={pause}
+        onChange={setPause}
+        targetIsAdmin={targetIsAdmin}
       />
-      {targetIsAdmin ? <p className="text-muted text-xs">admins can't be paused</p> : null}
 
       {error ? (
         <p role="alert" className="text-sm text-red-600">

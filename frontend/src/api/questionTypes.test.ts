@@ -15,7 +15,8 @@ describe('QuestionType', () => {
       'checkbox',
       'number',
       'boolean',
-      'rating',
+      'stars',
+      'scale',
       'datetime_poll',
       'section',
     ];
@@ -27,7 +28,8 @@ describe('QuestionType', () => {
     expect(QuestionType.Checkbox).toBe('checkbox');
     expect(QuestionType.Number).toBe('number');
     expect(QuestionType.Boolean).toBe('boolean');
-    expect(QuestionType.Rating).toBe('rating');
+    expect(QuestionType.Stars).toBe('stars');
+    expect(QuestionType.Scale).toBe('scale');
     expect(QuestionType.DatetimePoll).toBe('datetime_poll');
     expect(QuestionType.Section).toBe('section');
     expect(Object.values(QuestionType).sort()).toEqual([...expected].sort());

@@ -1,20 +1,18 @@
-import { format } from 'date-fns';
-
-import { useEvents } from '@/api/events';
 import type { SurveyInput } from '@/api/surveyAdmin';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
-import { type Event, EventType, type EventTypeValue } from '@/models/event';
+import { EventType, type EventTypeValue } from '@/models/event';
 
-export type SurveyFormValues = Omit<SurveyInput, 'isActive' | 'confirmationMessage'>;
+export type SurveyFormValues = Omit<
+  SurveyInput,
+  'isActive' | 'confirmationMessage' | 'description'
+>;
 
 interface Props {
   values: SurveyFormValues;
   onChange: (patch: Partial<SurveyFormValues>) => void;
   slugError?: string | undefined;
-  linkedEventError?: string | undefined;
   feedbackTypeError?: string | undefined;
   anonymousLocked?: boolean;
 }
@@ -34,7 +32,6 @@ export function SurveyFields({
   values,
   onChange,
   slugError,
-  linkedEventError,
   feedbackTypeError,
   anonymousLocked = false,
 }: Props) {
@@ -62,15 +59,6 @@ export function SurveyFields({
         error={slugError}
         maxLength={100}
       />
-      <Textarea
-        label="description"
-        value={values.description}
-        onChange={(e) => {
-          onChange({ description: e.target.value });
-        }}
-        rows={3}
-        maxLength={2000}
-      />
       <Select
         label="visibility"
         value={values.visibility}
@@ -79,14 +67,6 @@ export function SurveyFields({
         }}
         options={VISIBILITY_OPTIONS}
       />
-      <LinkedEventSelect
-        value={values.linkedEventId}
-        onChange={(linkedEventId) => {
-          onChange({ linkedEventId });
-        }}
-        error={linkedEventError}
-        disabled={isFeedback}
-      />
       <Select
         label="feedback survey for"
         value={values.feedbackEventType}
@@ -94,9 +74,7 @@ export function SurveyFields({
           const picked = FEEDBACK_TYPE_OPTIONS.find((o) => o.value === e.target.value);
           const feedbackEventType = picked?.value ?? '';
           onChange(
-            feedbackEventType
-              ? { feedbackEventType, anonymous: true, linkedEventId: null }
-              : { feedbackEventType },
+            feedbackEventType ? { feedbackEventType, anonymous: true } : { feedbackEventType },
           );
         }}
         options={FEEDBACK_TYPE_OPTIONS}
@@ -164,41 +142,5 @@ export function SurveyFields({
         hint="leave blank for unlimited"
       />
     </>
-  );
-}
-
-function eventLabel(e: Event): string {
-  const date = e.startDatetime ? ` · ${format(e.startDatetime, 'MMM d, yyyy').toLowerCase()}` : '';
-  return `${e.title.toLowerCase()}${date}`;
-}
-
-function LinkedEventSelect({
-  value,
-  onChange,
-  error,
-  disabled,
-}: {
-  value: string | null;
-  onChange: (id: string | null) => void;
-  error?: string | undefined;
-  disabled?: boolean;
-}) {
-  const { data: events = [] } = useEvents();
-  const options = events.map((e) => ({ value: e.id, label: eventLabel(e) }));
-  // A linked event that has left the active list (past, cancelled) must stay selectable.
-  if (value && !options.some((o) => o.value === value)) {
-    options.unshift({ value, label: 'current linked event' });
-  }
-  return (
-    <Select
-      label="linked event"
-      value={value ?? ''}
-      onChange={(e) => {
-        onChange(e.target.value || null);
-      }}
-      options={[{ value: '', label: 'none' }, ...options]}
-      error={error}
-      disabled={disabled}
-    />
   );
 }

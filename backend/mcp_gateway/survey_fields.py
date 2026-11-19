@@ -1,10 +1,10 @@
 from datetime import UTC, datetime
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
-from community._field_limits import FieldLimit
-from community._survey_schemas import SurveyIn, SurveyQuestionIn
-from community.models import QuestionType, ShowIfOperator, SurveyVisibility
+from community.field_limits import FieldLimit
+from community.models import EventType, QuestionType, ShowIfOperator, SurveyVisibility
+from community.surveys.schemas import SurveyIn, SurveyQuestionIn, scale_labels
 from django.utils.text import slugify
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import (
@@ -19,10 +19,10 @@ from pydantic import (
 from mcp_gateway.fields import WHEN, NewYorkTime, build, new_york
 
 _NEEDS_OPTIONS = ("radio", "select", "checkbox", "datetime_poll")
-_RATING_STARS = 5
 _TYPES = "text: short answer; textarea: long answer; number; boolean: yes/no; radio: pick one "
-_TYPES += "(buttons); select: pick one (dropdown); checkbox: pick any; rating: 1-5 stars; "
-_TYPES += "datetime_poll: respondents mark yes/maybe on each candidate time; section: a heading "
+_TYPES += "(buttons); select: pick one (dropdown); checkbox: pick multiple; stars: 1-5 stars; "
+_TYPES += "scale: pick 1-5 on numbered buttons, with optional end or point labels; "
+_TYPES += "datetime_poll: respondents mark yes/maybe/no on each candidate time; section: a heading "
 _TYPES += "that starts a new part of the survey, with an optional description; takes no answer"
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 # A real id only exists once the source question is created; validation just needs a UUID.
@@ -45,9 +45,10 @@ class SurveyQuestionFields(BaseModel):
     options: list[str] = Field(
         [],
         description=(
-            "radio/select/checkbox: the choices. rating: optional labels for stars 1-5 in order, "
-            f"'' for a star with no label. datetime_poll: candidate times, {WHEN} (saved as utc "
-            "like the survey builder, e.g. 2026-11-07T16:00:00.000Z). none for other types"
+            "radio/select/checkbox: the choices. scale: optional [low, high] end labels, e.g. "
+            "['bad', 'great'], or 5 labels for points 1-5 in order. datetime_poll: candidate "
+            "times, {WHEN} (saved as utc like the survey builder, e.g. 2026-11-07T16:00:00.000Z). "
+            "none for other types"
         ),
     )
     description: str = Field(
@@ -61,8 +62,8 @@ class SurveyQuestionFields(BaseModel):
 
     @model_validator(mode="after")
     def _shape_options(self) -> Self:
-        if self.field_type == QuestionType.RATING:
-            self.options = _rating_labels(self.options)
+        if self.field_type == QuestionType.SCALE:
+            self.options = scale_labels(self.options)
             return self
         kind, self.options = self.field_type, [o.strip() for o in self.options if o.strip()]
         if kind in _NEEDS_OPTIONS and not self.options:
@@ -81,14 +82,6 @@ class SurveyQuestionFields(BaseModel):
         if self.field_type != QuestionType.SECTION and self.description:
             raise ValueError("only section headers take a description")
         return self
-
-
-def _rating_labels(options: list[str]) -> list[str]:
-    if len(options) > _RATING_STARS:
-        raise ValueError(f"rating questions take at most {_RATING_STARS} star labels")
-    labels = [label.strip() for label in options]
-    labels += [""] * (_RATING_STARS - len(labels))
-    return labels if any(labels) else []
 
 
 def _poll_option(option: str) -> str:
@@ -122,8 +115,21 @@ class SurveySettings(BaseModel):
     opens_at: NewYorkTime = Field(None, description=f"first time it takes responses, {WHEN}")
     closes_at: NewYorkTime = Field(None, description=f"stops taking responses, {WHEN}")
     max_responses: int | None = Field(None, description="stop after this many; empty: unlimited")
-    linked_event_id: UUID | None = Field(None, description="event id this survey is for")
     confirmation_message: str = Field("", description="shown to the respondent after submitting")
+    feedback_event_type: Literal[EventType.OFFICIAL, EventType.CLUB, ""] = Field(
+        "",
+        description=(
+            "make it the feedback survey emailed to members after they attend an event of this "
+            "type; one survey per type; feedback surveys are always anonymous. empty: not one"
+        ),
+    )
+
+
+def feedback_emails(event_type: str) -> str:
+    return (
+        f"the daily feedback emails, asking members who attended a {event_type} event in the "
+        "past week to fill it in, with a reminder 3 days later"
+    )
 
 
 def to_survey_in(settings: SurveySettings) -> SurveyIn:

@@ -1,9 +1,9 @@
 """Tests for email validation on join request submission."""
 
 import pytest
-from community._join_request_submit import _send_join_request_email
-from community._shared import flatten_to_single_line
+from community.join_requests.submit import send_join_request_email
 from community.models import JoinFormQuestion, JoinRequest
+from community.shared import flatten_to_single_line
 from django.core import mail
 
 
@@ -77,10 +77,9 @@ class TestVettingEmailHeaderInjection:
     @pytest.mark.django_db
     def test_vetting_email_subject_is_single_line(self, settings):
         settings.VETTING_EMAIL = "vetting@example.com"
-        settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
         mail.outbox = []
 
-        _send_join_request_email(
+        send_join_request_email(
             full_name="Mallory\r\nSubject: spoofed",
             phone="+12025550101",
             custom_answers={},

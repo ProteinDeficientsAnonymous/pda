@@ -65,7 +65,7 @@ function RequestLoginLinkForm({
   if (delivery !== null) {
     const messages: Record<Exclude<RequestLoginLinkDelivery, 'cooldown'>, string> = {
       email:
-        "if there's an account for that number, we sent a login link to the email on file — check your inbox, including spam 🌱",
+        "check your email! if there's an account for that number, we sent a login link to the email on file — check your inbox, including spam 🌱",
       admin:
         "if there's an account for that number, an admin will follow up with your login link — sit tight 🌱",
     };

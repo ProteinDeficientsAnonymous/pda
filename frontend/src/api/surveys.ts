@@ -49,17 +49,10 @@ export interface Survey {
   closesAt: string | null;
   maxResponses: number | null;
   responseCount: number;
-  linkedEventId: string | null;
   feedbackEventType: '' | EventTypeValue;
   questions: SurveyQuestion[];
   myResponseId: string | null;
-  myAnswers: Record<string, { label: string; answer: string | Record<string, string> }> | null;
-  pollResult: {
-    id: string;
-    winningDatetime: string;
-    finalizedById: string | null;
-    finalizedAt: string;
-  } | null;
+  myAnswers: Record<string, { label: string; answer: AnswerValue }> | null;
 }
 
 export interface WireShowIf {
@@ -112,17 +105,10 @@ export interface WireSurvey {
   closes_at?: string | null;
   max_responses?: number | null;
   response_count?: number;
-  linked_event_id?: string | null;
   feedback_event_type?: '' | EventTypeValue;
   questions?: WireQuestion[];
   my_response_id?: string | null;
   my_answers?: Record<string, { label: string; answer: string | Record<string, string> }> | null;
-  poll_result?: {
-    id: string;
-    winning_datetime: string;
-    finalized_by_id: string | null;
-    finalized_at: string;
-  } | null;
 }
 
 interface WireSurveyResponse {
@@ -149,19 +135,10 @@ export function mapSurvey(w: WireSurvey): Survey {
     closesAt: w.closes_at ?? null,
     maxResponses: w.max_responses ?? null,
     responseCount: w.response_count ?? 0,
-    linkedEventId: w.linked_event_id ?? null,
     feedbackEventType: w.feedback_event_type ?? '',
     questions: (w.questions ?? []).map(mapQuestion).sort((a, b) => a.displayOrder - b.displayOrder),
     myResponseId: w.my_response_id ?? null,
     myAnswers: w.my_answers ?? null,
-    pollResult: w.poll_result
-      ? {
-          id: w.poll_result.id,
-          winningDatetime: w.poll_result.winning_datetime,
-          finalizedById: w.poll_result.finalized_by_id,
-          finalizedAt: w.poll_result.finalized_at,
-        }
-      : null,
   };
 }
 
@@ -185,16 +162,21 @@ export function useSurvey(slug: string | undefined) {
   });
 }
 
-export type AnswerValue = string | Record<string, string>;
+export type AnswerValue = string | string[] | Record<string, string>;
 
-export function useSubmitSurvey(slug: string) {
+function submitParams(slug: string, responseId: string | null) {
+  const params = { ...tokenParams(slug), ...(responseId ? { response_id: responseId } : {}) };
+  return Object.keys(params).length > 0 ? params : undefined;
+}
+
+export function useSubmitSurvey(slug: string, responseId: string | null = null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (answers: Record<string, AnswerValue>) => {
       const { data } = await apiClient.post<WireSurveyResponse>(
         `/api/community/surveys/view/${slug}/respond/`,
         { answers },
-        { params: tokenParams(slug) },
+        { params: submitParams(slug, responseId) },
       );
       if (data.response_token) setStoredSurveyToken(slug, data.response_token);
       return data;

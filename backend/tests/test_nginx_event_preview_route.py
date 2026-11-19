@@ -13,6 +13,12 @@ def _event_preview_location() -> re.Pattern[str]:
     return re.compile(re.sub(r"\(\?<(?=[A-Za-z_])", "(?P<", match.group(1)))
 
 
+def _survey_preview_location() -> re.Pattern[str]:
+    match = re.search(r'location "~(\^/surveys/[^"]+)"', NGINX_TEMPLATE.read_text())
+    assert match, "survey preview location block not found in nginx.conf.template"
+    return re.compile(re.sub(r"\(\?<(?=[A-Za-z_])", "(?P<", match.group(1)))
+
+
 @pytest.mark.parametrize(
     "path",
     [
@@ -38,3 +44,13 @@ def test_unfurl_bots_reach_preview_for_slug_and_uuid_links(path):
 )
 def test_non_detail_event_routes_stay_on_spa(path):
     assert not _event_preview_location().match(path)
+
+
+@pytest.mark.parametrize("path", ["/surveys/potluck-planning", "/surveys/q4_feedback"])
+def test_unfurl_bots_reach_survey_preview(path):
+    assert _survey_preview_location().match(path)
+
+
+@pytest.mark.parametrize("path", ["/surveys/potluck/thanks", "/surveys/", "/surveys"])
+def test_survey_subroutes_stay_on_spa(path):
+    assert not _survey_preview_location().match(path)

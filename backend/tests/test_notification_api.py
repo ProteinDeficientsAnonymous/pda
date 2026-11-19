@@ -3,26 +3,19 @@ count, mark-read). Service- and integration-level tests live in
 test_in_app_notifications.py."""
 
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from community.models import Event
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._auth import auth_headers_for
+from tests._events import make_event
+from tests._users import make_user
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
-
-
-def _make_user(phone: str, name: str = "") -> User:
-    return User.objects.create_user(phone_number=phone, password="pass", first_name=name)
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
 def _bulk_invites(recipient: User, event: Event, count: int) -> None:
@@ -52,27 +45,22 @@ def _bulk_invites(recipient: User, event: Event, count: int) -> None:
 
 @pytest.fixture
 def inviter(db) -> User:
-    return _make_user("+12025550101", "Alice")
+    return make_user(first_name="Alice")
 
 
 @pytest.fixture
 def invitee(db) -> User:
-    return _make_user("+12025550102", "Bob")
+    return make_user(first_name="Bob")
 
 
 @pytest.fixture
 def another_user(db) -> User:
-    return _make_user("+12025550103", "Carol")
+    return make_user(first_name="Carol")
 
 
 @pytest.fixture
 def sample_event(inviter) -> Event:
-    return Event.objects.create(
-        title="Test Event",
-        start_datetime=future_iso(days=30),
-        end_datetime=future_iso(days=30, hours=2),
-        created_by=inviter,
-    )
+    return make_event(created_by=inviter)
 
 
 # ─── List endpoint ────────────────────────────────────────────────────────────
@@ -88,7 +76,7 @@ class TestNotificationListAPI:
             message="Alice invited you to Test Event",
         )
         response = api_client.get(
-            "/api/notifications/", content_type="application/json", **_auth_headers(invitee)
+            "/api/notifications/", content_type="application/json", **auth_headers_for(invitee)
         )
         assert response.status_code == 200
         data = response.json()
@@ -106,7 +94,7 @@ class TestNotificationListAPI:
             message="Alice invited you to Test Event",
         )
         response = api_client.get(
-            "/api/notifications/", content_type="application/json", **_auth_headers(another_user)
+            "/api/notifications/", content_type="application/json", **auth_headers_for(another_user)
         )
         assert response.status_code == 200
         assert response.json() == []
@@ -118,7 +106,7 @@ class TestNotificationListAPI:
     def test_defaults_to_30(self, api_client, invitee, sample_event):
         _bulk_invites(invitee, sample_event, 35)
         response = api_client.get(
-            "/api/notifications/", content_type="application/json", **_auth_headers(invitee)
+            "/api/notifications/", content_type="application/json", **auth_headers_for(invitee)
         )
         assert response.status_code == 200
         assert len(response.json()) == 30
@@ -128,7 +116,7 @@ class TestNotificationListAPI:
         response = api_client.get(
             "/api/notifications/?limit=10",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         body = response.json()
@@ -141,12 +129,12 @@ class TestNotificationListAPI:
         page_one = api_client.get(
             "/api/notifications/?limit=10&offset=0",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         ).json()
         page_two = api_client.get(
             "/api/notifications/?limit=10&offset=10",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         ).json()
         assert page_one[-1]["message"] == "invite 25"
         assert page_two[0]["message"] == "invite 24"
@@ -158,7 +146,7 @@ class TestNotificationListAPI:
         response = api_client.get(
             "/api/notifications/?limit=51",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 422
 
@@ -166,7 +154,7 @@ class TestNotificationListAPI:
         response = api_client.get(
             "/api/notifications/?offset=-1",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 422
 
@@ -194,7 +182,7 @@ class TestUnreadCountAPI:
         response = api_client.get(
             "/api/notifications/unread-count/",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         assert response.json()["count"] == 1
@@ -203,7 +191,7 @@ class TestUnreadCountAPI:
         response = api_client.get(
             "/api/notifications/unread-count/",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         assert response.json()["count"] == 0
@@ -224,7 +212,7 @@ class TestMarkReadAPI:
         response = api_client.post(
             f"/api/notifications/{notif.id}/read/",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         notif.refresh_from_db()
@@ -242,7 +230,7 @@ class TestMarkReadAPI:
         response = api_client.post(
             f"/api/notifications/{notif.id}/read/",
             content_type="application/json",
-            **_auth_headers(another_user),
+            **auth_headers_for(another_user),
         )
         assert response.status_code == 404
 
@@ -261,7 +249,46 @@ class TestMarkReadAPI:
         response = api_client.post(
             "/api/notifications/read-all/",
             content_type="application/json",
-            **_auth_headers(invitee),
+            **auth_headers_for(invitee),
         )
         assert response.status_code == 200
         assert Notification.objects.filter(recipient=invitee, is_read=False).count() == 0
+
+    @patch("notifications.api.notify_read_state_changed")
+    def test_mark_one_read_pings_other_clients(self, ping, api_client, invitee, sample_event):
+        notif = Notification.objects.create(
+            recipient=invitee,
+            notification_type=NotificationType.EVENT_INVITE,
+            event=sample_event,
+            message="test",
+        )
+        api_client.post(
+            f"/api/notifications/{notif.id}/read/",
+            content_type="application/json",
+            **auth_headers_for(invitee),
+        )
+        ping.assert_called_once_with(str(invitee.pk))
+
+    @patch("notifications.api.notify_read_state_changed")
+    def test_mark_all_read_pings_only_when_something_changed(
+        self, ping, api_client, invitee, sample_event
+    ):
+        api_client.post(
+            "/api/notifications/read-all/",
+            content_type="application/json",
+            **auth_headers_for(invitee),
+        )
+        ping.assert_not_called()
+
+        Notification.objects.create(
+            recipient=invitee,
+            notification_type=NotificationType.EVENT_INVITE,
+            event=sample_event,
+            message="test",
+        )
+        api_client.post(
+            "/api/notifications/read-all/",
+            content_type="application/json",
+            **auth_headers_for(invitee),
+        )
+        ping.assert_called_once_with(str(invitee.pk))

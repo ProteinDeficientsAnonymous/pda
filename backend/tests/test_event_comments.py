@@ -13,11 +13,12 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
+from users.models import MembershipStatus, User
 from users.roles import Role
 
-from tests.conftest import future_iso
+from tests._auth import auth_headers_for
+from tests._time import future_iso
+from tests._users import make_attendance_paused, make_user
 
 
 @pytest.fixture
@@ -64,8 +65,7 @@ class TestGetComments:
             password="bystanderpass",
             first_name="Bystander",
         )
-        refresh = RefreshToken.for_user(bystander)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(bystander)
         response = api_client.get(f"/api/community/events/{event.id}/comments/", **headers)
         assert response.status_code == 200, response.content
         body = response.json()
@@ -81,8 +81,7 @@ class TestGetComments:
             first_name="Member",
         )
         EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.ATTENDING)
-        refresh = RefreshToken.for_user(member)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(member)
         response = api_client.get(f"/api/community/events/{event.id}/comments/", **headers)
         assert response.status_code == 200, response.content
         body = response.json()
@@ -99,8 +98,7 @@ class TestGetComments:
             first_name="Cohost",
         )
         event.co_hosts.add(cohost)
-        refresh = RefreshToken.for_user(cohost)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(cohost)
         response = api_client.get(f"/api/community/events/{event.id}/comments/", **headers)
         assert response.status_code == 200, response.content
         body = response.json()
@@ -120,8 +118,7 @@ def rsvp_user(db):
 
 @pytest.fixture
 def rsvp_headers(rsvp_user):
-    refresh = RefreshToken.for_user(rsvp_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(rsvp_user)
 
 
 @pytest.fixture
@@ -149,8 +146,7 @@ class TestPostComment:
             password="bystanderpass",
             first_name="Bystander",
         )
-        refresh = RefreshToken.for_user(bystander)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(bystander)
         response = api_client.post(
             f"/api/community/events/{event.id}/comments/",
             data=json.dumps({"body": "hi"}),
@@ -205,7 +201,7 @@ class TestPostComment:
         assert response.status_code == 422
 
     def test_post_broadcasts_event_update(self, api_client, rsvp_headers, event_with_rsvp):
-        with patch("community._event_comments.broadcast_event_comment_update") as mock_broadcast:
+        with patch("community.events.comments.broadcast_event_comment_update") as mock_broadcast:
             response = api_client.post(
                 f"/api/community/events/{event_with_rsvp.id}/comments/",
                 data=json.dumps({"body": "first comment"}),
@@ -251,7 +247,7 @@ class TestPostReply:
         self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
     ):
         parent = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="parent")
-        with patch("community._event_comments.broadcast_event_comment_update") as mock_broadcast:
+        with patch("community.events.comments.broadcast_event_comment_update") as mock_broadcast:
             response = api_client.post(
                 f"/api/community/events/{event_with_rsvp.id}/comments/{parent.id}/replies/",
                 data=json.dumps({"body": "reply"}),
@@ -294,8 +290,7 @@ def admin_user(db):
 
 @pytest.fixture
 def admin_headers(admin_user):
-    refresh = RefreshToken.for_user(admin_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(admin_user)
 
 
 @pytest.mark.django_db
@@ -318,9 +313,7 @@ class TestDeleteComment:
             first_name="Bystander",
         )
         EventRSVP.objects.create(event=event_with_rsvp, user=bystander, status=RSVPStatus.ATTENDING)
-        bystander_headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(bystander).access_token}"  # type: ignore
-        }
+        bystander_headers = auth_headers_for(bystander)
 
         author = User.objects.create_user(
             phone_number="+12025550505",
@@ -380,7 +373,7 @@ class TestDeleteComment:
         self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
     ):
         comment = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="mine")
-        with patch("community._event_comments.broadcast_event_comment_update") as mock_broadcast:
+        with patch("community.events.comments.broadcast_event_comment_update") as mock_broadcast:
             response = api_client.delete(
                 f"/api/community/events/{event_with_rsvp.id}/comments/{comment.id}/",
                 **rsvp_headers,
@@ -399,8 +392,7 @@ class TestCommentVisibility:
             password="strangerpass",
             first_name="Stranger",
         )
-        refresh = RefreshToken.for_user(stranger)
-        stranger_headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        stranger_headers = auth_headers_for(stranger)
         event = Event.objects.create(
             title="Invite-only",
             start_datetime=future_iso(days=30),
@@ -411,7 +403,7 @@ class TestCommentVisibility:
             f"/api/community/events/{event.id}/comments/",
             **stranger_headers,
         )
-        # _can_see_invite_only returns False → _enforce_event_read_visibility
+        # can_see_invite_only returns False → enforce_event_read_visibility
         # raises Code.Event.PERM_DENIED with status 403.
         assert response.status_code == 403
 
@@ -429,3 +421,52 @@ class TestCommentVisibility:
             **rsvp_headers,
         )
         assert response.status_code == 200
+
+
+@pytest.mark.django_db
+class TestLimitedViewerComments:
+    @pytest.fixture
+    def community_event(self, test_user):
+        return Event.objects.create(
+            title="Community Potluck",
+            start_datetime=future_iso(days=30),
+            created_by=test_user,
+            event_type=EventType.COMMUNITY,
+            visibility=PageVisibility.PUBLIC,
+            rsvp_enabled=True,
+        )
+
+    @pytest.mark.parametrize(
+        "make_limited",
+        [
+            lambda: make_user(membership_status=MembershipStatus.TENTATIVE),
+            make_attendance_paused,
+        ],
+        ids=["tentative", "attendance_paused"],
+    )
+    def test_limited_user_is_told_members_only_not_login(
+        self, api_client, community_event, make_limited
+    ):
+        EventComment.objects.create(
+            event=community_event, author=community_event.created_by, body="hi"
+        )
+        response = api_client.get(
+            f"/api/community/events/{community_event.id}/comments/",
+            **auth_headers_for(make_limited()),
+        )
+        assert response.status_code == 200, response.content
+        body = response.json()
+        assert body["items"] == []
+        assert body["can_post"] is False
+        assert body["cannot_post_reason"] == "members_only"
+
+    def test_limited_user_still_cannot_post(self, api_client, community_event):
+        tentative = make_user(membership_status=MembershipStatus.TENTATIVE)
+        response = api_client.post(
+            f"/api/community/events/{community_event.id}/comments/",
+            data=json.dumps({"body": "hi"}),
+            content_type="application/json",
+            **auth_headers_for(tentative),
+        )
+        assert response.status_code == 403, response.content
+        assert not EventComment.objects.filter(event=community_event).exists()

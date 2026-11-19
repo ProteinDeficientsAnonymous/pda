@@ -3,10 +3,11 @@ import { useEditablePage, useUpdateEditablePage } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import { EditableHtmlBlock } from '@/components/EditableHtmlBlock';
 // Editing EditablePage (including donate/volunteer) is gated by the same
-// permission as guidelines per _pages.py.
+// permission as guidelines per community/content/pages.py.
 import { hasPermission, Permission } from '@/models/permissions';
 
 import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
+import { ReserveTable } from './ReserveTable';
 
 export default function DonateScreen() {
   const { data, isPending, error } = useEditablePage('donate');
@@ -32,6 +33,7 @@ export default function DonateScreen() {
         onSave={(contentPm) => update.mutateAsync({ contentPm }).then(() => undefined)}
         placeholder="donate content"
       />
+      <ReserveTable />
     </ContentContainer>
   );
 }

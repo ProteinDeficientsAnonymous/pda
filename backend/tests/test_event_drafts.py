@@ -3,14 +3,14 @@
 import json
 
 import pytest
-from community._validation import Code
 from community.models import Event, EventStatus
-from ninja_jwt.tokens import RefreshToken
+from community.validation import Code
 from notifications.models import Notification
 from users.models import User
 
 from tests._asserts import assert_error_code
-from tests.conftest import future_iso, past_iso
+from tests._auth import auth_headers_for
+from tests._time import future_iso, past_iso
 
 
 @pytest.fixture
@@ -25,8 +25,7 @@ def creator(db):
 
 @pytest.fixture
 def creator_headers(creator):
-    refresh = RefreshToken.for_user(creator)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(creator)
 
 
 @pytest.fixture
@@ -41,8 +40,7 @@ def other_member(db):
 
 @pytest.fixture
 def other_headers(other_member):
-    refresh = RefreshToken.for_user(other_member)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(other_member)
 
 
 @pytest.fixture
@@ -57,8 +55,7 @@ def cohost(db):
 
 @pytest.fixture
 def cohost_headers(cohost):
-    refresh = RefreshToken.for_user(cohost)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(cohost)
 
 
 @pytest.fixture
@@ -140,8 +137,10 @@ class TestCreateDraft:
         assert_error_code(response, Code.Event.INVALID_CREATE_STATUS, "status")
 
     def test_invite_to_draft_skips_invitee_notifications(
-        self, api_client, creator_headers, invitee, sample_draft
+        self, api_client, creator, creator_headers, invitee, sample_draft
     ):
+        Event.objects.filter(pk=sample_draft.pk).update(rsvp_enabled=True)
+        sample_draft.co_hosts.add(creator)
         response = api_client.post(
             f"/api/community/events/{sample_draft.id}/invitations/",
             data=json.dumps({"user_ids": [str(invitee.pk)]}),

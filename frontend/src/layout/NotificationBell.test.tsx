@@ -1,7 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -11,7 +9,9 @@ import {
   useUnreadCount,
 } from '@/api/notifications';
 import { useAuthStore } from '@/auth/store';
+import { useEventSource } from '@/hooks/useEventSource';
 import { NotificationType } from '@/models/notification';
+import { renderWithProviders } from '@/test/render';
 
 import { NotificationBell } from './NotificationBell';
 
@@ -49,18 +49,8 @@ function makeMutation(overrides = {}) {
   return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false, ...overrides };
 }
 
-function makeQc() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
-}
-
 function renderBell(initialPath = '/') {
-  return render(
-    <QueryClientProvider client={makeQc()}>
-      <MemoryRouter initialEntries={[initialPath]}>
-        <NotificationBell />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<NotificationBell />, { route: initialPath });
 }
 
 beforeEach(() => {
@@ -159,14 +149,7 @@ describe('NotificationBell', () => {
     );
 
     // We need to capture navigation — render with a route display
-    const qc = makeQc();
-    render(
-      <QueryClientProvider client={qc}>
-        <MemoryRouter initialEntries={['/']}>
-          <NotificationBell />
-        </MemoryRouter>
-      </QueryClientProvider>,
-    );
+    renderWithProviders(<NotificationBell />);
 
     // Open the panel
     await user.click(screen.getByRole('button', { name: /notifications \(1 unread\)/i }));
@@ -349,5 +332,18 @@ describe('NotificationBell mark-read error handling', () => {
       'n9',
       expect.objectContaining({ onError: expect.any(Function) }),
     );
+  });
+});
+
+describe('NotificationBell cross-client read sync', () => {
+  it('invalidates only notification caches on a notifications_read push', () => {
+    const { qc } = renderBell();
+    const invalidate = vi.spyOn(qc, 'invalidateQueries');
+    const { events } = vi.mocked(useEventSource).mock.calls.at(-1)![0];
+
+    events.notifications_read!(new MessageEvent('notifications_read'));
+
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['notifications'] });
   });
 });

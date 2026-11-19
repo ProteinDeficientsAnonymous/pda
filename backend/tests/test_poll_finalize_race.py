@@ -3,25 +3,19 @@ import threading
 import pytest
 from community.models import Event, EventPoll, PollOption
 from django import db
+from django.conf import settings
 from django.test import Client
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
 
-from tests.conftest import future_iso
+from tests._auth import auth_headers_for
+from tests._time import future_iso
+from tests._users import make_user
 
-
-def _make_user(i):
-    return User.objects.create_user(
-        phone_number=f"+1415555{9200 + i}",
-        password="Testpass123!",
-        first_name=f"Finalizer{i}",
-        last_name="",
-    )
-
-
-def _jwt_headers(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+pytestmark = [
+    pytest.mark.skipif(
+        "postgresql" not in settings.DATABASES["default"]["ENGINE"],
+        reason="needs concurrent postgres writers",
+    ),
+]
 
 
 @pytest.mark.django_db(transaction=True, serialized_rollback=True)
@@ -42,7 +36,7 @@ class TestPollFinalizeRace:
             for i in range(8)
         ]
 
-        cohosts = [_make_user(i) for i in range(len(options))]
+        cohosts = [make_user() for _ in range(len(options))]
         event.co_hosts.set(cohosts)
         results = [None] * len(options)
 
@@ -53,7 +47,7 @@ class TestPollFinalizeRace:
                     f"/api/community/events/{event.id}/poll/finalize/",
                     {"winning_option_id": str(options[i].id)},
                     content_type="application/json",
-                    **_jwt_headers(cohosts[i]),
+                    **auth_headers_for(cohosts[i]),
                 )
                 results[i] = resp.status_code
             finally:

@@ -1,3 +1,4 @@
+import importlib
 import logging
 import os
 import signal
@@ -110,11 +111,11 @@ class TestRequestLoggingRss:
             middleware(request)
 
         record = caplog.records[0]
-        assert record.rss_kb >= 0  # type: ignore[attr-defined]
+        assert getattr(record, "rss_kb") >= 0
         assert hasattr(record, "rss_delta_kb")
-        assert record.media_path_calls == 0  # type: ignore[attr-defined]
+        assert getattr(record, "media_path_calls") == 0
         body = JsonResponse({"ok": True})
-        assert record.response_bytes == len(body.content)  # type: ignore[attr-defined]
+        assert getattr(record, "response_bytes") == len(body.content)
 
     def test_counts_media_path_calls_for_the_request(self, caplog, monkeypatch):
         monkeypatch.setenv("PDA_MEMORY_PROFILE", "1")
@@ -132,7 +133,7 @@ class TestRequestLoggingRss:
         with caplog.at_level(logging.INFO, logger="pda.middleware"):
             middleware(request)
 
-        assert caplog.records[0].media_path_calls == 3  # type: ignore[attr-defined]
+        assert getattr(caplog.records[0], "media_path_calls") == 3
 
     def test_omits_response_bytes_for_streaming(self, caplog, monkeypatch):
         monkeypatch.setenv("PDA_MEMORY_PROFILE", "1")
@@ -180,6 +181,18 @@ class TestGunicornConf:
         assert gunicorn_conf.max_requests == 2000
         assert gunicorn_conf.max_requests_jitter == 200
         assert gunicorn_conf.graceful_timeout == 35
+
+    def test_runs_two_workers_by_default(self, monkeypatch):
+        monkeypatch.delenv("WEB_CONCURRENCY", raising=False)
+
+        assert importlib.reload(gunicorn_conf).workers == 2
+
+    def test_worker_count_reads_web_concurrency(self, monkeypatch):
+        monkeypatch.setenv("WEB_CONCURRENCY", "3")
+
+        assert importlib.reload(gunicorn_conf).workers == 3
+        monkeypatch.undo()
+        importlib.reload(gunicorn_conf)
 
     def test_worker_max_age_defaults_to_30_minutes(self, monkeypatch):
         monkeypatch.delenv("PDA_WORKER_MAX_AGE", raising=False)

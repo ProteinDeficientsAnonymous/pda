@@ -1,0 +1,194 @@
+"""RSVP headcount and attendance predicates shared across event surfaces."""
+
+from django.db.models import Case, IntegerField, OuterRef, Q, Subquery, Sum, Value, When
+from django.db.models.functions import Coalesce
+
+from community.models import (
+    AttendanceStatus,
+    Event,
+    EventRSVP,
+    EventStatus,
+    RSVPStatus,
+)
+
+# Excluded from attendance surfaces; centralized so report + member-list can't drift.
+NON_REPORTABLE_EVENT_STATUSES = (EventStatus.DELETED, EventStatus.CANCELLED, EventStatus.DRAFT)
+
+
+def reportable_events_q(prefix: str = "event") -> Q:
+    """Q excluding non-reportable event statuses across `prefix` (default the event itself)."""
+    field = f"{prefix}__status" if prefix else "status"
+    return ~Q(**{f"{field}__in": NON_REPORTABLE_EVENT_STATUSES})
+
+
+def attendance_q(attendance: str, prefix: str = "rsvps") -> Q:
+    """Has this attendance mark, regardless of the rsvp's current status.
+
+    attendance(str): the AttendanceStatus to match.
+    prefix(str): relation lookup prefix from the queried model to EventRSVP; "" for EventRSVP.
+    return(Q): filter on attendance=<attendance>.
+    """
+    field = f"{prefix}__attendance" if prefix else "attendance"
+    return Q(**{field: attendance})
+
+
+def no_show_q(prefix: str = "rsvps") -> Q:
+    """Was RSVP'd going and didn't go — the narrower, true no-show."""
+    return Q(
+        **{
+            f"{prefix}__status": RSVPStatus.ATTENDING,
+            f"{prefix}__attendance": AttendanceStatus.DIDNT_GO,
+        }
+    )
+
+
+def plus_one_attendance_q(attendance: str, prefix: str = "rsvps") -> Q:
+    """Has a plus-one carrying this attendance mark, mirroring attendance_q for the guest."""
+    return Q(**{f"{prefix}__has_plus_one": True, f"{prefix}__plus_one_attendance": attendance})
+
+
+def plus_one_no_show_q(prefix: str = "rsvps") -> Q:
+    """RSVP'd going with a plus-one who didn't go."""
+    return Q(
+        **{
+            f"{prefix}__status": RSVPStatus.ATTENDING,
+            f"{prefix}__has_plus_one": True,
+            f"{prefix}__plus_one_attendance": AttendanceStatus.DIDNT_GO,
+        }
+    )
+
+
+def going_q(prefix: str = "rsvps") -> Q:
+    """Q matching all ATTENDING rsvps across `prefix` (the going denominator)."""
+    return Q(**{f"{prefix}__status": RSVPStatus.ATTENDING})
+
+
+def _plus_one_weight_case(prefix: str = "") -> Case:
+    """Case weighting each rsvp as 2 spots when it carries a plus-one, else 1."""
+    field = f"{prefix}__has_plus_one" if prefix else "has_plus_one"
+    return Case(
+        When(**{field: True}, then=Value(2)),
+        default=Value(1),
+        output_field=IntegerField(),
+    )
+
+
+def going_headcount_expr(prefix: str = "rsvps") -> Coalesce:
+    """Sum of ATTENDING spots incl. plus-ones, matching attending_headcount."""
+    return Coalesce(Sum(_plus_one_weight_case(prefix), filter=going_q(prefix)), Value(0))
+
+
+def _rsvp_headcount_subquery(status: str) -> Subquery:
+    """Per-event RSVP headcount (incl. plus-ones) without instantiating rows."""
+    return Subquery(
+        EventRSVP.objects.filter(event_id=OuterRef("pk"), status=status)
+        .order_by()
+        .values("event_id")
+        .annotate(total=Sum(_plus_one_weight_case()))
+        .values("total")[:1],
+        output_field=IntegerField(),
+    )
+
+
+def attending_count_annotation() -> Coalesce:
+    """SQL attending headcount (incl. plus-ones) without instantiating RSVP rows."""
+    return Coalesce(_rsvp_headcount_subquery(RSVPStatus.ATTENDING), Value(0))
+
+
+def waitlisted_count_annotation() -> Coalesce:
+    """SQL waitlisted headcount (incl. plus-ones) without instantiating RSVP rows."""
+    return Coalesce(_rsvp_headcount_subquery(RSVPStatus.WAITLISTED), Value(0))
+
+
+def is_attended(rsvp: EventRSVP) -> bool:
+    """Has an ATTENDED mark, regardless of the rsvp's current status. Shared across event surfaces."""
+    return rsvp.attendance == AttendanceStatus.ATTENDED
+
+
+def is_didnt_go(rsvp: EventRSVP) -> bool:
+    """Has a DIDNT_GO mark, regardless of the rsvp's current status. Shared across event surfaces."""
+    return rsvp.attendance == AttendanceStatus.DIDNT_GO
+
+
+def is_no_show(rsvp: EventRSVP) -> bool:
+    """Was RSVP'd going and didn't go — the narrower, true no-show. Shared across event surfaces."""
+    return rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.DIDNT_GO
+
+
+def count_attended(event: Event) -> int:
+    return sum(1 for r in event.rsvps.all() if is_attended(r))
+
+
+def count_didnt_go(event: Event) -> int:
+    return sum(1 for r in event.rsvps.all() if is_didnt_go(r))
+
+
+def count_no_shows(event: Event) -> int:
+    return sum(1 for r in event.rsvps.all() if is_no_show(r))
+
+
+def count_not_marked(event: Event) -> int:
+    return sum(
+        1
+        for r in event.rsvps.all()
+        if r.status == RSVPStatus.ATTENDING and r.attendance == AttendanceStatus.UNKNOWN
+    )
+
+
+def host_crew_ids(event: Event) -> list:
+    """Current co-host ids. The creator is one until they step down."""
+    return [u.pk for u in event.co_hosts.all()]
+
+
+def count_guest_rsvps(event: Event) -> int:
+    """RSVP rows from users outside the current co-hosts.
+
+    Exactly `_unpublish_event`'s guard predicate: 0 ⇔ unpublish allowed
+    (modulo the past guard). Any status counts — even can't-go. Reuses the
+    prefetched rsvp cache when present so EventOut serialization stays query-free.
+    """
+    host_ids = set(host_crew_ids(event))
+    if "rsvps" in getattr(event, "_prefetched_objects_cache", {}):
+        return sum(1 for r in event.rsvps.all() if r.user_id not in host_ids)
+    return EventRSVP.objects.filter(event=event).exclude(user_id__in=host_ids).count()
+
+
+def attending_headcount(event: Event) -> int:
+    """Count attending spots from prefetched RSVPs (each attendee + their +1)."""
+    return sum(
+        1 + (1 if r.has_plus_one else 0)
+        for r in event.rsvps.all()
+        if r.status == RSVPStatus.ATTENDING
+    )
+
+
+def attending_headcount_db(event: Event, exclude_user=None) -> int:
+    """Count attending spots via DB query (use inside select_for_update transactions)."""
+    qs = EventRSVP.objects.filter(event=event, status=RSVPStatus.ATTENDING)
+    if exclude_user is not None:
+        qs = qs.exclude(user=exclude_user)
+    result = qs.aggregate(total=Sum(_plus_one_weight_case()))
+    return result["total"] or 0
+
+
+def count_waitlisted(event: Event) -> int:
+    """Count waitlisted spots incl. plus-ones, matching attending_headcount."""
+    return sum(
+        1 + (1 if r.has_plus_one else 0)
+        for r in event.rsvps.all()
+        if r.status == RSVPStatus.WAITLISTED
+    )
+
+
+def count_maybe(event: Event) -> int:
+    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.MAYBE)
+
+
+def count_cant_go(event: Event) -> int:
+    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.CANT_GO)
+
+
+def count_no_response(event: Event) -> int:
+    """Invited users who have no RSVP row."""
+    responded = {r.user_id for r in event.rsvps.all()}
+    return sum(1 for u in event.invited_users.all() if u.pk not in responded)

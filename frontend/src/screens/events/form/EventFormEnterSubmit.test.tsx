@@ -1,12 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as EventWritesModule from '@/api/eventWrites';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { makeEvent, makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 type EventWrites = typeof EventWritesModule;
 
@@ -30,14 +29,7 @@ vi.mock('./EventFormPhoto', () => ({ EventFormPhoto: () => null }));
 import { EventForm } from './EventForm';
 
 function renderForm(existing?: Event) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const { container } = render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <EventForm existing={existing} />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  const { container } = renderWithProviders(<EventForm existing={existing} />);
   const form = container.querySelector<HTMLFormElement>('form')!;
   const onSubmit = vi.fn();
   form.addEventListener('submit', onSubmit);

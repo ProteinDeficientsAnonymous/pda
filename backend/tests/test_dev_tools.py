@@ -1,31 +1,22 @@
 import pytest
-from community._event_rsvp_answers import build_rsvp_answers
 from community.models import Event, EventStatus, EventType, PageVisibility, RSVPStatus
+from community.rsvps.answers import build_rsvp_answers
 from django.utils import timezone
-from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
+
+from tests._auth import auth_headers_for
+from tests._users import make_user
 
 
 @pytest.fixture
 def dev_tools_user(db):
-    user = User.objects.create_user(
-        phone_number="+15550003003",
-        password="devtoolsuserpass123",
-        first_name="Dev",
-        last_name="Tools",
-        is_member=True,
-    )
-    role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.MANAGE_EVENTS, first_name="Dev", last_name="Tools")
 
 
 @pytest.fixture
 def dev_tools_headers(dev_tools_user):
-    refresh = RefreshToken.for_user(dev_tools_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(dev_tools_user)
 
 
 @pytest.mark.django_db
@@ -440,7 +431,7 @@ class TestCreateDevTestEvent:
         self, api_client, dev_tools_headers, dev_tools_user, monkeypatch
     ):
         monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
-        before = User.objects.filter(is_member=True).count()
+        before = User.objects.members().count()
         response = api_client.post(
             "/api/community/dev/test-events/",
             data={
@@ -455,7 +446,7 @@ class TestCreateDevTestEvent:
             **dev_tools_headers,
         )
         assert response.status_code == 201
-        after = User.objects.filter(is_member=True).count()
+        after = User.objects.members().count()
         # dev_tools_user is already a member in the pool, so the single filler
         # should reuse it rather than always creating a new user.
         assert after - before <= 1

@@ -1,16 +1,17 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { queryWrapper } from '@/test/render';
 
-import { AlreadyInvitedError, useJoinRequests, useSubmitJoinRequest } from './join';
+import {
+  AlreadyHasAccountError,
+  PendingJoinRequestError,
+  useJoinRequests,
+  useSubmitJoinRequest,
+} from './join';
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
@@ -21,12 +22,6 @@ function makeAxiosError(status: number, data: Record<string, unknown> = {}): Err
     isAxiosError: true,
     response: { status, data },
   });
-}
-
-function wrapper() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
 }
 
 beforeEach(() => {
@@ -54,7 +49,7 @@ describe('useJoinRequests', () => {
       ],
     });
 
-    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -69,13 +64,13 @@ describe('useJoinRequests', () => {
         status: 'pending',
         userId: null,
         previouslyArchived: false,
+        previousArchive: null,
         previouslyRejected: false,
-        tentativeAt: null,
-        tentativeByName: null,
-        approvedAt: null,
-        approvedByName: null,
-        rejectedAt: null,
-        rejectedByName: null,
+        previousRejection: null,
+        statusChangedAt: null,
+        statusChangedByName: null,
+        approvedViaEventId: null,
+        approvedViaEventTitle: null,
         rejectionReason: null,
         rejectionNote: '',
         onboardedAt: null,
@@ -112,13 +107,93 @@ describe('useJoinRequests', () => {
       ],
     });
 
-    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(result.current.data?.[0]?.rsvpEvents).toEqual([
       { eventId: 'evt-1', title: 'Potluck', startDatetime: '2026-03-01T18:00:00Z' },
     ]);
+  });
+
+  it('maps previous_rejection from the wire', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'jr-5',
+          full_name: 'Lee Park',
+          phone_number: '+12125550333',
+          answers: [],
+          submitted_at: '2024-04-01T09:00:00Z',
+          status: 'pending',
+          user_id: null,
+          previous_rejection: {
+            status_changed_at: '2023-11-02T18:00:00Z',
+            status_changed_by_name: 'Sam Vettor',
+            rejection_reason: '',
+            rejection_note: '',
+          },
+        },
+      ],
+    });
+
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.[0]?.previousRejection).toEqual({
+      statusChangedAt: '2023-11-02T18:00:00Z',
+      statusChangedByName: 'Sam Vettor',
+      rejectionReason: null,
+      rejectionNote: '',
+    });
+  });
+
+  it('maps previous_archive from the wire and fills missing fields with null', async () => {
+    const wire = {
+      full_name: 'Lee Park',
+      phone_number: '+12125550333',
+      answers: [],
+      submitted_at: '2024-04-01T09:00:00Z',
+      status: 'pending',
+      user_id: null,
+    };
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          ...wire,
+          id: 'jr-6',
+          previous_archive: {
+            archived_at: '2023-08-01T12:00:00Z',
+            archived_by_name: 'Sam Vettor',
+            paused_status: 'attendance_paused',
+          },
+          previous_rejection: {},
+        },
+        { ...wire, id: 'jr-7', previous_archive: {} },
+      ],
+    });
+
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.[0]?.previousArchive).toEqual({
+      archivedAt: '2023-08-01T12:00:00Z',
+      archivedByName: 'Sam Vettor',
+      pausedStatus: 'attendance_paused',
+    });
+    expect(result.current.data?.[0]?.previousRejection).toEqual({
+      statusChangedAt: null,
+      statusChangedByName: null,
+      rejectionReason: null,
+      rejectionNote: '',
+    });
+    expect(result.current.data?.[1]?.previousArchive).toEqual({
+      archivedAt: null,
+      archivedByName: null,
+      pausedStatus: null,
+    });
   });
 
   it('maps attended_events from the wire', async () => {
@@ -144,7 +219,7 @@ describe('useJoinRequests', () => {
       ],
     });
 
-    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -152,7 +227,7 @@ describe('useJoinRequests', () => {
       {
         eventId: 'evt-2',
         title: 'Community Hang',
-        startDatetime: '2026-02-01T18:00:00Z',
+        startDatetime: new Date('2026-02-01T18:00:00Z'),
         eventType: 'community',
       },
     ]);
@@ -177,7 +252,7 @@ describe('useJoinRequests', () => {
       ],
     });
 
-    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -194,7 +269,7 @@ describe('useJoinRequests', () => {
     const forbidden = makeAxiosError(403, { detail: 'Permission denied' });
     mockedGet.mockRejectedValueOnce(forbidden);
 
-    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
@@ -207,7 +282,7 @@ describe('useJoinRequests', () => {
     const serverError = makeAxiosError(500, { detail: 'Internal error' });
     mockedGet.mockRejectedValueOnce(serverError);
 
-    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: queryWrapper() });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
@@ -232,22 +307,32 @@ const validPayload = {
 };
 
 describe('useSubmitJoinRequest', () => {
-  it('throws AlreadyInvitedError on a phone_already_invited 409', async () => {
+  it('throws AlreadyHasAccountError on a phone_already_invited 409', async () => {
     const conflict = makeAxiosError(409, {
       detail: [{ code: 'join_request.phone_already_invited', field: null }],
     });
     mockedPost.mockRejectedValueOnce(conflict);
 
     const { result } = renderHook(() => useSubmitJoinRequest(), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.toBeInstanceOf(
-      AlreadyInvitedError,
+      AlreadyHasAccountError,
     );
 
-    await waitFor(() => expect(result.current.error).toBeInstanceOf(AlreadyInvitedError));
-    expect((result.current.error as AlreadyInvitedError).name).toBe('AlreadyInvitedError');
+    await waitFor(() => expect(result.current.error).toBeInstanceOf(AlreadyHasAccountError));
+    expect((result.current.error as AlreadyHasAccountError).name).toBe('AlreadyHasAccountError');
+  });
+
+  it.each([
+    ['join_request.phone_already_pending', PendingJoinRequestError],
+    ['join_request.phone_already_tentative', AlreadyHasAccountError],
+  ])('maps %s to its error', async (code, ErrorClass) => {
+    mockedPost.mockRejectedValueOnce(makeAxiosError(400, { detail: [{ code, field: null }] }));
+    const { result } = renderHook(() => useSubmitJoinRequest(), { wrapper: queryWrapper() });
+
+    await expect(result.current.mutateAsync(validPayload)).rejects.toBeInstanceOf(ErrorClass);
   });
 
   it('does not redirect on an email.already_exists 409 — stays on the form', async () => {
@@ -257,13 +342,13 @@ describe('useSubmitJoinRequest', () => {
     mockedPost.mockRejectedValueOnce(conflict);
 
     const { result } = renderHook(() => useSubmitJoinRequest(), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.not.toBeInstanceOf(
-      AlreadyInvitedError,
+      AlreadyHasAccountError,
     );
-    expect(result.current.error).not.toBeInstanceOf(AlreadyInvitedError);
+    expect(result.current.error).not.toBeInstanceOf(AlreadyHasAccountError);
   });
 
   it('surfaces validation detail string when server responds with 400', async () => {
@@ -273,7 +358,7 @@ describe('useSubmitJoinRequest', () => {
     mockedPost.mockRejectedValueOnce(badRequest);
 
     const { result } = renderHook(() => useSubmitJoinRequest(), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.toMatchObject({
@@ -286,10 +371,10 @@ describe('useSubmitJoinRequest', () => {
     mockedPost.mockRejectedValueOnce(networkError);
 
     const { result } = renderHook(() => useSubmitJoinRequest(), {
-      wrapper: wrapper(),
+      wrapper: queryWrapper(),
     });
 
     await expect(result.current.mutateAsync(validPayload)).rejects.toThrow('Network Error');
-    expect(result.current.error).not.toBeInstanceOf(AlreadyInvitedError);
+    expect(result.current.error).not.toBeInstanceOf(AlreadyHasAccountError);
   });
 });

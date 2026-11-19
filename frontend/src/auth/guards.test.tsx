@@ -3,19 +3,16 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Permission } from '@/models/permissions';
+import { canViewPlanning, Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 import { EmailGate, OnboardingGate, RequireAuth, RequirePermission } from './guards';
 import { useAuthStore } from './store';
 
 // Prevent the store from wiring up real axios interceptors.
-vi.mock('@/api/client', () => ({
-  setAuthBridge: vi.fn(),
-  authClient: { post: vi.fn(), get: vi.fn() },
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 // Prevent any real API calls from the store module.
 vi.mock('@/api/auth', () => ({
@@ -78,7 +75,7 @@ describe('RequireAuth', () => {
   });
 
   it('renders the outlet for an authed user', () => {
-    useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok-abc' });
+    setAuthed(makeUser(), 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/protected']}>
@@ -119,7 +116,7 @@ describe('RequirePermission', () => {
   });
 
   it('redirects an authed user without the required permission to /calendar', () => {
-    useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok-abc' });
+    setAuthed(makeUser(), 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/admin']}>
@@ -137,11 +134,47 @@ describe('RequirePermission', () => {
     expect(screen.queryByText('admin content')).not.toBeInTheDocument();
   });
 
+  it('accepts either planning permission through an allow predicate', () => {
+    for (const perm of [Permission.ViewEventPlanning, Permission.ManageEventPlanning]) {
+      setAuthed(
+        makeUser({ roles: [{ id: 'r1', name: 'mod', isDefault: true, permissions: [perm] }] }),
+        'tok-abc',
+      );
+      const { unmount } = render(
+        <MemoryRouter initialEntries={['/admin']}>
+          <Routes>
+            <Route element={<RequirePermission allow={canViewPlanning} />}>
+              <Route path="/admin" element={<div>admin content</div>} />
+            </Route>
+            <Route path="/calendar" element={<div>calendar page</div>} />
+          </Routes>
+        </MemoryRouter>,
+      );
+      expect(screen.getByText('admin content')).toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it('redirects to /calendar when the allow predicate fails', () => {
+    setAuthed(makeUser(), 'tok-abc');
+    render(
+      <MemoryRouter initialEntries={['/admin']}>
+        <Routes>
+          <Route element={<RequirePermission allow={canViewPlanning} />}>
+            <Route path="/admin" element={<div>admin content</div>} />
+          </Route>
+          <Route path="/calendar" element={<div>calendar page</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('calendar page')).toBeInTheDocument();
+  });
+
   it('renders the outlet for an authed user with the required permission', () => {
     const user = makeUser({
       roles: [{ id: 'r1', name: 'mod', isDefault: true, permissions: [Permission.ManageUsers] }],
     });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/admin']}>
@@ -167,7 +200,7 @@ describe('RequirePermission', () => {
 describe('OnboardingGate', () => {
   it('redirects a first-time user (needsOnboarding=true, empty name) to /onboarding', () => {
     const user = makeUser({ needsOnboarding: true, firstName: '', fullName: '' });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/calendar']}>
@@ -192,7 +225,7 @@ describe('OnboardingGate', () => {
       fullName: 'Alice',
       email: 'alice@example.com',
     });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/calendar']}>
@@ -220,7 +253,7 @@ describe('OnboardingGate', () => {
       fullName: 'Alice',
       email: '',
     });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/calendar']}>
@@ -246,7 +279,7 @@ describe('OnboardingGate', () => {
       fullName: 'Bob',
       email: 'bob@example.com',
     });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/calendar']}>
@@ -271,7 +304,7 @@ describe('OnboardingGate', () => {
       fullName: 'Bob',
       email: 'bob@example.com',
     });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/new-password']}>
@@ -323,7 +356,7 @@ describe('OnboardingGate', () => {
 
   it('redirects a needsGuidelinesConsent user to /consent', () => {
     const user = makeUser({ needsGuidelinesConsent: true });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/calendar']}>
@@ -342,7 +375,7 @@ describe('OnboardingGate', () => {
 
   it('does not bounce a needsGuidelinesConsent user away from /consent', () => {
     const user = makeUser({ needsGuidelinesConsent: true });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/consent']}>
@@ -361,7 +394,7 @@ describe('OnboardingGate', () => {
 
   it('lets a needsGuidelinesConsent user read /guidelines (so consent is possible)', () => {
     const user = makeUser({ needsGuidelinesConsent: true });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/guidelines']}>
@@ -380,7 +413,7 @@ describe('OnboardingGate', () => {
 
   it('redirects an sms-only consent-pending user to /consent', () => {
     const user = makeUser({ needsGuidelinesConsent: false, needsSmsConsent: true });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/calendar']}>
@@ -399,7 +432,7 @@ describe('OnboardingGate', () => {
 
   it('does not bounce an sms-only consent-pending user away from /consent', () => {
     const user = makeUser({ needsGuidelinesConsent: false, needsSmsConsent: true });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/consent']}>
@@ -418,7 +451,7 @@ describe('OnboardingGate', () => {
 
   it('lets an sms-only consent-pending user read /sms-policy (so consent is possible)', () => {
     const user = makeUser({ needsGuidelinesConsent: false, needsSmsConsent: true });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/sms-policy']}>
@@ -437,7 +470,7 @@ describe('OnboardingGate', () => {
 
   it('lets a guidelines-consent-pending user read /sms-policy too', () => {
     const user = makeUser({ needsGuidelinesConsent: true });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/sms-policy']}>
@@ -463,7 +496,7 @@ describe('OnboardingGate', () => {
       fullName: '',
       needsGuidelinesConsent: true,
     });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/calendar']}>
@@ -483,7 +516,7 @@ describe('OnboardingGate', () => {
 
   it('redirects a consented user on /consent to /calendar', () => {
     const user = makeUser({ needsGuidelinesConsent: false });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/consent']}>
@@ -502,7 +535,7 @@ describe('OnboardingGate', () => {
 
   it('redirects an onboarding-complete user on /onboarding to /guidelines', () => {
     const user = makeUser({ needsOnboarding: false });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/onboarding']}>
@@ -605,7 +638,7 @@ describe('OnboardingGate', () => {
 
   it('redirects an onboarding-complete user on /login to /calendar', () => {
     const user = makeUser({ needsOnboarding: false });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/login']}>
@@ -630,7 +663,7 @@ describe('OnboardingGate', () => {
 describe('EmailGate', () => {
   it('renders RequireEmail when authed user lacks email', () => {
     const user = makeUser({ email: '' });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/calendar']}>
@@ -648,7 +681,7 @@ describe('EmailGate', () => {
 
   it('logs out and lands on public calendar (not /login) when "not now" is clicked', async () => {
     const user = makeUser({ email: '' });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/members']}>
@@ -673,7 +706,7 @@ describe('EmailGate', () => {
 
   it('renders Outlet when authed user has email', () => {
     const user = makeUser({ email: 'foo@example.com' });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/calendar']}>
@@ -689,7 +722,7 @@ describe('EmailGate', () => {
   });
 
   it('renders Outlet for unauthed (null user)', () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
 
     render(
       <MemoryRouter initialEntries={['/login']}>
@@ -706,7 +739,7 @@ describe('EmailGate', () => {
 
   it('renders Outlet when needs_onboarding (OnboardingGate handles routing)', () => {
     const user = makeUser({ email: '', needsOnboarding: true });
-    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+    setAuthed(user, 'tok-abc');
 
     render(
       <MemoryRouter initialEntries={['/onboarding']}>

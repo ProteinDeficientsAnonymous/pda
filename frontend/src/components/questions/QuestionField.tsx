@@ -6,9 +6,15 @@ import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
 import { cn } from '@/utils/cn';
 
+import { checkboxValues } from './checkboxAnswer';
 import { FieldError } from './FieldError';
+import { formatPollOption, POLL_AVAILABILITIES, type PollAvailability } from './pollOption';
+import { ScaleRating } from './ScaleRating';
 import { SectionHeader } from './SectionHeader';
 import { StarRating } from './StarRating';
+
+// mirrors backend FieldLimit.DESCRIPTION, the server-side cap on answers
+const ANSWER_MAX_LENGTH = 2000;
 
 interface Props {
   question: Pick<SurveyQuestion, 'label' | 'fieldType' | 'options' | 'required' | 'description'>;
@@ -23,18 +29,23 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
   const { label } = question;
   const labelSuffix = question.required ? '· required' : undefined;
   const common = { label, labelSuffix, error, disabled: readOnly };
+  const text = asString(value);
+  const textProps = {
+    ...common,
+    value: text,
+    maxLength: ANSWER_MAX_LENGTH,
+    hint: readOnly ? undefined : `${String(text.length)}/${String(ANSWER_MAX_LENGTH)}`,
+  };
 
   switch (question.fieldType) {
     case QuestionType.Textarea:
       return (
         <Textarea
-          {...common}
-          value={asString(value)}
+          {...textProps}
           onChange={(e) => {
             onChange(e.target.value);
           }}
           rows={5}
-          maxLength={2000}
         />
       );
     case QuestionType.Number:
@@ -74,10 +85,8 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
         <CheckboxGroup
           {...common}
           options={question.options}
-          value={asCsv(value)}
-          onChange={(list) => {
-            onChange(list.join(','));
-          }}
+          value={checkboxValues(value)}
+          onChange={onChange}
         />
       );
     case QuestionType.Boolean:
@@ -89,14 +98,27 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           onChange={onChange}
         />
       );
-    case QuestionType.Rating:
+    case QuestionType.Stars:
       return (
         <StarRating
           label={label}
           labelSuffix={labelSuffix}
           error={error}
           value={Number(asString(value)) || 0}
-          labels={question.options}
+          readOnly={readOnly}
+          onChange={(n) => {
+            onChange(String(n));
+          }}
+        />
+      );
+    case QuestionType.Scale:
+      return (
+        <ScaleRating
+          label={label}
+          labelSuffix={labelSuffix}
+          error={error}
+          value={Number(asString(value)) || 0}
+          pointLabels={question.options}
           readOnly={readOnly}
           onChange={(n) => {
             onChange(String(n));
@@ -118,12 +140,10 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
     default:
       return (
         <TextField
-          {...common}
-          value={asString(value)}
+          {...textProps}
           onChange={(e) => {
             onChange(e.target.value);
           }}
-          maxLength={2000}
         />
       );
   }
@@ -132,12 +152,8 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
 function asString(v: AnswerValue | undefined): string {
   return typeof v === 'string' ? v : '';
 }
-function asCsv(v: AnswerValue | undefined): string[] {
-  const s = asString(v);
-  return s ? s.split(',').filter(Boolean) : [];
-}
 function asAvailabilityMap(v: AnswerValue | undefined): Record<string, string> {
-  return typeof v === 'object' ? v : {};
+  return typeof v === 'object' && !Array.isArray(v) ? v : {};
 }
 
 function RadioGroup({
@@ -245,7 +261,7 @@ function DatetimePoll({
   error?: string | undefined;
   disabled?: boolean | undefined;
 }) {
-  function pick(option: string, availability: 'yes' | 'maybe') {
+  function pick(option: string, availability: PollAvailability) {
     if (value[option] === availability) {
       const { [option]: _removed, ...rest } = value;
       onChange(rest);
@@ -266,9 +282,9 @@ function DatetimePoll({
             key={option}
             className="border-border bg-surface flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2"
           >
-            <span className="text-sm">{new Date(option).toLocaleString()}</span>
+            <span className="text-sm">{formatPollOption(option)}</span>
             <div className="flex gap-1" role="radiogroup">
-              {(['yes', 'maybe'] as const).map((a) => (
+              {POLL_AVAILABILITIES.map((a) => (
                 <button
                   key={a}
                   type="button"

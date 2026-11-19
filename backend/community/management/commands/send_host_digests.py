@@ -5,11 +5,11 @@ from enum import StrEnum
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from notifications._host_digest_email import send_host_digest_email
 from notifications.email_sender import EmailStream, get_email_sender, mask_recipient
+from notifications.host_digest_email import send_host_digest_email
 from users.models import User
 
-from community._host_digest import build_host_digest, digest_recipients
+from community.scheduled.host_digest import build_host_digest, digest_recipients
 
 logger = logging.getLogger(__name__)
 

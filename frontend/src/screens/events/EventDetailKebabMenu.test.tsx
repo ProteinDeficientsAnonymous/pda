@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType } from '@/models/event';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeEvent, makeGuest, makeUser } from '@/test/fixtures';
 
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
@@ -25,6 +25,7 @@ function renderMenu(
   overrides: {
     eventHasEnded?: boolean;
     canManageRsvps?: boolean;
+    showSpeech?: boolean;
     event?: Partial<Event>;
   } = {},
 ) {
@@ -33,7 +34,8 @@ function renderMenu(
       <EventDetailKebabMenu
         event={makeEvent(overrides.event)}
         eventHasEnded={overrides.eventHasEnded ?? false}
-        canManageRsvps={overrides.canManageRsvps ?? false}
+        canManageRsvps={overrides.canManageRsvps ?? true}
+        showSpeech={overrides.showSpeech ?? false}
       />
     </MemoryRouter>,
   );
@@ -44,16 +46,12 @@ async function openMenu() {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('EventDetailKebabMenu', () => {
   it('shows an edit item for a co-host, linking to the edit route', async () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: makeUser({ id: HOST_ID }),
-      accessToken: 'tok',
-    });
+    setAuthed(makeUser({ id: HOST_ID }));
     renderMenu({ event: { coHostIds: [HOST_ID] } });
     await openMenu();
 
@@ -62,11 +60,7 @@ describe('EventDetailKebabMenu', () => {
   });
 
   it('hides the edit item for a member who is not a host', async () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: makeUser({ id: 'regular-user' }),
-      accessToken: 'tok',
-    });
+    setAuthed(makeUser({ id: 'regular-user' }));
     renderMenu({ event: { coHostIds: [HOST_ID] } });
     await openMenu();
 
@@ -74,11 +68,7 @@ describe('EventDetailKebabMenu', () => {
   });
 
   it('hides the edit item once the edit window has closed', async () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: makeUser({ id: HOST_ID }),
-      accessToken: 'tok',
-    });
+    setAuthed(makeUser({ id: HOST_ID }));
     renderMenu({
       event: {
         coHostIds: [HOST_ID],
@@ -277,5 +267,49 @@ describe('EventDetailKebabMenu', () => {
     await openMenu();
 
     expect(screen.queryByRole('menuitem', { name: 'email blast' })).not.toBeInTheDocument();
+  });
+
+  it('shows event speech linking to the speech route', async () => {
+    renderMenu({ showSpeech: true, event: { id: 'ev9' } });
+    await openMenu();
+
+    expect(screen.getByRole('menuitem', { name: 'event speech' })).toHaveAttribute(
+      'href',
+      '/events/ev9/speech',
+    );
+  });
+
+  it('hides event speech by default', async () => {
+    renderMenu();
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: 'event speech' })).not.toBeInTheDocument();
+  });
+
+  it('hides rsvp tools when only the speech is available', async () => {
+    renderMenu({ canManageRsvps: false, showSpeech: true, eventHasEnded: true });
+    await openMenu();
+
+    expect(screen.getByRole('menuitem', { name: 'event speech' })).toBeInTheDocument();
+    for (const name of ['check-in', 'check-in report', 'feedback', 'email blast', 'group text']) {
+      expect(screen.queryByRole('menuitem', { name })).not.toBeInTheDocument();
+    }
+  });
+
+  it.each(['event speech', 'check-in'])('closes the menu after picking %s', async (name) => {
+    renderMenu({ showSpeech: true });
+    await openMenu();
+    await userEvent.click(screen.getByRole('menuitem', { name }));
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('opens the group text dialog and closes the menu', async () => {
+    renderMenu();
+    await openMenu();
+    await userEvent.click(screen.getByRole('menuitem', { name: 'group text' }));
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(screen.getByTestId('group-text-dialog')).toBeInTheDocument();
   });
 });

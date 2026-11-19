@@ -1,13 +1,13 @@
 from typing import Any
 from uuid import UUID
 
-from community._survey_conditions import condition_still_valid
-from community._survey_schemas import SurveyQuestionIn
-from community._surveys import create_survey_question as create_question_view
-from community._surveys import delete_survey_question as delete_question_view
-from community._surveys import reorder_survey_questions as reorder_view
-from community._surveys import update_survey_question as update_question_view
 from community.models import QuestionType, SurveyQuestion
+from community.surveys.conditions import condition_still_valid
+from community.surveys.crud import create_survey_question as create_question_view
+from community.surveys.crud import delete_survey_question as delete_question_view
+from community.surveys.crud import reorder_survey_questions as reorder_view
+from community.surveys.crud import update_survey_question as update_question_view
+from community.surveys.schemas import SurveyQuestionIn
 from mcp.server.mcpserver.exceptions import ToolError
 
 from mcp_gateway.fields import build

@@ -1,28 +1,20 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useRoles } from '@/api/roles';
 import { useUsers } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
-import type { User } from '@/models/user';
-import { makeMember, makeUser } from '@/test/fixtures';
+import { MembershipStatus, type User } from '@/models/user';
+import { setAuthed } from '@/test/auth';
+import { makeMember, makeUser, makeUserWithPermissions } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import MembersScreen from './MembersScreen';
 
-// Mock the users API module so we can drive loading / error / data states
-// without hitting the network. useCreateUser is only pulled in transitively
-// by MemberCreateDialog if it opens, but the default here is closed.
 vi.mock('@/api/users', () => ({
   useUsers: vi.fn(),
-  useCreateUser: vi.fn(() => ({
-    mutateAsync: vi.fn(),
-    isPending: false,
-    reset: vi.fn(),
-  })),
 }));
 
 vi.mock('@/api/roles', () => ({
@@ -41,29 +33,19 @@ const baseUser = makeUser({
   weekStart: 'monday',
 });
 
+const attendancePaused = makeMember({
+  id: 'm3',
+  fullName: 'Paused Member',
+  isMember: false,
+  membershipStatus: MembershipStatus.AttendancePaused,
+});
+
 function adminUser(permissions: string[] = [Permission.ManageUsers]): User {
-  return {
-    ...baseUser,
-    roles: [
-      {
-        id: 'role-admin',
-        name: 'admin',
-        isDefault: true,
-        permissions,
-      },
-    ],
-  };
+  return makeUserWithPermissions(permissions, baseUser);
 }
 
 function renderScreen() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <MembersScreen />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<MembersScreen />);
 }
 
 function mockUsersResult(overrides: Partial<ReturnType<typeof useUsers>>) {
@@ -82,11 +64,7 @@ beforeEach(() => {
     isPending: false,
     isError: false,
   } as unknown as ReturnType<typeof useRoles>);
-  useAuthStore.setState({
-    status: 'authed',
-    user: adminUser(),
-    accessToken: 'tok',
-  });
+  setAuthed(adminUser());
 });
 
 describe('MembersScreen', () => {
@@ -167,38 +145,17 @@ describe('MembersScreen', () => {
     expect(screen.getByText('loading…')).toBeInTheDocument();
   });
 
-  it('renders the add-member button for an admin viewer', () => {
+  it('does not render add-member or bulk-add controls', () => {
     mockUsersResult({ data: [] });
 
     renderScreen();
 
-    expect(screen.getByRole('button', { name: /add member/i })).toBeInTheDocument();
-  });
-
-  // TODO(tier3-mismatch): Flutter gated the add-member button on the
-  // `manage_users` permission inside the screen. React's MembersScreen always
-  // renders the button — permission gating is enforced at the route/admin-hub
-  // level (see AdminHubScreen). Locking the current React behavior: the
-  // button is always present when the screen renders.
-  it('renders the add-member button even without manage_users permission (react gates at route level)', () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: adminUser([]),
-      accessToken: 'tok',
-    });
-    mockUsersResult({ data: [] });
-
-    renderScreen();
-
-    expect(screen.getByRole('button', { name: /add member/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add member/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /bulk add/i })).not.toBeInTheDocument();
   });
 
   it('renders the members/non-members/roles tab switcher for users with manage_roles', () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: adminUser([Permission.ManageUsers, Permission.ManageRoles]),
-      accessToken: 'tok',
-    });
+    setAuthed(adminUser([Permission.ManageUsers, Permission.ManageRoles]));
     mockUsersResult({ data: [] });
 
     renderScreen();
@@ -239,7 +196,13 @@ describe('MembersScreen', () => {
     mockUsersResult({
       data: [
         makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true }),
-        makeMember({ id: 'm2', fullName: 'Guest Rsvp', isMember: false }),
+        makeMember({
+          id: 'm2',
+          fullName: 'Guest Rsvp',
+          isMember: false,
+          membershipStatus: MembershipStatus.None,
+        }),
+        attendancePaused,
       ],
     });
 
@@ -249,8 +212,7 @@ describe('MembersScreen', () => {
 
     expect(screen.getByText('Guest Rsvp')).toBeInTheDocument();
     expect(screen.queryByText('Ada Member')).not.toBeInTheDocument();
-    // The non-members tab has no add-member controls.
-    expect(screen.queryByRole('button', { name: /add member/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Paused Member')).not.toBeInTheDocument();
   });
 
   it('shows the non-members empty state when there are no non-members', async () => {
@@ -324,7 +286,12 @@ describe('MembersScreen', () => {
     mockUsersResult({
       data: [
         makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true }),
-        makeMember({ id: 'm2', fullName: 'Guest Rsvp', isMember: false }),
+        makeMember({
+          id: 'm2',
+          fullName: 'Guest Rsvp',
+          isMember: false,
+          membershipStatus: MembershipStatus.None,
+        }),
       ],
     });
 
@@ -335,6 +302,26 @@ describe('MembersScreen', () => {
     const links = screen.getAllByRole('link');
     expect(links).toHaveLength(1);
     expect(links[0]?.textContent).toContain('Ada Member');
+  });
+
+  it('labels pause kinds and links attendance-paused members as members', () => {
+    mockUsersResult({
+      data: [
+        makeMember({
+          id: 'm1',
+          fullName: 'Ada Member',
+          membershipStatus: MembershipStatus.GuidelinesPaused,
+        }),
+        attendancePaused,
+      ],
+    });
+
+    renderScreen();
+
+    expect(screen.getByText('paused · guidelines')).toBeInTheDocument();
+    expect(screen.getByText('paused · event rqmt')).toBeInTheDocument();
+    expect(screen.queryByText('non-member')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(2);
   });
 
   it('shows total count when no filters are active', () => {
@@ -368,11 +355,7 @@ describe('MembersScreen', () => {
   });
 
   it('shows filtered count as "N of M" when role filter is active', async () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: adminUser([Permission.ManageUsers, Permission.ManageRoles]),
-      accessToken: 'tok',
-    });
+    setAuthed(adminUser([Permission.ManageUsers, Permission.ManageRoles]));
     vi.mocked(useRoles).mockReturnValue({
       data: [
         { id: 'r1', name: 'organizer', isDefault: false, permissions: [] },

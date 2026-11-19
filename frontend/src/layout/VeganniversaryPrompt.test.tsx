@@ -1,11 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as authApi from '@/api/auth';
-import { useAuthStore } from '@/auth/store';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { VeganniversaryPrompt } from './VeganniversaryPrompt';
 
@@ -25,18 +25,12 @@ vi.mock('@/api/auth', () => ({
 const UNSEEN = makeUser({ hasSeenVeganniversary: false });
 
 function renderPrompt(user = UNSEEN) {
-  useAuthStore.setState({ status: 'authed', user, accessToken: 'tok' });
-  return render(
-    <QueryClientProvider
-      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-    >
-      <VeganniversaryPrompt />
-    </QueryClientProvider>,
-  );
+  setAuthed(user);
+  return renderWithProviders(<VeganniversaryPrompt />);
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
   vi.clearAllMocks();
   vi.mocked(authApi.updateProfile).mockResolvedValue({ ...UNSEEN, hasSeenVeganniversary: true });
 });

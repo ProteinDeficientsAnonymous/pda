@@ -4,47 +4,34 @@ from unittest.mock import patch
 
 import pytest
 from community.models import Event
-from ninja_jwt.tokens import RefreshToken
 from notifications.email_sender import SendResult
 from users.models import User
 
-from tests.conftest import future_iso
-
-
-def _make_user(phone: str, name: str = "", email: str = "") -> User:
-    return User.objects.create_user(
-        phone_number=phone, password="pass", first_name=name, email=email
-    )
-
-
-def _auth_headers(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
+from tests._auth import auth_headers_for
+from tests._events import make_event
+from tests._users import make_user
 
 
 @pytest.fixture
 def inviter(db) -> User:
-    return _make_user("+12025550101", "Alice")
+    return make_user(first_name="Alice", email="")
 
 
 @pytest.fixture
 def invitee_with_email(db) -> User:
-    return _make_user("+12025550102", "Bob", email="bob@example.com")
+    return make_user(first_name="Bob", email="bob@example.com")
 
 
 @pytest.fixture
 def invitee_without_email(db) -> User:
-    return _make_user("+12025550103", "Carol", email="")
+    return make_user(first_name="Carol", email="")
 
 
 @pytest.fixture
 def sample_event(inviter) -> Event:
-    return Event.objects.create(
-        title="Test Event",
-        start_datetime=future_iso(days=30),
-        end_datetime=future_iso(days=30, hours=2),
-        created_by=inviter,
-    )
+    event = make_event(created_by=inviter, rsvp_enabled=True)
+    event.co_hosts.add(inviter)
+    return event
 
 
 @pytest.mark.django_db
@@ -52,13 +39,13 @@ class TestEventInviteEmailIntegration:
     def test_sends_email_to_invitee_with_email(
         self, api_client, inviter, invitee_with_email, sample_event
     ):
-        with patch("community._event_invite_email.send_event_invite_email") as mock_send:
+        with patch("community.events._invite_email.send_event_invite_email") as mock_send:
             mock_send.return_value = SendResult(success=True)
             response = api_client.post(
                 f"/api/community/events/{sample_event.id}/invitations/",
                 {"user_ids": [str(invitee_with_email.pk)]},
                 content_type="application/json",
-                **_auth_headers(inviter),
+                **auth_headers_for(inviter),
             )
         assert response.status_code == 200
         mock_send.assert_called_once()
@@ -67,12 +54,12 @@ class TestEventInviteEmailIntegration:
     def test_skips_email_for_invitee_without_email(
         self, api_client, inviter, invitee_without_email, sample_event
     ):
-        with patch("community._event_invite_email.send_event_invite_email") as mock_send:
+        with patch("community.events._invite_email.send_event_invite_email") as mock_send:
             response = api_client.post(
                 f"/api/community/events/{sample_event.id}/invitations/",
                 {"user_ids": [str(invitee_without_email.pk)]},
                 content_type="application/json",
-                **_auth_headers(inviter),
+                **auth_headers_for(inviter),
             )
         assert response.status_code == 200
         mock_send.assert_not_called()
@@ -81,27 +68,27 @@ class TestEventInviteEmailIntegration:
         self, api_client, inviter, invitee_with_email, sample_event
     ):
         with patch(
-            "community._event_invite_email.send_event_invite_email",
+            "community.events._invite_email.send_event_invite_email",
             side_effect=RuntimeError("smtp down"),
         ):
             response = api_client.post(
                 f"/api/community/events/{sample_event.id}/invitations/",
                 {"user_ids": [str(invitee_with_email.pk)]},
                 content_type="application/json",
-                **_auth_headers(inviter),
+                **auth_headers_for(inviter),
             )
         assert response.status_code == 200
 
     def test_endpoint_succeeds_when_email_send_reports_failure(
         self, api_client, inviter, invitee_with_email, sample_event
     ):
-        with patch("community._event_invite_email.send_event_invite_email") as mock_send:
+        with patch("community.events._invite_email.send_event_invite_email") as mock_send:
             mock_send.return_value = SendResult(success=False, error="bounced")
             response = api_client.post(
                 f"/api/community/events/{sample_event.id}/invitations/",
                 {"user_ids": [str(invitee_with_email.pk)]},
                 content_type="application/json",
-                **_auth_headers(inviter),
+                **auth_headers_for(inviter),
             )
         assert response.status_code == 200
         mock_send.assert_called_once()

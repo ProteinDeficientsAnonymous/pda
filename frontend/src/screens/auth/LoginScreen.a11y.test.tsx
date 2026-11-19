@@ -1,11 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
-import { useAuthStore } from '@/auth/store';
+import { setUnauthed } from '@/test/auth';
+import { renderWithProviders } from '@/test/render';
 
 import LoginScreen from './LoginScreen';
 
@@ -13,24 +12,15 @@ vi.mock('@/api/join', () => ({
   checkPhone: vi.fn(),
 }));
 
-vi.mock('@/api/client', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-  authClient: { post: vi.fn() },
-  setAuthBridge: vi.fn(),
-}));
+vi.mock('@/api/client');
 
 function renderWith(component: ReactElement) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/login']}>{component}</MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(component, { route: '/login' });
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('LoginScreen accessibility', () => {

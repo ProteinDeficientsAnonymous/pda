@@ -22,7 +22,6 @@ const EMPTY_SURVEY: SurveyInput = {
   opensAt: null,
   closesAt: null,
   maxResponses: null,
-  linkedEventId: null,
   feedbackEventType: '',
 };
 
@@ -70,7 +69,6 @@ export default function SurveyCreateScreen() {
             fieldErrors.clearFor(patch);
           }}
           slugError={fieldErrors.slugError ?? undefined}
-          linkedEventError={fieldErrors.linkedEventError ?? undefined}
           feedbackTypeError={fieldErrors.feedbackTypeError ?? undefined}
         />
         {error ? (

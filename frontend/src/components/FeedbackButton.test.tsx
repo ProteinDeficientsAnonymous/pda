@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useSubmitFeedback } from '@/api/feedback';
 import { clearStoredRsvpToken, setStoredRsvpToken } from '@/api/rsvpTokenStorage';
-import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 import { FeedbackButton } from './FeedbackButton';
@@ -55,7 +55,7 @@ function renderButton(initialPath = '/calendar') {
 beforeEach(() => {
   vi.clearAllMocks();
   clearStoredRsvpToken();
-  useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok' });
+  setAuthed(makeUser());
   submitFeedbackMock.mockResolvedValue({ html_url: 'https://example.com/1' });
   mockedUseSubmitFeedback.mockReturnValue({
     mutateAsync: submitFeedbackMock,
@@ -72,13 +72,13 @@ describe('FeedbackButton', () => {
   });
 
   it('is hidden when the user is not authenticated and has no rsvp token', () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
     renderButton();
     expect(screen.queryByRole('button', { name: /send feedback/i })).not.toBeInTheDocument();
   });
 
   it('renders for an unauthenticated non-member holding a stored rsvp token', () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setUnauthed();
     setStoredRsvpToken('rsvp-token-123');
     renderButton();
     expect(screen.getByRole('button', { name: /send feedback/i })).toBeInTheDocument();
@@ -169,11 +169,7 @@ describe('FeedbackButton', () => {
   });
 
   it('never sends user display name, phone, or id from the client — backend derives identity from auth', async () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: makeUser({ firstName: 'alice', lastName: 'smith', fullName: 'alice smith' }),
-      accessToken: 'tok',
-    });
+    setAuthed(makeUser({ firstName: 'alice', lastName: 'smith', fullName: 'alice smith' }));
     const user = userEvent.setup();
     renderButton();
     await user.click(screen.getByRole('button', { name: /send feedback/i }));

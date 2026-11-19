@@ -1,11 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAttendanceReport } from '@/api/attendanceReport';
 import { makeRow } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import AttendanceReportScreen from './AttendanceReportScreen';
 
@@ -37,14 +36,7 @@ function mockResult(overrides: Partial<ReturnType<typeof useAttendanceReport>>) 
 }
 
 function renderScreen() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <AttendanceReportScreen />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<AttendanceReportScreen />);
 }
 
 beforeEach(() => {

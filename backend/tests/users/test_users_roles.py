@@ -1,7 +1,8 @@
 import pytest
-from community._validation import Code
-from ninja_jwt.tokens import RefreshToken
+from community.validation import Code
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
+from tests._users import make_attendance_paused
 from users.models import User
 from users.roles import Role
 
@@ -53,8 +54,7 @@ class TestUpdateUserRoles:
         member_role = Role.objects.get(name="member")
         admin_user = User.objects.create_user(phone_number="+12025550401", password="adminpass123")
         admin_user.roles.add(admin_role)
-        refresh = RefreshToken.for_user(admin_user)
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        headers = auth_headers_for(admin_user)
 
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/roles/",
@@ -64,3 +64,16 @@ class TestUpdateUserRoles:
         )
         assert response.status_code == 200
         assert other_user.roles.filter(name="admin").exists()
+
+    def test_attendance_paused_user_cannot_be_given_roles(self, api_client, manage_users_headers):
+        paused = make_attendance_paused()
+        vetter = Role.objects.create(name="vetter")
+        member_role = Role.objects.get(name="member")
+        response = api_client.patch(
+            f"/api/auth/users/{paused.pk}/roles/",
+            {"role_ids": [str(member_role.id), str(vetter.id)]},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 404
+        assert not paused.roles.filter(pk=vetter.pk).exists()

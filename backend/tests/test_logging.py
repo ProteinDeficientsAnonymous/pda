@@ -55,9 +55,9 @@ class TestRequestLoggingMiddleware:
             middleware(request)
         assert len(caplog.records) >= 1
         record = caplog.records[0]
-        assert record.method == "GET"  # type: ignore[attr-defined]
-        assert record.path == "/api/auth/me/"  # type: ignore[attr-defined]
-        assert record.status_code == 200  # type: ignore[attr-defined]
+        assert getattr(record, "method") == "GET"
+        assert getattr(record, "path") == "/api/auth/me/"
+        assert getattr(record, "status_code") == 200
         assert hasattr(record, "duration_ms")
 
 
@@ -115,7 +115,6 @@ class TestApplicationEventLogging:
     @pytest.mark.django_db
     def test_email_failure_logs_at_error(self, caplog, settings):
         settings.VETTING_EMAIL = "test@example.com"
-        settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
         q = JoinFormQuestion.objects.filter(required=True).first()
         answers = {str(q.id): "Community"} if q else {}
         client = Client()
@@ -127,7 +126,7 @@ class TestApplicationEventLogging:
             caplog.at_level(logging.ERROR, logger="pda.community"),
             pytest.MonkeyPatch.context() as mp,
         ):
-            mp.setattr("community._join_request_submit.send_mail", _fail_send_mail)
+            mp.setattr("community.join_requests._vetting_email.send_mail", _fail_send_mail)
             response = client.post(
                 "/api/community/join-request/",
                 data={

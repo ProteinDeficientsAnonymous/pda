@@ -1,48 +1,64 @@
 import secrets
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 
-import phonenumbers
-from community._validation import Code, raise_validation
-from community.models.choices import JoinRequestStatus
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, prefetch_related_objects
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
-
-# Fallback for bare digits only — a number with an explicit country code is unaffected.
-ADMIN_ENTERED_PHONE_REGION = "US"
-PUBLIC_FORM_PHONE_REGION = None
+from users.phone import normalize_phone_number
+from users.roles import Role
 
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
+STATUS_CHANGE_FIELDS = (
+    "membership_status",
+    "membership_status_changed_at",
+    "membership_status_changed_by",
+)
 
 
-def _parse_phone(raw: str, default_region: str | None) -> str | None:
-    try:
-        parsed = phonenumbers.parse(raw, default_region)
-    except phonenumbers.phonenumberutil.NumberParseException:
-        return None
-    if not phonenumbers.is_valid_number(parsed):
-        return None
-    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+def status_change_stamp(by: "User | None") -> dict:
+    """Create kwargs that record who set a new account's first status."""
+    return {"membership_status_changed_at": timezone.now(), "membership_status_changed_by": by}
 
 
-def validate_phone(raw: str, default_region: str | None, field: str = "phone_number") -> str:
-    """Parse, validate, and return E.164. Raises ValidationException on invalid."""
-    canonical = _parse_phone(raw, default_region)
-    if canonical is None:
-        raise_validation(Code.Phone.INVALID, field=field)
-    return canonical
+def can_sign_in_q() -> Q:
+    """Members, plus tentative and attendance-paused non-members."""
+    return Q(membership_status__in=SIGN_IN_STATUSES)
 
 
-def normalize_phone_number(raw: str) -> str:
-    """Best-effort canonicalize to E.164 for save() — never raises on bad legacy data."""
-    return _parse_phone(raw, ADMIN_ENTERED_PHONE_REGION) or raw
+def limited_q() -> Q:
+    """Signed-in non-members: tentatively approved or attendance-paused; never guidelines-paused."""
+    return Q(membership_status__in=LIMITED_STATUSES)
+
+
+class MembershipStatus(models.TextChoices):
+    NONE = "none", "none"
+    TENTATIVE = "tentative", "tentative"
+    ACTIVE_MEMBER = "active_member", "active member"
+    ATTENDANCE_PAUSED = "attendance_paused", "attendance paused"
+    ARCHIVED = "archived", "archived"
+    GUIDELINES_PAUSED = "guidelines_paused", "guidelines paused"
+
+
+# Paused members keep the member role; only active members get full access.
+MEMBER_STATUSES = (
+    MembershipStatus.ACTIVE_MEMBER,
+    MembershipStatus.GUIDELINES_PAUSED,
+    MembershipStatus.ATTENDANCE_PAUSED,
+)
+LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
+PAUSED_STATUSES = (MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED)
+# Members not limited to official/club events; a guidelines pause blocks login outright.
+FULL_MEMBER_STATUSES = (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.GUIDELINES_PAUSED)
+SIGN_IN_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
+MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
+# The admin members screen lists tentative people too, so they can be archived.
+MANAGED_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
 
 
 class WeekStart:
@@ -66,43 +82,32 @@ class UserManager(BaseUserManager):
         Use on member-facing surfaces (directory, roles, recipient lists). The
         default manager returns both, for auth/login/join lookups by phone/email.
         """
-        return self.get_queryset().filter(is_member=True)
+        return self.get_queryset().filter(membership_status__in=MEMBER_STATUSES)
+
+    def members_or_archived(self):
+        """Members plus archived members: everyone admins manage as members."""
+        return self.get_queryset().filter(membership_status__in=MEMBER_OR_ARCHIVED)
+
+    def managed(self):
+        """Everyone on the admin members screen: members and tentative people."""
+        return self.get_queryset().filter(membership_status__in=MANAGED_STATUSES)
 
     def active_members(self):
-        """Members who should appear on member-facing surfaces.
-
-        Bundles the full visibility predicate so call sites can't forget part of
-        it (a bare ``members()`` would still leak paused/archived users). Use this
-        for member-facing directory, profile, and search lookups.
-
-        ``needs_onboarding`` is deliberately NOT filtered here — it's only excluded
-        by the directory, which adds ``needs_onboarding=False`` itself. The profile
-        and search surfaces intentionally include onboarding-pending members.
-
-        On ``is_active``: this is Django's built-in ``AbstractUser`` flag, which the
-        app never sets to False (``is_paused`` is the product's live suspension flag,
-        enforced at the auth gate). It's kept here as cheap defense-in-depth guarding
-        the only path that can deactivate a user — the Django admin.
-        """
-        return self.members().filter(
+        """Members for member-facing surfaces; the directory also drops onboarding-pending ones."""
+        # is_active is only ever cleared from the Django admin; kept as defense in depth.
+        return self.get_queryset().filter(
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
             is_active=True,
-            is_paused=False,
             archived_at__isnull=True,
         )
 
-    def active_tentative_members(self):
-        """Signed-in tentative applicants, filtered like ``active_members``."""
-        return (
-            self.get_queryset()
-            .filter(
-                is_member=False,
-                join_requests__status=JoinRequestStatus.TENTATIVE,
-                is_active=True,
-                is_paused=False,
-                archived_at__isnull=True,
-            )
-            .distinct()
-        )
+    def limited_users(self):
+        """Users matching ``limited_q``."""
+        return self.get_queryset().filter(limited_q())
+
+    def active_limited_users(self):
+        """Limited users, filtered like ``active_members``."""
+        return self.limited_users().filter(is_active=True, archived_at__isnull=True)
 
     def with_permission(self, key: str):
         """Members granted `key` via role permissions, honoring the admin-default rule."""
@@ -119,7 +124,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("is_member", True)
+        extra_fields.setdefault("membership_status", MembershipStatus.ACTIVE_MEMBER)
         return self.create_user(phone_number, password, **extra_fields)
 
 
@@ -128,8 +133,16 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=20, unique=True)
     first_name = models.CharField(max_length=64, blank=True, default="")
     last_name = models.CharField(max_length=64, blank=True, default="")
-    # Defaults False; non-members are excluded via objects.members().
-    is_member = models.BooleanField(default=False, db_index=True)
+    membership_status = models.CharField(
+        max_length=20,
+        choices=MembershipStatus.choices,
+        default=MembershipStatus.NONE,
+        db_index=True,
+    )
+    membership_status_changed_at = models.DateTimeField(null=True, blank=True)
+    membership_status_changed_by = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     # Uniqueness enforced by a partial constraint (see Meta) so multiple
     # members can share a null/blank email.
     email = models.EmailField(null=True, blank=True)
@@ -166,9 +179,15 @@ class User(AbstractUser):
     attendance_nudge_opt_out = models.BooleanField(default=False)
     host_digest_opt_out = models.BooleanField(default=False)
     host_digest_last_sent_at = models.DateTimeField(null=True, blank=True)
-    is_paused = models.BooleanField(default=False)
+    attendance_paused_at = models.DateTimeField(null=True, blank=True)
+    restored_at = models.DateTimeField(null=True, blank=True)
+    unpaused_at = models.DateTimeField(null=True, blank=True)
+    attendance_grace_notified_at = models.DateTimeField(null=True, blank=True)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    status_before_archive = models.CharField(
+        max_length=20, choices=MembershipStatus.choices, null=True, blank=True
+    )
     login_link_requested = models.BooleanField(default=False)
     week_start = models.CharField(
         max_length=10, choices=WeekStart.CHOICES, default=WeekStart.SUNDAY
@@ -198,13 +217,80 @@ class User(AbstractUser):
             ),
         ]
 
+    def set_membership_status(
+        self, new_status: MembershipStatus, *, by: "User | None"
+    ) -> list[str]:
+        """param(by): who made the change, or None for the system.
+        return(list[str]): the fields it changed, for update_fields."""
+        if self.is_archived and new_status != MembershipStatus.ARCHIVED:
+            # They stay archived; unarchiving restores this status.
+            self.status_before_archive = new_status
+            return ["status_before_archive"]
+        if new_status != self.membership_status:
+            self.membership_status = new_status
+            self.membership_status_changed_at = timezone.now()
+            self.membership_status_changed_by = by
+        return list(STATUS_CHANGE_FIELDS)
+
+    def apply_guidelines_pause(self, *, by: "User | None") -> list[str]:
+        """A guidelines pause replaces any attendance pause."""
+        return self._set_pause(MembershipStatus.GUIDELINES_PAUSED, by)
+
+    def lift_guidelines_pause(self, *, by: "User | None") -> list[str]:
+        # Lifting leaves them limited until a compliant in-person check-in.
+        at = timezone.now()
+        return self._set_pause(MembershipStatus.ATTENDANCE_PAUSED, by, paused_at=at, unpaused_at=at)
+
+    def apply_attendance_pause(self, *, by: "User | None") -> list[str]:
+        return self._set_pause(MembershipStatus.ATTENDANCE_PAUSED, by, paused_at=timezone.now())
+
+    def _set_pause(
+        self,
+        status: MembershipStatus,
+        by: "User | None",
+        *,
+        paused_at: datetime | None = None,
+        unpaused_at: datetime | None = None,
+    ) -> list[str]:
+        if self.is_archived:
+            # Only status_before_archive records it; unarchiving sets the pause stamps.
+            return self.set_membership_status(status, by=by)
+        self.attendance_paused_at, self.unpaused_at = paused_at, unpaused_at
+        self.has_joined_whatsapp = False
+        fields = ["attendance_paused_at", "unpaused_at", "has_joined_whatsapp"]
+        return [*fields, *self.set_membership_status(status, by=by)]
+
+    @property
+    def is_archived(self) -> bool:
+        # Not membership_status: _unarchive clears archived_at first so the restore isn't parked.
+        return self.archived_at is not None
+
+    @property
+    def is_member(self) -> bool:
+        return self.membership_status in MEMBER_STATUSES
+
+    @property
+    def is_guidelines_paused(self) -> bool:
+        """True for an archived user archived while guidelines-paused too, so archiving can't shed it."""
+        return self._pause_status() == MembershipStatus.GUIDELINES_PAUSED
+
+    @property
+    def is_attendance_paused(self) -> bool:
+        """True for an archived user archived while attendance-paused too."""
+        return self._pause_status() == MembershipStatus.ATTENDANCE_PAUSED
+
+    def _pause_status(self) -> str | None:
+        if self.membership_status == MembershipStatus.ARCHIVED:
+            return self.status_before_archive
+        return self.membership_status
+
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
 
     @property
     def needs_contact_privacy_consent(self) -> bool:
-        # Already hiding something means they've seen the privacy toggles in settings.
+        # Already hiding something means they've seen the toggles; PATCH /me/ stamps consent on toggle.
         if not self.show_phone or not self.show_email:
             return False
         return self.contact_privacy_consent_at is None
@@ -218,14 +304,11 @@ class User(AbstractUser):
         return self.full_name or self.phone_number
 
     def has_permission(self, key: str) -> bool:
-        """Return True if any of the user's roles grants this permission key.
-
-        Uses the prefetch cache when available (avoids N+1 in list views),
-        otherwise falls back to a queryset.
-        """
-        cache = getattr(self, "_prefetched_objects_cache", {})
-        roles = cache["roles"] if "roles" in cache else self.roles.all()
-        for role in roles:
+        """Return True if any of the user's roles grants this permission key."""
+        # Cached after the first call; roles.add/remove/set/clear invalidate it.
+        if "roles" not in getattr(self, "_prefetched_objects_cache", {}):
+            prefetch_related_objects([self], "roles")
+        for role in self._prefetched_objects_cache["roles"]:
             # effective_permissions expands the admin role and guards corrupt rows
             if key in role.effective_permissions:
                 return True
@@ -277,22 +360,21 @@ class MagicLoginToken(models.Model):
         )
 
 
-# Number of days a non-member RSVP-management link stays valid from issuance.
-NON_MEMBER_RSVP_TOKEN_TTL_DAYS = 90
+# Number of days a public rsvper's RSVP-management link stays valid from issuance.
+PUBLIC_RSVP_TOKEN_TTL_DAYS = 90
 # Absolute cap on a token's life, even with repeated extension, to bound leak exposure.
-NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS = 180
+PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS = 180
 
 
-class NonMemberRsvpToken(models.Model):
-    """Scoped magic link for a non-member to manage their own RSVPs at /my-rsvps.
+class PublicRsvpToken(models.Model):
+    """Scoped magic link for a public rsvper to manage their own RSVPs at /my-rsvps.
 
     This token NEVER logs the user in — it is entirely separate from
     MagicLoginToken (different table, different validation path, narrower scope).
     It grants scoped read/write to one non-member's RSVPs only. On a non-member's
     RSVP we EXTEND their existing valid token (see issue_or_extend) rather than
     minting a new one, so a link saved from a previous email keeps working; a
-    fresh token is only issued when there is no valid one. Revoked when the user
-    converts to a member.
+    fresh token is only issued when there is no valid one. Revoked once they can sign in.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -329,51 +411,50 @@ class NonMemberRsvpToken(models.Model):
             self.save(update_fields=["revoked_at"])
 
     @classmethod
-    def issue(cls, user: "User") -> "NonMemberRsvpToken":
-        """Create a fresh token for a non-member, valid for 90 days.
-
-        Rejects members — a converted/existing member must use the member flow,
-        not the scoped non-member RSVP link.
-        """
-        if user.is_member:
-            raise ValidationError("Cannot issue a non-member RSVP token for a member.")
+    def issue(cls, user: "User") -> "PublicRsvpToken":
+        """Create a fresh token for a public rsvper, valid for 90 days."""
+        cls._require_public_rsvper(user)
         return cls.objects.create(
             user=user,
             token=secrets.token_urlsafe(32),
-            expires_at=timezone.now() + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS),
+            expires_at=timezone.now() + timedelta(days=PUBLIC_RSVP_TOKEN_TTL_DAYS),
         )
 
     @classmethod
-    def issue_or_extend(cls, user: "User") -> "NonMemberRsvpToken":
+    def issue_or_extend(cls, user: "User") -> "PublicRsvpToken":
         """Return a usable non-member RSVP token, reusing one when possible.
 
         Extends the newest valid token still within its absolute lifetime (so an
-        emailed link keeps resolving), else issues a fresh one. Rejects members.
+        emailed link keeps resolving), else issues a fresh one.
         """
-        if user.is_member:
-            raise ValidationError("Cannot issue a non-member RSVP token for a member.")
+        cls._require_public_rsvper(user)
         existing = user.rsvp_tokens.first()
-        max_age_cutoff = timezone.now() - timedelta(days=NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS)
+        max_age_cutoff = timezone.now() - timedelta(days=PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS)
         if existing is not None and existing.is_valid and existing.created_at > max_age_cutoff:
-            existing.expires_at = timezone.now() + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS)
+            existing.expires_at = timezone.now() + timedelta(days=PUBLIC_RSVP_TOKEN_TTL_DAYS)
             existing.save(update_fields=["expires_at"])
             return existing
         return cls.issue(user)
 
     @classmethod
     def resolve_user(cls, token: str) -> "User | None":
-        """Resolve a token string to its User, or None if the token is unusable.
-
-        Returns None when the token is unknown, expired (expires_at < now), or
-        revoked (revoked_at set). Endpoints in stages 3/4 reuse this and map a
-        None result to their own 404. Never logs the user in.
-        """
+        """The token's user; None if the token is unusable or its user isn't a public rsvper."""
         if not token:
             return None
         row = cls.objects.select_related("user").filter(token=token).first()
-        if row is None or not row.is_valid:
+        if row is None or not row.is_valid or not cls.can_hold(row.user):
             return None
         return row.user
+
+    @staticmethod
+    def can_hold(user: "User") -> bool:
+        """Only public rsvpers; anyone who can sign in, or is archived, manages RSVPs elsewhere."""
+        return user.membership_status == MembershipStatus.NONE
+
+    @classmethod
+    def _require_public_rsvper(cls, user: "User") -> None:
+        if not cls.can_hold(user):
+            raise ValidationError("Only a public rsvper can hold an RSVP manage link.")
 
 
 @receiver(m2m_changed, sender=User.roles.through)
@@ -393,9 +474,13 @@ def reject_role_for_non_member(sender, instance, action, reverse, pk_set, **kwar
         return
     signal_from_role_side = reverse
     if signal_from_role_side:
-        if User.objects.filter(pk__in=pk_set, is_member=False).exists():
+        if (
+            User.objects.filter(pk__in=pk_set)
+            .exclude(membership_status__in=MEMBER_OR_ARCHIVED)
+            .exists()
+        ):
             raise ValueError("cannot assign a role to a non-member user")
-    elif not instance.is_member:
+    elif instance.membership_status not in MEMBER_OR_ARCHIVED:
         raise ValueError("cannot assign a role to a non-member user")
 
 

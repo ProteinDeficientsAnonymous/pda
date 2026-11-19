@@ -4,11 +4,11 @@ from datetime import datetime, time
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
-from notifications._digest_emails import send_monthly_digest_email
+from notifications.digest_emails import MonthlyDigestMail, send_monthly_digest_email
 from notifications.email_sender import EmailStream, get_email_sender
 from users.models import User
 
-from community._digest import (
+from community.scheduled.digest import (
     digest_events,
     digest_urls,
     monthly_digest_recipients,
@@ -72,16 +72,17 @@ class Command(BaseCommand):
             send_monthly_digest_email,
             sender,
             monthly_digest_recipients(User.objects.active_members(), today),
-            payload,
+            lambda name: MonthlyDigestMail(display_name=name, **payload),
             on_sent=mark_sent,
         )
         if events:
             # Shoutouts link to member profiles, which tentative members can't open.
+            tentative_payload = {**payload, "veganniversaries": []}
             tentative_sent, tentative_failed = send_digest_to_all(
                 send_monthly_digest_email,
                 sender,
-                monthly_digest_recipients(User.objects.active_tentative_members(), today),
-                {**payload, "veganniversaries": []},
+                monthly_digest_recipients(User.objects.active_limited_users(), today),
+                lambda name: MonthlyDigestMail(display_name=name, **tentative_payload),
                 on_sent=mark_sent,
             )
             sent_count += tentative_sent
@@ -96,8 +97,7 @@ class Command(BaseCommand):
         result = send_monthly_digest_email(
             sender=sender,
             to=to,
-            display_name=user.first_name if user else "",
-            **payload,
+            mail=MonthlyDigestMail(display_name=user.first_name if user else "", **payload),
         )
         if not result.success:
             raise CommandError(f"test monthly digest failed: {result.error}")

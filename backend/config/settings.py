@@ -73,11 +73,14 @@ ASGI_APPLICATION = "config.asgi.application"
 
 AUTH_USER_MODEL = "users.User"
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default="sqlite:///db.sqlite3", conn_max_age=600, conn_health_checks=True
-    )
-}
+DATABASES = {"default": dj_database_url.config(default="sqlite:///db.sqlite3")}
+
+# ASGI runs each request on a fresh thread, so CONN_MAX_AGE never reuses a connection; pool instead.
+if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
+    DATABASES["default"].setdefault("OPTIONS", {})["pool"] = {
+        "min_size": 2,
+        "max_size": int(os.environ.get("PDA_DB_POOL_MAX_SIZE", "10")),
+    }
 
 # "ratelimit" is DB-backed so rate limits/cooldowns survive worker recycling; "default" stays in-process.
 # Signed B2 URLs use the same table (keys start with media_url:) so gunicorn workers share one signature.
@@ -227,15 +230,23 @@ GITHUB_APP_PRIVATE_KEY = (
 )
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "")
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+_default_mailer: dict[str, object] = {
+    "BACKEND": "django.core.mail.backends.console.EmailBackend",
+}
 if IS_PRODUCTION and os.environ.get("EMAIL_HOST"):
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = os.environ["EMAIL_HOST"]
-    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
+    _default_mailer = {
+        "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+        "OPTIONS": {
+            "host": os.environ["EMAIL_HOST"],
+            "username": os.environ.get("EMAIL_HOST_USER", ""),
+            "password": os.environ.get("EMAIL_HOST_PASSWORD", ""),
+            "port": 587,
+            "use_tls": True,
+        },
+    }
     DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "")
+
+MAILERS = {"default": _default_mailer}
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "")

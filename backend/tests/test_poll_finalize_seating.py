@@ -1,7 +1,6 @@
 import json
 
 import pytest
-from community._waitlist import promote_from_waitlist
 from community.models import (
     Event,
     EventPoll,
@@ -11,9 +10,10 @@ from community.models import (
     PollVote,
     RSVPStatus,
 )
+from community.rsvps.waitlist import promote_from_waitlist
 from users.models import User
 
-from tests.conftest import future_iso
+from tests._time import future_iso
 
 
 def _finalize(api_client, headers, event, option):

@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from community._surveys import get_survey_admin, list_surveys_admin
-from community.models import SurveyQuestionType
+from community.models import Survey, SurveyQuestionType
+from community.surveys.crud import get_survey_admin, list_surveys_admin
 from django.utils import timezone
 from pydantic import Field
 from users.models import User
@@ -11,15 +11,15 @@ from users.permissions import PermissionKey
 
 from mcp_gateway.fields import local_time
 from mcp_gateway.server import BASE_URL, current_user, pda_tool
-from mcp_gateway.view_calls import _tool_error, call_view
+from mcp_gateway.view_calls import call_view, tool_error
 
 _LIST_FIELDS = (
     *("id", "slug", "title", "is_active", "visibility", "max_responses"),
-    *("response_count", "linked_event_id"),
+    "response_count",
 )
 _SETTINGS = (
     *("id", "slug", "title", "description", "visibility", "is_active", "one_response_per_user"),
-    *("anonymous", "confirmation_message", "max_responses", "linked_event_id"),
+    *("anonymous", "confirmation_message", "max_responses"),
     *("feedback_event_type", "response_count"),
 )
 
@@ -85,7 +85,7 @@ async def _surveys(user: User) -> list[dict[str, Any]]:
     )
 
 
-async def _survey_id(ref: str, user: User) -> UUID:
+async def resolve_survey_id(ref: str) -> UUID:
     try:
         parsed = UUID(ref)
     except ValueError:
@@ -93,10 +93,10 @@ async def _survey_id(ref: str, user: User) -> UUID:
     # UUID() also takes dashless and braced forms, which could be a hex-looking slug.
     if parsed is not None and str(parsed) == ref.lower():
         return parsed
-    match = next((s for s in await _surveys(user) if s["slug"] == ref), None)
+    match = await Survey.objects.filter(slug=ref).values_list("id", flat=True).afirst()
     if match is None:
-        raise _tool_error(404, f"no survey with id or slug {ref}")
-    return UUID(match["id"])
+        raise tool_error(404, f"no survey with id or slug {ref}")
+    return match
 
 
 @pda_tool(
@@ -134,7 +134,7 @@ async def get_survey(
     survey: Annotated[str, Field(description="survey id (uuid) or slug, e.g. from list_surveys")],
 ) -> dict[str, Any]:
     user = await current_user()
-    body = await call_view(get_survey_admin, user, survey_id=await _survey_id(survey, user))
+    body = await call_view(get_survey_admin, user, survey_id=await resolve_survey_id(survey))
     return survey_detail(body)
 
 

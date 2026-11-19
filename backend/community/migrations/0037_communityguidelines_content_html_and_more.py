@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 
 def backfill_content_html(apps, schema_editor):
-    from community._delta_html import delta_to_html
+    from community.content.delta_html import delta_to_html
 
     CommunityGuidelines = apps.get_model("community", "CommunityGuidelines")
     FAQ = apps.get_model("community", "FAQ")

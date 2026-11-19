@@ -5,7 +5,7 @@ from uuid import UUID
 
 import anyio
 from anyio.lowlevel import checkpoint
-from community._surveys import get_survey_admin as get_survey_view
+from community.surveys.crud import get_survey_admin as get_survey_view
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 from users.models import User
@@ -16,7 +16,7 @@ from mcp_gateway.server import current_user, pda_tool
 from mcp_gateway.survey_edit_fields import QuestionOps, SurveyChanges
 from mcp_gateway.survey_edit_plan import Edit, Step, operation, plan_settings
 from mcp_gateway.survey_edit_questions import Questions
-from mcp_gateway.tools.surveys_read import _survey_id, survey_detail
+from mcp_gateway.tools.surveys_read import resolve_survey_id, survey_detail
 from mcp_gateway.view_calls import call_view
 
 logger = logging.getLogger(__name__)
@@ -113,7 +113,7 @@ async def update_survey(
     confirm_token: ConfirmToken = None,
 ) -> dict[str, Any]:
     user = await current_user()
-    survey_id = await _survey_id(survey, user)
+    survey_id = await resolve_survey_id(survey)
     before = await call_view(get_survey_view, user, survey_id)
     changed = settings.model_dump(mode="json", exclude_unset=True) if settings else {}
     if not (changed or questions):

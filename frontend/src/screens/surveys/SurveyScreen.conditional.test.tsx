@@ -1,11 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as SurveysApi from '@/api/surveys';
 import { ShowIfOperator, type Survey } from '@/api/surveys';
+import { renderWithProviders } from '@/test/render';
 
 const submitMutate = vi.fn();
 const useSurveyMock = vi.fn();
@@ -37,11 +36,9 @@ const survey: Survey = {
   closesAt: null,
   maxResponses: null,
   responseCount: 0,
-  linkedEventId: null,
   feedbackEventType: '',
   myResponseId: null,
   myAnswers: null,
-  pollResult: null,
   anonymous: false,
   confirmationMessage: '',
   questions: [
@@ -67,13 +64,7 @@ const survey: Survey = {
 };
 
 function renderScreen() {
-  return render(
-    <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter initialEntries={['/surveys/diet']}>
-        <SurveyScreen />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<SurveyScreen />, { route: '/surveys/diet' });
 }
 
 describe('SurveyScreen conditional questions', () => {

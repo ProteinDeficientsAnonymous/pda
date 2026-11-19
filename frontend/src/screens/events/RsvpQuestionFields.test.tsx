@@ -46,7 +46,7 @@ describe('RsvpQuestionFields', () => {
     expect(onChange).toHaveBeenCalledWith('q-one', 'car');
   });
 
-  it('toggles checkbox options as csv', () => {
+  it('toggles checkbox options as a list', () => {
     const onChange = vi.fn();
     render(
       <RsvpQuestionFields
@@ -57,9 +57,9 @@ describe('RsvpQuestionFields', () => {
       />,
     );
     fireEvent.click(screen.getByRole('checkbox', { name: 'cleanup' }));
-    expect(onChange).toHaveBeenCalledWith('q-multi', 'setup,cleanup');
+    expect(onChange).toHaveBeenCalledWith('q-multi', ['setup', 'cleanup']);
     fireEvent.click(screen.getByRole('checkbox', { name: 'setup' }));
-    expect(onChange).toHaveBeenCalledWith('q-multi', '');
+    expect(onChange).toHaveBeenCalledWith('q-multi', []);
   });
 
   it('shows per-question errors', () => {

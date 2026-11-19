@@ -1,9 +1,9 @@
 from datetime import timedelta
 
 import pytest
-from community._cohost_invite_helpers import expire_stale_cohost_invites
+from community.cohosts.invite_helpers import expire_stale_cohost_invites
 from community.models import CoHostInviteStatus, Event, EventCoHostInvite
-from community.models.event import _is_past_q
+from community.models.event import is_past_q
 from django.utils import timezone
 
 
@@ -36,7 +36,7 @@ class TestIsPast:
     def test_property_and_queryset_agree(self, spec, expected):
         event = _build(spec)
         assert event.is_past is expected
-        in_past_q = Event.objects.filter(_is_past_q(timezone.now()), pk=event.pk).exists()
+        in_past_q = Event.objects.filter(is_past_q(timezone.now()), pk=event.pk).exists()
         assert in_past_q is expected
 
 

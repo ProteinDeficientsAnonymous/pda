@@ -1,26 +1,16 @@
 """Tests for auth endpoints: login, refresh, me, change-password, onboarding."""
 
 import pytest
-from community._validation import Code
-from django.core.cache import caches
+from community.validation import Code
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
 from tests._asserts import assert_error_code
+from tests._auth import auth_headers_for
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
-
-
-@pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
-    # /login/ is rate-limited (5/m keyed on client IP). Tests share the same
-    # REMOTE_ADDR, so clear the cache around each test to keep counts isolated.
-
-    caches["ratelimit"].clear()
-    yield
-    caches["ratelimit"].clear()
 
 
 @pytest.fixture
@@ -36,8 +26,7 @@ def onboarding_user(db):
 
 @pytest.fixture
 def onboarding_headers(onboarding_user):
-    refresh = RefreshToken.for_user(onboarding_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+    return auth_headers_for(onboarding_user)
 
 
 # ---------------------------------------------------------------------------
@@ -111,15 +100,14 @@ class TestLogin:
         assert response.status_code == 401
 
     def test_login_paused_user_returns_403(self, api_client, test_user):
-        test_user.is_paused = True
-        test_user.save(update_fields=["is_paused"])
+        test_user.save(update_fields=test_user.apply_guidelines_pause(by=None))
         response = api_client.post(
             "/api/auth/login/",
             {"phone_number": "+12025550101", "password": "testpass123"},
             content_type="application/json",
         )
         assert response.status_code == 403
-        assert_error_code(response, Code.Auth.ACCOUNT_PAUSED)
+        assert_error_code(response, Code.Auth.ACCOUNT_GUIDELINES_PAUSED)
 
 
 # ---------------------------------------------------------------------------
@@ -201,12 +189,11 @@ class TestMe:
         assert response.json()["needs_onboarding"] is True
 
     def test_me_paused_user_returns_403(self, api_client, test_user):
-        test_user.is_paused = True
-        test_user.save(update_fields=["is_paused"])
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(test_user).access_token}"}  # type: ignore
+        test_user.save(update_fields=test_user.apply_guidelines_pause(by=None))
+        headers = auth_headers_for(test_user)
         response = api_client.get("/api/auth/me/", **headers)
         assert response.status_code == 403
-        assert_error_code(response, Code.Auth.ACCOUNT_PAUSED)
+        assert_error_code(response, Code.Auth.ACCOUNT_GUIDELINES_PAUSED)
 
 
 # ---------------------------------------------------------------------------
@@ -243,7 +230,7 @@ class TestChangePassword:
         user = User.objects.create_user(
             phone_number="+12025550401", password="ReusedPass123!", first_name="Reuse", last_name=""
         )
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
+        headers = auth_headers_for(user)
         response = api_client.post(
             "/api/auth/change-password/",
             {"current_password": "ReusedPass123!", "new_password": "ReusedPass123!"},
@@ -260,7 +247,7 @@ class TestChangePassword:
         )
         user.needs_password_reset = True
         user.save(update_fields=["needs_password_reset"])
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
+        headers = auth_headers_for(user)
         response = api_client.post(
             "/api/auth/change-password/",
             {"current_password": "OldPass123!", "new_password": "BrandNew456!"},

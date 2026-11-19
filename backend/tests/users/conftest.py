@@ -1,30 +1,5 @@
 import pytest
-from ninja_jwt.tokens import RefreshToken
-from users.models import User
-from users.permissions import PermissionKey
-from users.roles import Role
-
-
-@pytest.fixture
-def manage_users_user(db):
-    user = User.objects.create_user(
-        phone_number="+12025550201",
-        password="managerpass123",
-        first_name="User",
-        last_name="Manager",
-    )
-    role = Role.objects.create(
-        name="user_manager",
-        permissions=[PermissionKey.MANAGE_USERS, PermissionKey.CREATE_USER],
-    )
-    user.roles.add(role)
-    return user
-
-
-@pytest.fixture
-def manage_users_headers(manage_users_user):
-    refresh = RefreshToken.for_user(manage_users_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+from users.models import MembershipStatus, User
 
 
 @pytest.fixture
@@ -39,7 +14,7 @@ def other_user(db):
 
 @pytest.fixture
 def member(db):
-    """A member User (is_member=True). Reusable across user test files."""
+    """A member User. Reusable across user test files."""
     return User.objects.create_user(
         phone_number="+12025550401",
         password="memberpass123",
@@ -50,14 +25,10 @@ def member(db):
 
 @pytest.fixture
 def non_member(db):
-    """A non-member User (is_member=False) — e.g. a public-RSVP account.
-
-    Passes is_member=False explicitly to override the conftest create_user
-    monkeypatch, which otherwise forces is_member=True for the test population.
-    """
+    """A public rsvper; overrides the conftest create_user default of member."""
     return User.objects.create_user(
         phone_number="+12025550402",
         first_name="Non-member",
         last_name="User",
-        is_member=False,
+        membership_status=MembershipStatus.NONE,
     )

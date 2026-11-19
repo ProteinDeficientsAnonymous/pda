@@ -1,10 +1,10 @@
-"""Tests for anchor + milestone due-date math (community/_attendance_clock.py)."""
+"""Tests for anchor + milestone due-date math (community/attendance/clock.py)."""
 
 from datetime import UTC, date, datetime
 
 import pytest
-from community._attendance_analytics import compute_member_stats, user_rsvps_for_attendance
-from community._attendance_clock import (
+from community.attendance.analytics import compute_member_stats, user_rsvps_for_attendance
+from community.attendance.clock import (
     compute_anchor,
     last_qualifying_attendance_date,
     latest_due_milestone,
@@ -20,15 +20,11 @@ from community.models import (
 )
 from users.models import User
 
+from tests._users import make_user
+
 
 def _make_user(date_joined: date, **extra) -> User:
-    user = User.objects.create_user(
-        phone_number=extra.pop("phone_number", "+12025550100"),
-        password="testpass123",
-        first_name="Test",
-        is_member=True,
-        **extra,
-    )
+    user = make_user(**extra)
     User.objects.filter(pk=user.pk).update(
         date_joined=datetime.combine(date_joined, datetime.min.time(), tzinfo=UTC)
     )

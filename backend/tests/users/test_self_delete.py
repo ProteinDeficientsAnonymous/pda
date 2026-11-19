@@ -1,5 +1,5 @@
 import pytest
-from community._validation import Code
+from community.validation import Code
 from notifications.models import Notification, NotificationType
 from tests._asserts import assert_error_code
 from users.models import User

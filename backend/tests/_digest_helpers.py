@@ -2,18 +2,7 @@ from datetime import timedelta
 
 from community.models import Event, EventType, JoinRequest, JoinRequestStatus
 from django.utils import timezone
-from users.models import User
-
-
-def make_member(phone_number: str, **extra) -> User:
-    extra.setdefault("email", f"{phone_number}@example.test")
-    extra.setdefault("first_name", "Test")
-    extra.setdefault("is_member", True)
-    return User.objects.create_user(
-        phone_number=phone_number,
-        password="testpass123",
-        **extra,
-    )
+from users.models import MembershipStatus, User
 
 
 def make_tentative(phone_number: str, **extra) -> User:
@@ -21,7 +10,7 @@ def make_tentative(phone_number: str, **extra) -> User:
         phone_number=phone_number,
         email=f"{phone_number}@example.test",
         first_name="Sprout",
-        is_member=False,
+        membership_status=MembershipStatus.TENTATIVE,
         **extra,
     )
     JoinRequest.objects.create(
@@ -34,7 +23,7 @@ def make_tentative(phone_number: str, **extra) -> User:
     return user
 
 
-def make_event(title: str, days_out: float, **extra) -> Event:
+def make_event(title: str = "Vegan Potluck", days_out: float = 5, **extra) -> Event:
     extra.setdefault("event_type", EventType.OFFICIAL)
     return Event.objects.create(
         title=title,

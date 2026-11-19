@@ -1,71 +1,57 @@
 """Tests for waitlist promotion behaviour when RSVP capacity frees up."""
 
 import pytest
-from community._waitlist import promote_from_waitlist
 from community.models import Event, EventRSVP, RSVPStatus
-from ninja_jwt.tokens import RefreshToken
+from community.rsvps.waitlist import promote_from_waitlist
 from notifications.models import Notification, NotificationType
-from users.models import User
 
-from tests.conftest import future_iso
+from tests._auth import auth_headers_for
+from tests._time import future_iso
+from tests._users import make_user
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
 
-def _make_user(phone, name):
-    return User.objects.create_user(
-        phone_number=phone,
-        password="Testpass123!",
-        first_name=name,
-        last_name="",
-    )
-
-
-def _jwt_headers(user):
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
-
-
 @pytest.fixture
 def user1(db):
-    return _make_user("+14155559001", "User One")
+    return make_user(first_name="User One")
 
 
 @pytest.fixture
 def user2(db):
-    return _make_user("+14155559002", "User Two")
+    return make_user(first_name="User Two")
 
 
 @pytest.fixture
 def user3(db):
-    return _make_user("+14155559003", "User Three")
+    return make_user(first_name="User Three")
 
 
 @pytest.fixture
 def user4(db):
-    return _make_user("+14155559004", "User Four")
+    return make_user(first_name="User Four")
 
 
 @pytest.fixture
 def headers1(user1):
-    return _jwt_headers(user1)
+    return auth_headers_for(user1)
 
 
 @pytest.fixture
 def headers2(user2):
-    return _jwt_headers(user2)
+    return auth_headers_for(user2)
 
 
 @pytest.fixture
 def headers3(user3):
-    return _jwt_headers(user3)
+    return auth_headers_for(user3)
 
 
 @pytest.fixture
 def headers4(user4):
-    return _jwt_headers(user4)
+    return auth_headers_for(user4)
 
 
 @pytest.fixture
@@ -96,7 +82,7 @@ def _rsvp(api_client, event, headers, status="attending", has_plus_one=False):
 
 @pytest.mark.django_db
 class TestWaitlistPromotion:
-    def test_promote_on_status_change(  # noqa: PLR0913
+    def test_promote_on_status_change(
         self, api_client, capped_event, user3, headers1, headers2, headers3
     ):
         _rsvp(api_client, capped_event, headers1)
@@ -109,9 +95,7 @@ class TestWaitlistPromotion:
         rsvp3 = EventRSVP.objects.get(event=capped_event, user=user3)
         assert rsvp3.status == RSVPStatus.ATTENDING
 
-    def test_promote_on_delete(  # noqa: PLR0913
-        self, api_client, capped_event, user3, headers1, headers2, headers3
-    ):
+    def test_promote_on_delete(self, api_client, capped_event, user3, headers1, headers2, headers3):
         _rsvp(api_client, capped_event, headers1)
         _rsvp(api_client, capped_event, headers2)
         _rsvp(api_client, capped_event, headers3)  # waitlisted
@@ -121,7 +105,7 @@ class TestWaitlistPromotion:
         rsvp3 = EventRSVP.objects.get(event=capped_event, user=user3)
         assert rsvp3.status == RSVPStatus.ATTENDING
 
-    def test_fifo_order(  # noqa: PLR0913
+    def test_fifo_order(
         self,
         api_client,
         capped_event,
@@ -144,7 +128,7 @@ class TestWaitlistPromotion:
         assert rsvp3.status == RSVPStatus.ATTENDING
         assert rsvp4.status == RSVPStatus.WAITLISTED
 
-    def test_promote_multiple_spots(  # noqa: PLR0913
+    def test_promote_multiple_spots(
         self,
         api_client,
         capped_event,
@@ -168,7 +152,7 @@ class TestWaitlistPromotion:
         assert rsvp3.status == RSVPStatus.ATTENDING
         assert rsvp4.status == RSVPStatus.WAITLISTED
 
-    def test_waitlisted_plus_one_party_promoted_together(  # noqa: PLR0913
+    def test_waitlisted_plus_one_party_promoted_together(
         self, api_client, capped_event, user3, headers1, headers3
     ):
         # max=2; user1 with +1 fills both seats. user3 requests attending +1
@@ -185,7 +169,7 @@ class TestWaitlistPromotion:
         assert rsvp3.status == RSVPStatus.ATTENDING
         assert rsvp3.has_plus_one is True
 
-    def test_waitlisted_plus_one_party_not_seated_solo_into_one_seat(  # noqa: PLR0913
+    def test_waitlisted_plus_one_party_not_seated_solo_into_one_seat(
         self, api_client, capped_event, user3, headers1, headers3
     ):
         # Only one seat frees up — the +1 party must wait, not be seated solo.
@@ -241,7 +225,7 @@ class TestWaitlistPromotion:
 
 @pytest.mark.django_db
 class TestWaitlistPromotionNotification:
-    def test_notification_created_on_promote(  # noqa: PLR0913
+    def test_notification_created_on_promote(
         self,
         api_client,
         capped_event,
@@ -283,14 +267,14 @@ class TestWaitlistPromotionNotification:
 
 @pytest.mark.django_db
 class TestPromoteOnCapacityIncrease:
-    def test_promote_on_max_attendees_increase(  # noqa: PLR0913
+    def test_promote_on_max_attendees_increase(
         self, api_client, capped_event, test_user, user3, headers1, headers2, headers3
     ):
         _rsvp(api_client, capped_event, headers1)
         _rsvp(api_client, capped_event, headers2)
         _rsvp(api_client, capped_event, headers3)  # waitlisted, cap=2
 
-        host_headers = _jwt_headers(test_user)
+        host_headers = auth_headers_for(test_user)
         response = api_client.patch(
             f"/api/community/events/{capped_event.id}/",
             {"max_attendees": 3},
@@ -303,14 +287,14 @@ class TestPromoteOnCapacityIncrease:
         rsvp3 = EventRSVP.objects.get(event=capped_event, user=user3)
         assert rsvp3.status == RSVPStatus.ATTENDING
 
-    def test_no_promotion_on_max_attendees_decrease(  # noqa: PLR0913
+    def test_no_promotion_on_max_attendees_decrease(
         self, api_client, capped_event, test_user, user3, headers1, headers2, headers3
     ):
         _rsvp(api_client, capped_event, headers1)
         _rsvp(api_client, capped_event, headers2)
         _rsvp(api_client, capped_event, headers3)  # waitlisted, cap=2
 
-        host_headers = _jwt_headers(test_user)
+        host_headers = auth_headers_for(test_user)
         response = api_client.patch(
             f"/api/community/events/{capped_event.id}/",
             {"max_attendees": 1},

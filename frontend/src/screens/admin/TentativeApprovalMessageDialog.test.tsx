@@ -1,18 +1,14 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { TentativeApprovalMessageDialog } from './TentativeApprovalMessageDialog';
 
-vi.mock('@/api/client', () => ({
-  setAuthBridge: vi.fn(),
-  authClient: { post: vi.fn(), get: vi.fn() },
-  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
+vi.mock('@/api/client');
 
 vi.mock('@/api/content', () => ({
   useTentativeApprovalMessage: () => ({
@@ -52,18 +48,15 @@ function renderDialog(user: User | null, magicLinkToken: string | null = null) {
     user,
     accessToken: user ? 'tok' : null,
   });
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <TentativeApprovalMessageDialog
-        open
-        onClose={() => {}}
-        fullName="Sam Vetterson"
-        firstName="Sam"
-        phoneNumber="+12025551234"
-        magicLinkToken={magicLinkToken}
-      />
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <TentativeApprovalMessageDialog
+      open
+      onClose={() => {}}
+      fullName="Sam Vetterson"
+      firstName="Sam"
+      phoneNumber="+12025551234"
+      magicLinkToken={magicLinkToken}
+    />,
   );
 }
 

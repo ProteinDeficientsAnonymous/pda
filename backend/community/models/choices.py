@@ -3,6 +3,12 @@
 from django.db import models
 
 
+class ReserveEntryKind(models.TextChoices):
+    EVENT = "event", "Event"
+    COST = "cost", "Cost"
+    DONATION = "donation", "Donation"
+
+
 class PageVisibility(models.TextChoices):
     PUBLIC = "public", "Public"
     MEMBERS_ONLY = "members_only", "Members only"
@@ -15,6 +21,11 @@ class EventType(models.TextChoices):
     CLUB = "club", "Club"
 
 
+class EventFormat(models.TextChoices):
+    WALK = "walk", "Walk"
+    RESTAURANT = "restaurant", "Restaurant"
+
+
 def is_official_or_club(event_type: str) -> bool:
     return event_type in (EventType.OFFICIAL, EventType.CLUB)
 
@@ -24,6 +35,25 @@ class EventStatus(models.TextChoices):
     ACTIVE = "active", "Active"
     CANCELLED = "cancelled", "Cancelled"
     DELETED = "deleted", "Deleted"
+
+
+class PlanningSlotKind(models.TextChoices):
+    MONTHLY = "monthly", "Monthly"
+    BIANNUAL = "biannual", "Biannual"
+
+
+class BiannualInterest(models.TextChoices):
+    YES = "yes", "Yes"
+    MAYBE = "maybe", "Maybe"
+    NO = "no", "No"
+
+
+class AssignmentStatus(models.TextChoices):
+    DRAFT = "draft", "Draft"
+    PROPOSED = "proposed", "Proposed"
+    COMMITTED = "committed", "Committed"
+    DECLINED = "declined", "Declined"
+    WITHDRAWN = "withdrawn", "Withdrawn"
 
 
 class EventFlagStatus(models.TextChoices):
@@ -46,6 +76,12 @@ class JoinRequestStatus(models.TextChoices):
     TENTATIVE = "tentative", "Tentatively approved"
     APPROVED = "approved", "Approved"
     REJECTED = "rejected", "Rejected"
+    # Terminal: the tentative applicant was archived before they were approved.
+    CLOSED = "closed", "Closed"
+
+
+# Open requests can still change status; every other status is final.
+OPEN_JOIN_REQUEST_STATUSES = (JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE)
 
 
 class RejectionReason(models.TextChoices):
@@ -70,7 +106,8 @@ class QuestionType(models.TextChoices):
     CHECKBOX = "checkbox", "Checkbox"
     NUMBER = "number", "Number"
     BOOLEAN = "boolean", "Yes / No"
-    RATING = "rating", "Rating"
+    STARS = "stars", "Stars"
+    SCALE = "scale", "Scale"
     DATETIME_POLL = "datetime_poll", "Datetime poll"
     SECTION = "section", "Section"
 
@@ -123,6 +160,13 @@ class RSVPStatus(models.TextChoices):
     CANT_GO = "cant_go", "Can't go"
     WAITLISTED = "waitlisted", "Waitlisted"
     REMOVED = "removed", "Removed"
+
+
+class CancelReason(models.TextChoices):
+    SELF = "self", "Self"
+    HOST = "host", "Host"
+    PAUSE = "pause", "Pause"
+    ARCHIVE = "archive", "Archive"
 
 
 # Guests a payment import can match and verify.

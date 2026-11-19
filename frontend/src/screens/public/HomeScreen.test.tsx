@@ -1,12 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
-import type { ReactElement } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useHome } from '@/api/content';
-import { useAuthStore } from '@/auth/store';
+import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import HomeScreen from './HomeScreen';
 
@@ -37,18 +35,9 @@ const baseUser = makeUser({
   weekStart: 'monday',
 });
 
-function renderWith(component: ReactElement) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>{component}</MemoryRouter>
-    </QueryClientProvider>,
-  );
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  setUnauthed();
 });
 
 describe('HomeScreen', () => {
@@ -59,7 +48,7 @@ describe('HomeScreen', () => {
       data: undefined,
     } as ReturnType<typeof useHome>);
 
-    renderWith(<HomeScreen />);
+    renderWithProviders(<HomeScreen />);
 
     expect(screen.getByText('loading…')).toBeInTheDocument();
   });
@@ -76,14 +65,14 @@ describe('HomeScreen', () => {
         },
       ],
     };
-    useAuthStore.setState({ status: 'authed', user: editorUser, accessToken: 'token' });
+    setAuthed(editorUser, 'token');
     mockUseHome.mockReturnValue({
       isPending: false,
       isError: false,
       data: baseHomeData,
     } as ReturnType<typeof useHome>);
 
-    renderWith(<HomeScreen />);
+    renderWithProviders(<HomeScreen />);
 
     expect(screen.getAllByRole('button', { name: /edit/i }).length).toBeGreaterThan(0);
   });

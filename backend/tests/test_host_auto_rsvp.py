@@ -1,5 +1,4 @@
 import pytest
-from community._validation import Code
 from community.models import (
     Event,
     EventCoHostInvite,
@@ -9,33 +8,23 @@ from community.models import (
     RsvpQuestionType,
     RSVPStatus,
 )
-from ninja_jwt.tokens import RefreshToken
+from community.validation import Code
 from notifications.models import Notification, NotificationType
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
-from tests.conftest import future_iso
+from tests._auth import auth_headers_for
+from tests._time import future_iso
+from tests._users import make_user
 
 EVENTS_URL = "/api/community/events/"
 PAID = {"price": "$10", "venmo_link": "https://venmo.com/x"}
 
 
-def _auth(user: User) -> dict:
-    refresh = RefreshToken.for_user(user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
-
-
 @pytest.fixture
 def host(db) -> User:
-    user = User.objects.create_user(phone_number="+12025556100", password="x", first_name="Host")
-    role = Role.objects.create(
-        name="auto_rsvp_tagger",
-        permissions=[PermissionKey.TAG_OFFICIAL_EVENT, PermissionKey.TAG_CLUB_EVENT],
-    )
-    user.roles.add(role)
-    return user
+    return make_user(PermissionKey.TAG_OFFICIAL_EVENT, PermissionKey.TAG_CLUB_EVENT, email="")
 
 
 @pytest.fixture
@@ -58,7 +47,9 @@ def _create(api_client, host: User, event_type: str, **overrides) -> Event:
         "rsvp_enabled": True,
         **overrides,
     }
-    response = api_client.post(EVENTS_URL, payload, content_type="application/json", **_auth(host))
+    response = api_client.post(
+        EVENTS_URL, payload, content_type="application/json", **auth_headers_for(host)
+    )
     assert response.status_code == 201, response.content
     return Event.objects.get(id=response.json()["id"])
 
@@ -68,7 +59,7 @@ def _accept(api_client, event: Event, user: User):
     return api_client.post(
         f"{EVENTS_URL}{event.id}/cohost-invites/{invite.id}/accept/",
         content_type="application/json",
-        **_auth(user),
+        **auth_headers_for(user),
     )
 
 
@@ -98,7 +89,7 @@ class TestAutoRsvpOnCreate:
                 "rsvp_enabled": True,
             },
             content_type="application/json",
-            **_auth(host),
+            **auth_headers_for(host),
         )
         assert response.status_code == 201
         assert response.json()["my_rsvp"] == RSVPStatus.ATTENDING
@@ -124,7 +115,7 @@ class TestAutoRsvpOnCreate:
             f"{EVENTS_URL}{event.id}/rsvp/",
             {"status": RSVPStatus.ATTENDING},
             content_type="application/json",
-            **_auth(member),
+            **auth_headers_for(member),
         )
         assert_error_code(response, Code.Event.PAYMENT_CONFIRMATION_REQUIRED)
         assert _rsvp_status(event, member) is None
@@ -149,7 +140,10 @@ class TestAutoRsvpOnCreate:
 
 def _patch(api_client, event: Event, user: User, payload: dict):
     response = api_client.patch(
-        f"{EVENTS_URL}{event.id}/", payload, content_type="application/json", **_auth(user)
+        f"{EVENTS_URL}{event.id}/",
+        payload,
+        content_type="application/json",
+        **auth_headers_for(user),
     )
     assert response.status_code == 200, response.content
     return response
@@ -176,13 +170,13 @@ class TestAutoRsvpOnTypeSwitch:
 
     def test_switching_between_official_and_club_does_not_re_rsvp(self, api_client, host):
         event = _create(api_client, host, EventType.OFFICIAL)
-        api_client.delete(f"{EVENTS_URL}{event.id}/rsvp/", **_auth(host))
+        api_client.delete(f"{EVENTS_URL}{event.id}/rsvp/", **auth_headers_for(host))
         _patch(api_client, event, host, {"event_type": EventType.CLUB})
         assert _rsvp_status(event, host) is None
 
     def test_other_edits_do_not_re_rsvp(self, api_client, host):
         event = _create(api_client, host, EventType.OFFICIAL)
-        api_client.delete(f"{EVENTS_URL}{event.id}/rsvp/", **_auth(host))
+        api_client.delete(f"{EVENTS_URL}{event.id}/rsvp/", **auth_headers_for(host))
         _patch(api_client, event, host, {"title": "renamed"})
         assert _rsvp_status(event, host) is None
 
@@ -196,7 +190,7 @@ class TestAutoRsvpOnTypeSwitch:
 class TestHostCanChangeAutoRsvp:
     def test_host_can_withdraw(self, api_client, host):
         event = _create(api_client, host, EventType.OFFICIAL)
-        response = api_client.delete(f"{EVENTS_URL}{event.id}/rsvp/", **_auth(host))
+        response = api_client.delete(f"{EVENTS_URL}{event.id}/rsvp/", **auth_headers_for(host))
         assert response.status_code == 204
         assert _rsvp_status(event, host) is None
 
@@ -206,7 +200,7 @@ class TestHostCanChangeAutoRsvp:
             f"{EVENTS_URL}{event.id}/rsvp/",
             {"status": RSVPStatus.CANT_GO},
             content_type="application/json",
-            **_auth(host),
+            **auth_headers_for(host),
         )
         assert response.status_code == 200
         assert _rsvp_status(event, host) == RSVPStatus.CANT_GO
