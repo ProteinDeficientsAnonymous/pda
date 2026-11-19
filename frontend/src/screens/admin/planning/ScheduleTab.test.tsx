@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -31,6 +31,7 @@ let status = { isPending: false, isError: false };
 const mutation = { mutateAsync: vi.fn(), isPending: false };
 const commitMutation = { mutateAsync: vi.fn(), isPending: false };
 const toastMock = vi.fn();
+const toastSuccess = vi.fn();
 const TAP_TOAST = { id: 'planning-read-only-tap' };
 
 vi.mock('sonner', () => ({
@@ -38,7 +39,10 @@ vi.mock('sonner', () => ({
     (...args: unknown[]) => {
       toastMock(...args);
     },
-    { error: vi.fn() },
+    {
+      error: vi.fn(),
+      success: (...args: unknown[]) => toastSuccess(...args),
+    },
   ),
 }));
 
@@ -62,6 +66,7 @@ describe('ScheduleTab', () => {
     mutation.mutateAsync.mockClear();
     commitMutation.mutateAsync.mockClear();
     toastMock.mockClear();
+    toastSuccess.mockClear();
   });
 
   it('shows planners who cannot manage a read-only grid and panel', async () => {
@@ -84,6 +89,9 @@ describe('ScheduleTab', () => {
     await userEvent.click(screen.getByRole('button', { name: 'put yourself in for january' }));
     expect(commitMutation.mutateAsync).toHaveBeenCalledWith('a1');
     expect(mutation.mutateAsync).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(toastSuccess).toHaveBeenCalledWith("you're in for january 🌱", TAP_TOAST);
+    });
   });
 
   it('explains why an unproposed own tile does nothing', async () => {
