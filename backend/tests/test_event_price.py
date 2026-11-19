@@ -25,7 +25,23 @@ def test_parse_price_accepts_amounts(raw, expected):
     assert parse_price(raw) == expected
 
 
-@pytest.mark.parametrize("raw", ["free", "$10-20", "0", "-5", "NaN", "100000"])
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "free",
+        "$10-20",
+        "0",
+        "-5",
+        "NaN",
+        "100000",
+        "12,50",
+        "1,0",
+        "1e2",
+        "1_0",
+        "0.004",
+        "99999.999",
+    ],
+)
 def test_parse_price_rejects_non_amounts(raw):
     with pytest.raises(ValidationException) as exc:
         parse_price(raw)

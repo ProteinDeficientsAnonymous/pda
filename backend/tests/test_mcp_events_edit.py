@@ -119,7 +119,7 @@ def test_draft_edit_applies_directly(test_user, make_event):
 def test_live_edit_previews_then_applies_with_token(test_user, make_event):
     event = make_event(price="$15")
     preview = _update(test_user, event)
-    assert preview["changes"] == {"price": {"before": "$15", "after": "$20"}}
+    assert preview["changes"] == {"price": {"before": "$15", "after": "20"}}
     assert Event.objects.get(pk=event.pk).price == "$15"
     assert "fresh preview" in _update_refused(
         test_user, event, {"price": "$25"}, confirm_token=preview["confirm_token"]
@@ -196,7 +196,7 @@ def test_live_edit_refuses_official_with_unfilled_slots(test_user, make_event, f
 
 
 def test_edit_that_changes_nothing_is_refused(test_user, make_event):
-    event = make_event(price="$20")
+    event = make_event(price="20")
     event.tags.add(EventTag.objects.create(name="walk"))
     changes = {**PRICE, "tags": ["Walk"]}
     assert _update_refused(test_user, event, changes).startswith("nothing would change")
