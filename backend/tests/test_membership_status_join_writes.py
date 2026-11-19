@@ -1,6 +1,6 @@
 import pytest
 from community.join_requests.approval import maybe_promote_tentative
-from community.models import JoinRequestStatus
+from community.models import JoinRequestEvent, JoinRequestStatus
 from django.utils import timezone
 from users._archive_user import archive_user
 from users.models import MEMBER_STATUSES, MembershipStatus, User
@@ -13,11 +13,17 @@ __all__ = ["open_official_event"]
 
 pytestmark = pytest.mark.django_db
 
+_STATUS_TO_EVENT = {
+    JoinRequestStatus.TENTATIVE: JoinRequestEvent.MARK_TENTATIVE,
+    JoinRequestStatus.APPROVED: JoinRequestEvent.APPROVE,
+    JoinRequestStatus.REJECTED: JoinRequestEvent.REJECT,
+}
+
 
 def _decide(api_client, headers, join_request, status):
     response = api_client.patch(
         f"/api/community/join-requests/{join_request.id}/",
-        {"status": status},
+        {"event": _STATUS_TO_EVENT[status]},
         content_type="application/json",
         **headers,
     )

@@ -5264,8 +5264,13 @@ export interface components {
             /** Title */
             title: string;
         };
-        /** JoinRequestStatusIn */
+        /**
+         * JoinRequestStatusIn
+         * @description Decision payload: fire an event, not a target status.
+         */
         JoinRequestStatusIn: {
+            /** Event */
+            event: string;
             /**
              * Rejection Note
              * @default
@@ -5276,8 +5281,6 @@ export interface components {
              * @default
              */
             rejection_reason: string;
-            /** Status */
-            status: string;
         };
         /** JoinRequestSubmittedOut */
         JoinRequestSubmittedOut: {

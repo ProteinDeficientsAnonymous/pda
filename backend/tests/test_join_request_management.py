@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 from community.join_requests import manage
-from community.models import JoinRequest, JoinRequestStatus
+from community.models import JoinRequest, JoinRequestEvent, JoinRequestStatus
 from community.validation import Code
 from django.utils import timezone
 from users.models import User
@@ -58,7 +58,7 @@ class TestJoinRequestManagement:
     def test_approve_success(self, api_client, vettor_headers, sample_join_request):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -70,7 +70,7 @@ class TestJoinRequestManagement:
     def test_approve_creates_user(self, api_client, vettor_headers, sample_join_request):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -86,7 +86,7 @@ class TestJoinRequestManagement:
     def test_reject_success(self, api_client, vettor_headers, sample_join_request):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.REJECTED},
+            {"event": JoinRequestEvent.REJECT},
             content_type="application/json",
             **vettor_headers,
         )
@@ -96,7 +96,7 @@ class TestJoinRequestManagement:
     def test_approve_persists_status(self, api_client, vettor_headers, sample_join_request):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -106,7 +106,7 @@ class TestJoinRequestManagement:
     def test_invalid_status_rejected(self, api_client, vettor_headers, sample_join_request):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.PENDING},
+            {"event": JoinRequestStatus.PENDING},
             content_type="application/json",
             **vettor_headers,
         )
@@ -115,7 +115,7 @@ class TestJoinRequestManagement:
     def test_requires_permission(self, api_client, auth_headers, sample_join_request):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **auth_headers,
         )
@@ -124,7 +124,7 @@ class TestJoinRequestManagement:
     def test_unauthenticated_rejected(self, api_client, sample_join_request):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
         )
         assert response.status_code == 401
@@ -132,7 +132,7 @@ class TestJoinRequestManagement:
     def test_not_found(self, api_client, vettor_headers):
         response = api_client.patch(
             f"/api/community/join-requests/{uuid.uuid4()}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -141,13 +141,13 @@ class TestJoinRequestManagement:
     def test_approve_already_approved_fails(self, api_client, vettor_headers, sample_join_request):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": "approved"},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": "approved"},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -171,7 +171,7 @@ class TestJoinRequestManagement:
         monkeypatch.setattr(manage.JoinRequest.objects, "select_for_update", spy)
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": "approved"},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -181,13 +181,13 @@ class TestJoinRequestManagement:
     def test_reject_after_reject_fails(self, api_client, vettor_headers, sample_join_request):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.REJECTED},
+            {"event": JoinRequestEvent.REJECT},
             content_type="application/json",
             **vettor_headers,
         )
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -199,7 +199,7 @@ class TestJoinRequestManagement:
     ):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -213,7 +213,7 @@ class TestJoinRequestManagement:
     ):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.REJECTED},
+            {"event": JoinRequestEvent.REJECT},
             content_type="application/json",
             **vettor_headers,
         )
@@ -227,7 +227,7 @@ class TestJoinRequestManagement:
     ):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": "approved"},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -243,7 +243,7 @@ class TestJoinRequestManagement:
         sample_join_request.save()
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": "approved"},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -283,7 +283,7 @@ class TestJoinRequestManagement:
         )
         response = api_client.patch(
             f"/api/community/join-requests/{jr.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -305,7 +305,7 @@ class TestApprovalEmail:
         )
         resp = api_client.patch(
             f"/api/community/join-requests/{jr.id}/",
-            data={"status": "approved"},
+            data={"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -325,7 +325,7 @@ class TestApprovalEmail:
         )
         resp = api_client.patch(
             f"/api/community/join-requests/{jr.id}/",
-            data={"status": "approved"},
+            data={"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -345,7 +345,7 @@ class TestApprovalCarriesConsent:
         )
         resp = api_client.patch(
             f"/api/community/join-requests/{jr.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -375,7 +375,7 @@ class TestApprovalCarriesConsent:
         )
         resp = api_client.patch(
             f"/api/community/join-requests/{jr.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )

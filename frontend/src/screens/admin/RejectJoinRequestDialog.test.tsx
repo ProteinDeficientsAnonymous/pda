@@ -36,7 +36,7 @@ describe('RejectJoinRequestDialog', () => {
     await waitFor(() => {
       expect(mutateAsyncMock).toHaveBeenCalledWith({
         id: 'jr-1',
-        status: JoinRequestStatus.REJECTED,
+        event: 'reject',
         rejectionReason: null,
         rejectionNote: '',
       });

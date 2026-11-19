@@ -3,7 +3,7 @@
 import uuid
 
 import pytest
-from community.models import JoinRequest, JoinRequestStatus
+from community.models import JoinRequest, JoinRequestEvent, JoinRequestStatus
 from community.validation import Code
 
 from tests._asserts import assert_error_code
@@ -14,7 +14,7 @@ class TestUnrejectJoinRequest:
     def test_unreject_success(self, api_client, vettor_headers, vettor_user, sample_join_request):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.REJECTED},
+            {"event": JoinRequestEvent.REJECT},
             content_type="application/json",
             **vettor_headers,
         )
@@ -59,7 +59,7 @@ class TestUnrejectJoinRequest:
     def test_unreject_approved_fails(self, api_client, vettor_headers, sample_join_request):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -102,7 +102,7 @@ class TestUnrejectJoinRequest:
     ):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.REJECTED},
+            {"event": JoinRequestEvent.REJECT},
             content_type="application/json",
             **vettor_headers,
         )
@@ -113,7 +113,7 @@ class TestUnrejectJoinRequest:
         )
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.REJECTED},
+            {"event": JoinRequestEvent.REJECT},
             content_type="application/json",
             **vettor_headers,
         )

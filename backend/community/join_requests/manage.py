@@ -99,9 +99,25 @@ class JoinRequestOut(BaseModel):
 
 
 class JoinRequestStatusIn(BaseModel):
-    status: str = Field(max_length=FieldLimit.CHOICE)
+    """Decision payload: fire an event, not a target status."""
+
+    event: str = Field(max_length=FieldLimit.CHOICE)
     rejection_reason: str = ""
     rejection_note: str = ""
+
+
+# Vetter PATCH may only fire these; close / unreject / promote use other paths.
+_DECISION_EVENTS = (
+    JoinRequestEvent.MARK_TENTATIVE,
+    JoinRequestEvent.APPROVE,
+    JoinRequestEvent.REJECT,
+)
+
+_DECISION_ACTIONS = {
+    JoinRequestEvent.MARK_TENTATIVE: "join_request_tentative",
+    JoinRequestEvent.APPROVE: "join_request_approved",
+    JoinRequestEvent.REJECT: "join_request_rejected",
+}
 
 
 class ApproveJoinRequestOut(BaseModel):
@@ -296,25 +312,12 @@ def list_join_requests(request):
     return Status(200, [join_request_out(jr, lookups) for jr in rows])
 
 
-_DECISION_ACTIONS = {
-    JoinRequestStatus.TENTATIVE: "join_request_tentative",
-    JoinRequestStatus.APPROVED: "join_request_approved",
-    JoinRequestStatus.REJECTED: "join_request_rejected",
-}
-
-_DECISION_EVENTS = {
-    JoinRequestStatus.TENTATIVE: JoinRequestEvent.MARK_TENTATIVE,
-    JoinRequestStatus.APPROVED: JoinRequestEvent.APPROVE,
-    JoinRequestStatus.REJECTED: JoinRequestEvent.REJECT,
-}
-
-
 def _apply_decision_fields(
     join_request: JoinRequest, payload: JoinRequestStatusIn, actor
 ) -> list[str]:
-    if payload.status == JoinRequestStatus.TENTATIVE:
+    if payload.event == JoinRequestEvent.MARK_TENTATIVE:
         return join_request.mark_tentative(by=actor)
-    if payload.status == JoinRequestStatus.APPROVED:
+    if payload.event == JoinRequestEvent.APPROVE:
         return join_request.approve(by=actor)
     return join_request.reject(
         by=actor, reason=payload.rejection_reason, note=payload.rejection_note
@@ -356,12 +359,12 @@ def _apply_status_transition(
         before_status = str(join_request.status)
         was_tentative = before_status == JoinRequestStatus.TENTATIVE
         join_request.save(update_fields=_apply_decision_fields(join_request, payload, actor))
-        if payload.status == JoinRequestStatus.TENTATIVE:
+        if payload.event == JoinRequestEvent.MARK_TENTATIVE:
             user, magic_token, reactivated = provision_tentative_user(join_request, actor)
             if reactivated:
                 _audit_reactivated(request, user, join_request)
             return join_request, magic_token, False, before_status
-        if payload.status == JoinRequestStatus.APPROVED:
+        if payload.event == JoinRequestEvent.APPROVE:
             provisioned = provision_approved_user(
                 join_request, actor, was_tentative=was_tentative
             )
@@ -405,25 +408,19 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_join_request_status")
 
-    valid_statuses = [
-        JoinRequestStatus.TENTATIVE,
-        JoinRequestStatus.APPROVED,
-        JoinRequestStatus.REJECTED,
-    ]
-    if payload.status not in valid_statuses:
+    if payload.event not in _DECISION_EVENTS:
         raise_validation(
             Code.JoinRequest.INVALID_STATUS,
-            field="status",
+            field="event",
             status_code=400,
-            allowed=valid_statuses,
+            allowed=list(_DECISION_EVENTS),
         )
 
     join_request, magic_token, user_created, before_status = _apply_status_transition(
         request, id, payload
     )
     promoted = (
-        before_status == JoinRequestStatus.TENTATIVE
-        and payload.status == JoinRequestStatus.APPROVED
+        before_status == JoinRequestStatus.TENTATIVE and payload.event == JoinRequestEvent.APPROVE
     )
     if promoted:
         send_join_approval(
@@ -431,20 +428,19 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             display_name=join_request.full_name,
             first_name=join_request.first_name,
         )
-    if payload.status == JoinRequestStatus.REJECTED:
+    if payload.event == JoinRequestEvent.REJECT:
         send_join_rejection(join_request)
 
     approved_user = applicant_user(join_request)
-    action = _DECISION_ACTIONS[payload.status]
     audit_log(
         logging.INFO,
-        action,
+        _DECISION_ACTIONS[payload.event],
         request,
         target=AuditTarget(
             type=AuditTargetType.JOIN_REQUEST,
             id=str(join_request.id),
             details={
-                "event": _DECISION_EVENTS[payload.status],
+                "event": payload.event,
                 "from": before_status,
                 "to": str(join_request.status),
                 "full_name": join_request.full_name,

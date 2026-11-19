@@ -1,7 +1,11 @@
 import { type SyntheticEvent, useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { JoinRequestStatus, type JoinRequestSummary, useDecideJoinRequest } from '@/api/join';
+import {
+  JoinRequestDecisionEvent,
+  type JoinRequestSummary,
+  useDecideJoinRequest,
+} from '@/api/join';
 import { REJECTION_REASON_LABELS, RejectionReason } from '@/api/rejectionEmail';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -44,7 +48,7 @@ export function RejectJoinRequestDialog({ request, onClose }: Props) {
     try {
       await decide.mutateAsync({
         id: request.id,
-        status: JoinRequestStatus.REJECTED,
+        event: JoinRequestDecisionEvent.REJECT,
         rejectionReason: reason || null,
         rejectionNote: isOther ? note : '',
       });

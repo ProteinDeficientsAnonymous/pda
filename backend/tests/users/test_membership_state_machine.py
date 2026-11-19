@@ -3,7 +3,13 @@ from dataclasses import dataclass
 
 import pytest
 from audit.models import AuditLogEntry, AuditTargetType
-from community.models import AttendanceStatus, EventRSVP, EventType, JoinRequestStatus, RSVPStatus
+from community.models import (
+    AttendanceStatus,
+    EventRSVP,
+    EventType,
+    JoinRequestEvent,
+    RSVPStatus,
+)
 from community.validation import Code, InvalidStateTransition
 from django.utils import timezone
 from hypothesis import settings
@@ -326,7 +332,7 @@ def _submit_and_promote(
     assert sub.status_code == 201
     tent = api_client.patch(
         f"/api/community/join-requests/{sub.json()['id']}/",
-        {"status": JoinRequestStatus.TENTATIVE},
+        {"event": JoinRequestEvent.MARK_TENTATIVE},
         content_type="application/json",
         **admin_headers,
     )

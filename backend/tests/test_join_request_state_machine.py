@@ -311,7 +311,7 @@ def _walk_first_request_to_closed(api_client, jr1_id: str, admin_headers: dict) 
     assert (
         api_client.patch(
             f"/api/community/join-requests/{jr1_id}/",
-            {"status": JoinRequestStatus.REJECTED, "rejection_reason": RejectionReason.VEGETARIAN},
+            {"event": JoinRequestEvent.REJECT, "rejection_reason": RejectionReason.VEGETARIAN},
             content_type="application/json",
             **admin_headers,
         ).status_code
@@ -319,7 +319,7 @@ def _walk_first_request_to_closed(api_client, jr1_id: str, admin_headers: dict) 
     )
     bad_approve = api_client.patch(
         f"/api/community/join-requests/{jr1_id}/",
-        {"status": JoinRequestStatus.APPROVED},
+        {"event": JoinRequestEvent.APPROVE},
         content_type="application/json",
         **admin_headers,
     )
@@ -336,7 +336,7 @@ def _walk_first_request_to_closed(api_client, jr1_id: str, admin_headers: dict) 
     assert (
         api_client.patch(
             f"/api/community/join-requests/{jr1_id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **admin_headers,
         ).status_code
@@ -349,7 +349,7 @@ def _walk_first_request_to_closed(api_client, jr1_id: str, admin_headers: dict) 
     # Sending TENTATIVE again is rejected and does NOT re-lock onboarding!
     repeat_tentative = api_client.patch(
         f"/api/community/join-requests/{jr1_id}/",
-        {"status": JoinRequestStatus.TENTATIVE},
+        {"event": JoinRequestEvent.MARK_TENTATIVE},
         content_type="application/json",
         **admin_headers,
     )
@@ -359,7 +359,7 @@ def _walk_first_request_to_closed(api_client, jr1_id: str, admin_headers: dict) 
 
     bad_reject = api_client.patch(
         f"/api/community/join-requests/{jr1_id}/",
-        {"status": JoinRequestStatus.REJECTED},
+        {"event": JoinRequestEvent.REJECT},
         content_type="application/json",
         **admin_headers,
     )
@@ -368,7 +368,7 @@ def _walk_first_request_to_closed(api_client, jr1_id: str, admin_headers: dict) 
     assert api_client.delete(f"/api/auth/users/{user.pk}/", **admin_headers).status_code == 204
     bad_closed = api_client.patch(
         f"/api/community/join-requests/{jr1_id}/",
-        {"status": JoinRequestStatus.APPROVED},
+        {"event": JoinRequestEvent.APPROVE},
         content_type="application/json",
         **admin_headers,
     )
@@ -399,7 +399,7 @@ class TestJoinRequestLifecycleEndToEnd:
         assert (
             api_client.patch(
                 f"/api/community/join-requests/{jr2_id}/",
-                {"status": JoinRequestStatus.TENTATIVE},
+                {"event": JoinRequestEvent.MARK_TENTATIVE},
                 content_type="application/json",
                 **admin_headers,
             ).status_code

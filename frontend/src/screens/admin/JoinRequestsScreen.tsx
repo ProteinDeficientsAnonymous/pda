@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import {
+  JoinRequestDecisionEvent,
   JoinRequestStatus,
   type JoinRequestSummary,
   useDecideJoinRequest,
@@ -87,11 +88,16 @@ export default function JoinRequestsScreen() {
     const ok = await confirm(confirmPropsForDecision(decision, name));
     if (!ok) return;
 
-    const wireStatus = decision === 'manually_approved' ? JoinRequestStatus.APPROVED : decision;
+    const event =
+      decision === 'manually_approved' || decision === JoinRequestStatus.APPROVED
+        ? JoinRequestDecisionEvent.APPROVE
+        : decision === JoinRequestStatus.TENTATIVE
+          ? JoinRequestDecisionEvent.MARK_TENTATIVE
+          : JoinRequestDecisionEvent.REJECT;
 
     setError(null);
     try {
-      const result = await decide.mutateAsync({ id: request.id, status: wireStatus });
+      const result = await decide.mutateAsync({ id: request.id, event });
       if (decision === 'manually_approved') {
         setMemberPromotionMessageFor({
           fullName: result.fullName,

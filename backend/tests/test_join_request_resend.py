@@ -3,7 +3,7 @@
 import uuid
 
 import pytest
-from community.models import JoinRequestStatus
+from community.models import JoinRequestEvent, JoinRequestStatus
 from community.validation import Code
 from django.utils import timezone
 from users.models import MagicLoginToken, User
@@ -14,7 +14,7 @@ from tests._asserts import assert_error_code
 def _approve(api_client, vettor_headers, join_request):
     return api_client.patch(
         f"/api/community/join-requests/{join_request.id}/",
-        {"status": JoinRequestStatus.APPROVED},
+        {"event": JoinRequestEvent.APPROVE},
         content_type="application/json",
         **vettor_headers,
     )
