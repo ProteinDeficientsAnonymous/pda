@@ -7,7 +7,7 @@ from community.models import (
     RejectionReason,
 )
 from django.test import TestCase
-from users.models import User
+from users.models import MembershipStatus, User
 
 pytestmark = pytest.mark.django_db
 
@@ -35,7 +35,7 @@ def _entry(action: str) -> AuditLogEntry:
 
 def test_submitted(api_client):
     rsvper = User.objects.create_user(
-        phone_number="+14155550123", first_name="Sam", is_member=False
+        phone_number="+14155550123", first_name="Sam", membership_status=MembershipStatus.NONE
     )
     body = {
         "first_name": "Sam",
@@ -73,7 +73,9 @@ def test_admitted_names_actor_and_user(
 
 def test_rejected_then_unrejected(api_client, vettor_headers, vettor_user, sample_join_request):
     rsvper = User.objects.create_user(
-        phone_number=sample_join_request.phone_number, first_name="Sprout", is_member=False
+        phone_number=sample_join_request.phone_number,
+        first_name="Sprout",
+        membership_status=MembershipStatus.NONE,
     )
     _decide(
         api_client,
