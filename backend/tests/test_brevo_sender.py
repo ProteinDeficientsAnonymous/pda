@@ -179,8 +179,14 @@ class TestStreamRouting:
         brevo_settings.RESEND_API_KEY = "resend_key"
         brevo_settings.RESEND_FROM_EMAIL = "noreply@example.com"
         try:
-            assert isinstance(get_email_sender(EmailStream.BULK), BrevoSender)
-            assert isinstance(get_email_sender(EmailStream.TRANSACTIONAL), ResendSender)
+            from notifications._log_only_test_domain_sender import LogOnlyTestDomainSender
+
+            bulk = get_email_sender(EmailStream.BULK)
+            transactional = get_email_sender(EmailStream.TRANSACTIONAL)
+            assert isinstance(bulk, LogOnlyTestDomainSender)
+            assert isinstance(bulk.inner, BrevoSender)
+            assert isinstance(transactional, LogOnlyTestDomainSender)
+            assert isinstance(transactional.inner, ResendSender)
         finally:
             reset_email_sender_cache()
 
@@ -209,7 +215,11 @@ class TestStreamRouting:
         reset_email_sender_cache()
         settings.BREVO_API_KEY = ""
         try:
-            assert isinstance(get_email_sender(EmailStream.BULK), ConsoleSender)
+            from notifications._log_only_test_domain_sender import LogOnlyTestDomainSender
+
+            sender = get_email_sender(EmailStream.BULK)
+            assert isinstance(sender, LogOnlyTestDomainSender)
+            assert isinstance(sender.inner, ConsoleSender)
         finally:
             reset_email_sender_cache()
 

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from notifications.email_sender import TEST_EMAIL_DOMAIN
+from notifications.email_types import TEST_EMAIL_DOMAIN
 from users.models import MembershipStatus
 
 from community.models.choices import EventType, JoinRequestStatus, PageVisibility

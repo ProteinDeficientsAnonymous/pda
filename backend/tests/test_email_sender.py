@@ -238,11 +238,11 @@ class TestResendSender:
 
 
 class TestLogOnlyTestDomainSender:
-    def test_test_domain_logs_and_skips_inner(self, caplog):
-        inner = ConsoleSender()
+    def test_test_domain_uses_console_and_skips_inner(self, caplog):
+        inner = ResendSender.__new__(ResendSender)
         with patch.object(inner, "send") as mock_send:
             sender = LogOnlyTestDomainSender(inner)
-            with caplog.at_level(logging.INFO, logger="notifications.log_only_test_domain"):
+            with caplog.at_level(logging.INFO, logger="notifications.console_sender"):
                 result = sender.send(
                     to=f"seed@{TEST_EMAIL_DOMAIN}",
                     subject="hello seed",
@@ -257,7 +257,7 @@ class TestLogOnlyTestDomainSender:
         assert "hi body" in log_text
 
     def test_test_domain_match_is_case_insensitive(self):
-        inner = ConsoleSender()
+        inner = ResendSender.__new__(ResendSender)
         with patch.object(inner, "send") as mock_send:
             result = LogOnlyTestDomainSender(inner).send(
                 to=f"Seed@{TEST_EMAIL_DOMAIN.upper()}",
@@ -269,7 +269,7 @@ class TestLogOnlyTestDomainSender:
         mock_send.assert_not_called()
 
     def test_other_domains_delegate_to_inner(self):
-        inner = ConsoleSender()
+        inner = ResendSender.__new__(ResendSender)
         with patch.object(inner, "send", return_value=SendResult(success=True)) as mock_send:
             result = LogOnlyTestDomainSender(inner).send(
                 to="real@example.com",
