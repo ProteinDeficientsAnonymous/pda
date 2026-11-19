@@ -24,6 +24,7 @@ from users.permissions import PermissionKey
 
 from community.events._invite_email import email_invited_members
 from community.events.helpers import event_out, reload_event_or_404
+from community.events.limited_access import can_be_guest, is_limited
 from community.events.schemas import EventOut
 from community.models import Event, EventStatus, InvitePermission, RSVPStatus
 from community.shared import ErrorOut
@@ -39,6 +40,8 @@ class InviteIn(BaseModel):
 
 def can_invite_to_event(user, event: Event) -> bool:
     """Same rule as the frontend's invite button (eventMemberSectionFlags)."""
+    if is_limited(user):
+        return False
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
     if event.co_hosts.filter(pk=user.pk).exists():
@@ -59,6 +62,14 @@ def closed_to_invites(event: Event) -> str | None:
     if not event.rsvp_enabled:
         return "invite_without_rsvp"
     return None
+
+
+def _eligible_invitees(event: Event, user_ids: set[UUID]) -> list[UserModel]:
+    """All-or-nothing: one invitee who can't see the event refuses the whole batch."""
+    users = list(UserModel.objects.filter(pk__in=user_ids))
+    if not all(can_be_guest(user, event) for user in users):
+        raise_validation(Code.Event.GUEST_NOT_ELIGIBLE, status_code=400)
+    return users
 
 
 @router.post(
@@ -100,7 +111,7 @@ def invite_to_event(request, event_id: UUID, payload: InviteIn):
     new_ids = requested_ids - existing_ids
 
     if new_ids:
-        new_users = UserModel.objects.filter(pk__in=new_ids)
+        new_users = _eligible_invitees(event, new_ids)
         event.invited_users.add(*new_users)
         if not event.is_draft:
             new_id_strs = [str(uid) for uid in new_ids]

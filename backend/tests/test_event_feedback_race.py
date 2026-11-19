@@ -12,9 +12,17 @@ from community.models import (
     SurveyResponse,
 )
 from django import db
+from django.conf import settings
 from django.test import Client
 from django.utils import timezone
 from users.models import User
+
+pytestmark = [
+    pytest.mark.skipif(
+        "postgresql" not in settings.DATABASES["default"]["ENGINE"],
+        reason="needs concurrent postgres writers",
+    ),
+]
 
 THREADS = 8
 
