@@ -3,12 +3,14 @@ import re
 from django.db import migrations, models
 
 _FIRST_NUMBER = re.compile(r"\d+(?:\.\d+)?")
+_MAX_PRICE = 100000
 
 
 def numeric_text(raw: str | None) -> str | None:
     # Prod only had past free-text prices ("$10 deposit", "~$35 - ~$60 sliding scale"); keep the first amount.
     match = _FIRST_NUMBER.search((raw or "").replace(",", ""))
-    return match.group(0) if match and float(match.group(0)) > 0 else None
+    # Out-of-range amounts (e.g. a phone number) would overflow numeric(8,2) and abort the migration.
+    return match.group(0) if match and 0 < float(match.group(0)) < _MAX_PRICE else None
 
 
 def to_numeric_text(apps, schema_editor):

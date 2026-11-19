@@ -54,6 +54,8 @@ def test_price_text(amount, expected):
         ("", None),
         ("pwyc", None),
         ("$0", None),
+        ("venmo 9175551234", None),
+        ("$100000", None),
     ],
 )
 def test_migration_keeps_the_first_amount(raw, expected):
