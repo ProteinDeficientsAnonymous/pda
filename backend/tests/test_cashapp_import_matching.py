@@ -71,6 +71,17 @@ class TestSenderMatch:
         [p] = _match([row(sender="Anita Garcia-Lopez")], [ALEX, ana])
         assert p.candidate_user_ids == ["u-ana"]
 
+    def test_last_initial_alone_is_not_a_candidate(self):
+        jo = guest("u-jo", "Jo", "K.")
+        [p] = _match([row(sender="Pat K")], [ALEX, jo])
+        assert p.confidence == MatchConfidence.UNMATCHED
+
+    def test_partial_sender_already_covered_by_note_is_not_a_candidate(self):
+        beth = guest("u-beth", "Beth", "Vazquez")
+        [p] = _match([row(sender="Elizabeth Vazquez", note="beth vazquez + jamie")], [JAMIE, beth])
+        assert "u-beth" in p.user_ids
+        assert "u-beth" not in p.candidate_user_ids
+
     def test_partial_sender_kept_alongside_weak_note_hit(self):
         beth = guest("u-beth", "Beth", "Vazquez")
         [p] = _match([row(sender="Elizabeth Vazquez", note="thanks jamie")], [JAMIE, beth])

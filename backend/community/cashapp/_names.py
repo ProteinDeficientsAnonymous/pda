@@ -63,7 +63,8 @@ class NameIndex:
             self.note_single[key].append(guest)
             self.sender_first[key].append(guest)
         for key in _keys(guest.last_name):
-            self.sender_last[key].append(guest)
+            if len(key) > 1:
+                self.sender_last[key].append(guest)
 
     def sender_matches(self, sender_name: str) -> tuple[list[GuestRecord], bool]:
         """return(tuple): (matching guests, True when only a bare nickname matched)."""
