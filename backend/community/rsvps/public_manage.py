@@ -17,6 +17,7 @@ from community.events.schemas import EventOut, RsvpAnswer
 from community.field_limits import FieldLimit
 from community.models import Event, EventRSVP, RSVPStatus
 from community.models.event import public_rsvp_eligible_q
+from community.rsvps._deadline import enforce_rsvp_deadline
 from community.rsvps.member import (
     RsvpApply,
     apply_rsvp_in_transaction,
@@ -82,7 +83,13 @@ def _eligible_event_rsvps(user):
     return (
         user.event_rsvps.filter(public_rsvp_eligible_q(timezone.now(), prefix="event__"))
         .select_related("event", "event__created_by")
-        .prefetch_related("event__co_hosts", "event__invited_users", "event__rsvps__user")
+        .prefetch_related(
+            "event__co_hosts",
+            "event__rsvps__user",
+            "event__tags",
+            "event__rsvp_questions",
+            "event__poll",
+        )
     )
 
 
@@ -203,10 +210,10 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
 
     fresh_event = (
         Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+        .prefetch_related("co_hosts", "rsvps__user")
         .get(id=event.id)
     )
-    final_rsvp = user.event_rsvps.get(event=fresh_event)
+    final_rsvp = next(r for r in fresh_event.rsvps.all() if r.user_id == user.pk)
     return Status(
         200,
         PublicRsvpOut(
@@ -231,6 +238,7 @@ def delete_my_rsvp(request, event_id, token: str = ""):
         rsvp = EventRSVP.objects.filter(event=event, user=user).first()
         if not rsvp:
             raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
+        enforce_rsvp_deadline(user, event, rsvp, RSVPStatus.CANT_GO)
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.delete()
         if was_attending:

@@ -5,6 +5,13 @@
     <p style="margin: 0 0 16px;">hi{% if display_name %} {{ display_name|lower }}{% endif %} —</p>
     <p style="margin: 0 0 16px;"><strong>{{ event_title|lower }}</strong> is tomorrow. {% if status == "attending" %}you're going 🌱{% elif status == "maybe" %}you rsvp'd maybe — please confirm so the host can plan.{% else %}you're on the waitlist — we'll email you if a spot opens up.{% endif %}</p>
     <p style="margin: 0 0 24px;">when: {{ event_when|lower }}{% if event_location %}<br>where: {{ event_location|lower }}{% endif %}</p>
+    <p style="margin: 0 0 8px;"><strong>how to show up at pda events</strong></p>
+    <ul style="margin: 0 0 24px; padding-left: 20px;">
+      <li>say hi to someone you don't know yet, and if you already know a lot of people, talk to newer folks and make them feel welcome</li>
+      <li>stay curious — ask questions and really listen to the answers</li>
+      <li>if you're a cis man, and especially a white cis man, be mindful of the space you take up. let people finish their thoughts before jumping in, notice if you're steering every conversation, and make room for others. if you see other men cutting people off, be the one to ask them to let others finish.</li>
+      <li>if you're white, be mindful of your privilege and watch for microaggressions. if someone names one, thank them and listen rather than getting defensive or explaining yourself. if you see someone else make one, say something or let the facilitators know.</li>
+    </ul>
     <p style="margin: 0 0 24px;">plans changed? update your rsvp so someone else can take your spot.</p>
     <p style="margin: 0 0 24px;">
       <a href="{{ rsvp_url }}" style="display: inline-block; background: #3c6939; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500;">view your rsvp</a>

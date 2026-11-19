@@ -1,15 +1,19 @@
 import { Link } from 'react-router-dom';
 
 import { useAuthStore } from '@/auth/store';
-import { hasPermission, Permission, type PermissionKey } from '@/models/permissions';
+import {
+  canViewPlanning,
+  Permission,
+  type PermissionRule,
+  satisfiesRule,
+} from '@/models/permissions';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 
-interface Tile {
+type Tile = PermissionRule & {
   to: string;
   label: string;
   description: string;
-  perm: PermissionKey;
-}
+};
 
 const TILES: Tile[] = [
   {
@@ -66,11 +70,17 @@ const TILES: Tile[] = [
     description: 'manage the shared document library',
     perm: Permission.ManageDocuments,
   },
+  {
+    to: '/admin/planning',
+    label: 'event planning',
+    description: "availability and who's planning what",
+    allow: canViewPlanning,
+  },
 ];
 
 export default function AdminHubScreen() {
   const user = useAuthStore((s) => s.user);
-  const visible = TILES.filter((t) => hasPermission(user, t.perm));
+  const visible = TILES.filter((t) => satisfiesRule(user, t));
 
   return (
     <ContentContainer>

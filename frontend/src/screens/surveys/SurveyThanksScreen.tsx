@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 
 import { useSurvey } from '@/api/surveys';
+import { buttonClass } from '@/components/ui/buttonClass';
 import { thankYouMessage } from '@/models/survey';
 import { ContentContainer, ContentLoading } from '@/screens/public/ContentContainer';
 
@@ -19,17 +20,11 @@ export default function SurveyThanksScreen() {
         </h1>
         <div className="mt-2 flex flex-wrap justify-center gap-2">
           {survey?.myResponseId ? (
-            <Link
-              to={`/surveys/${slug ?? ''}`}
-              className="bg-surface text-foreground border-border-strong hover:bg-background inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium"
-            >
+            <Link to={`/surveys/${slug ?? ''}`} className={buttonClass('secondary')}>
               edit your response
             </Link>
           ) : null}
-          <Link
-            to="/"
-            className="bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
-          >
+          <Link to="/" className={buttonClass()}>
             back to home
           </Link>
         </div>

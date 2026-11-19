@@ -76,6 +76,7 @@ class TestGuidelinesPauseRelease:
             "removed_rsvp_event_ids": [str(official.pk)],
             "removed_hosting_event_ids": [str(shared.pk)],
             "drafted_event_ids": [str(drafted.pk)],
+            "rescinded_invite_event_ids": [str(official.pk)],
         }
 
     def test_lifting_leaves_an_attendance_pause_with_the_member_role(self, set_pause, member):

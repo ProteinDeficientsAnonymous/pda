@@ -1,7 +1,6 @@
 from collections.abc import Iterable
 
 from community.events.helpers import broadcast_capacity_change
-from community.join_requests.closing import close_tentative_requests
 from community.models import (
     CancelReason,
     CoHostInviteStatus,
@@ -19,8 +18,7 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from notifications.service import broadcast_cohost_change
 
-from users.helpers import strip_elevated_roles
-from users.models import MembershipStatus, User
+from users.models import User
 
 HELD_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.WAITLISTED)
 _LIVE_EVENT_STATUSES = (EventStatus.DRAFT, EventStatus.ACTIVE)
@@ -28,33 +26,6 @@ _LIVE_EVENT_STATUSES = (EventStatus.DRAFT, EventStatus.ACTIVE)
 
 def upcoming_events_q(prefix: str = "") -> Q:
     return Q(**{f"{prefix}status__in": _LIVE_EVENT_STATUSES}) & ~is_past_q(timezone.now(), prefix)
-
-
-def archive_user(request, user: User) -> list[str]:
-    """Archive user and release what they hold on upcoming events.
-
-    param(request): the triggering request, for promoted-member email logging
-    param(user): the member to archive
-    return(list[str]): ids of the elevated roles that were stripped
-    """
-    with transaction.atomic():
-        actor = getattr(request, "auth", None)
-        user.archived_at = timezone.now()
-        user.status_before_archive = user.membership_status
-        user.calendar_token = ""
-        user.save(
-            update_fields=[
-                "archived_at",
-                "status_before_archive",
-                "calendar_token",
-                *user.set_membership_status(MembershipStatus.ARCHIVED, by=actor),
-            ]
-        )
-        close_tentative_requests(request, user)
-        removed_role_ids = strip_elevated_roles(user)
-        release_upcoming_rsvps(request, user, CancelReason.ARCHIVE)
-        step_down_as_cohost(user)
-    return removed_role_ids
 
 
 def release_upcoming_rsvps(
@@ -86,10 +57,7 @@ def upcoming_hosted_events(user: User):
     ).annotate(host_count=Count("co_hosts"))
 
 
-def step_down_as_cohost(user: User, events: Iterable[Event] | None = None) -> None:
-    """Leave the given events, by default every upcoming one that has another host."""
-    if events is None:
-        events = upcoming_hosted_events(user).filter(host_count__gt=1)
+def step_down_as_cohost(user: User, events: Iterable[Event]) -> None:
     for event in events:
         leave_cohost(event, user)
         broadcast_cohost_change(event)

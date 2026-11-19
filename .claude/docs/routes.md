@@ -62,6 +62,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/admin/whatsapp` | `manage_whatsapp` |
 | `/admin/join-form` | `edit_join_questions` |
 | `/admin/event-speech` | `edit_speech_template` (speech template + open roles) |
+| `/admin/planning` | `view_event_planning` or `manage_event_planning` (availability + my slots; grid and slot editor need `manage_event_planning`) |
 | `/admin/surveys` | `manage_surveys` |
 | `/admin/surveys/new` | `manage_surveys` |
 | `/admin/surveys/:id` | `manage_surveys` |

@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+{% if variant == "reminder" %}just checking in — we still need to know when you can plan events in {{ year }}.{% else %}we're planning {{ year }}! 🌱 let us know which months you could plan an event.{% endif %}
+
+it only takes a minute, and you can change it later:
+
+{{ availability_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}

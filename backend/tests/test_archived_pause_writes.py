@@ -79,12 +79,13 @@ def test_pause_writers_only_record_the_pause_on_an_archived_user(
 
 @pytest.mark.parametrize("body", [{"attendance_paused": True}, {"guidelines_paused": True}])
 def test_pausing_an_archived_host_keeps_their_events(api_client, manage_users_headers, body):
-    host = make_user(last_login=timezone.now())
+    # Created after archiving, since archiving drafts a solo-hosted event itself.
+    host = _archive(api_client, manage_users_headers, make_user(last_login=timezone.now()))
     event = Event.objects.create(
         title="potluck", start_datetime=timezone.now() + timedelta(days=3), created_by=host
     )
     event.co_hosts.add(host)
-    _patch(api_client, manage_users_headers, _archive(api_client, manage_users_headers, host), body)
+    _patch(api_client, manage_users_headers, host, body)
     event.refresh_from_db()
     assert event.status == EventStatus.ACTIVE
 

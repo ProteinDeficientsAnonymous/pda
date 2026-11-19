@@ -24,7 +24,7 @@ from users.permissions import PermissionKey
 
 from community.events._invite_email import email_invited_members
 from community.events.helpers import event_out, reload_event_or_404
-from community.events.limited_access import can_be_guest
+from community.events.limited_access import can_be_guest, is_limited
 from community.events.schemas import EventOut
 from community.models import Event, EventStatus, InvitePermission, RSVPStatus
 from community.shared import ErrorOut
@@ -40,6 +40,8 @@ class InviteIn(BaseModel):
 
 def can_invite_to_event(user, event: Event) -> bool:
     """Same rule as the frontend's invite button (eventMemberSectionFlags)."""
+    if is_limited(user):
+        return False
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
     if event.co_hosts.filter(pk=user.pk).exists():

@@ -117,6 +117,16 @@
         "params": []
       },
       {
+        "name": "RSVPS_CLOSED_DEADLINE",
+        "value": "event.rsvps_closed_deadline",
+        "params": []
+      },
+      {
+        "name": "RSVP_DEADLINE_AFTER_START",
+        "value": "event.rsvp_deadline_after_start",
+        "params": []
+      },
+      {
         "name": "RSVP_INVALID_STATUS",
         "value": "event.rsvp_invalid_status",
         "params": []
@@ -357,6 +367,13 @@
       {
         "name": "NAME_ALREADY_EXISTS",
         "value": "tag.name_already_exists",
+        "params": []
+      }
+    ],
+    "Reserve": [
+      {
+        "name": "NOT_FOUND",
+        "value": "reserve.not_found",
         "params": []
       }
     ],
@@ -1337,6 +1354,73 @@
       {
         "name": "APP_NOT_FOUND",
         "value": "connect.app_not_found",
+        "params": []
+      }
+    ],
+    "Planning": [
+      {
+        "name": "YEAR_EXISTS",
+        "value": "planning.year_exists",
+        "params": []
+      },
+      {
+        "name": "YEAR_NOT_FOUND",
+        "value": "planning.year_not_found",
+        "params": []
+      },
+      {
+        "name": "SLOT_NOT_FOUND",
+        "value": "planning.slot_not_found",
+        "params": []
+      },
+      {
+        "name": "SLOT_NOT_IN_YEAR",
+        "value": "planning.slot_not_in_year",
+        "params": []
+      },
+      {
+        "name": "NOT_A_PLANNER",
+        "value": "planning.not_a_planner",
+        "params": []
+      },
+      {
+        "name": "ALREADY_ASSIGNED",
+        "value": "planning.already_assigned",
+        "params": []
+      },
+      {
+        "name": "ASSIGNMENT_NOT_FOUND",
+        "value": "planning.assignment_not_found",
+        "params": []
+      },
+      {
+        "name": "NOT_PENDING",
+        "value": "planning.not_pending",
+        "params": []
+      },
+      {
+        "name": "NOT_EVENT_HOST",
+        "value": "planning.not_event_host",
+        "params": []
+      },
+      {
+        "name": "SLOT_HAS_EVENT",
+        "value": "planning.slot_has_event",
+        "params": []
+      },
+      {
+        "name": "AVAILABILITY_ALREADY_OPEN",
+        "value": "planning.availability_already_open",
+        "params": []
+      },
+      {
+        "name": "EVENT_ALREADY_LINKED",
+        "value": "planning.event_already_linked",
+        "params": []
+      },
+      {
+        "name": "CHECKLIST_ITEM_NOT_FOUND",
+        "value": "planning.checklist_item_not_found",
         "params": []
       }
     ]

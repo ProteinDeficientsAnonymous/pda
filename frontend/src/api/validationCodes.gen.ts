@@ -30,6 +30,8 @@ export const Code = {
     RsvpsNotEnabled: 'event.rsvps_not_enabled',
     RsvpsClosedCancelled: 'event.rsvps_closed_cancelled',
     RsvpsClosedPast: 'event.rsvps_closed_past',
+    RsvpsClosedDeadline: 'event.rsvps_closed_deadline',
+    RsvpDeadlineAfterStart: 'event.rsvp_deadline_after_start',
     RsvpInvalidStatus: 'event.rsvp_invalid_status',
     NoPlusOneSpots: 'event.no_plus_one_spots',
     RsvpNotFound: 'event.rsvp_not_found',
@@ -78,6 +80,9 @@ export const Code = {
     NotFound: 'tag.not_found',
     NameRequired: 'tag.name_required',
     NameAlreadyExists: 'tag.name_already_exists',
+  },
+  Reserve: {
+    NotFound: 'reserve.not_found',
   },
   Comment: {
     NotFound: 'comment.not_found',
@@ -315,6 +320,21 @@ export const Code = {
     RequestAlreadyUsed: 'connect.request_already_used',
     AppNotFound: 'connect.app_not_found',
   },
+  Planning: {
+    YearExists: 'planning.year_exists',
+    YearNotFound: 'planning.year_not_found',
+    SlotNotFound: 'planning.slot_not_found',
+    SlotNotInYear: 'planning.slot_not_in_year',
+    NotAPlanner: 'planning.not_a_planner',
+    AlreadyAssigned: 'planning.already_assigned',
+    AssignmentNotFound: 'planning.assignment_not_found',
+    NotPending: 'planning.not_pending',
+    NotEventHost: 'planning.not_event_host',
+    SlotHasEvent: 'planning.slot_has_event',
+    AvailabilityAlreadyOpen: 'planning.availability_already_open',
+    EventAlreadyLinked: 'planning.event_already_linked',
+    ChecklistItemNotFound: 'planning.checklist_item_not_found',
+  },
 } as const;
 
 export type ValidationCode =
@@ -341,6 +361,8 @@ export type ValidationCode =
   | 'event.rsvps_not_enabled'
   | 'event.rsvps_closed_cancelled'
   | 'event.rsvps_closed_past'
+  | 'event.rsvps_closed_deadline'
+  | 'event.rsvp_deadline_after_start'
   | 'event.rsvp_invalid_status'
   | 'event.no_plus_one_spots'
   | 'event.rsvp_not_found'
@@ -385,6 +407,7 @@ export type ValidationCode =
   | 'tag.not_found'
   | 'tag.name_required'
   | 'tag.name_already_exists'
+  | 'reserve.not_found'
   | 'comment.not_found'
   | 'comment.reply_depth_exceeded'
   | 'comment.invalid_emoji'
@@ -550,7 +573,20 @@ export type ValidationCode =
   | 'connect.request_not_found'
   | 'connect.request_expired'
   | 'connect.request_already_used'
-  | 'connect.app_not_found';
+  | 'connect.app_not_found'
+  | 'planning.year_exists'
+  | 'planning.year_not_found'
+  | 'planning.slot_not_found'
+  | 'planning.slot_not_in_year'
+  | 'planning.not_a_planner'
+  | 'planning.already_assigned'
+  | 'planning.assignment_not_found'
+  | 'planning.not_pending'
+  | 'planning.not_event_host'
+  | 'planning.slot_has_event'
+  | 'planning.availability_already_open'
+  | 'planning.event_already_linked'
+  | 'planning.checklist_item_not_found';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -576,6 +612,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvps_not_enabled': [],
   'event.rsvps_closed_cancelled': [],
   'event.rsvps_closed_past': [],
+  'event.rsvps_closed_deadline': [],
+  'event.rsvp_deadline_after_start': [],
   'event.rsvp_invalid_status': [],
   'event.no_plus_one_spots': [],
   'event.rsvp_not_found': [],
@@ -620,6 +658,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'tag.not_found': [],
   'tag.name_required': [],
   'tag.name_already_exists': [],
+  'reserve.not_found': [],
   'comment.not_found': [],
   'comment.reply_depth_exceeded': [],
   'comment.invalid_emoji': [],
@@ -786,4 +825,17 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'connect.request_expired': [],
   'connect.request_already_used': [],
   'connect.app_not_found': [],
+  'planning.year_exists': [],
+  'planning.year_not_found': [],
+  'planning.slot_not_found': [],
+  'planning.slot_not_in_year': [],
+  'planning.not_a_planner': [],
+  'planning.already_assigned': [],
+  'planning.assignment_not_found': [],
+  'planning.not_pending': [],
+  'planning.not_event_host': [],
+  'planning.slot_has_event': [],
+  'planning.availability_already_open': [],
+  'planning.event_already_linked': [],
+  'planning.checklist_item_not_found': [],
 };
