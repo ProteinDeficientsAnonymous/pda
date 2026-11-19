@@ -18,8 +18,6 @@ from tests._auth import auth_headers_for
 from tests._users import make_user
 from tests.test_member_attendance_analytics import MEMBERS_URL, events_admin  # noqa: F401
 
-_seq = {"n": 0}
-
 
 def _members(count: int) -> list[User]:
     host = make_user()
@@ -39,15 +37,14 @@ def _members(count: int) -> list[User]:
     ]
     attendances = [AttendanceStatus.ATTENDED, AttendanceStatus.DIDNT_GO, AttendanceStatus.UNKNOWN]
     members = []
-    for _ in range(count):
-        _seq["n"] += 1
+    for n in range(1, count + 1):
         user = make_user(is_member=True)
-        for i, event in enumerate(events[_seq["n"] % 4 :]):
+        for i, event in enumerate(events[n % 4 :]):
             EventRSVP.objects.create(
                 event=event,
                 user=user,
                 status=RSVPStatus.ATTENDING,
-                attendance=attendances[(i + _seq["n"]) % 3],
+                attendance=attendances[(i + n) % 3],
                 cancelled_at=timezone.now() if i % 5 == 0 else None,
             )
         members.append(user)
