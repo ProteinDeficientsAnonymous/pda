@@ -88,12 +88,11 @@ export default function JoinRequestsScreen() {
     const ok = await confirm(confirmPropsForDecision(decision, name));
     if (!ok) return;
 
+    // ConfirmedDecision excludes reject (that path uses RejectJoinRequestDialog).
     const event =
       decision === 'manually_approved' || decision === JoinRequestStatus.APPROVED
         ? JoinRequestDecisionEvent.APPROVE
-        : decision === JoinRequestStatus.TENTATIVE
-          ? JoinRequestDecisionEvent.MARK_TENTATIVE
-          : JoinRequestDecisionEvent.REJECT;
+        : JoinRequestDecisionEvent.MARK_TENTATIVE;
 
     setError(null);
     try {
