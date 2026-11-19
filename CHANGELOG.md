@@ -1,3 +1,10 @@
+## [0.257.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.257.0...v0.257.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* **docker:** copy the pnpmfile before the frozen frontend install ([#2572](https://github.com/ProteinDeficientsAnonymous/pda/issues/2572)) ([7cefbd3](https://github.com/ProteinDeficientsAnonymous/pda/commit/7cefbd3f67b434421802bd07d51a1f89bfbf0c1d))
+
 # [0.257.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.256.0...v0.257.0) (2026-11-17)
 
 
