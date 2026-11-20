@@ -27,6 +27,7 @@ from community.models import (
     is_official_or_club,
 )
 from community.shared import render_template_placeholders
+from community.validation import InvalidStateTransition
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,10 @@ def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome
             return _promote_or_restore(request, user, event)
     except Exception as exc:
         logger.warning("check_in_promotion_failed", exc_info=True)
+        details: dict = {"event_id": str(event.pk), "error": type(exc).__name__}
+        if isinstance(exc, InvalidStateTransition):
+            exc.audited = True
+            details.update(exc.failure.details(exc.code))
         audit_log(
             logging.WARNING,
             "check_in_promotion_failed",
@@ -51,7 +56,7 @@ def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome
             target=AuditTarget(
                 type=AuditTargetType.USER,
                 id=str(user.pk),
-                details={"event_id": str(event.pk), "error": type(exc).__name__},
+                details=details,
             ),
         )
         if was_tentative:
