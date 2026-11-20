@@ -15,6 +15,7 @@ from community.events.helpers import (
 )
 from community.models import Event, EventSlugAlias, EventType, is_official_or_club
 from community.models.event_slug import RESERVED_EVENT_SLUGS, rename_event_slug
+from community.paypal.eligibility import ensure_paypal_allowed
 from community.rsvps.waitlist import promote_from_waitlist
 from community.validation import Code, raise_validation
 
@@ -107,6 +108,16 @@ def _resolve_event_format(event: Event, updates: dict) -> None:
         updates["event_format"] = ""
 
 
+def _resolve_accept_paypal(event: Event, updates: dict) -> None:
+    """Treat a null toggle as unchanged, and turn paypal off when the event stops being official."""
+    effective_type = updates.get("event_type", event.event_type)
+    ensure_paypal_allowed(updates.get("accept_paypal"), effective_type)
+    if updates.get("accept_paypal", False) is None:
+        del updates["accept_paypal"]
+    if effective_type != EventType.OFFICIAL and event.accept_paypal:
+        updates["accept_paypal"] = False
+
+
 def guard_can_edit_event(request, event: Event, event_id: UUID) -> None:
     if can_edit_event(request.auth, event):
         return
@@ -151,6 +162,7 @@ def apply_field_updates(request, event: Event, event_id: UUID, updates: dict) ->
     _validate_rsvp_deadline_update(event, updates)
     _lock_typed_plus_ones(event, updates)
     _resolve_event_format(event, updates)
+    _resolve_accept_paypal(event, updates)
     co_host_ids = updates.pop("co_host_ids", None)
     tag_ids = updates.pop("tag_ids", None)
     changed_fields = list(updates.keys())

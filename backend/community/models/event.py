@@ -77,6 +77,7 @@ class Event(models.Model):
     venmo_link = models.URLField(blank=True)
     cashapp_link = models.URLField(blank=True)
     zelle_info = models.CharField(max_length=200, blank=True)
+    accept_paypal = models.BooleanField(default=False)
     rsvp_enabled = models.BooleanField(default=False)
     is_partiful_import = models.BooleanField(default=False)
     is_legacy = models.BooleanField(default=False)
@@ -409,6 +410,8 @@ class EventRsvpQuestion(models.Model):
     label = models.CharField(max_length=300)
     field_type = models.CharField(max_length=20, choices=RSVP_QUESTION_TYPE_CHOICES)
     options = models.JSONField(default=list, blank=True)
+    # Cents, parallel to options; empty means the question isn't priced.
+    option_prices = models.JSONField(default=list, blank=True)
     required = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(default=0)
 
