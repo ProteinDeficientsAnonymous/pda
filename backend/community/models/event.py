@@ -270,6 +270,8 @@ class EventRSVP(models.Model):
         on_delete=models.SET_NULL,
         related_name="payment_verified_rsvps",
     )
+    # Unique so a retried paypal webhook can't apply the same capture twice.
+    paypal_capture_id = models.CharField(max_length=64, null=True, blank=True, unique=True)
     # Set on joining the waitlist, cleared on leaving; hosts can renumber via the reorder endpoint.
     waitlist_position = models.PositiveIntegerField(null=True, blank=True)
     # Stamped on create and on any status change (see save()); bulk .update() callers must set it.

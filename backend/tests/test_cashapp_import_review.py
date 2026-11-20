@@ -175,6 +175,22 @@ class TestLoaders:
         assert [g.user_id for g in guests] == [str(alex.id)]
         assert verified == {str(alex.id), str(gone.id)}
 
+    def test_paypal_paid_guests_are_left_out_of_matching(self):
+        event = create_paid_event(price="15")
+        alex = self._user("+12025550201", "Alex", "Kim")
+        EventRSVP.objects.create(
+            event=event,
+            user=alex,
+            status=RSVPStatus.ATTENDING,
+            payment_verified_at=timezone.now(),
+            paypal_capture_id="CAP-1",
+        )
+
+        guests, verified = load_guests_and_verified(event)
+
+        assert guests == []
+        assert verified == {str(alex.id)}
+
     def test_payment_context_uses_end_then_start(self):
         event = create_paid_event()
         ctx = load_payment_context(event)

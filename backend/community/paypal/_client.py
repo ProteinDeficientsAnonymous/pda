@@ -26,14 +26,15 @@ def _access_token() -> str:
     return resp.json()["access_token"]
 
 
-def post(path: str, payload: dict) -> dict:
-    """POST to the PayPal REST API; raises httpx.HTTPError on any failure."""
-    resp = httpx.post(
-        _url(path),
-        json=payload,
-        headers={"Authorization": f"Bearer {_access_token()}"},
-        timeout=_TIMEOUT,
-    )
+def post(path: str, payload: dict, *, request_id: str | None = None) -> dict:
+    """POST to the PayPal REST API; raises httpx.HTTPError on any failure.
+
+    param(request_id): PayPal-Request-Id, so a retried call returns the first result.
+    """
+    headers = {"Authorization": f"Bearer {_access_token()}"}
+    if request_id:
+        headers["PayPal-Request-Id"] = request_id
+    resp = httpx.post(_url(path), json=payload, headers=headers, timeout=_TIMEOUT)
     resp.raise_for_status()
     return resp.json()
 

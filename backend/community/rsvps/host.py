@@ -28,17 +28,17 @@ from community.events.schemas import (
     HostRSVPPaymentIn,
 )
 from community.models import MATCHABLE_RSVP_STATUSES, CancelReason, Event, EventRSVP, RSVPStatus
-from community.rsvps._payment_verification import (
-    PaymentVerificationChange,
-    apply_payment_verification,
-    record_payment_verification,
-    verify_payments,
-)
 from community.rsvps.member import (
     payment_audit_details,
     resolve_cancel_fields,
     resolve_rsvp_status,
     validate_rsvp_status,
+)
+from community.rsvps.payment_verification import (
+    PaymentVerificationChange,
+    apply_payment_verification,
+    record_payment_verification,
+    verify_payments,
 )
 from community.rsvps.status_emails import email_host_set_rsvp_status, email_promoted_users
 from community.rsvps.waitlist import promote_from_waitlist

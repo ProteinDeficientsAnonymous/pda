@@ -154,5 +154,10 @@ def load_guests_and_verified(event: Event) -> tuple[list[GuestRecord], set[str]]
             Q(status__in=MATCHABLE_RSVP_STATUSES) | Q(payment_verified_at__isnull=False)
         ).select_related("user")
     )
-    guests = [_guest_record(r) for r in rsvps if r.status in MATCHABLE_RSVP_STATUSES]
+    # Paypal-paid guests can't owe a cash app payment, so a payment naming them goes unmatched.
+    guests = [
+        _guest_record(r)
+        for r in rsvps
+        if r.status in MATCHABLE_RSVP_STATUSES and r.paypal_capture_id is None
+    ]
     return guests, {str(r.user_id) for r in rsvps if r.payment_verified_at is not None}
