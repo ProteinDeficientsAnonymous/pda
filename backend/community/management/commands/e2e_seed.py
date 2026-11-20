@@ -34,7 +34,11 @@ from community.models import (
     SurveyQuestionType,
 )
 
-from ._e2e_attendance import seed_attendance_analytics, seed_attendance_report
+from ._e2e_attendance import (
+    seed_attendance_analytics,
+    seed_attendance_report,
+    seed_report_sections,
+)
 from ._e2e_common import (
     E2E_PASSWORD,
     issue_access_token,
@@ -290,7 +294,7 @@ def _seed_member_screens() -> dict:
         has_seen_veganniversary=True,
     )
     ada.roles.add(Role.objects.get(name="admin", is_default=True))
-    _screen_user(
+    remy = _screen_user(
         phone_number="+17025550008",
         first_name="Remy",
         last_name="Reset",
@@ -298,7 +302,7 @@ def _seed_member_screens() -> dict:
         needs_password_reset=True,
         has_seen_veganniversary=True,
     )
-    User.objects.create_user(
+    casey = User.objects.create_user(
         phone_number="+17025550009",
         first_name="Casey",
         last_name="Consent",
@@ -308,6 +312,7 @@ def _seed_member_screens() -> dict:
         guidelines_consent_at=None,
         password=E2E_PASSWORD,
     )
+    seed_report_sections(hike, (jamie, ada, remy, casey, guest))
     survey = Survey.objects.create(
         title="potluck feedback",
         slug="potluck-feedback",

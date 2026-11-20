@@ -26,6 +26,8 @@ from ninja_jwt.tokens import RefreshToken
 from users.models import PublicRsvpToken, User
 from users.permissions import PermissionKey
 
+from tests._auth import auth_headers_for
+
 
 @pytest.mark.django_db
 def test_e2e_seed_member(capsys):
@@ -161,6 +163,24 @@ def test_e2e_seed_member_screens_host_admin_and_gates(capsys):
     call_command("e2e_seed", "member-screens")
     assert Event.objects.filter(slug="hike").count() == 1
     assert Event.objects.filter(slug="picnic").count() == 1
+
+
+@pytest.mark.django_db
+def test_e2e_seed_member_screens_fills_every_report_section(capsys, api_client):
+    call_command("e2e_seed", "member-screens")
+    out = json.loads(capsys.readouterr().out)
+    seed = User.objects.get(phone_number=out["seed_phone"])
+    report = api_client.get(
+        f"/api/community/events/{out['hike_id']}/report/", **auth_headers_for(seed)
+    ).json()
+    counts = {k: v for k, v in report.items() if k.endswith("_count")}
+    assert counts == {
+        "attended_count": 1,
+        "no_show_count": 1,
+        "canceled_count": 1,
+        "unmarked_going_count": 1,
+        "unmarked_not_going_count": 1,
+    }
 
 
 def test_month_end_in_january_uses_prior_december():
