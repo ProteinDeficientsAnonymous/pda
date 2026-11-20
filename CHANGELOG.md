@@ -1,3 +1,43 @@
+## [0.271.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.1...v0.271.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* **visual:** hide fixed chrome in fullPage screenshots ([#2614](https://github.com/ProteinDeficientsAnonymous/pda/issues/2614)) ([8f7bb4a](https://github.com/ProteinDeficientsAnonymous/pda/commit/8f7bb4aa0d115d9f73a754543b50cb7bbdae57f1))
+
+## [0.271.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.0...v0.271.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **docker:** copy pnpm-workspace.yaml before the frozen frontend install ([#2619](https://github.com/ProteinDeficientsAnonymous/pda/issues/2619)) ([5dd1b84](https://github.com/ProteinDeficientsAnonymous/pda/commit/5dd1b84d256ea029a11f4e341a0a84de3e2afe59))
+
+# [0.271.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.270.0...v0.271.0) (2026-11-20)
+
+
+### Features
+
+* 2117 - charge the order total on the rsvp pay step ([#2615](https://github.com/ProteinDeficientsAnonymous/pda/issues/2615)) ([d24f201](https://github.com/ProteinDeficientsAnonymous/pda/commit/d24f2013eb530bbd82ef8df01cf79ff526bf5b3e))
+* 2117 - let hosts price rsvp question options ([#2608](https://github.com/ProteinDeficientsAnonymous/pda/issues/2608)) ([b0d82cc](https://github.com/ProteinDeficientsAnonymous/pda/commit/b0d82cce7ed11d028b54c3a8cbf7d4ac4dfeef38))
+* 2117 - show guests their order total while they rsvp ([#2609](https://github.com/ProteinDeficientsAnonymous/pda/issues/2609)) ([a749cf8](https://github.com/ProteinDeficientsAnonymous/pda/commit/a749cf85f953fc441d7e81af7d157845690e984f))
+* 2117 - show rsvp order totals to guests and hosts ([#2610](https://github.com/ProteinDeficientsAnonymous/pda/issues/2610)) ([a8a3de7](https://github.com/ProteinDeficientsAnonymous/pda/commit/a8a3de72372cc48146172b04c2b05cf30c2cec46))
+* 2117 - snapshot the ordered price into rsvp answers ([#2607](https://github.com/ProteinDeficientsAnonymous/pda/issues/2607)) ([203e20b](https://github.com/ProteinDeficientsAnonymous/pda/commit/203e20b184d147911c2e5747cd0c336cf3c3254d))
+* 2117 - store per-option prices on rsvp questions ([#2606](https://github.com/ProteinDeficientsAnonymous/pda/issues/2606)) ([1fab3f5](https://github.com/ProteinDeficientsAnonymous/pda/commit/1fab3f5f44258304300c13e2c33cdbb1fdba27b7))
+
+# [0.270.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.269.0...v0.270.0) (2026-11-20)
+
+
+### Features
+
+* 2122 - add per-event paypal toggle with fee-inclusive price ([#2266](https://github.com/ProteinDeficientsAnonymous/pda/issues/2266)) ([3048554](https://github.com/ProteinDeficientsAnonymous/pda/commit/3048554bb8a44ef9ff955c5d1732027d050e0440))
+
+# [0.269.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.268.1...v0.269.0) (2026-11-20)
+
+
+### Features
+
+* **notifications:** mint event-scoped sse tickets for rsvp viewers (1043, 2/3) ([#1688](https://github.com/ProteinDeficientsAnonymous/pda/issues/1688)) ([cc2f8c3](https://github.com/ProteinDeficientsAnonymous/pda/commit/cc2f8c324f2ff8ddbbedb4873611610f3f9abbff))
+
 ## [0.268.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.268.0...v0.268.1) (2026-11-20)
 
 

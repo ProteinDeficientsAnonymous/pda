@@ -3991,6 +3991,11 @@ export interface components {
         /** EventIn */
         EventIn: {
             /**
+             * Accept Paypal
+             * @default false
+             */
+            accept_paypal: boolean;
+            /**
              * Allow Plus Ones
              * @default false
              */
@@ -4252,6 +4257,11 @@ export interface components {
         /** EventOut */
         EventOut: {
             /**
+             * Accept Paypal
+             * @default false
+             */
+            accept_paypal: boolean;
+            /**
              * Allow Plus Ones
              * @default false
              */
@@ -4398,6 +4408,11 @@ export interface components {
              */
             partiful_link: string;
             /**
+             * Paypal Price
+             * @default
+             */
+            paypal_price: string;
+            /**
              * Pending Cohost Invites
              * @default []
              */
@@ -4480,6 +4495,8 @@ export interface components {
         };
         /** EventPatchIn */
         EventPatchIn: {
+            /** Accept Paypal */
+            accept_paypal?: boolean | null;
             /** Allow Plus Ones */
             allow_plus_ones?: boolean | null;
             /** Cashapp Link */
@@ -4638,6 +4655,11 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
+            /**
              * Options
              * @default []
              */
@@ -4657,6 +4679,11 @@ export interface components {
             field_type: "textarea" | "select" | "checkbox";
             /** Label */
             label: string;
+            /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
             /**
              * Options
              * @default []
@@ -4682,6 +4709,11 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Option Prices
+             * @default []
+             */
+            option_prices: number[];
+            /**
              * Options
              * @default []
              */
@@ -4700,6 +4732,11 @@ export interface components {
             id?: string | null;
             /** Label */
             label: string;
+            /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
             /**
              * Options
              * @default []
