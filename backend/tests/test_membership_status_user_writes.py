@@ -125,3 +125,35 @@ def test_switching_from_guidelines_to_attendance_pause(api_client, manage_users_
     )
     assert response.status_code == 200
     assert _status(member) == MembershipStatus.ATTENDANCE_PAUSED
+
+
+def test_lift_guidelines_with_attendance_false_stays_attendance_paused(
+    api_client, manage_users_headers
+):
+    """Combined PATCH must not treat post-lift attendance pause as a refused lift."""
+    member = make_user()
+    _patch_guidelines_pause(api_client, manage_users_headers, member, True)
+    response = api_client.patch(
+        f"/api/auth/users/{member.pk}/",
+        {"guidelines_paused": False, "attendance_paused": False},
+        content_type="application/json",
+        **manage_users_headers,
+    )
+    assert response.status_code == 200
+    assert _status(member) == MembershipStatus.ATTENDANCE_PAUSED
+
+
+def test_pause_patch_whatsapp_true_still_clears_on_guidelines_pause(
+    api_client, manage_users_headers
+):
+    member = make_user(has_joined_whatsapp=True)
+    response = api_client.patch(
+        f"/api/auth/users/{member.pk}/",
+        {"guidelines_paused": True, "has_joined_whatsapp": True},
+        content_type="application/json",
+        **manage_users_headers,
+    )
+    assert response.status_code == 200
+    member.refresh_from_db()
+    assert member.membership_status == MembershipStatus.GUIDELINES_PAUSED
+    assert member.has_joined_whatsapp is False

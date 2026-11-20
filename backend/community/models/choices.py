@@ -80,8 +80,32 @@ class JoinRequestStatus(models.TextChoices):
     CLOSED = "closed", "Closed"
 
 
+class JoinRequestEvent(models.TextChoices):
+    MARK_TENTATIVE = "mark_tentative", "Mark tentative"
+    APPROVE = "approve", "Approve"
+    PROMOTE_ON_CHECK_IN = "promote_on_check_in", "Promote on check-in"
+    REJECT = "reject", "Reject"
+    UNREJECT = "unreject", "Un-reject"
+    CLOSE = "close", "Close"
+
+
 # Open requests can still change status; every other status is final.
 OPEN_JOIN_REQUEST_STATUSES = (JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE)
+
+ALLOWED_JOIN_REQUEST_TRANSITIONS: dict[
+    tuple[JoinRequestStatus, JoinRequestEvent], JoinRequestStatus
+] = {
+    (JoinRequestStatus.PENDING, JoinRequestEvent.MARK_TENTATIVE): JoinRequestStatus.TENTATIVE,
+    (JoinRequestStatus.PENDING, JoinRequestEvent.APPROVE): JoinRequestStatus.APPROVED,
+    (JoinRequestStatus.PENDING, JoinRequestEvent.REJECT): JoinRequestStatus.REJECTED,
+    (JoinRequestStatus.TENTATIVE, JoinRequestEvent.APPROVE): JoinRequestStatus.APPROVED,
+    (
+        JoinRequestStatus.TENTATIVE,
+        JoinRequestEvent.PROMOTE_ON_CHECK_IN,
+    ): JoinRequestStatus.APPROVED,
+    (JoinRequestStatus.TENTATIVE, JoinRequestEvent.CLOSE): JoinRequestStatus.CLOSED,
+    (JoinRequestStatus.REJECTED, JoinRequestEvent.UNREJECT): JoinRequestStatus.PENDING,
+}
 
 
 class RejectionReason(models.TextChoices):

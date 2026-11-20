@@ -130,6 +130,15 @@ export const JoinRequestStatus = {
 } as const;
 export type JoinRequestStatus = (typeof JoinRequestStatus)[keyof typeof JoinRequestStatus];
 
+/** Vetter decision events for PATCH /join-requests/{id}/ */
+export const JoinRequestDecisionEvent = {
+  MARK_TENTATIVE: 'mark_tentative',
+  APPROVE: 'approve',
+  REJECT: 'reject',
+} as const;
+export type JoinRequestDecisionEvent =
+  (typeof JoinRequestDecisionEvent)[keyof typeof JoinRequestDecisionEvent];
+
 export interface JoinRequestAnswer {
   questionId: string;
   label: string;
@@ -422,17 +431,14 @@ export function useDecideJoinRequest() {
   return useMutation({
     mutationFn: async (args: {
       id: string;
-      status:
-        | typeof JoinRequestStatus.APPROVED
-        | typeof JoinRequestStatus.TENTATIVE
-        | typeof JoinRequestStatus.REJECTED;
+      event: JoinRequestDecisionEvent;
       rejectionReason?: RejectionReason | null;
       rejectionNote?: string;
     }) => {
       const { data } = await apiClient.patch<WireDecision>(
         `/api/community/join-requests/${args.id}/`,
         {
-          status: args.status,
+          event: args.event,
           rejection_reason: args.rejectionReason ?? '',
           rejection_note: args.rejectionNote ?? '',
         },

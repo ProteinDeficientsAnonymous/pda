@@ -30,10 +30,11 @@ def photo_question(event):
     )
 
 
-def test_host_sees_answers_keyed_by_label(test_user, event, photo_question):
+def test_host_sees_answers_keyed_by_question_id(test_user, event, photo_question):
     note = EventRsvpQuestion.objects.create(
         event=event, label="anything else?", field_type=RsvpQuestionType.TEXTAREA, display_order=1
     )
+    photo_id, note_id = str(photo_question.id), str(note.id)
     shy = make_member(last_name="Shy")
     guest = make_public_rsvper("+12025559101", "g@e.com", name="Pat Guest")
     make_rsvp(event, shy, questionnaire_responses=_answers((photo_question, "yes")))
@@ -48,7 +49,10 @@ def test_host_sees_answers_keyed_by_label(test_user, event, photo_question):
     body = run_tool(test_user, TOOL, event="photo-walk")
 
     assert body["event"]["id"] == str(event.id)
-    assert [q["label"] for q in body["questions"]] == ["opt out of photos?", "anything else?"]
+    assert [(q["id"], q["label"]) for q in body["questions"]] == [
+        (photo_id, "opt out of photos?"),
+        (note_id, "anything else?"),
+    ]
     assert body["questions"][0]["options"] == ["yes", "no"]
     assert body["responses"] == [
         {
@@ -56,14 +60,14 @@ def test_host_sees_answers_keyed_by_label(test_user, event, photo_question):
             "name": "M Shy",
             "is_member": True,
             "status": RSVPStatus.ATTENDING,
-            "answers": {"opt out of photos?": "yes"},
+            "answers": {photo_id: "yes"},
         },
         {
             "user_id": str(guest.id),
             "name": "Pat Guest",
             "is_member": False,
             "status": RSVPStatus.MAYBE,
-            "answers": {"opt out of photos?": "no", "anything else?": "hi"},
+            "answers": {photo_id: "no", note_id: "hi"},
         },
     ]
 
@@ -75,7 +79,7 @@ def test_co_host_and_event_manager_can_read(event, photo_question, manage_events
 
     for user in (co_host, manage_events_user):
         body = run_tool(user, TOOL, event=str(event.id))
-        assert body["responses"][0]["answers"] == {"opt out of photos?": "yes"}
+        assert body["responses"][0]["answers"] == {str(photo_question.id): "yes"}
 
 
 def test_other_members_are_forbidden(event, photo_question):
@@ -91,16 +95,24 @@ def test_unknown_or_deleted_event_is_an_error(test_user, event):
     assert tool_error(test_user, TOOL, event=str(event.id)) == "no event with that id or slug"
 
 
-def test_answer_to_deleted_question_keeps_its_snapshot_label(test_user, event, photo_question):
+def test_deleted_question_is_listed_from_its_snapshot(test_user, event, photo_question):
     gone = EventRsvpQuestion.objects.create(
-        event=event, label="old question", field_type=RsvpQuestionType.TEXTAREA
+        event=event, label="opt out of photos?", field_type=RsvpQuestionType.TEXTAREA
     )
-    make_rsvp(event, make_member(), questionnaire_responses=_answers((gone, "kept")))
+    gone_id = str(gone.id)
+    stored = _answers((gone, "old answer"), (photo_question, "no"))
+    make_rsvp(event, make_member(), questionnaire_responses=stored)
+    make_rsvp(event, make_member(), questionnaire_responses=_answers((gone, "also old")))
     gone.delete()
 
     body = run_tool(test_user, TOOL, event="photo-walk")
 
-    assert body["responses"][0]["answers"] == {"old question": "kept"}
+    assert body["questions"][1] == {"id": gone_id, "label": "opt out of photos?", "removed": True}
+    assert len(body["questions"]) == 2
+    assert [r["answers"] for r in body["responses"]] == [
+        {str(photo_question.id): "no", gone_id: "old answer"},
+        {gone_id: "also old"},
+    ]
 
 
 def test_malformed_snapshot_is_skipped(test_user, event, photo_question):
@@ -109,4 +121,23 @@ def test_malformed_snapshot_is_skipped(test_user, event, photo_question):
 
     body = run_tool(test_user, TOOL, event="photo-walk")
 
-    assert body["responses"][0]["answers"] == {"opt out of photos?": "yes"}
+    assert len(body["questions"]) == 1
+    assert body["responses"][0]["answers"] == {str(photo_question.id): "yes"}
+
+
+def test_questions_sharing_a_label_keep_both_answers(test_user, event, photo_question):
+    twin = EventRsvpQuestion.objects.create(
+        event=event,
+        label="opt out of photos?",
+        field_type=RsvpQuestionType.TEXTAREA,
+        display_order=1,
+    )
+    stored = _answers((twin, "only group shots"), (photo_question, "yes"))
+    make_rsvp(event, make_member(), questionnaire_responses=stored)
+
+    body = run_tool(test_user, TOOL, event="photo-walk")
+
+    assert body["responses"][0]["answers"] == {
+        str(photo_question.id): "yes",
+        str(twin.id): "only group shots",
+    }
