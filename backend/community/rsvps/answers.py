@@ -51,6 +51,15 @@ def _require_if_needed(q: EventRsvpQuestion, *, require_answers: bool) -> None:
         )
 
 
+def answer_price_cents(q: EventRsvpQuestion, answer: ChoiceAnswer) -> int | None:
+    """return(None): the question isn't priced."""
+    if not q.option_prices:
+        return None
+    price_by_option = dict(zip(q.options, q.option_prices, strict=False))
+    chosen = answer if isinstance(answer, list) else [answer]
+    return sum(price_by_option[option] for option in chosen)
+
+
 def build_rsvp_answers(
     questions: list[EventRsvpQuestion],
     raw: AnswersIn | None,
@@ -81,4 +90,7 @@ def build_rsvp_answers(
             _require_if_needed(q, require_answers=require_answers)
             continue
         snapshot[key] = {"label": q.label, "answer": normalized}
+        price_cents = answer_price_cents(q, normalized)
+        if price_cents is not None:
+            snapshot[key]["price_cents"] = price_cents
     return snapshot

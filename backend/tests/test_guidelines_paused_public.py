@@ -14,7 +14,8 @@ EMAIL = "sam@example.com"
 @pytest.fixture
 def paused(db):
     user = make_public_rsvper(PHONE, EMAIL)
-    user.save(update_fields=user.apply_guidelines_pause(by=None))
+    fields = [*user.approve_membership(by=None), *user.apply_guidelines_pause(by=None)]
+    user.save(update_fields=list(dict.fromkeys(fields)))
     return user
 
 
@@ -64,17 +65,18 @@ class TestPausedPublicRsvp:
 class TestPausedRsvpToken:
     @pytest.fixture
     def token(self, db):
-        # Issued before the pause: a member can't be issued one.
+        # Issued before membership + pause: a member can't be issued one.
         user = make_public_rsvper(PHONE, EMAIL)
         token = PublicRsvpToken.issue_or_extend(user).token
-        user.save(update_fields=user.apply_guidelines_pause(by=None))
+        fields = [*user.approve_membership(by=None), *user.apply_guidelines_pause(by=None)]
+        user.save(update_fields=list(dict.fromkeys(fields)))
         return token
 
     def test_viewer_falls_back_to_anonymous(self, rf, official_event, token):
         request = rf.get(f"/api/community/events/x/?token={token}")
         request.auth = None
 
-        assert resolve_event_viewer(request, official_event.id) is None
+        assert resolve_event_viewer(request, official_event) is None
 
     def test_manage_list_404s(self, api_client, token):
         response = api_client.get(f"/api/community/public/my-rsvps/?token={token}")

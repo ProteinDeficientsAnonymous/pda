@@ -30,6 +30,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says only official events can take paypal', () => {
+    expect(messageForCode({ code: Code.Event.PaypalOfficialOnly, field: 'accept_paypal' })).toBe(
+      'only official events can take paypal',
+    );
+  });
+
   it('says the rsvp deadline must come before the start', () => {
     expect(
       messageForCode({ code: Code.Event.RsvpDeadlineAfterStart, field: 'rsvp_deadline' }),
@@ -246,6 +252,12 @@ describe('messageForCode', () => {
 
   it.each(Object.values(Code.Planning))('gives planning code %s its own copy', (code) => {
     expect(messageForCode({ code, field: null })).not.toMatch(/double-check/i);
+  });
+
+  it('should return lowercase copy when user status transition is invalid', () => {
+    expect(messageForCode({ code: Code.User.InvalidStatusTransition, field: null })).toBe(
+      "that status change isn't allowed",
+    );
   });
 
   it('returns a safe fallback for unknown codes', () => {

@@ -25,8 +25,8 @@ from community.validation import Code, raise_validation
 
 router = Router()
 
-EVENT_PROTOCOL_SLUG = "event-protocol"
-_MEMBERS_ONLY_SLUGS = frozenset({"volunteer", EVENT_PROTOCOL_SLUG})
+DAY_OF_GUIDE_SLUG = "day-of-guide"
+_MEMBERS_ONLY_SLUGS = frozenset({"volunteer", DAY_OF_GUIDE_SLUG})
 
 
 class EditablePageOut(BaseModel):

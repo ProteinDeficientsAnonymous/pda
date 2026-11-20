@@ -4,8 +4,12 @@ from io import BytesIO
 from typing import Any
 
 from asgiref.sync import sync_to_async
-from community.validation import ValidationException
-from config.audit import flush_rollback_safe_audits, mark_request_via_mcp
+from community.validation import InvalidStateTransition, ValidationException
+from config.audit import (
+    audit_rejected_transition,
+    flush_rollback_safe_audits,
+    mark_request_via_mcp,
+)
 from config.validation_handlers import serialize_validation_exception
 from django.core.handlers.asgi import ASGIRequest
 from django.http import HttpRequest
@@ -67,6 +71,8 @@ async def call_view(view: Callable[..., Any], user: User, *args: Any, **kwargs: 
     try:
         result = await sync_to_async(_run_view)(view, request, *args, **kwargs)
     except ValidationException as exc:
+        if isinstance(exc, InvalidStateTransition):
+            await sync_to_async(audit_rejected_transition)(request, exc)
         raise validation_tool_error(exc) from exc
     if isinstance(result, Status) and result.status_code >= 400:
         body = _jsonable(result.value)

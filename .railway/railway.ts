@@ -61,8 +61,6 @@ export default defineRailway((ctx) => {
       dockerfilePath: "Dockerfile",
     },
     deploy: {
-      restartPolicyType: "ON_FAILURE",
-      restartPolicyMaxRetries: 10,
       // matches the current dashboard setting; only staging has it on
       ipv6EgressEnabled: ctx.isEnvironment("staging") ? true : null,
     },

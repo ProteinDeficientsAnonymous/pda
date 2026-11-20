@@ -1,5 +1,5 @@
 import pytest
-from community.content.pages import EVENT_PROTOCOL_SLUG
+from community.content.pages import DAY_OF_GUIDE_SLUG
 from community.models import EditablePage, Event, EventSpeech, EventStatus, EventType
 from community.scheduled.checkin_nudge import (
     due_checkin_nudge_events,
@@ -217,42 +217,44 @@ class TestSendDueCheckinNudges:
         )
 
 
-_PROTOCOL_HTML = (
+_GUIDE_HTML = (
     "<h2>arrive early</h2><ul><li><p>set up tables</p></li></ul>"
     "<p>bring snacks &amp; water</p><script>x()</script>"
 )
 
 
 @pytest.mark.django_db
-class TestCheckinNudgeEventProtocol:
+class TestCheckinNudgeDayOfGuide:
     @pytest.fixture(autouse=True)
-    def _protocol_page(self, db):
-        EditablePage.objects.create(slug=EVENT_PROTOCOL_SLUG, content_html=_PROTOCOL_HTML)
+    def _guide_page(self, db):
+        EditablePage.objects.create(slug=DAY_OF_GUIDE_SLUG, content_html=_GUIDE_HTML)
 
-    def test_official_event_includes_protocol(self, test_user, fake_email_sender, db):
+    def test_official_event_includes_day_of_guide(self, test_user, fake_email_sender, db):
         _, sent = _send_for(test_user, fake_email_sender, event_type=EventType.OFFICIAL)
 
-        assert "event protocol" in sent["html"]
+        assert "day-of guide" in sent["html"]
         assert "<h2>arrive early</h2>" in sent["html"]
         assert "<script>" not in sent["html"]
-        assert "event protocol" in sent["text"]
+        assert "day-of guide" in sent["text"]
         assert "arrive early\n\n- set up tables\n\nbring snacks & water" in sent["text"]
 
-    def test_club_event_has_no_protocol(self, test_user, fake_email_sender, db):
+    def test_club_event_has_no_day_of_guide(self, test_user, fake_email_sender, db):
         _, sent = _send_for(test_user, fake_email_sender)
 
-        assert "event protocol" not in sent["html"]
+        assert "day-of guide" not in sent["html"]
         assert "arrive early" not in sent["text"]
 
-    def test_no_protocol_block_when_page_empty(self, test_user, fake_email_sender, db):
-        EditablePage.objects.filter(slug=EVENT_PROTOCOL_SLUG).update(content_html="")
+    def test_no_day_of_guide_block_when_page_empty(self, test_user, fake_email_sender, db):
+        EditablePage.objects.filter(slug=DAY_OF_GUIDE_SLUG).update(content_html="")
 
         _, sent = _send_for(test_user, fake_email_sender, event_type=EventType.OFFICIAL)
 
-        assert "event protocol" not in sent["html"]
-        assert "event protocol" not in sent["text"]
+        assert "day-of guide" not in sent["html"]
+        assert "day-of guide" not in sent["text"]
 
-    def test_due_run_includes_protocol_for_official_events(self, test_user, fake_email_sender, db):
+    def test_due_run_includes_day_of_guide_for_official_events(
+        self, test_user, fake_email_sender, db
+    ):
         test_user.email = "creator@example.com"
         test_user.save(update_fields=["email"])
         _make_event(created_by=test_user, event_type=EventType.OFFICIAL)
@@ -263,5 +265,5 @@ class TestCheckinNudgeEventProtocol:
 
 
 @pytest.mark.django_db
-def test_event_protocol_page_defaults_to_members_only(api_client, db):
-    assert api_client.get(f"/api/community/pages/{EVENT_PROTOCOL_SLUG}/").status_code == 403
+def test_event_guide_page_defaults_to_members_only(api_client, db):
+    assert api_client.get(f"/api/community/pages/{DAY_OF_GUIDE_SLUG}/").status_code == 403

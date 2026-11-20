@@ -68,6 +68,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "official and club events can't allow +1s";
     case Code.Event.InvalidEventFormat:
       return 'only official events can be a walk or restaurant';
+    case Code.Event.PaypalOfficialOnly:
+      return 'only official events can take paypal';
     case Code.Event.InvalidCreateStatus:
       return 'new events can only be saved as active or draft';
     case Code.Event.DateLockedByPoll:
@@ -370,6 +372,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'lift the guidelines pause before pausing for attendance';
     case Code.User.AttendancePauseLiftsOnCheckIn:
       return 'an event rqmt pause lifts when they check in at an official or club event';
+    case Code.User.InvalidStatusTransition:
+      return "that status change isn't allowed";
     case Code.User.RoleIdsNotFound:
       return 'one or more role IDs not found';
     case Code.User.InvalidBirthday:

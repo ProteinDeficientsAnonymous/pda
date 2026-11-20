@@ -62,6 +62,8 @@ Routes: see `.claude/docs/routes.md`
 
 User states and transitions (public rsvper → member → paused/archived): see `.claude/docs/user-states.md`; what each type can do: `.claude/docs/user-capabilities.md`
 
+**State machines:** `User.membership_status` and `JoinRequest.status` change only through their model event methods (`user.archive(by=…)`, `join_request.approve(by=…)`, …), never by direct assignment or `.update()`. Rules: `.claude/rules/state-machines.md`; enforced by `backend/tests/test_state_transition_guard.py`.
+
 ## Environment
 
 - **Dev database**: Prefer Docker-free per-worktree SQLite via `make dev-sqlite` / `make run-sqlite` (gitignored `dev.db` at the worktree root). Use per-worktree Postgres via `make dev-pg` / `make run-pg` **only when local verification depends on actual Postgres features** that SQLite cannot exercise — e.g. SSE live notifications (`/api/notifications/stream/` uses `pg_notify`; returns 503 on SQLite). One shared Docker Postgres container; each worktree gets its own database (name in gitignored `.dev-pg-db-name`). `make dev` / `make run` still use the shared `DATABASE_URL` from `.env` (typically `pda` on localhost:5432).

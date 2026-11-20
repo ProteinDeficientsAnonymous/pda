@@ -292,6 +292,11 @@
         "name": "INVALID_EVENT_FORMAT",
         "value": "event.invalid_event_format",
         "params": []
+      },
+      {
+        "name": "PAYPAL_OFFICIAL_ONLY",
+        "value": "event.paypal_official_only",
+        "params": []
       }
     ],
     "Poll": [
@@ -699,6 +704,11 @@
       {
         "name": "ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN",
         "value": "user.attendance_pause_lifts_on_check_in",
+        "params": []
+      },
+      {
+        "name": "INVALID_STATUS_TRANSITION",
+        "value": "user.invalid_status_transition",
         "params": []
       },
       {
