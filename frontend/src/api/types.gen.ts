@@ -2897,10 +2897,7 @@ export interface paths {
         put?: never;
         /**
          * Create Sse Ticket
-         * @description Mint a short-lived single-use ticket for opening the SSE stream.
-         *
-         *     Lets the client open the stream with ?ticket= instead of the JWT (EventSource
-         *     can't send an auth header).
+         * @description Mint a single-use stream ticket; without a JWT, ?event_id= and ?token= scope it to one event.
          */
         post: operations["notifications_api_create_sse_ticket"];
         delete?: never;
@@ -3994,6 +3991,11 @@ export interface components {
         /** EventIn */
         EventIn: {
             /**
+             * Accept Paypal
+             * @default false
+             */
+            accept_paypal: boolean;
+            /**
              * Allow Plus Ones
              * @default false
              */
@@ -4058,6 +4060,11 @@ export interface components {
              * @default
              */
             price: string;
+            /**
+             * Price Note
+             * @default
+             */
+            price_note: string;
             /** Rsvp Deadline */
             rsvp_deadline?: string | null;
             /**
@@ -4175,6 +4182,11 @@ export interface components {
              */
             price: string;
             /**
+             * Price Note
+             * @default
+             */
+            price_note: string;
+            /**
              * Slug
              * @default
              */
@@ -4244,6 +4256,11 @@ export interface components {
         };
         /** EventOut */
         EventOut: {
+            /**
+             * Accept Paypal
+             * @default false
+             */
+            accept_paypal: boolean;
             /**
              * Allow Plus Ones
              * @default false
@@ -4391,6 +4408,11 @@ export interface components {
              */
             partiful_link: string;
             /**
+             * Paypal Price
+             * @default
+             */
+            paypal_price: string;
+            /**
              * Pending Cohost Invites
              * @default []
              */
@@ -4407,6 +4429,11 @@ export interface components {
              * @default
              */
             price: string;
+            /**
+             * Price Note
+             * @default
+             */
+            price_note: string;
             /** Rsvp Deadline */
             rsvp_deadline?: string | null;
             /**
@@ -4468,6 +4495,8 @@ export interface components {
         };
         /** EventPatchIn */
         EventPatchIn: {
+            /** Accept Paypal */
+            accept_paypal?: boolean | null;
             /** Allow Plus Ones */
             allow_plus_ones?: boolean | null;
             /** Cashapp Link */
@@ -4504,6 +4533,8 @@ export interface components {
             partiful_link?: string | null;
             /** Price */
             price?: string | null;
+            /** Price Note */
+            price_note?: string | null;
             /** Rsvp Deadline */
             rsvp_deadline?: string | null;
             /** Rsvp Enabled */
@@ -4624,6 +4655,11 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
+            /**
              * Options
              * @default []
              */
@@ -4643,6 +4679,11 @@ export interface components {
             field_type: "textarea" | "select" | "checkbox";
             /** Label */
             label: string;
+            /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
             /**
              * Options
              * @default []
@@ -4668,6 +4709,11 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Option Prices
+             * @default []
+             */
+            option_prices: number[];
+            /**
              * Options
              * @default []
              */
@@ -4686,6 +4732,11 @@ export interface components {
             id?: string | null;
             /** Label */
             label: string;
+            /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
             /**
              * Options
              * @default []
@@ -5247,8 +5298,16 @@ export interface components {
             /** Title */
             title: string;
         };
-        /** JoinRequestStatusIn */
+        /**
+         * JoinRequestStatusIn
+         * @description Decision payload: fire an event, not a target status.
+         */
         JoinRequestStatusIn: {
+            /**
+             * Event
+             * @default
+             */
+            event: string;
             /**
              * Rejection Note
              * @default
@@ -5259,7 +5318,11 @@ export interface components {
              * @default
              */
             rejection_reason: string;
-            /** Status */
+            /**
+             * Status
+             * @deprecated
+             * @default
+             */
             status: string;
         };
         /** JoinRequestSubmittedOut */
@@ -15340,7 +15403,9 @@ export interface operations {
     };
     notifications_api_create_sse_ticket: {
         parameters: {
-            query?: never;
+            query?: {
+                event_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15354,6 +15419,24 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SseTicketOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Too Many Requests */

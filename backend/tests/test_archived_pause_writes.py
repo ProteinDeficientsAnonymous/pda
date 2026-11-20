@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community.models import Event, EventStatus, JoinRequestStatus
+from community.models import Event, EventStatus, JoinRequestEvent
 from community.validation import Code
 from django.utils import timezone
 from users.models import MembershipStatus, User
@@ -102,7 +102,7 @@ def test_approval_waits_for_a_pause_set_while_archived_to_be_lifted(
     def approve():
         return api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )

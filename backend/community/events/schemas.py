@@ -1,12 +1,10 @@
 from datetime import datetime
-from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import (
     BaseModel,
     Field,
     ValidationInfo,
-    WithJsonSchema,
     field_validator,
     model_validator,
 )
@@ -19,9 +17,14 @@ from community.events._field_validators import (
     validate_partiful_url,
     validate_zelle_info,
 )
+from community.events.price import parse_price, price_text
+from community.events.rsvp_question_schemas import (
+    EventRsvpQuestionIn,
+    EventRsvpQuestionOut,
+    RsvpAnswer,
+)
 from community.field_limits import FieldLimit
 from community.models import (
-    RSVP_CHOICE_TYPES,
     AttendanceStatus,
     EventStatus,
     EventType,
@@ -32,65 +35,6 @@ from community.models import (
 from community.models.event_slug import SLUG_MAX
 from community.shared import validate_whatsapp_url
 from community.validation import Code, raise_validation
-
-RsvpQuestionFieldType = Literal["textarea", "select", "checkbox"]
-RsvpQuestionOption = Annotated[str, Field(max_length=FieldLimit.OPTION_TEXT)]
-RsvpTextAnswer = Annotated[
-    str, WithJsonSchema({"type": "string", "maxLength": FieldLimit.DESCRIPTION})
-]
-RsvpAnswer = RsvpTextAnswer | list[RsvpQuestionOption]
-
-
-class EventRsvpQuestionOut(BaseModel):
-    id: str
-    label: str
-    field_type: RsvpQuestionFieldType
-    options: list[str] = []
-    required: bool
-    display_order: int
-
-
-class EventRsvpQuestionIn(BaseModel):
-    label: str = Field(max_length=FieldLimit.SHORT_TEXT)
-    field_type: RsvpQuestionFieldType
-    options: list[RsvpQuestionOption] = []
-    required: bool = False
-
-    @field_validator("label")
-    @classmethod
-    def label_not_blank(cls, value: str) -> str:
-        trimmed = value.strip()
-        if not trimmed:
-            raise ValueError("label required")
-        return trimmed
-
-    @field_validator("options")
-    @classmethod
-    def trim_options(cls, value: list[str]) -> list[str]:
-        trimmed = [o.strip() for o in value if o.strip()]
-        if any(len(option) > FieldLimit.OPTION_TEXT for option in trimmed):
-            raise ValueError(f"options must be {FieldLimit.OPTION_TEXT} characters or fewer")
-        return trimmed
-
-
-class EventRsvpQuestionSyncIn(EventRsvpQuestionIn):
-    id: UUID | None = None
-
-
-class EventRsvpQuestionExpectedIn(EventRsvpQuestionIn):
-    id: UUID
-
-
-class EventRsvpQuestionSyncPayload(BaseModel):
-    expected: list[EventRsvpQuestionExpectedIn]
-    questions: list[EventRsvpQuestionSyncIn]
-
-
-def validate_event_rsvp_question(payload: EventRsvpQuestionIn) -> None:
-    if payload.field_type in RSVP_CHOICE_TYPES and not payload.options:
-        raise_validation(
-            Code.Event.RSVP_QUESTION_OPTIONS_REQUIRED, field="options", status_code=400
-        )
 
 
 class TagOut(BaseModel):
@@ -141,6 +85,7 @@ class EventListOut(BaseModel):
     event_type: str = EventType.COMMUNITY
     visibility: str = PageVisibility.PUBLIC
     price: str = ""
+    price_note: str = ""
     co_host_ids: list[str] = []
     datetime_tbd: bool = False
     has_poll: bool = False
@@ -171,9 +116,13 @@ class EventOut(BaseModel):
     partiful_link: str = ""
     other_link: str = ""
     price: str = ""
+    price_note: str = ""
     venmo_link: str = ""
     cashapp_link: str = ""
     zelle_info: str = ""
+    accept_paypal: bool = False
+    # Fee-inclusive total; "" when paypal isn't offered.
+    paypal_price: str = ""
     rsvp_enabled: bool = False
     created_by_id: str | None = None
     created_by_name: str | None = None
@@ -322,9 +271,11 @@ class EventIn(BaseModel):
     partiful_link: str = Field(default="", max_length=FieldLimit.URL)
     other_link: str = Field(default="", max_length=FieldLimit.URL)
     price: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
+    price_note: str = Field(default="", max_length=FieldLimit.PRICE_NOTE)
     venmo_link: str = Field(default="", max_length=FieldLimit.PAYMENT_HANDLE)
     cashapp_link: str = Field(default="", max_length=FieldLimit.PAYMENT_HANDLE)
     zelle_info: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
+    accept_paypal: bool = False
     rsvp_enabled: bool = False
     datetime_tbd: bool = False
     allow_plus_ones: bool = False
@@ -369,6 +320,11 @@ class EventIn(BaseModel):
     def validate_other(cls, v: str) -> str:
         return validate_generic_url(v or "", field="other_link")
 
+    @field_validator("price", mode="before")
+    @classmethod
+    def validate_price(cls, v: object) -> str:
+        return price_text(parse_price(v))
+
     @field_validator("zelle_info", mode="after")
     @classmethod
     def validate_zelle(cls, v: str) -> str:
@@ -398,9 +354,11 @@ class EventPatchIn(BaseModel):
     partiful_link: str | None = Field(default=None, max_length=FieldLimit.URL)
     other_link: str | None = Field(default=None, max_length=FieldLimit.URL)
     price: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    price_note: str | None = Field(default=None, max_length=FieldLimit.PRICE_NOTE)
     venmo_link: str | None = Field(default=None, max_length=FieldLimit.PAYMENT_HANDLE)
     cashapp_link: str | None = Field(default=None, max_length=FieldLimit.PAYMENT_HANDLE)
     zelle_info: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    accept_paypal: bool | None = None
     rsvp_enabled: bool | None = None
     datetime_tbd: bool | None = None
     allow_plus_ones: bool | None = None
@@ -441,6 +399,12 @@ class EventPatchIn(BaseModel):
         if v is None:
             return None
         return validate_generic_url(v, field="other_link")
+
+    @field_validator("price", mode="before")
+    @classmethod
+    def validate_price(cls, v: object) -> str | None:
+        # Blank clears the price (stored as null).
+        return None if v is None else price_text(parse_price(v)) or None
 
     @field_validator("zelle_info", mode="after")
     @classmethod

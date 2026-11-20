@@ -90,13 +90,9 @@ def _apply_status(user: User, spec: StatusSpec, admin: User) -> None:
     if pause == MembershipStatus.GUIDELINES_PAUSED:
         fields = user.apply_guidelines_pause(by=admin)
     elif pause == MembershipStatus.ATTENDANCE_PAUSED:
-        user.attendance_paused_at = timezone.now()
-        fields = ["attendance_paused_at", *user.set_membership_status(pause, by=admin)]
+        fields = user.apply_attendance_pause(by=admin)
     if spec.archived_from is not None:
-        user.archived_at = timezone.now()
-        user.status_before_archive = user.membership_status
-        fields += ["archived_at", "status_before_archive"]
-        fields += user.set_membership_status(MembershipStatus.ARCHIVED, by=admin)
+        fields = list(dict.fromkeys([*fields, *user.archive(by=admin)]))
     user.save(update_fields=fields)
 
 

@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from community.join_requests.approval import maybe_promote_tentative
-from community.models import JoinRequest, JoinRequestStatus
+from community.models import JoinRequest, JoinRequestEvent, JoinRequestStatus
 from community.validation import Code
 from django.utils import timezone
 from users.models import MembershipStatus, Role, User
@@ -16,6 +16,12 @@ __all__ = ["open_official_event"]
 pytestmark = pytest.mark.django_db
 
 PHONE = "+16505551234"
+
+_STATUS_TO_EVENT = {
+    JoinRequestStatus.TENTATIVE: JoinRequestEvent.MARK_TENTATIVE,
+    JoinRequestStatus.APPROVED: JoinRequestEvent.APPROVE,
+    JoinRequestStatus.REJECTED: JoinRequestEvent.REJECT,
+}
 
 
 @pytest.fixture
@@ -31,7 +37,7 @@ def archived_member(vettor_user):
 def _patch_status(api_client, headers, join_request, status):
     return api_client.patch(
         f"/api/community/join-requests/{join_request.id}/",
-        {"status": status},
+        {"event": _STATUS_TO_EVENT[status]},
         content_type="application/json",
         **headers,
     )

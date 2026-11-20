@@ -72,10 +72,12 @@ class Event(models.Model):
     whatsapp_link = models.URLField(blank=True)
     partiful_link = models.URLField(blank=True)
     other_link = models.URLField(blank=True)
-    price = models.CharField(max_length=100, blank=True)
+    price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    price_note = models.CharField(max_length=100, blank=True)
     venmo_link = models.URLField(blank=True)
     cashapp_link = models.URLField(blank=True)
     zelle_info = models.CharField(max_length=200, blank=True)
+    accept_paypal = models.BooleanField(default=False)
     rsvp_enabled = models.BooleanField(default=False)
     is_partiful_import = models.BooleanField(default=False)
     is_legacy = models.BooleanField(default=False)
@@ -408,6 +410,8 @@ class EventRsvpQuestion(models.Model):
     label = models.CharField(max_length=300)
     field_type = models.CharField(max_length=20, choices=RSVP_QUESTION_TYPE_CHOICES)
     options = models.JSONField(default=list, blank=True)
+    # Cents, parallel to options; empty means the question isn't priced.
+    option_prices = models.JSONField(default=list, blank=True)
     required = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(default=0)
 

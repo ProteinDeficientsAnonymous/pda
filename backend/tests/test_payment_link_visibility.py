@@ -15,7 +15,7 @@ def _paid_event(creator, **overrides) -> Event:
 def paid_public_event(db):
     return make_official_event(
         title="Paid Official Event",
-        price="$10",
+        price="10",
         venmo_link="https://venmo.com/u/host",
     )
 
@@ -32,7 +32,7 @@ class TestPublicPaymentLinkVisibility:
         assert response.status_code == 200
         body = response.json()
         assert body["venmo_link"] == "https://venmo.com/u/host"
-        assert body["price"] == "$10"
+        assert body["price"] == "10"
 
     def test_anon_does_not_see_payment_links_on_non_eligible_event(
         self, api_client, paid_public_event

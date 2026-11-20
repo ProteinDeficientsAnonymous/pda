@@ -337,6 +337,11 @@ def create_payment_revoked_notification(event: Event, user_id: str) -> None:
     notify_users([user_id])
 
 
+def create_poll_seated_unpaid_notifications(event: Event, user_ids: list[str]) -> None:
+    message = f"{event.title} is set — you're going, but your spot isn't confirmed until you pay."
+    _create_event_notifications(event, user_ids, NotificationType.POLL_SEATED_UNPAID, message)
+
+
 def notify_comment_reply(reply) -> None:
     """Notify the parent comment's author that someone replied to them.
 

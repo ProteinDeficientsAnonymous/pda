@@ -1,6 +1,6 @@
 import pytest
 from community.join_requests.approval import maybe_promote_tentative
-from community.models import JoinRequestStatus
+from community.models import JoinRequestEvent, JoinRequestStatus
 from django.utils import timezone
 from users._archive_user import archive_user
 from users.models import MEMBER_STATUSES, MembershipStatus, User
@@ -13,11 +13,17 @@ __all__ = ["open_official_event"]
 
 pytestmark = pytest.mark.django_db
 
+_STATUS_TO_EVENT = {
+    JoinRequestStatus.TENTATIVE: JoinRequestEvent.MARK_TENTATIVE,
+    JoinRequestStatus.APPROVED: JoinRequestEvent.APPROVE,
+    JoinRequestStatus.REJECTED: JoinRequestEvent.REJECT,
+}
+
 
 def _decide(api_client, headers, join_request, status):
     response = api_client.patch(
         f"/api/community/join-requests/{join_request.id}/",
-        {"status": status},
+        {"event": _STATUS_TO_EVENT[status]},
         content_type="application/json",
         **headers,
     )
@@ -100,6 +106,41 @@ def test_check_in_promotes_tentative_to_member(
     assert maybe_promote_tentative(user, open_official_event, vettor_user)
     assert _assert_in_sync(user) == MembershipStatus.ACTIVE_MEMBER
     assert user.membership_status_changed_by == vettor_user
+
+
+def test_check_in_promote_locks_row_for_update(
+    sample_join_request, vettor_user, open_official_event, monkeypatch
+):
+    from django.db import transaction
+    from users.models import User
+
+    user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+    original = User.objects.select_for_update
+    called = False
+
+    def spy(*args, **kwargs):
+        nonlocal called
+        called = True
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(User.objects, "select_for_update", spy)
+    with transaction.atomic():
+        assert maybe_promote_tentative(user, open_official_event, vettor_user)
+    assert called
+
+
+def test_check_in_promote_returns_none_when_concurrent_check_in_won(
+    sample_join_request, vettor_user, open_official_event
+):
+    from django.db import transaction
+
+    stale = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+    User.objects.filter(pk=stale.pk).update(membership_status=MembershipStatus.ACTIVE_MEMBER)
+
+    with transaction.atomic():
+        assert maybe_promote_tentative(stale, open_official_event, vettor_user) is None
+    sample_join_request.refresh_from_db()
+    assert sample_join_request.status == JoinRequestStatus.TENTATIVE
 
 
 def test_reapproving_archived_applicant_makes_member(
