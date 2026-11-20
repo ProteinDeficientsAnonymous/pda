@@ -1258,6 +1258,12 @@
             "title": "Cohost Count",
             "type": "integer"
           },
+          "event_format": {
+            "default": "walk",
+            "maxLength": 20,
+            "title": "Event Format",
+            "type": "string"
+          },
           "going_count": {
             "default": 5,
             "maximum": 50,

@@ -1,5 +1,12 @@
 import pytest
-from community.models import Event, EventStatus, EventType, PageVisibility, RSVPStatus
+from community.models import (
+    Event,
+    EventFormat,
+    EventStatus,
+    EventType,
+    PageVisibility,
+    RSVPStatus,
+)
 from community.rsvps.answers import build_rsvp_answers
 from django.utils import timezone
 from users.models import User
@@ -173,6 +180,39 @@ class TestCreateDevTestEvent:
         )
         event = Event.objects.get(id=response.json()["id"])
         assert event.visibility == PageVisibility.PUBLIC
+
+    @pytest.mark.parametrize(
+        ("data", "expected"),
+        [
+            ({"is_official": True}, EventFormat.WALK),
+            ({"is_official": True, "event_format": "restaurant"}, EventFormat.RESTAURANT),
+            ({"event_format": "restaurant"}, ""),
+            ({"is_club": True, "event_format": "walk"}, ""),
+        ],
+    )
+    def test_event_format_set_only_on_official(
+        self, api_client, dev_tools_headers, monkeypatch, data, expected
+    ):
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data=data,
+            content_type="application/json",
+            **dev_tools_headers,
+        )
+        assert response.status_code == 201
+        assert Event.objects.get(id=response.json()["id"]).event_format == expected
+
+    def test_invalid_event_format_rejected(self, api_client, dev_tools_headers, monkeypatch):
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={"is_official": True, "event_format": "picnic"},
+            content_type="application/json",
+            **dev_tools_headers,
+        )
+        assert response.status_code == 422
+        assert not Event.objects.exists()
 
     @pytest.mark.parametrize("type_flag", ["is_official", "is_club"])
     def test_official_and_club_force_plus_ones_off(

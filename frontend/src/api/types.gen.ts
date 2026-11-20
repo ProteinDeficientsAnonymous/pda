@@ -3446,6 +3446,11 @@ export interface components {
              */
             cohost_count: number;
             /**
+             * Event Format
+             * @default walk
+             */
+            event_format: string;
+            /**
              * Going Count
              * @default 5
              */
