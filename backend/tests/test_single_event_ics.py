@@ -55,7 +55,7 @@ class TestSingleEventIcs:
     def test_view_on_pda_url_is_not_split_by_line_folding(self, api_client, test_user):
         event = Event.objects.create(
             title="Walk in Central Park Arts and Crafts",
-            description="Bring hummus!",
+            description="Bring hummus 🌱",
             start_datetime=timezone.now(),
             created_by=test_user,
         )
@@ -66,7 +66,7 @@ class TestSingleEventIcs:
         assert "\r\n " not in content
         vevent = icalendar.Calendar.from_ical(raw).walk("VEVENT")[0]
         assert vevent["description"] == (
-            f"Bring hummus!\nView on PDA: http://testserver/events/{event.slug}"
+            f"Bring hummus 🌱\nView on PDA: http://testserver/events/{event.slug}"
         )
 
     def test_returns_404_for_unknown_slug(self, api_client):
