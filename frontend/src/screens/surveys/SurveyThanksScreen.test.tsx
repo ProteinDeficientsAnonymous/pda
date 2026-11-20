@@ -32,8 +32,8 @@ describe('SurveyThanksScreen', () => {
   });
 
   it('scrolls to the top so the message is in view after submitting from far down', () => {
-    const scrollTo = vi.spyOn(window, 'scrollTo');
+    vi.mocked(window.scrollTo).mockClear();
     renderScreen();
-    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
   });
 });

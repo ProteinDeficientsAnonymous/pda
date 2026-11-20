@@ -56,7 +56,6 @@ function apiError(status: number, code: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.spyOn(window, 'scrollTo');
 });
 
 describe('FeedbackScreen', () => {

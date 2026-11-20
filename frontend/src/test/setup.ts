@@ -2,7 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import 'vitest-axe/extend-expect';
 
 import { cleanup } from '@testing-library/react';
-import { afterEach, expect } from 'vitest';
+import { afterEach, expect, vi } from 'vitest';
 import * as axeMatchers from 'vitest-axe/matchers';
 
 import { setPhoneCountriesForTesting } from '@/components/ui/phoneCountries';
@@ -71,5 +71,5 @@ HTMLCanvasElement.prototype.getContext = (() => null) as never;
 // jsdom doesn't implement scrollIntoView — provide a no-op stub.
 Element.prototype.scrollIntoView = () => {};
 
-// jsdom doesn't implement window.scrollTo — provide a no-op stub.
-window.scrollTo = () => {};
+// jsdom doesn't implement window.scrollTo — provide a mock so tests can assert on it.
+window.scrollTo = vi.fn();
