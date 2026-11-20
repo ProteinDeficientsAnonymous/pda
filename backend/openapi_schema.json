@@ -3294,6 +3294,11 @@
             "title": "Rsvp Questions",
             "type": "array"
           },
+          "rsvps_closed": {
+            "default": false,
+            "title": "Rsvps Closed",
+            "type": "boolean"
+          },
           "slug": {
             "default": "",
             "title": "Slug",
@@ -3632,6 +3637,17 @@
               }
             ],
             "title": "Rsvp Enabled"
+          },
+          "rsvps_closed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsvps Closed"
           },
           "slug": {
             "anyOf": [

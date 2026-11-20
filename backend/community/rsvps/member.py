@@ -30,7 +30,7 @@ from community.events.limited_access import (
 from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import EventOut, RSVPIn
 from community.models import CancelReason, Event, EventComment, EventRSVP, RSVPStatus
-from community.rsvps._deadline import enforce_rsvp_deadline
+from community.rsvps._deadline import enforce_rsvps_open
 from community.rsvps._waitlist_place import keep_waitlist_place, save_would_seat_waitlister
 from community.rsvps.answers import (
     AnswersIn,
@@ -302,7 +302,7 @@ def apply_rsvp_in_transaction(event_id, user, rsvp: RsvpApply) -> tuple[str, lis
     existing = EventRSVP.objects.filter(event=event, user=user).first()
     previous_status = existing.status if existing is not None else None
     if not rsvp.skip_host_gates:
-        enforce_rsvp_deadline(user, event, existing, rsvp.status, rsvp.has_plus_one)
+        enforce_rsvps_open(user, event, existing, rsvp.status, rsvp.has_plus_one)
 
     final_status, final_plus_one = resolve_rsvp_status(
         event, user, rsvp.status, rsvp.has_plus_one, existing
@@ -463,7 +463,7 @@ def _delete_rsvp_in_transaction(event_id, user) -> tuple[Event, list[str]]:
         raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
     if event.is_past and not can_edit_event(user, event):
         raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
-    enforce_rsvp_deadline(user, event, rsvp, RSVPStatus.CANT_GO)
+    enforce_rsvps_open(user, event, rsvp, RSVPStatus.CANT_GO)
 
     was_attending = rsvp.status == RSVPStatus.ATTENDING
     rsvp.delete()

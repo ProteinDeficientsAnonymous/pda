@@ -74,18 +74,27 @@ def _validate_rsvp_deadline_update(event: Event, updates: dict) -> None:
     )
 
 
-def promote_if_capacity_increased(
+def promote_if_spots_opened(
     event: Event, updates: dict, old_max_attendees: int | None
 ) -> list[str]:
-    """Promote waitlisted users if `max_attendees` grew. Must run inside the locked transaction."""
+    """Promote waitlisted users if the cap grew or rsvps reopened. Run inside the locked transaction."""
     capacity_increased = (
         "max_attendees" in updates
         and event.max_attendees is not None
         and (old_max_attendees is None or event.max_attendees > old_max_attendees)
     )
-    if not capacity_increased:
+    reopened = "rsvps_closed_at" in updates and not event.rsvps_closed
+    if not (capacity_increased or reopened):
         return []
     return promote_from_waitlist(event)
+
+
+def _resolve_rsvps_closed(event: Event, updates: dict) -> None:
+    """Translate the `rsvps_closed` toggle into `rsvps_closed_at`, keeping the first close time."""
+    closed = updates.pop("rsvps_closed", None)
+    if closed is None or closed == event.rsvps_closed:
+        return
+    updates["rsvps_closed_at"] = timezone.now() if closed else None
 
 
 def _lock_typed_plus_ones(event: Event, updates: dict) -> None:
@@ -155,7 +164,8 @@ def apply_field_updates(request, event: Event, event_id: UUID, updates: dict) ->
     """Apply non-status field edits to an event. Raises ValidationException on failure."""
     if not updates:
         return
-    if "max_attendees" in updates:
+    _resolve_rsvps_closed(event, updates)
+    if "max_attendees" in updates or "rsvps_closed_at" in updates:
         # Lock the row so a concurrent capacity-based promotion can't race this edit.
         Event.objects.select_for_update().get(id=event_id)
     _validate_update_payload(request, event, event_id, updates)

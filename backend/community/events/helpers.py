@@ -377,6 +377,7 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
         allow_plus_ones=event.allow_plus_ones,
         max_attendees=event.max_attendees,
         rsvp_deadline=event.rsvp_deadline,
+        rsvps_closed=event.rsvps_closed,
         attending_count=_annotated_or(event, "attending_count", lambda: attending_headcount(event)),
         waitlisted_count=_annotated_or(event, "waitlisted_count", lambda: count_waitlisted(event)),
         guest_rsvp_count=_annotated_or(event, "guest_rsvp_count", lambda: count_guest_rsvps(event)),

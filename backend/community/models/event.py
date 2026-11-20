@@ -85,6 +85,8 @@ class Event(models.Model):
     allow_plus_ones = models.BooleanField(default=False)
     max_attendees = models.PositiveIntegerField(null=True, blank=True)
     rsvp_deadline = models.DateTimeField(null=True, blank=True)
+    # Host-closed: nothing new gets in and cancellations don't promote the waitlist.
+    rsvps_closed_at = models.DateTimeField(null=True, blank=True)
     photo = models.ImageField(upload_to="event_photos/", blank=True)
     photo_updated_at = models.DateTimeField(null=True, blank=True)
     event_type = models.CharField(
@@ -205,6 +207,10 @@ class Event(models.Model):
     @property
     def rsvp_deadline_passed(self) -> bool:
         return self.rsvp_deadline is not None and self.rsvp_deadline < timezone.now()
+
+    @property
+    def rsvps_closed(self) -> bool:
+        return self.rsvps_closed_at is not None
 
     @property
     def is_draft(self) -> bool:
