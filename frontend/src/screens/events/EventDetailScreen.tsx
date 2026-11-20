@@ -276,8 +276,10 @@ function MemberRsvpControl({
   useRerenderAt(event.rsvpDeadline);
   if (!isAuthed && !hasTokenUnlock) return null;
 
-  const { showRsvp, rsvpLocked, rsvpDeadlineClosed, membershipBlocksRsvp } =
-    eventMemberSectionFlags(event, isAuthed ? user : null);
+  const { showRsvp, rsvpLocked, rsvpsClosed, membershipBlocksRsvp } = eventMemberSectionFlags(
+    event,
+    isAuthed ? user : null,
+  );
   if (!showRsvp) return null;
   if (membershipBlocksRsvp) {
     if (rsvpLocked) return null;
@@ -292,7 +294,7 @@ function MemberRsvpControl({
     <MyRsvpSection
       event={event}
       locked={rsvpLocked}
-      deadlineClosed={rsvpDeadlineClosed}
+      rsvpsClosed={rsvpsClosed}
       {...(hasTokenUnlock ? { token: rsvpToken ?? '' } : {})}
     />
   );

@@ -211,6 +211,7 @@ describe('useCreateEvent', () => {
             label: 'dietary?',
             field_type: 'textarea',
             options: [],
+            option_prices: [],
             required: true,
           },
         ],
@@ -316,5 +317,33 @@ describe('useUpdateEvent cache patching', () => {
       });
     });
     expect(qc.getQueryData(eventKeys.detail(EVENT_ID, true))).toMatchObject({ maxAttendees: 12 });
+  });
+
+  it('sends option prices for priced questions', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: makeEvent() });
+    const qc = makeQueryClient();
+    const { result } = renderHook(() => useCreateEvent(), { wrapper: queryWrapper(qc) });
+
+    result.current.mutate({
+      ...eventToFormValues(makeEvent()),
+      rsvpQuestions: [
+        {
+          id: 'q-order',
+          label: 'order',
+          fieldType: 'select',
+          options: ['bowl', 'plate'],
+          optionPrices: [1200, 1850],
+          required: true,
+        },
+      ],
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/community/events/',
+      expect.objectContaining({
+        rsvp_questions: [expect.objectContaining({ option_prices: [1200, 1850] })],
+      }),
+    );
   });
 });

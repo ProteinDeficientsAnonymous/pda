@@ -52,10 +52,12 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     cashappLink: '',
     zelleInfo: '',
     price: '',
+    priceNote: '',
     rsvpEnabled: true,
     allowPlusOnes: false,
     maxAttendees: null,
     rsvpDeadline: null,
+    rsvpsClosed: false,
     attendingCount: 1,
     waitlistedCount: 0,
     invitedCount: 0,
@@ -105,6 +107,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
 export function makePaidEvent(overrides: Partial<Event> = {}): Event {
   return makeEvent({
     price: '$10',
+    priceNote: '',
     venmoLink: 'https://venmo.com/u/host',
     cashappLink: '',
     zelleInfo: '',

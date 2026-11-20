@@ -85,7 +85,7 @@ def make_tentative_member(phone, email, name="Tentative Sprout"):
         user=user,
         status=JoinRequestStatus.TENTATIVE,
     )
-    user.save(update_fields=user.set_membership_status(MembershipStatus.TENTATIVE, by=None))
+    user.save(update_fields=user.mark_tentative(by=None))
     return user
 
 

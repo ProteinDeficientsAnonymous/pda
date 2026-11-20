@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Notify hosts + co-hosts (email + in-app) that a club/official event just started."
+    help = "Notify hosts + co-hosts (email + in-app) that a club/official event starts soon."
 
     def handle(self, *args, **options):
         count = send_due_checkin_nudges()

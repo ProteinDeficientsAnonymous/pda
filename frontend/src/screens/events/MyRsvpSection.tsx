@@ -1,12 +1,14 @@
 import { useState } from 'react';
 
-import { extractApiErrorOr } from '@/api/apiErrors';
+import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
 import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
+import { Code } from '@/api/validationCodes.gen';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import {
+  areRsvpsClosed,
   type Event,
   isRsvpDeadlinePassed,
   isRsvpInputStatus,
@@ -16,16 +18,18 @@ import {
   spotsLeft,
 } from '@/models/event';
 
+import { MyOrderTotal } from './MyOrderTotal';
 import { RsvpBox } from './RsvpBox';
-import { MaybeDeadlineDialog, RsvpDeadlineNote } from './RsvpDeadline';
+import { MaybeDeadlineDialog, RsvpDeadlineNote, RsvpsClosedButton } from './RsvpDeadline';
+import { RSVP_PILL_CLASSES } from './rsvpPill';
 import type { RsvpAnswerValue } from './rsvpQuestions';
 
 interface Props {
   event: Event;
   token?: string;
   locked?: boolean;
-  /** Past the rsvp deadline and not a host: only going → can't go is left. */
-  deadlineClosed?: boolean;
+  /** RSVPs closed (host or deadline) and not a host: only going → can't go is left. */
+  rsvpsClosed?: boolean;
 }
 
 const STATUS_LINES: Record<RsvpInputStatus, string> = {
@@ -51,7 +55,7 @@ interface BoxState {
   initialStatus: RsvpInputStatus;
 }
 
-export function MyRsvpSection({ event, token, locked = false, deadlineClosed = false }: Props) {
+export function MyRsvpSection({ event, token, locked = false, rsvpsClosed = false }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
   const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
@@ -74,18 +78,19 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
   const myGuest = event.guests.find((g) => g.userId === myUserId);
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
-  // An attending member already holds a seat — re-saving "going" keeps it.
-  const goingWouldWaitlist = atCapacity && myRsvp !== RsvpServerStatus.Attending;
   // Token holders are public rsvpers, and the public rsvp endpoints never save a +1 for them.
   const plusOneNote = plusOneUnavailableReason(event.allowPlusOnes, Boolean(token));
 
-  async function confirmRsvp(args: {
-    status: RsvpInputStatus;
-    comment?: string;
-    hasPlusOne: boolean;
-    paidConfirmed?: boolean;
-    questionnaireResponses: Record<string, RsvpAnswerValue>;
-  }) {
+  async function confirmRsvp(
+    args: {
+      status: RsvpInputStatus;
+      comment?: string;
+      hasPlusOne: boolean;
+      paidConfirmed?: boolean;
+      questionnaireResponses: Record<string, RsvpAnswerValue>;
+    },
+    openPaymentStep?: () => void,
+  ) {
     setError(null);
     try {
       if (token) {
@@ -114,6 +119,10 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
         setMaybeDeadline(event.rsvpDeadline);
       }
     } catch (err) {
+      if (openPaymentStep && hasErrorCode(err, Code.Event.PaymentConfirmationRequired)) {
+        openPaymentStep();
+        return;
+      }
       setError(extractError(err));
     }
   }
@@ -167,7 +176,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
       {!locked && onWaitlist ? (
         <WaitlistView
           onEdit={
-            deadlineClosed
+            rsvpsClosed
               ? undefined
               : () => {
                   setError(null);
@@ -183,7 +192,8 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
           atCapacity={atCapacity}
           busy={busy}
           locked={locked}
-          closed={deadlineClosed}
+          closed={rsvpsClosed}
+          noNewRsvps={rsvpsClosed || event.rsvpsClosed}
           onOpenCreate={(status) => {
             setError(null);
             setBox({ mode: 'create', initialStatus: status });
@@ -196,7 +206,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
         />
       )}
 
-      {!locked && deadlineClosed && myRsvp === RsvpServerStatus.Attending ? (
+      {!locked && rsvpsClosed && myRsvp === RsvpServerStatus.Attending ? (
         <Button
           variant="ghost"
           className="self-center"
@@ -206,8 +216,9 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
           i can't go anymore
         </Button>
       ) : null}
+      <MyOrderTotal event={event} />
       <SpotsLeft event={event} />
-      {locked ? null : <RsvpDeadlineNote event={event} closed={deadlineClosed} />}
+      {locked ? null : <RsvpDeadlineNote event={event} closed={rsvpsClosed} />}
       {error && !box ? (
         <p role="alert" className="text-destructive text-sm">
           {error}
@@ -225,7 +236,6 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
           allowPlusOnes={plusOneNote === null}
           plusOneNote={plusOneNote}
           allowComment={Boolean(token) || box.mode === 'create'}
-          atCapacity={goingWouldWaitlist}
           onWaitlist={onWaitlist}
           busy={busy}
           error={error}
@@ -233,7 +243,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
           initialAnswers={Object.fromEntries(
             Object.entries(event.myQuestionnaireResponses).map(([id, snap]) => [id, snap.answer]),
           )}
-          onConfirm={(args) => void confirmRsvp(args)}
+          onConfirm={(args, openPaymentStep) => void confirmRsvp(args, openPaymentStep)}
           onRemove={box.mode === 'edit' ? () => void removeMyRsvp() : undefined}
           onClose={() => {
             setError(null);
@@ -254,15 +264,13 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
   );
 }
 
-const RSVP_PILL_CLASSES =
-  'mx-auto inline-flex h-12 min-w-28 items-center justify-center rounded-full px-5 text-base font-medium bg-brand-600 text-brand-on';
-
 function RsvpControls({
   myInputStatus,
   atCapacity,
   busy,
   locked,
   closed,
+  noNewRsvps,
   onOpenCreate,
   onOpenEdit,
 }: {
@@ -271,9 +279,12 @@ function RsvpControls({
   busy: boolean;
   locked?: boolean;
   closed: boolean;
+  // Hosts skip `closed` but still shouldn't be offered a fresh rsvp on a host-closed event.
+  noNewRsvps: boolean;
   onOpenCreate: (status: RsvpInputStatus) => void;
   onOpenEdit: () => void;
 }) {
+  if (!myInputStatus && noNewRsvps && !locked) return <RsvpsClosedButton />;
   if (locked || closed) {
     if (!myInputStatus) return null;
     const labels = locked ? PAST_STATUS_LABELS : STATUS_BADGE_LABELS;
@@ -348,7 +359,7 @@ function WaitlistView({
 
 function SpotsLeft({ event }: { event: Event }) {
   const left = spotsLeft(event);
-  if (left === null || left === 0) return null;
+  if (left === null || left === 0 || areRsvpsClosed(event)) return null;
   return (
     <p className="text-warning text-center text-xs">
       {left === 1 ? '1 spot left' : `${String(left)} spots left`}

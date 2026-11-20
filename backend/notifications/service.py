@@ -337,6 +337,11 @@ def create_payment_revoked_notification(event: Event, user_id: str) -> None:
     notify_users([user_id])
 
 
+def create_poll_seated_unpaid_notifications(event: Event, user_ids: list[str]) -> None:
+    message = f"{event.title} is set — you're going, but your spot isn't confirmed until you pay."
+    _create_event_notifications(event, user_ids, NotificationType.POLL_SEATED_UNPAID, message)
+
+
 def notify_comment_reply(reply) -> None:
     """Notify the parent comment's author that someone replied to them.
 
@@ -413,11 +418,11 @@ def notify_rsvp_declined_note(event, author, note: str) -> None:
 
 
 def notify_checkin_reminder(event: Event) -> None:
-    """Notify creator + co-hosts that a club/official event just started — go check people in."""
+    """Notify creator + co-hosts that a club/official event starts soon — go check people in."""
     recipient_id_list = event_recipient_ids(event, exclude="")
     if not recipient_id_list:
         return
-    message = f"{event.title} just started — head to check-in to check people in."
+    message = f"{event.title} starts soon — head to check-in to check people in as they arrive."
     Notification.objects.bulk_create(
         [
             Notification(

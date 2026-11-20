@@ -95,4 +95,20 @@ describe('PaymentConfirmStep', () => {
     expect(screen.getByRole('button', { name: /yes, i paid/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /back/i })).toBeDisabled();
   });
+
+  it("shows the guest's order total and prefills it in cashapp", () => {
+    render(
+      <PaymentConfirmStep
+        event={makePaidEvent({ venmoLink: '', cashappLink: '$host', price: '' })}
+        orderTotalCents={1850}
+        onConfirm={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('your total: $18.50')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /cashapp/i })).toHaveAttribute(
+      'href',
+      'https://cash.app/$host/18.50',
+    );
+  });
 });

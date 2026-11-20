@@ -19,19 +19,25 @@ describe('eventMemberSectionFlags rsvpLocked', () => {
   });
 });
 
-describe('eventMemberSectionFlags rsvpDeadlineClosed', () => {
+describe('eventMemberSectionFlags rsvpsClosed', () => {
   const pastDeadline = makeEvent({
     rsvpDeadline: new Date(Date.now() - 60 * 60 * 1000),
     coHostIds: ['host'],
   });
 
   it('closes rsvps for a guest once the deadline passes', () => {
-    expect(eventMemberSectionFlags(pastDeadline, makeUser()).rsvpDeadlineClosed).toBe(true);
+    expect(eventMemberSectionFlags(pastDeadline, makeUser()).rsvpsClosed).toBe(true);
   });
 
   it('keeps rsvps open for a co-host past the deadline', () => {
     const host = makeUser({ id: 'host' });
-    expect(eventMemberSectionFlags(pastDeadline, host).rsvpDeadlineClosed).toBe(false);
+    expect(eventMemberSectionFlags(pastDeadline, host).rsvpsClosed).toBe(false);
+  });
+
+  it('closes rsvps for a guest when a host closed them, with no deadline', () => {
+    const closed = makeEvent({ rsvpsClosed: true, coHostIds: ['host'] });
+    expect(eventMemberSectionFlags(closed, makeUser()).rsvpsClosed).toBe(true);
+    expect(eventMemberSectionFlags(closed, makeUser({ id: 'host' })).rsvpsClosed).toBe(false);
   });
 });
 

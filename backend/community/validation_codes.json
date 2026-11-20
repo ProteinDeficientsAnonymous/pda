@@ -17,6 +17,11 @@
         "params": []
       },
       {
+        "name": "PRICE_INVALID",
+        "value": "event.price_invalid",
+        "params": []
+      },
+      {
         "name": "START_DATETIME_MUST_BE_FUTURE",
         "value": "event.start_datetime_must_be_future",
         "params": []
@@ -119,6 +124,11 @@
       {
         "name": "RSVPS_CLOSED_DEADLINE",
         "value": "event.rsvps_closed_deadline",
+        "params": []
+      },
+      {
+        "name": "RSVPS_CLOSED_BY_HOST",
+        "value": "event.rsvps_closed_by_host",
         "params": []
       },
       {
@@ -286,6 +296,11 @@
       {
         "name": "INVALID_EVENT_FORMAT",
         "value": "event.invalid_event_format",
+        "params": []
+      },
+      {
+        "name": "PAYPAL_OFFICIAL_ONLY",
+        "value": "event.paypal_official_only",
         "params": []
       }
     ],
@@ -697,6 +712,11 @@
         "params": []
       },
       {
+        "name": "INVALID_STATUS_TRANSITION",
+        "value": "user.invalid_status_transition",
+        "params": []
+      },
+      {
         "name": "ROLE_IDS_NOT_FOUND",
         "value": "user.role_ids_not_found",
         "params": []
@@ -930,6 +950,13 @@
       {
         "name": "ANSWER_INVALID_OPTION",
         "value": "join_request.answer_invalid_option",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "ANSWER_INVALID_FORMAT",
+        "value": "join_request.answer_invalid_format",
         "params": [
           "label"
         ]
