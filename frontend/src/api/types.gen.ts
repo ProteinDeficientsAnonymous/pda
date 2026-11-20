@@ -4447,6 +4447,11 @@ export interface components {
              */
             rsvp_questions: components["schemas"]["EventRsvpQuestionOut"][];
             /**
+             * Rsvps Closed
+             * @default false
+             */
+            rsvps_closed: boolean;
+            /**
              * Slug
              * @default
              */
@@ -4539,6 +4544,8 @@ export interface components {
             rsvp_deadline?: string | null;
             /** Rsvp Enabled */
             rsvp_enabled?: boolean | null;
+            /** Rsvps Closed */
+            rsvps_closed?: boolean | null;
             /** Slug */
             slug?: string | null;
             /** Start Datetime */

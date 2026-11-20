@@ -144,6 +144,7 @@ class EventOut(BaseModel):
     allow_plus_ones: bool = False
     max_attendees: int | None = None
     rsvp_deadline: datetime | None = None
+    rsvps_closed: bool = False
     attending_count: int = 0
     waitlisted_count: int = 0
     invited_count: int = 0
@@ -364,6 +365,7 @@ class EventPatchIn(BaseModel):
     allow_plus_ones: bool | None = None
     max_attendees: int | None = None
     rsvp_deadline: datetime | None = None
+    rsvps_closed: bool | None = None
     event_type: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     event_format: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)

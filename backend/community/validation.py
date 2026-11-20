@@ -30,6 +30,7 @@ class Code:
         RSVPS_CLOSED_CANCELLED = "event.rsvps_closed_cancelled"
         RSVPS_CLOSED_PAST = "event.rsvps_closed_past"
         RSVPS_CLOSED_DEADLINE = "event.rsvps_closed_deadline"
+        RSVPS_CLOSED_BY_HOST = "event.rsvps_closed_by_host"
         RSVP_DEADLINE_AFTER_START = "event.rsvp_deadline_after_start"
         RSVP_INVALID_STATUS = "event.rsvp_invalid_status"
         NO_PLUS_ONE_SPOTS = "event.no_plus_one_spots"

@@ -21,7 +21,7 @@ from community.events._transitions import handle_status_update, set_event_partic
 from community.events._update import (
     apply_field_updates,
     guard_can_edit_event,
-    promote_if_capacity_increased,
+    promote_if_spots_opened,
 )
 from community.events.helpers import (
     broadcast_capacity_change,
@@ -360,7 +360,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
             if early is not None:
                 return early
 
-        promoted_user_ids = promote_if_capacity_increased(event, updates, old_max_attendees)
+        promoted_user_ids = promote_if_spots_opened(event, updates, old_max_attendees)
         hosts_rsvped = not was_official_or_club and auto_rsvp_hosts(event)
 
     email_removed_public_rsvpers(request, event, removed_user_ids)
