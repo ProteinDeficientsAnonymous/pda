@@ -20,8 +20,8 @@ vi.mock('@/api/publicRsvp', () => ({
 
 const HOUR = 60 * 60 * 1000;
 
-function renderSection(event: Event, deadlineClosed = false) {
-  return renderWithProviders(<MyRsvpSection event={event} deadlineClosed={deadlineClosed} />);
+function renderSection(event: Event, rsvpsClosed = false) {
+  return renderWithProviders(<MyRsvpSection event={event} rsvpsClosed={rsvpsClosed} />);
 }
 
 function rsvpMaybe() {

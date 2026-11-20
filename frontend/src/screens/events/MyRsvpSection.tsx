@@ -7,6 +7,7 @@ import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import {
+  areRsvpsClosed,
   type Event,
   isRsvpDeadlinePassed,
   isRsvpInputStatus,
@@ -25,8 +26,8 @@ interface Props {
   event: Event;
   token?: string;
   locked?: boolean;
-  /** Past the rsvp deadline and not a host: only going → can't go is left. */
-  deadlineClosed?: boolean;
+  /** RSVPs closed (host or deadline) and not a host: only going → can't go is left. */
+  rsvpsClosed?: boolean;
 }
 
 const STATUS_LINES: Record<RsvpInputStatus, string> = {
@@ -52,7 +53,7 @@ interface BoxState {
   initialStatus: RsvpInputStatus;
 }
 
-export function MyRsvpSection({ event, token, locked = false, deadlineClosed = false }: Props) {
+export function MyRsvpSection({ event, token, locked = false, rsvpsClosed = false }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
   const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
@@ -168,7 +169,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
       {!locked && onWaitlist ? (
         <WaitlistView
           onEdit={
-            deadlineClosed
+            rsvpsClosed
               ? undefined
               : () => {
                   setError(null);
@@ -184,7 +185,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
           atCapacity={atCapacity}
           busy={busy}
           locked={locked}
-          closed={deadlineClosed}
+          closed={rsvpsClosed}
           onOpenCreate={(status) => {
             setError(null);
             setBox({ mode: 'create', initialStatus: status });
@@ -197,7 +198,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
         />
       )}
 
-      {!locked && deadlineClosed && myRsvp === RsvpServerStatus.Attending ? (
+      {!locked && rsvpsClosed && myRsvp === RsvpServerStatus.Attending ? (
         <Button
           variant="ghost"
           className="self-center"
@@ -209,7 +210,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
       ) : null}
       <MyOrderTotal event={event} />
       <SpotsLeft event={event} />
-      {locked ? null : <RsvpDeadlineNote event={event} closed={deadlineClosed} />}
+      {locked ? null : <RsvpDeadlineNote event={event} closed={rsvpsClosed} />}
       {error && !box ? (
         <p role="alert" className="text-destructive text-sm">
           {error}
@@ -350,7 +351,7 @@ function WaitlistView({
 
 function SpotsLeft({ event }: { event: Event }) {
   const left = spotsLeft(event);
-  if (left === null || left === 0) return null;
+  if (left === null || left === 0 || areRsvpsClosed(event)) return null;
   return (
     <p className="text-warning text-center text-xs">
       {left === 1 ? '1 spot left' : `${String(left)} spots left`}

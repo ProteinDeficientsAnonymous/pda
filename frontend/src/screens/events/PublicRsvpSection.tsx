@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { setStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useRerenderAt } from '@/hooks/useRerenderAt';
-import { type Event, isRsvpDeadlinePassed } from '@/models/event';
+import { areRsvpsClosed, type Event } from '@/models/event';
 
 import { CostSection } from './EventMemberSection';
 import { PublicRsvpForm } from './PublicRsvpForm';
@@ -22,7 +22,7 @@ export function PublicRsvpSection({ event }: Props) {
     void navigate(0);
   }
 
-  if (isRsvpDeadlinePassed(event)) {
+  if (areRsvpsClosed(event)) {
     return (
       <div className="mt-8 flex flex-col gap-6">
         <CostSection event={event} />

@@ -50,6 +50,7 @@ export interface WireEvent {
   allow_plus_ones?: boolean;
   max_attendees?: number | null;
   rsvp_deadline?: string | null;
+  rsvps_closed?: boolean;
   attending_count?: number;
   waitlisted_count?: number;
   invited_count?: number;
@@ -202,6 +203,7 @@ export function mapEvent(e: WireEvent): Event {
     allowPlusOnes: e.allow_plus_ones ?? false,
     maxAttendees: e.max_attendees ?? null,
     rsvpDeadline: e.rsvp_deadline ? new Date(e.rsvp_deadline) : null,
+    rsvpsClosed: e.rsvps_closed ?? false,
     attendingCount: e.attending_count ?? 0,
     waitlistedCount: e.waitlisted_count ?? 0,
     invitedCount: e.invited_count ?? 0,

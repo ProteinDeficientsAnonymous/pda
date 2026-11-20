@@ -165,6 +165,18 @@ describe('PublicRsvpSection — rsvp deadline', () => {
     ).toBeInTheDocument();
   });
 
+  it('hides the form and says rsvps are closed when a host closed them', () => {
+    render(
+      <MemoryRouter>
+        <PublicRsvpSection event={officialEvent({ rsvpsClosed: true })} />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole('heading', { name: 'rsvp' })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      "rsvps are closed — new rsvps aren't being taken",
+    );
+  });
+
   it('closes on its own when the deadline passes while the page is open', () => {
     vi.useFakeTimers();
     renderSection(new Date(Date.now() + 60_000));

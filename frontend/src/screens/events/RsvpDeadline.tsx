@@ -15,6 +15,13 @@ function closedDetail(myRsvp: string | null): string {
 }
 
 export function RsvpDeadlineNote({ event, closed }: { event: Event; closed: boolean }) {
+  if (closed && event.rsvpsClosed) {
+    return (
+      <p role="status" className="text-foreground-secondary text-center text-sm">
+        rsvps are closed — {closedDetail(event.myRsvp)}
+      </p>
+    );
+  }
   if (!event.rsvpDeadline) return null;
   const when = formatDeadline(event.rsvpDeadline);
   if (!closed) {
