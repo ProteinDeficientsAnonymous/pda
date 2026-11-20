@@ -79,7 +79,7 @@ def capture_paypal_order(request, event_id: UUID, order_id: str):
         return Status(503, {"detail": "paypal is not configured"})
     # Checked before capturing so a guest who already paid isn't charged twice.
     rsvp = unpaid_rsvp(event_id, request.auth)
-    if rsvp is None or not order_id.isalnum():
+    if rsvp is None or not (order_id.isascii() and order_id.isalnum()):
         raise_validation(Code.Event.PAYPAL_NOTHING_TO_PAY, status_code=400)
     try:
         order = post(
@@ -88,6 +88,7 @@ def capture_paypal_order(request, event_id: UUID, order_id: str):
     except httpx.HTTPError:
         logger.exception("paypal_capture_failed", extra={"order_id": order_id})
         return Status(502, {"detail": "paypal is unavailable, try again"})
-    captures = [c for unit in order["purchase_units"] for c in unit["payments"]["captures"]]
-    paid = any(record_capture(request, c) == rsvp for c in captures)
+    units = order.get("purchase_units", [])
+    captures = [c for unit in units for c in unit.get("payments", {}).get("captures", [])]
+    paid = rsvp in [record_capture(request, c) for c in captures]
     return Status(200, PayPalCaptureOut(paid=paid))
