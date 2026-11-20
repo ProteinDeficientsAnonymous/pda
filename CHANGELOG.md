@@ -1,3 +1,16 @@
+# [0.263.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.262.1...v0.263.0) (2026-11-20)
+
+
+### Bug Fixes
+
+* **cashapp:** offer partial sender-name matches as candidates ([#2477](https://github.com/ProteinDeficientsAnonymous/pda/issues/2477)) ([50ddc0a](https://github.com/ProteinDeficientsAnonymous/pda/commit/50ddc0a3ac3f7774142cf9cb3e54aa00950dc7d9))
+
+
+### Features
+
+* 2587 - assign and remove member roles through the mcp ([#2592](https://github.com/ProteinDeficientsAnonymous/pda/issues/2592)) ([5a63cb9](https://github.com/ProteinDeficientsAnonymous/pda/commit/5a63cb9435453134469c8aed27389e5e153aa265))
+* **audit:** audit check-in approval and re-approval reactivation ([#2294](https://github.com/ProteinDeficientsAnonymous/pda/issues/2294)) ([b47b718](https://github.com/ProteinDeficientsAnonymous/pda/commit/b47b71875f89c19508a1a4d07b77ff63f7320a7a))
+
 ## [0.262.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.262.0...v0.262.1) (2026-11-20)
 
 
