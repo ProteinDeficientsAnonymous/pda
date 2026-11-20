@@ -1,3 +1,10 @@
+# [0.269.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.268.1...v0.269.0) (2026-11-20)
+
+
+### Features
+
+* **notifications:** mint event-scoped sse tickets for rsvp viewers (1043, 2/3) ([#1688](https://github.com/ProteinDeficientsAnonymous/pda/issues/1688)) ([cc2f8c3](https://github.com/ProteinDeficientsAnonymous/pda/commit/cc2f8c324f2ff8ddbbedb4873611610f3f9abbff))
+
 ## [0.268.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.268.0...v0.268.1) (2026-11-20)
 
 
