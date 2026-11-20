@@ -1,6 +1,9 @@
 import json
+from unittest.mock import patch
 
+import httpx
 import pytest
+from community.paypal.webhook import MAX_WEBHOOK_BYTES
 
 from tests._paypal_helpers import completed_capture, create_paypal_rsvp, mock_paypal
 
@@ -26,10 +29,10 @@ def rsvp(db, test_user):
     return create_paypal_rsvp(test_user)
 
 
-def _deliver(api_client, rsvp, verification="SUCCESS"):
+def _deliver(api_client, rsvp, verification="SUCCESS", event_type="PAYMENT.CAPTURE.COMPLETED"):
     event = {
         "id": "WH-EVT",
-        "event_type": "PAYMENT.CAPTURE.COMPLETED",
+        "event_type": event_type,
         "resource": completed_capture(rsvp),
     }
     raw = json.dumps(event)
@@ -65,7 +68,24 @@ class TestWebhook:
         rsvp.refresh_from_db()
         assert rsvp.paypal_capture_id is None
 
-    @pytest.mark.parametrize("body", ["not json", "[]"])
+    def test_non_capture_event_is_acknowledged_without_write(self, api_client, rsvp):
+        response, _, _ = _deliver(api_client, rsvp, event_type="PAYMENT.CAPTURE.PENDING")
+
+        assert response.status_code == 200
+        rsvp.refresh_from_db()
+        assert rsvp.paypal_capture_id is None
+
+    def test_paypal_outage_returns_502(self, api_client, rsvp):
+        raw = json.dumps({"event_type": "PAYMENT.CAPTURE.COMPLETED"})
+        with patch(
+            "community.paypal._client.httpx.post", side_effect=httpx.ConnectError("refused")
+        ):
+            response = api_client.post(
+                WEBHOOK_URL, raw, content_type="application/json", **SIGNATURE_HEADERS
+            )
+        assert response.status_code == 502
+
+    @pytest.mark.parametrize("body", ["not json", "[]", "{" + " " * MAX_WEBHOOK_BYTES + "}"])
     def test_non_object_body_is_rejected(self, api_client, rsvp, body):
         with mock_paypal({}) as http:
             response = api_client.post(WEBHOOK_URL, body, content_type="application/json")
