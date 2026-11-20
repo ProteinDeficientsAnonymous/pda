@@ -1,5 +1,7 @@
 import pytest
+from audit.api import MAX_OFFSET
 from audit.models import AuditLogEntry, AuditTargetType
+from mcp.server.mcpserver.exceptions import ToolError
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -58,3 +60,8 @@ def test_recent_actions_by_an_admin(auditor, test_user):
 
     assert [e["action"] for e in body["entries"]] == ["user_archived"]
     assert (body["total"], body["next_offset"]) == (1, None)
+
+
+def test_offset_past_the_cap_is_rejected(auditor):
+    with pytest.raises(ToolError):
+        run_tool(auditor, "audit_history", offset=MAX_OFFSET + 1)

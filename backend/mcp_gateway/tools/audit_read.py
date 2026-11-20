@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from audit.api import AuditLogFilters, AuditLogQuery, list_audit_log
+from audit.api import MAX_OFFSET, AuditLogFilters, AuditLogQuery, list_audit_log
 from pydantic import Field
 from users.permissions import PermissionKey
 
@@ -27,7 +27,7 @@ async def audit_history(
     filters: AuditLogFilters | None = None,
     limit: Annotated[int, Field(ge=1, le=100, description="entries per page")] = 50,
     offset: Annotated[
-        int, Field(ge=0, le=100_000, description="next_offset from the previous page")
+        int, Field(ge=0, le=MAX_OFFSET, description="next_offset from the previous page")
     ] = 0,
 ) -> dict[str, Any]:
     query = AuditLogQuery(**(filters or AuditLogFilters()).model_dump(), limit=limit, offset=offset)
