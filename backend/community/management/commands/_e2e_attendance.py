@@ -24,6 +24,24 @@ def _attended(event: Event, user: User) -> None:
     )
 
 
+def seed_report_sections(event: Event, guests: tuple[User, User, User, User, User]) -> None:
+    """Fill every check-in report section with one guest, in report order, for the screenshot."""
+    attended, no_show, canceled, going, maybe = guests
+    _attended(event, attended)
+    EventRSVP.objects.create(
+        event=event, user=no_show, status=RSVPStatus.ATTENDING, attendance=AttendanceStatus.DIDNT_GO
+    )
+    EventRSVP.objects.create(
+        event=event,
+        user=canceled,
+        status=RSVPStatus.CANT_GO,
+        cancelled_at=event.start_datetime - timedelta(days=1),
+        cancel_reason=CancelReason.SELF,
+    )
+    EventRSVP.objects.create(event=event, user=going, status=RSVPStatus.ATTENDING)
+    EventRSVP.objects.create(event=event, user=maybe, status=RSVPStatus.MAYBE)
+
+
 def seed_attendance_report() -> dict:
     # Creator with no role, so the report is reached via the host path, not MANAGE_EVENTS.
     host = browser_user()

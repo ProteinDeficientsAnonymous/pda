@@ -1100,19 +1100,6 @@
             "title": "Canceled Count",
             "type": "integer"
           },
-          "didnt_go": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/CheckInReportPersonOut"
-            },
-            "title": "Didnt Go",
-            "type": "array"
-          },
-          "didnt_go_count": {
-            "default": 0,
-            "title": "Didnt Go Count",
-            "type": "integer"
-          },
           "no_show_count": {
             "default": 0,
             "title": "No Show Count",
@@ -1126,17 +1113,30 @@
             "title": "No Shows",
             "type": "array"
           },
-          "unmarked": {
+          "unmarked_going": {
             "default": [],
             "items": {
               "$ref": "#/components/schemas/CheckInReportPersonOut"
             },
-            "title": "Unmarked",
+            "title": "Unmarked Going",
             "type": "array"
           },
-          "unmarked_count": {
+          "unmarked_going_count": {
             "default": 0,
-            "title": "Unmarked Count",
+            "title": "Unmarked Going Count",
+            "type": "integer"
+          },
+          "unmarked_not_going": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CheckInReportPersonOut"
+            },
+            "title": "Unmarked Not Going",
+            "type": "array"
+          },
+          "unmarked_not_going_count": {
+            "default": 0,
+            "title": "Unmarked Not Going Count",
             "type": "integer"
           }
         },
