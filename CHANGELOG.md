@@ -1,3 +1,10 @@
+## [0.271.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.2...v0.271.3) (2026-11-20)
+
+
+### Bug Fixes
+
+* **notifications:** live comment updates for non-member rsvp viewers (1043, 3/3) ([#1057](https://github.com/ProteinDeficientsAnonymous/pda/issues/1057)) ([a192847](https://github.com/ProteinDeficientsAnonymous/pda/commit/a192847f6614cc824615ba55d0583dc46d3f6e22))
+
 ## [0.271.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.1...v0.271.2) (2026-11-20)
 
 
