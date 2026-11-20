@@ -102,6 +102,41 @@ def test_check_in_promotes_tentative_to_member(
     assert user.membership_status_changed_by == vettor_user
 
 
+def test_check_in_promote_locks_row_for_update(
+    sample_join_request, vettor_user, open_official_event, monkeypatch
+):
+    from django.db import transaction
+    from users.models import User
+
+    user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+    original = User.objects.select_for_update
+    called = False
+
+    def spy(*args, **kwargs):
+        nonlocal called
+        called = True
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(User.objects, "select_for_update", spy)
+    with transaction.atomic():
+        assert maybe_promote_tentative(user, open_official_event, vettor_user)
+    assert called
+
+
+def test_check_in_promote_returns_none_when_concurrent_check_in_won(
+    sample_join_request, vettor_user, open_official_event
+):
+    from django.db import transaction
+
+    stale = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+    User.objects.filter(pk=stale.pk).update(membership_status=MembershipStatus.ACTIVE_MEMBER)
+
+    with transaction.atomic():
+        assert maybe_promote_tentative(stale, open_official_event, vettor_user) is None
+    sample_join_request.refresh_from_db()
+    assert sample_join_request.status == JoinRequestStatus.TENTATIVE
+
+
 def test_reapproving_archived_applicant_makes_member(
     api_client, vettor_headers, sample_join_request
 ):

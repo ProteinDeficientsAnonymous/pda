@@ -707,6 +707,11 @@
         "params": []
       },
       {
+        "name": "INVALID_STATUS_TRANSITION",
+        "value": "user.invalid_status_transition",
+        "params": []
+      },
+      {
         "name": "ROLE_IDS_NOT_FOUND",
         "value": "user.role_ids_not_found",
         "params": []

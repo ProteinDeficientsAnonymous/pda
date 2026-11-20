@@ -6,7 +6,6 @@ from tests._auth import auth_headers_for
 from tests._events import make_event
 from tests._users import make_user
 from users._attendance_pause import apply_attendance_pause
-from users.models import MembershipStatus
 
 URL = "/api/community/events/"
 
@@ -21,7 +20,7 @@ def drafted(rf, member):
 
 
 def _restore(user):
-    user.save(update_fields=user.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=None))
+    user.save(update_fields=user.restore_on_check_in(by=None))
 
 
 def _listed_draft_ids(api_client, user) -> set[str]:

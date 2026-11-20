@@ -254,6 +254,12 @@ describe('messageForCode', () => {
     expect(messageForCode({ code, field: null })).not.toMatch(/double-check/i);
   });
 
+  it('should return lowercase copy when user status transition is invalid', () => {
+    expect(messageForCode({ code: Code.User.InvalidStatusTransition, field: null })).toBe(
+      "that status change isn't allowed",
+    );
+  });
+
   it('returns a safe fallback for unknown codes', () => {
     expect(messageForCode({ code: 'something_the_fe_doesnt_know', field: null })).toMatch(
       /double-check/i,
