@@ -19,7 +19,7 @@ def _started_event(host: User, guests: int) -> tuple[Event, User]:
         start_datetime=timezone.now() - timedelta(minutes=10),
         created_by=host,
         rsvp_enabled=True,
-        price="$5",
+        price="5",
         venmo_link="https://venmo.com/u/host",
     )
     event.co_hosts.add(host)

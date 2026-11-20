@@ -50,18 +50,19 @@ from community.events.listing import (
     list_count_annotations,
 )
 from community.events.official_defaults import apply_official_defaults
+from community.events.price import parse_price
 from community.events.public_rsvper_removal import (
     email_removed_public_rsvpers,
     guard_or_remove_ineligible_public_rsvpers,
 )
 from community.events.read_visibility import enforce_event_read_visibility
+from community.events.rsvp_question_schemas import validate_event_rsvp_question
 from community.events.schemas import (
     EventIn,
     EventListOut,
     EventOut,
     EventPatchIn,
     RSVPGuestOut,
-    validate_event_rsvp_question,
 )
 from community.events.viewer import resolve_event_viewer
 from community.models import (
@@ -72,6 +73,7 @@ from community.models import (
     is_official_or_club,
     parse_event_ref,
 )
+from community.paypal.eligibility import ensure_paypal_allowed
 from community.rsvps.answers import can_see_guest_questionnaire_responses
 from community.rsvps.host_auto import auto_rsvp_host, auto_rsvp_hosts
 from community.rsvps.serialize import with_guest_photos
@@ -126,7 +128,7 @@ def _get_visible_event(request, event_id: str):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    viewer = event_viewer_for(resolve_event_viewer(request, event.id), event)
+    viewer = event_viewer_for(resolve_event_viewer(request, event), event)
     enforce_event_read_visibility(event, viewer)
     return event, viewer
 
@@ -216,6 +218,7 @@ def create_event(request, payload: EventIn):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
 
     event_format = validated_event_format(payload.event_format, payload.event_type)
+    ensure_paypal_allowed(payload.accept_paypal, payload.event_type)
 
     if payload.allow_plus_ones and is_official_or_club(payload.event_type):
         raise_validation(Code.Event.OFFICIAL_NO_PLUS_ONES, status_code=400)
@@ -248,10 +251,12 @@ def create_event(request, payload: EventIn):
         whatsapp_link=payload.whatsapp_link,
         partiful_link=payload.partiful_link,
         other_link=payload.other_link,
-        price=payload.price,
+        price=parse_price(payload.price),
+        price_note=payload.price_note,
         venmo_link=payload.venmo_link,
         cashapp_link=payload.cashapp_link,
         zelle_info=payload.zelle_info,
+        accept_paypal=payload.accept_paypal,
         rsvp_enabled=payload.rsvp_enabled,
         datetime_tbd=payload.datetime_tbd,
         allow_plus_ones=payload.allow_plus_ones,

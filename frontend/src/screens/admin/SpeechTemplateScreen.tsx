@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { extractApiError } from '@/api/apiErrors';
 import { useSpeechTemplate, useUpdateSpeechTemplate } from '@/api/eventSpeech';
@@ -142,6 +143,9 @@ export default function SpeechTemplateScreen() {
 
   return (
     <ContentContainer>
+      <Link to="/admin" className="text-muted mb-4 inline-block text-sm hover:underline">
+        ← back to admin
+      </Link>
       <h1 className="mb-2 text-2xl font-medium tracking-tight">event speech</h1>
       <p className="text-foreground-tertiary mb-6 text-sm">
         use a blockquote for speaker notes — they show as asides and aren&apos;t read aloud. insert

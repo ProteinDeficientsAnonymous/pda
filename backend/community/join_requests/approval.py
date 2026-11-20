@@ -177,7 +177,7 @@ def _make_tentative(user, join_request, by: User) -> list[str]:
     return [*fields, "first_name", "last_name"]
 
 
-def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
+def provision_tentative_user(join_request, requesting_user) -> tuple[User, str, bool]:
     """Provision the non-member User backing a tentatively-approved join request.
 
     Reuses a non-member or archived account linked or matched by phone, un-archiving
@@ -185,7 +185,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     They get the same way in as a fully-approved member — onboarding plus a
     magic token — but stay non-members with no member role, which is what
     limits them to official/club events (see ``community/events/limited_access``).
-    Returns ``(user, magic_token)``.
+    Returns ``(user, magic_token, reactivated)``; reactivated is True when it un-archived them.
     """
     user = applicant_user(join_request)
     if user is None:
@@ -207,6 +207,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     # Carry the form's consents forward, same as _promote_non_member — they
     # consented when they applied, so the consent gate must not ask again.
     changed = ["needs_onboarding"] if not user.needs_onboarding else []
+    was_archived = user.archived_at is not None
     changed += _make_tentative(user, join_request, requesting_user)
     user.needs_onboarding = True
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
@@ -219,7 +220,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
         user.save(update_fields=changed)
     revoke_public_rsvp_tokens(user)
 
-    return user, create_magic_token(user)
+    return user, create_magic_token(user), was_archived and user.archived_at is None
 
 
 def maybe_promote_tentative(user, event, actor) -> JoinRequest | None:
