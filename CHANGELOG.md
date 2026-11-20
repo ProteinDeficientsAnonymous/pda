@@ -1,3 +1,10 @@
+## [0.277.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.277.1...v0.277.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* let manage_events holders add and manage co-hosts ([#2637](https://github.com/ProteinDeficientsAnonymous/pda/issues/2637)) ([41663fc](https://github.com/ProteinDeficientsAnonymous/pda/commit/41663fce4d9eb1002a7b9e1e0b5111df575549eb))
+
 ## [0.277.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.277.0...v0.277.1) (2026-11-20)
 
 
