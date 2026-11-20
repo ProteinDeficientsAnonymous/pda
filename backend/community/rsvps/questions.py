@@ -8,7 +8,7 @@ from ninja import Router
 from ninja.responses import Status
 
 from community.events.helpers import can_edit_event
-from community.events.schemas import (
+from community.events.rsvp_question_schemas import (
     EventRsvpQuestionOut,
     EventRsvpQuestionSyncPayload,
     validate_event_rsvp_question,

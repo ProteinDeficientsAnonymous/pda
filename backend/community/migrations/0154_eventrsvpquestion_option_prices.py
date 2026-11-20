@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0152_perf_indexes"),
+        ("community", "0153_event_price_decimal"),
     ]
 
     operations = [

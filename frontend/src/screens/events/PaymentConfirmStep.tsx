@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/Button';
 import { buttonClass } from '@/components/ui/buttonClass';
 import type { Event } from '@/models/event';
 import { cn } from '@/utils/cn';
-import { formatPrice } from '@/utils/eventCost';
+import { formatPriceWithNote } from '@/utils/eventCost';
 import { toCashAppPayUrl, toVenmoUrl } from '@/utils/paymentHandle';
 
 const PAYMENT_LINK_CLASS = buttonClass('primary', 'w-full');
@@ -28,7 +28,7 @@ export function PaymentConfirmStep({ event, busy = false, onConfirm, onBack }: P
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       <div>
-        <p className="text-foreground text-sm font-medium">{formatPrice(event.price)}</p>
+        <p className="text-foreground text-sm font-medium">{formatPriceWithNote(event)}</p>
         <p className="text-foreground-secondary mt-1 text-sm">
           pay the host before you rsvp — then confirm below
         </p>
