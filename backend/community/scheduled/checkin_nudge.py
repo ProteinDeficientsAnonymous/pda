@@ -23,7 +23,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-NUDGE_WINDOW = timedelta(hours=1)
+NUDGE_LEAD = timedelta(hours=2)
+NUDGE_GRACE = timedelta(hours=1)
 
 _LINE_BREAK = re.compile(r"</(?:p|li)>|<br\s*/?>", re.IGNORECASE)
 _SECTION_BREAK = re.compile(r"</(?:h[1-6]|blockquote|ul|ol)>", re.IGNORECASE)
@@ -38,8 +39,8 @@ def due_checkin_nudge_events(now) -> Iterable[Event]:
             status=EventStatus.ACTIVE,
             rsvp_enabled=True,
             checkin_nudge_sent_at__isnull=True,
-            start_datetime__lte=now,
-            start_datetime__gte=now - NUDGE_WINDOW,
+            start_datetime__lte=now + NUDGE_LEAD,
+            start_datetime__gte=now - NUDGE_GRACE,
         )
         .select_related("created_by", "speech")
         .prefetch_related("co_hosts")
