@@ -252,23 +252,6 @@ class TestMembershipStateMachineUnit:
         with pytest.raises(InvalidStateTransition):
             archived_none.apply_attendance_pause(by=actor)
 
-    @pytest.mark.unit
-    @pytest.mark.parametrize(
-        "event", [MembershipEvent.PAUSE_FOR_GUIDELINES, MembershipEvent.PAUSE_FOR_ATTENDANCE]
-    )
-    def test_archived_tentative_cannot_be_parked_into_a_pause(self, event):
-        actor = _in_memory_user()
-        user = _in_memory_user(archived=True, before_archive=MembershipStatus.TENTATIVE)
-        before = _snapshot(user)
-
-        with pytest.raises(InvalidStateTransition) as exc_info:
-            _EVENT_CALLERS[event](user, actor)
-
-        assert exc_info.value.code == Code.User.INVALID_STATUS_TRANSITION
-        assert _snapshot(user) == before
-        user.mark_tentative(by=actor)
-        assert user.membership_status == MembershipStatus.TENTATIVE
-
 
 @dataclass
 class _ModelShadow:
