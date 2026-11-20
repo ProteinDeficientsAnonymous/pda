@@ -30,6 +30,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says only official events can take paypal', () => {
+    expect(messageForCode({ code: Code.Event.PaypalOfficialOnly, field: 'accept_paypal' })).toBe(
+      'only official events can take paypal',
+    );
+  });
+
   it('says the rsvp deadline must come before the start', () => {
     expect(
       messageForCode({ code: Code.Event.RsvpDeadlineAfterStart, field: 'rsvp_deadline' }),

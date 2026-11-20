@@ -15,7 +15,7 @@ from users.models import SIGN_IN_STATUSES, PublicRsvpToken, User, status_change_
 from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community.events.helpers import broadcast_capacity_change, event_out
-from community.events.schemas import RsvpAnswer
+from community.events.rsvp_question_schemas import RsvpAnswer
 from community.field_limits import FieldLimit
 from community.models import Event, RSVPStatus
 from community.rsvps.member import (

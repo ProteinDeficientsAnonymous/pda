@@ -219,4 +219,38 @@ describe('EventRsvpResponsesSection', () => {
 
     expect(screen.getByRole('list')).toHaveTextContent(/driving\s*1/);
   });
+
+  it('shows each guest their order total when options are priced', () => {
+    const event = makeEvent({
+      rsvpQuestions: [
+        {
+          id: 'meal',
+          label: 'meal',
+          fieldType: QuestionType.Select,
+          options: ['bowl', 'plate'],
+          optionPrices: [1200, 1850],
+          required: true,
+        },
+      ],
+      guests: [
+        makeGuest({
+          userId: 'a',
+          name: 'alice',
+          status: RsvpServerStatus.Attending,
+          questionnaireResponses: { meal: { label: 'meal', answer: 'plate', priceCents: 1500 } },
+        }),
+        makeGuest({
+          userId: 'b',
+          name: 'bob',
+          status: RsvpServerStatus.Attending,
+          questionnaireResponses: { meal: { label: 'meal', answer: 'bowl' } },
+        }),
+      ],
+    });
+    render(<EventRsvpResponsesSection event={event} />);
+
+    expect(screen.getByRole('columnheader', { name: 'total' })).toBeInTheDocument();
+    expect(screen.getByRole('row', { name: /alice.*\$15/ })).toBeInTheDocument();
+    expect(screen.getByRole('row', { name: /bob.*\$12/ })).toBeInTheDocument();
+  });
 });

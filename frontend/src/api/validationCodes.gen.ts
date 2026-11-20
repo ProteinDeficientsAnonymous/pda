@@ -62,6 +62,7 @@ export const Code = {
     SlugInvalid: 'event.slug_invalid',
     SlugTaken: 'event.slug_taken',
     InvalidEventFormat: 'event.invalid_event_format',
+    PaypalOfficialOnly: 'event.paypal_official_only',
   },
   Poll: {
     NotFound: 'poll.not_found',
@@ -395,6 +396,7 @@ export type ValidationCode =
   | 'event.slug_invalid'
   | 'event.slug_taken'
   | 'event.invalid_event_format'
+  | 'event.paypal_official_only'
   | 'poll.not_found'
   | 'poll.options_required'
   | 'poll.options_must_be_future'
@@ -648,6 +650,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.slug_invalid': [],
   'event.slug_taken': [],
   'event.invalid_event_format': [],
+  'event.paypal_official_only': [],
   'poll.not_found': [],
   'poll.options_required': [],
   'poll.options_must_be_future': [],
