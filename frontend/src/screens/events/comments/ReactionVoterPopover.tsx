@@ -12,6 +12,7 @@ interface Props {
 }
 
 export function ReactionVoterPopover({ reaction, insideRef, onClose }: Props) {
+  const ref = useRef<HTMLDivElement | null>(null);
   const authed = useAuthStore((s) => s.status === 'authed');
   // the parent passes a fresh onClose each render; rebinding would leave a gap with no outside listener
   const close = useRef(onClose);
@@ -25,7 +26,9 @@ export function ReactionVoterPopover({ reaction, insideRef, onClose }: Props) {
     }
     // pointerdown, not mousedown: iOS replays a mouse press on the emoji after a long press lifts
     function onDown(e: PointerEvent) {
-      if (!insideRef.current?.contains(e.target as Node)) close.current();
+      const target = e.target as Node;
+      if (ref.current?.contains(target) || insideRef.current?.contains(target)) return;
+      close.current();
     }
     document.addEventListener('keydown', onKey);
     // deferred so the press that opened the popover can't also dismiss it
@@ -41,6 +44,7 @@ export function ReactionVoterPopover({ reaction, insideRef, onClose }: Props) {
 
   return (
     <div
+      ref={ref}
       role="dialog"
       aria-label={`who reacted with ${reaction.emoji}`}
       className="border-border bg-surface absolute top-full left-0 z-20 mt-1 min-w-40 rounded-md border p-2 shadow-(--shadow-lg)"
