@@ -1,3 +1,10 @@
+## [0.262.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.262.0...v0.262.1) (2026-11-20)
+
+
+### Performance Improvements
+
+* 1922 - index join request, rsvp and event status lookups ([#1932](https://github.com/ProteinDeficientsAnonymous/pda/issues/1932)) ([2785a7f](https://github.com/ProteinDeficientsAnonymous/pda/commit/2785a7f9dd5e1a179e8cd246af29968d8e61fcaa))
+
 # [0.262.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.261.0...v0.262.0) (2026-11-20)
 
 
