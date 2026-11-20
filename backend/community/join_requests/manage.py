@@ -51,7 +51,7 @@ router = Router()
 class JoinRequestAnswerOut(BaseModel):
     question_id: str
     label: str
-    answer: str
+    answer: str | list[str]
 
 
 class JoinRequestRsvpOut(BaseModel):
