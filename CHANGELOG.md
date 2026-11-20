@@ -1,3 +1,12 @@
+## [0.274.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.274.0...v0.274.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* 401 expired tokens on optional-auth reads so hosts keep seeing their drafts ([#2623](https://github.com/ProteinDeficientsAnonymous/pda/issues/2623)) ([515aaa5](https://github.com/ProteinDeficientsAnonymous/pda/commit/515aaa598468addac1db3c468edecf3d2b8a3640))
+* **deploy:** drop default restart policy from railway iac config ([#2622](https://github.com/ProteinDeficientsAnonymous/pda/issues/2622)) ([68ba397](https://github.com/ProteinDeficientsAnonymous/pda/commit/68ba3979f0f77a99bfd116d690bfa8720a9aad93))
+* **rsvp:** don't require payment to join a paid event's waitlist ([#1655](https://github.com/ProteinDeficientsAnonymous/pda/issues/1655)) ([d190aeb](https://github.com/ProteinDeficientsAnonymous/pda/commit/d190aeb58763f9355a049583f7517e27e7b78283))
+
 # [0.274.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.273.0...v0.274.0) (2026-11-20)
 
 
