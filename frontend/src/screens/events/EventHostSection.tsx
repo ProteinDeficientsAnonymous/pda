@@ -43,7 +43,7 @@ export function EventHostSection({
       return true;
     })
     .map((row) => ({ userId: row.id, name: row.name, photoUrl: row.photoUrl }));
-  // backend already scopes pending invites to creator/accepted co-hosts; others get []
+  // backend already scopes pending invites to co-hosts and manage_events holders; others get []
   const pending = event.pendingCohostInvites;
 
   async function removeCohost(host: HostRow) {
