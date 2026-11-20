@@ -113,7 +113,7 @@ def _event_format(payload: DevTestEventIn, event_type: str) -> str:
 
 @router.post(
     "/dev/test-events/",
-    response={201: EventOut, 404: ErrorOut},
+    response={201: EventOut, 404: ErrorOut, 422: ErrorOut},
     auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
