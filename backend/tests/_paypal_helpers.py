@@ -21,5 +21,10 @@ def create_paypal_rsvp(user: User) -> EventRSVP:
     return EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.WAITLISTED)
 
 
-def completed_capture(rsvp: EventRSVP, status: str = "COMPLETED") -> dict:
-    return {"id": "CAP-1", "status": status, "custom_id": str(rsvp.pk)}
+def completed_capture(rsvp: EventRSVP, status: str = "COMPLETED", value: str = "10.87") -> dict:
+    return {
+        "id": "CAP-1",
+        "status": status,
+        "custom_id": str(rsvp.pk),
+        "amount": {"currency_code": "USD", "value": value},
+    }
