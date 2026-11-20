@@ -1,7 +1,7 @@
 import logging
 
 from community.validation import Code, raise_validation
-from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log_before_raise
 from config.auth import HARD_ACCOUNT_BLOCKS, account_block_code
 
 from users.models import User
@@ -22,7 +22,7 @@ def reject_blocked_login(request, user: User, audit_prefix: str) -> None:
     code = account_block_code(user)
     if code not in HARD_ACCOUNT_BLOCKS:
         return
-    audit_log(
+    audit_log_before_raise(
         logging.WARNING,
         f"{audit_prefix}_{_AUDIT_SUFFIX[code]}",
         request,

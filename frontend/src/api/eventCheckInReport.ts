@@ -22,14 +22,14 @@ export interface CanceledPerson extends CheckInReportPerson {
 export interface CheckInReport {
   attendedCount: number;
   noShowCount: number;
-  didntGoCount: number;
   canceledCount: number;
-  unmarkedCount: number;
+  unmarkedGoingCount: number;
+  unmarkedNotGoingCount: number;
   attended: AttendedPerson[];
   noShows: CheckInReportPerson[];
-  didntGo: CheckInReportPerson[];
   canceled: CanceledPerson[];
-  unmarked: CheckInReportPerson[];
+  unmarkedGoing: CheckInReportPerson[];
+  unmarkedNotGoing: CheckInReportPerson[];
 }
 
 interface WirePerson {
@@ -51,23 +51,23 @@ interface WireCanceledPerson extends WirePerson {
 interface WireReport {
   attended_count: number;
   no_show_count: number;
-  didnt_go_count: number;
   canceled_count: number;
-  unmarked_count: number;
+  unmarked_going_count: number;
+  unmarked_not_going_count: number;
   attended: WireAttendedPerson[];
   no_shows: WirePerson[];
-  didnt_go: WirePerson[];
   canceled: WireCanceledPerson[];
-  unmarked: WirePerson[];
+  unmarked_going: WirePerson[];
+  unmarked_not_going: WirePerson[];
 }
 
 function mapReport(w: WireReport): CheckInReport {
   return {
     attendedCount: w.attended_count,
     noShowCount: w.no_show_count,
-    didntGoCount: w.didnt_go_count,
     canceledCount: w.canceled_count,
-    unmarkedCount: w.unmarked_count,
+    unmarkedGoingCount: w.unmarked_going_count,
+    unmarkedNotGoingCount: w.unmarked_not_going_count,
     attended: w.attended.map((p) => ({
       userId: p.user_id,
       name: p.name,
@@ -83,13 +83,6 @@ function mapReport(w: WireReport): CheckInReport {
       isMember: p.is_member,
       isPlusOneGuest: p.is_plus_one_guest,
     })),
-    didntGo: w.didnt_go.map((p) => ({
-      userId: p.user_id,
-      name: p.name,
-      phone: p.phone,
-      isMember: p.is_member,
-      isPlusOneGuest: p.is_plus_one_guest,
-    })),
     canceled: w.canceled.map((p) => ({
       userId: p.user_id,
       name: p.name,
@@ -98,7 +91,14 @@ function mapReport(w: WireReport): CheckInReport {
       isPlusOneGuest: p.is_plus_one_guest,
       cancelledAt: new Date(p.cancelled_at),
     })),
-    unmarked: w.unmarked.map((p) => ({
+    unmarkedGoing: w.unmarked_going.map((p) => ({
+      userId: p.user_id,
+      name: p.name,
+      phone: p.phone,
+      isMember: p.is_member,
+      isPlusOneGuest: p.is_plus_one_guest,
+    })),
+    unmarkedNotGoing: w.unmarked_not_going.map((p) => ({
       userId: p.user_id,
       name: p.name,
       phone: p.phone,

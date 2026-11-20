@@ -11,11 +11,13 @@ Two cases:
 
 from typing import Any
 
-from community.validation import ValidationException
+from community.validation import InvalidStateTransition, ValidationException
 from django.http import HttpRequest, HttpResponse
 from ninja import NinjaAPI
 from ninja.errors import ValidationError as NinjaValidationError
 from users.refresh_cookie import clear_refresh_cookie
+
+from config.audit import audit_rejected_transition
 
 _GENERIC_FIELD_INVALID = "field_invalid"
 _GENERIC_FIELD_REQUIRED = "field_required"
@@ -26,6 +28,8 @@ def register_validation_handlers(api: NinjaAPI) -> None:
     def _handle_validation_exception(
         request: HttpRequest, exc: ValidationException
     ) -> HttpResponse:
+        if isinstance(exc, InvalidStateTransition):
+            audit_rejected_transition(request, exc)
         response = api.create_response(
             request,
             {"detail": [serialize_validation_exception(exc)]},

@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from community.models import Event, EventStatus, JoinRequestStatus
+from community.models import Event, EventStatus, JoinRequestEvent
 from django.utils import timezone
 from users.models import MembershipStatus, User
 
@@ -98,7 +98,7 @@ def test_guidelines_paused_while_archived_comes_back_paused(
     _patch(api_client, manage_users_headers, member, {"guidelines_paused": True})
     response = api_client.patch(
         f"/api/community/join-requests/{sample_join_request.id}/",
-        {"status": JoinRequestStatus.APPROVED},
+        {"event": JoinRequestEvent.APPROVE},
         content_type="application/json",
         **vettor_headers,
     )

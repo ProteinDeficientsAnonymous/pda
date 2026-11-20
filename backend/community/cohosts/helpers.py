@@ -7,6 +7,7 @@ from notifications.cohost_notifications import create_cohost_invite_notification
 from notifications.service import broadcast_cohost_change, create_event_invite_notifications
 from users.helpers import visible_display_name
 from users.models import User as UserModel
+from users.permissions import PermissionKey
 
 from community.cohosts.invite_helpers import (
     diff_cohost_invites,
@@ -24,11 +25,12 @@ def can_manage_cohost_invites(
     requesting_user,
     co_host_ids: set[str],
 ) -> bool:
-    """Accepted co-hosts can see and rescind pending invites. Admins are
-    intentionally excluded — this is a host-only workflow, not admin moderation."""
+    """Accepted co-hosts and manage_events holders can invite, see and rescind co-hosts."""
     if requesting_user is None:
         return False
-    return str(requesting_user.pk) in co_host_ids
+    if str(requesting_user.pk) in co_host_ids:
+        return True
+    return requesting_user.has_permission(PermissionKey.MANAGE_EVENTS)
 
 
 def pending_cohost_invites_out(

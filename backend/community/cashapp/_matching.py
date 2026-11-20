@@ -21,6 +21,7 @@ class _Hits:
     note_ambiguous: list[GuestRecord]
     weak: list[GuestRecord]
     sender_by_nickname: bool = False
+    partial_senders: tuple[GuestRecord, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -54,7 +55,8 @@ def _find_hits(sender_name: str, note: str, index: NameIndex) -> _Hits:
     note_guests, note_ambiguous = _split_hits(full_hits, sender_ids)
     named = sender_ids | {g.user_id for g in note_guests + note_ambiguous}
     weak = _unique([g for gs in single_hits.values() for g in gs if g.user_id not in named])
-    return _Hits(senders, note_guests, note_ambiguous, weak, by_nickname)
+    partial = () if senders else tuple(index.partial_sender_matches(sender_name))
+    return _Hits(senders, note_guests, note_ambiguous, weak, by_nickname, partial)
 
 
 def _pick_without_sender(hits: _Hits) -> _Pick:
@@ -69,6 +71,9 @@ def _pick_without_sender(hits: _Hits) -> _Pick:
         return _Pick([], extras, MatchSource.NOTE, "note name matches several guests", True)
     if hits.weak:
         return _Pick([], extras, MatchSource.NOTE, "only a first name in the note matched", True)
+    if hits.partial_senders:
+        reason = "only part of the sender name matched"
+        return _Pick([], list(hits.partial_senders), MatchSource.SENDER, reason, True)
     return _Pick([], [], MatchSource.NONE, "no guest matches the sender or note", True)
 
 
@@ -98,7 +103,9 @@ def _pick(hits: _Hits) -> _Pick:
         reason = "sender is waitlisted; note names another guest"
         return _Pick(hits.note_guests, [*extras, sender], MatchSource.NOTE, reason, True)
     pick = _pick_without_sender(hits)
-    return replace(pick, candidates=pick.candidates + hits.senders)
+    covered = {g.user_id for g in pick.covered}
+    partial = [g for g in hits.partial_senders if g.user_id not in covered]
+    return replace(pick, candidates=_unique(pick.candidates + partial))
 
 
 def _people_text(people: PeopleRange) -> str:

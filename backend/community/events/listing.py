@@ -16,6 +16,7 @@ from community.events.limited_access import (
     is_limited,
     limited_access_event_q,
 )
+from community.events.price import price_text
 from community.events.schemas import EventListOut
 from community.models import (
     DEFAULT_EVENT_DURATION,
@@ -154,7 +155,8 @@ def event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         location=gated(e.location, "", is_authed),
         event_type=e.event_type,
         visibility=e.visibility,
-        price=e.price,
+        price=price_text(e.price),
+        price_note=e.price_note,
         co_host_ids=[str(c.id) for c in e.co_hosts.all()] if is_authed else [],
         datetime_tbd=e.datetime_tbd,
         has_poll=hasattr(e, "poll"),

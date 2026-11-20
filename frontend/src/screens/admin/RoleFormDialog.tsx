@@ -16,6 +16,7 @@ interface Props {
 const PERMISSION_LABELS: Record<string, string> = {
   [Permission.ManageUsers]: 'manage users',
   [Permission.ManageRoles]: 'manage roles',
+  [Permission.ViewAuditLog]: 'view audit log',
   [Permission.ApproveJoinRequests]: 'approve join requests',
   [Permission.ManageEvents]: 'manage events',
   [Permission.EditGuidelines]: 'edit guidelines',

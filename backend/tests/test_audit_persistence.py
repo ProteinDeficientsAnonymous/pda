@@ -4,9 +4,20 @@ from pathlib import Path
 
 import pytest
 from audit.models import AuditLogEntry, AuditTargetType
-from config.audit import AuditTarget, audit_log
+from community.models import Event
+from config.audit import (
+    AuditTarget,
+    audit_log,
+    audit_log_before_raise,
+    flush_rollback_safe_audits,
+)
 from django.db import transaction
 from django.test import RequestFactory
+from users.models import MagicLoginToken, User
+
+from tests._auth import auth_headers_for
+from tests._public_rsvp_helpers import make_official_event, make_public_rsvper, post
+from tests._time import future_iso
 
 
 @pytest.fixture
@@ -121,6 +132,78 @@ class TestAuditPersistence:
         commit(lambda: audit_log(logging.INFO, "role_created", request))
 
         assert AuditLogEntry.objects.get().ip_address is None
+
+
+def _archive(user) -> list[str]:
+    user.archived_at = user.date_joined
+    return ["archived_at"]
+
+
+class TestSurviveRollback:
+    class Rollback(Exception):
+        pass
+
+    def test_held_row_written_after_rollback(self, db, request_with_actor):
+        with pytest.raises(self.Rollback), transaction.atomic():
+            audit_log_before_raise(logging.WARNING, "login_archived", request_with_actor)
+            raise self.Rollback
+
+        assert not AuditLogEntry.objects.exists()
+        flush_rollback_safe_audits(request_with_actor)
+        flush_rollback_safe_audits(request_with_actor)
+
+        assert AuditLogEntry.objects.get().action == "login_archived"
+
+    @pytest.mark.django_db(transaction=True, serialized_rollback=True)
+    def test_written_immediately_outside_transaction(self, anon_request):
+        audit_log_before_raise(logging.WARNING, "login_failed", anon_request)
+
+        assert AuditLogEntry.objects.get().action == "login_failed"
+
+    @pytest.mark.parametrize(
+        ("block", "action"),
+        [
+            (_archive, "magic_login_archived"),
+            (lambda u: u.apply_guidelines_pause(by=None), "magic_login_paused"),
+        ],
+    )
+    def test_blocked_magic_login_audit_persists(self, api_client, test_user, block, action):
+        test_user.save(update_fields=block(test_user))
+        magic = MagicLoginToken.create_for_user(test_user)
+
+        response = api_client.get(f"/api/auth/magic-login/{magic.token}/")
+
+        assert response.status_code == 403
+        entry = AuditLogEntry.objects.get(action=action)
+        assert entry.target_id == str(test_user.pk)
+
+    def test_public_rsvp_email_collision_audit_persists(self, db, api_client):
+        event = make_official_event()
+        make_public_rsvper("+14155550123", "phone@example.com", name="Phone Row")
+        make_public_rsvper("+14155550888", "sam@example.com", name="Email Row")
+
+        response = post(api_client, event)
+
+        assert response.status_code == 409
+        assert AuditLogEntry.objects.filter(action="public_rsvp_email_collision").exists()
+
+    def test_rsvp_questions_permission_denied_audit_persists(self, api_client, test_user):
+        event = Event.objects.create(
+            title="Questions Event", start_datetime=future_iso(days=30), created_by=test_user
+        )
+        outsider = User.objects.create_user(
+            phone_number="+12025550999", password="otherpass", first_name="Other", last_name="Guest"
+        )
+
+        response = api_client.put(
+            f"/api/community/events/{event.id}/rsvp-questions/",
+            {"expected": [], "questions": []},
+            content_type="application/json",
+            **auth_headers_for(outsider),
+        )
+
+        assert response.status_code == 403
+        assert AuditLogEntry.objects.get(action="permission_denied").target_id == str(event.id)
 
 
 class TestAuditTargetTypeCoverage:

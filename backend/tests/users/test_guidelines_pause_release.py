@@ -72,6 +72,10 @@ class TestGuidelinesPauseRelease:
         assert list(member.roles.all()) == []
         entry = AuditLogEntry.objects.get(action="user_paused")
         assert entry.details == {
+            "full_name": member.full_name,
+            "event": "pause_for_guidelines",
+            "from": "active_member",
+            "to": "guidelines_paused",
             "removed_role_ids": [str(vettor.pk)],
             "removed_rsvp_event_ids": [str(official.pk)],
             "removed_hosting_event_ids": [str(shared.pk)],

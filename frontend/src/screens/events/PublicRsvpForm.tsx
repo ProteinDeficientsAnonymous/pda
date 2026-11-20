@@ -25,6 +25,7 @@ import {
   ValidationMessage,
 } from '@/utils/validators';
 
+import { orderTotalCents } from './orderTotal';
 import { PaymentConfirmStep } from './PaymentConfirmStep';
 import { PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
 import { RsvpCommentField } from './RsvpCommentField';
@@ -51,9 +52,6 @@ interface SubmitError {
 }
 
 function messageForStatus(status: number | null, err: unknown): SubmitError {
-  if (hasErrorCode(err, Code.Event.PaymentConfirmationRequired)) {
-    return { text: extractApiErrorOr(err, 'confirm you paid before rsvping'), showSignIn: false };
-  }
   if (hasErrorCode(err, Code.Event.RsvpCouldNotBeCreated)) {
     return {
       text: "we couldn't set up your rsvp with those details — reach out and we'll help",
@@ -162,13 +160,18 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
       });
       onSuccess(result);
     } catch (err) {
+      // Our capacity guess was stale (or they hold an unpaid seat): the server wants payment.
+      if (hasErrorCode(err, Code.Event.PaymentConfirmationRequired)) {
+        setShowPayment(true);
+        return;
+      }
       setSubmitError(messageForStatus(getApiStatus(err), err));
     }
   }
 
   function handleSubmitClick() {
     if (!status || !validate()) return;
-    if (needsPaymentFor(status)) {
+    if (needsPaymentFor(status, false)) {
       setShowPayment(true);
       return;
     }
@@ -231,6 +234,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
         <PaymentConfirmStep
           event={event}
           busy={submit.isPending}
+          orderTotalCents={orderTotalCents(questions, answers)}
           onConfirm={() => {
             void onSubmit(true);
           }}

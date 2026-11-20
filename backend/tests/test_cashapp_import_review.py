@@ -135,7 +135,7 @@ class TestLoaders:
         )
 
     def test_guest_records_cover_attending_and_waitlisted_only(self):
-        event = create_paid_event(price="$15")
+        event = create_paid_event(price="15")
         alex = self._user("+12025550201", "Alex", "Kim", nickname="Al")
         wren = self._user("+12025550202", "Wren", "Park")
         gone = self._user("+12025550203", "Gone", "Person")
@@ -159,7 +159,7 @@ class TestLoaders:
         assert not records[str(wren.id)].said_paid
 
     def test_verified_ids_include_verified_non_guests(self):
-        event = create_paid_event(price="$15")
+        event = create_paid_event(price="15")
         alex = self._user("+12025550201", "Alex", "Kim")
         gone = self._user("+12025550203", "Gone", "Person")
         verified_at = timezone.now()
@@ -189,7 +189,7 @@ class TestLoaders:
         assert load_payment_context(event).ends_at is None
 
     def test_at_the_door_payment_after_start_is_kept_when_no_end(self):
-        event = create_paid_event(price="$15", end_datetime=None)
+        event = create_paid_event(price="15", end_datetime=None)
         event.created_at = event.start_datetime - timedelta(days=7)
         alex = self._user("+12025550205", "Alex", "Kim")
         EventRSVP.objects.create(event=event, user=alex, status=RSVPStatus.ATTENDING)
@@ -204,15 +204,15 @@ class TestLoaders:
         assert review.proposals[0].user_ids == [str(alex.id)]
 
     def test_priced_event_without_payment_link_still_counts_as_paid(self):
-        event = create_paid_event(venmo_link="", price="$15")
+        event = create_paid_event(venmo_link="", price="15")
         assert load_payment_context(event).is_paid_event
 
     def test_free_event_is_not_paid(self):
-        event = create_paid_event(price="free", venmo_link="")
+        event = create_paid_event(price=None, venmo_link="")
         assert not load_payment_context(event).is_paid_event
 
     def test_loaded_records_feed_the_review(self):
-        event = create_paid_event(price="$15")
+        event = create_paid_event(price="15")
         event.created_at = timezone.now() - timedelta(days=1)
         alex = self._user("+12025550204", "Alex", "Kim")
         EventRSVP.objects.create(event=event, user=alex, status=RSVPStatus.ATTENDING)
