@@ -16,7 +16,7 @@ from community.models import (
     PageVisibility,
     RSVPStatus,
 )
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._time import future_iso
 from tests._users import make_attendance_paused
@@ -69,7 +69,7 @@ def make_public_rsvper(phone, email, name="Existing Rsvper"):
         first_name=first_name,
         last_name=last_name,
         email=email,
-        is_member=False,
+        membership_status=MembershipStatus.NONE,
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])
@@ -85,6 +85,7 @@ def make_tentative_member(phone, email, name="Tentative Sprout"):
         user=user,
         status=JoinRequestStatus.TENTATIVE,
     )
+    user.save(update_fields=user.set_membership_status(MembershipStatus.TENTATIVE, by=None))
     return user
 
 

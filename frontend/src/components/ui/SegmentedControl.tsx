@@ -32,7 +32,7 @@ export function SegmentedControl<T extends string | number>({
           <label
             key={String(opt.value)}
             className={cn(
-              'inline-flex h-8 cursor-pointer items-center rounded-full px-3 text-sm transition-colors',
+              'inline-flex h-8 shrink-0 cursor-pointer items-center rounded-full px-2.5 text-sm whitespace-nowrap transition-colors sm:px-3',
               active
                 ? 'bg-brand-600 text-brand-on'
                 : 'text-foreground-secondary hover:bg-surface-dim',

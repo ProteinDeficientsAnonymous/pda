@@ -1,3 +1,5 @@
+import { buttonClass } from './buttonClass';
+
 interface Props {
   href: string;
   label: string;
@@ -5,8 +7,7 @@ interface Props {
   onClick?: () => void;
 }
 
-const CLASS_NAME =
-  'focus-visible:ring-brand-200 bg-surface text-foreground border-border-strong hover:bg-background inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none';
+const CLASS_NAME = buttonClass('secondary');
 
 export function SendLink({ href, label, disabled = false, onClick }: Props) {
   if (disabled) {

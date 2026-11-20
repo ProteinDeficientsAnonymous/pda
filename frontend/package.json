@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "0.227.3",
+  "version": "0.258.1",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
@@ -17,6 +17,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:visual": "node visual/shot-names.mjs && playwright test -c playwright.visual.config.ts",
+    "test:staging": "playwright test -c playwright.staging.config.ts",
     "types:api": "openapi-typescript ../backend/openapi_schema.json -o src/api/types.gen.ts",
     "types:api:check": "openapi-typescript ../backend/openapi_schema.json -o src/api/types.gen.ts --check"
   },
@@ -68,12 +69,12 @@
     "axios-mock-adapter": "^2.1.0",
     "jsdom": "^29.0.2",
     "openapi-typescript": "^7.13.0",
-    "oxfmt": "^0.72.0",
+    "oxfmt": "^0.78.0",
     "oxlint": "^1.87.0",
     "oxlint-tsgolint": "^7.0.2003",
     "postcss": "^8.5.10",
     "tailwindcss": "^4.2.2",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vite": "^8.0.8",
     "vitest": "^4.1.12",
     "vitest-axe": "^0.1.0"

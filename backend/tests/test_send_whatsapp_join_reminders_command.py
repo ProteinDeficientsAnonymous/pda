@@ -11,7 +11,7 @@ from django.core.management import call_command
 from django.utils import timezone
 from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._users import make_user
 
@@ -88,7 +88,7 @@ class TestRecipientSelection:
         fake_sender.send.assert_not_called()
 
     def test_excludes_paused_member(self, fake_sender):
-        _make_member("+12025550314", is_paused=True)
+        _make_member("+12025550314", membership_status=MembershipStatus.GUIDELINES_PAUSED)
         call_command("send_whatsapp_join_reminders")
         fake_sender.send.assert_not_called()
 
@@ -98,7 +98,7 @@ class TestRecipientSelection:
         fake_sender.send.assert_not_called()
 
     def test_excludes_non_member(self, fake_sender):
-        make_user(email="guest@example.test", is_member=False)
+        make_user(email="guest@example.test", membership_status=MembershipStatus.NONE)
         call_command("send_whatsapp_join_reminders")
         fake_sender.send.assert_not_called()
 

@@ -12,7 +12,7 @@ from community.models import (
 )
 from django.test import TestCase
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._auth import auth_headers_for
 from tests._events import make_event, make_rsvp
@@ -43,7 +43,7 @@ def _entry(action: str) -> AuditLogEntry:
 
 def test_submitted(api_client):
     rsvper = User.objects.create_user(
-        phone_number="+14155550123", first_name="Sam", is_member=False
+        phone_number="+14155550123", first_name="Sam", membership_status=MembershipStatus.NONE
     )
     body = {
         "first_name": "Sam",
@@ -65,6 +65,21 @@ def test_submitted(api_client):
     assert entry.details["user_id"] == str(rsvper.pk)
 
 
+def test_approved_names_user_linked_by_email(api_client, vettor_headers, sample_join_request):
+    linked = User.objects.create_user(
+        phone_number="+14155550199",
+        email="sprout@example.com",
+        first_name="Sprout",
+        membership_status=MembershipStatus.NONE,
+    )
+    sample_join_request.user = linked
+    sample_join_request.save(update_fields=["user"])
+
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+
+    assert _entry("join_request_approved").details["user_id"] == str(linked.pk)
+
+
 @pytest.mark.parametrize("status", [JoinRequestStatus.TENTATIVE, JoinRequestStatus.APPROVED])
 def test_admitted_names_actor_and_user(
     api_client, vettor_headers, vettor_user, sample_join_request, status
@@ -81,7 +96,9 @@ def test_admitted_names_actor_and_user(
 
 def test_rejected_then_unrejected(api_client, vettor_headers, vettor_user, sample_join_request):
     rsvper = User.objects.create_user(
-        phone_number=sample_join_request.phone_number, first_name="Sprout", is_member=False
+        phone_number=sample_join_request.phone_number,
+        first_name="Sprout",
+        membership_status=MembershipStatus.NONE,
     )
     _decide(
         api_client,
@@ -109,10 +126,11 @@ def test_reapproval_reactivates_archived_user(
     api_client, vettor_headers, vettor_user, sample_join_request
 ):
     archived = User.objects.create_user(
-        phone_number=sample_join_request.phone_number, first_name="Prior"
+        phone_number=sample_join_request.phone_number,
+        first_name="Prior",
+        membership_status=MembershipStatus.ARCHIVED,
+        archived_at=timezone.now(),
     )
-    archived.archived_at = timezone.now()
-    archived.save(update_fields=["archived_at"])
 
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
 
@@ -124,7 +142,11 @@ def test_reapproval_reactivates_archived_user(
 
 def test_check_in_approves_tentative(api_client):
     host = User.objects.create_user(phone_number="+12025557100", first_name="Host")
-    user = User.objects.create_user(phone_number="+12025557101", first_name="Tent", is_member=False)
+    user = User.objects.create_user(
+        phone_number="+12025557101",
+        first_name="Tent",
+        membership_status=MembershipStatus.TENTATIVE,
+    )
     join_request = JoinRequest.objects.create(
         phone_number=user.phone_number, user=user, status=JoinRequestStatus.TENTATIVE
     )
