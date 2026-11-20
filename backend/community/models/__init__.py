@@ -1,5 +1,6 @@
 from community.models.attendance_reminder import AttendanceMilestone, AttendanceReminder
 from community.models.choices import (
+    ALLOWED_JOIN_REQUEST_TRANSITIONS,
     CONDITION_SOURCE_TYPES,
     MATCHABLE_RSVP_STATUSES,
     OPEN_JOIN_REQUEST_STATUSES,
@@ -17,6 +18,7 @@ from community.models.choices import (
     FeedbackType,
     InvitePermission,
     JoinFormQuestionType,
+    JoinRequestEvent,
     JoinRequestStatus,
     PageVisibility,
     PlanningSlotKind,
@@ -99,7 +101,9 @@ __all__ = [
     "EventType",
     "FeedbackType",
     "InvitePermission",
+    "ALLOWED_JOIN_REQUEST_TRANSITIONS",
     "JoinFormQuestionType",
+    "JoinRequestEvent",
     "JoinRequestStatus",
     "OPEN_JOIN_REQUEST_STATUSES",
     "EventFormat",

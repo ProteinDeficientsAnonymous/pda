@@ -16,7 +16,12 @@ from community.events._report_schemas import (
     ReportBucket,
     ReportPlusOne,
 )
-from community.events.helpers import can_edit_event, is_cohost, load_event_with_stats_prefetch
+from community.events.helpers import (
+    can_edit_event,
+    event_co_host_ids,
+    is_cohost,
+    load_event_with_stats_prefetch,
+)
 from community.models import AttendanceStatus, Event, RSVPStatus
 from community.shared import ErrorOut, csv_response, csv_safe
 from community.validation import Code, raise_validation
@@ -65,12 +70,13 @@ def _classify_attendance(
         buckets[ReportBucket.ATTENDED].append(
             AttendedPersonOut(**person.model_dump(), checked_in_at=checked_in_at)
         )
-    elif rsvp_status == RSVPStatus.ATTENDING and attendance == AttendanceStatus.DIDNT_GO:
-        buckets[ReportBucket.NO_SHOWS].append(person)
+    elif rsvp_status != RSVPStatus.ATTENDING:
+        # A maybe/waitlisted guest who didn't come isn't a no-show, whatever their mark.
+        buckets[ReportBucket.UNMARKED_NOT_GOING].append(person)
     elif attendance == AttendanceStatus.DIDNT_GO:
-        buckets[ReportBucket.DIDNT_GO].append(person)
+        buckets[ReportBucket.NO_SHOWS].append(person)
     else:
-        buckets[ReportBucket.UNMARKED].append(person)
+        buckets[ReportBucket.UNMARKED_GOING].append(person)
 
 
 def _classify_cancellation(rsvp, person: CheckInReportPersonOut, plus_one, buckets: dict) -> None:
@@ -97,15 +103,15 @@ def _classify_rsvp(rsvp, person: CheckInReportPersonOut, plus_one, buckets: dict
 
 
 def _build_report(event: Event, viewer) -> CheckInReportOut:
-    co_host_ids = {str(c.id) for c in event.co_hosts.all()}
+    co_host_ids = event_co_host_ids(event)
     can_see_phones = is_cohost(viewer, co_host_ids)
 
     buckets = {
         ReportBucket.ATTENDED: [],
         ReportBucket.NO_SHOWS: [],
-        ReportBucket.DIDNT_GO: [],
         ReportBucket.CANCELED: [],
-        ReportBucket.UNMARKED: [],
+        ReportBucket.UNMARKED_GOING: [],
+        ReportBucket.UNMARKED_NOT_GOING: [],
     }
     for rsvp in _report_rsvps(event):
         person = _person(rsvp, viewer, can_see_phones)
@@ -119,14 +125,14 @@ def _build_report(event: Event, viewer) -> CheckInReportOut:
     return CheckInReportOut(
         attended_count=len(buckets[ReportBucket.ATTENDED]),
         no_show_count=len(buckets[ReportBucket.NO_SHOWS]),
-        didnt_go_count=len(buckets[ReportBucket.DIDNT_GO]),
         canceled_count=len(buckets[ReportBucket.CANCELED]),
-        unmarked_count=len(buckets[ReportBucket.UNMARKED]),
+        unmarked_going_count=len(buckets[ReportBucket.UNMARKED_GOING]),
+        unmarked_not_going_count=len(buckets[ReportBucket.UNMARKED_NOT_GOING]),
         attended=buckets[ReportBucket.ATTENDED],
         no_shows=buckets[ReportBucket.NO_SHOWS],
-        didnt_go=buckets[ReportBucket.DIDNT_GO],
         canceled=buckets[ReportBucket.CANCELED],
-        unmarked=buckets[ReportBucket.UNMARKED],
+        unmarked_going=buckets[ReportBucket.UNMARKED_GOING],
+        unmarked_not_going=buckets[ReportBucket.UNMARKED_NOT_GOING],
     )
 
 
@@ -180,7 +186,7 @@ def get_check_in_report_csv(request, event_id: UUID, columns: str = ",".join(REP
     event = _load_and_authorize(request, event_id)
     selected = _parse_columns(columns)
 
-    co_host_ids = {str(c.id) for c in event.co_hosts.all()}
+    co_host_ids = event_co_host_ids(event)
     can_see_phones = is_cohost(request.auth, co_host_ids)
 
     buf = io.StringIO()

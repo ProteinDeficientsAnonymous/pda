@@ -5,8 +5,8 @@ import { useMyEventFeedback } from '@/api/eventFeedbackHost';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
-import { eventHostCount, spotsLeft } from '@/models/event';
-import { formatPrice } from '@/utils/eventCost';
+import { areRsvpsClosed, eventHostCount, spotsLeft } from '@/models/event';
+import { formatPriceWithNote } from '@/utils/eventCost';
 import { buildEventLinks } from '@/utils/eventLinks';
 import { toCashAppPayUrl } from '@/utils/paymentHandle';
 import { ensureHttps } from '@/utils/url';
@@ -88,6 +88,9 @@ export function EventMemberSection({ event, token }: Props) {
 }
 
 function CapacityNote({ event }: { event: Event }) {
+  if (areRsvpsClosed(event)) {
+    return <p className="text-muted -mt-2 mb-3 text-xs">rsvps closed</p>;
+  }
   const { maxAttendees } = event;
   const left = spotsLeft(event);
   if (left === null || maxAttendees === null) return null;
@@ -179,7 +182,7 @@ export function LinksSection({ event }: { event: Event }) {
 
 export function CostSection({ event }: { event: Event }) {
   const items: { label: string; url?: string }[] = [];
-  if (event.price) items.push({ label: formatPrice(event.price) });
+  if (event.price || event.priceNote) items.push({ label: formatPriceWithNote(event) });
   if (event.venmoLink) items.push({ label: 'venmo', url: ensureHttps(event.venmoLink) });
   if (event.cashappLink) {
     items.push({

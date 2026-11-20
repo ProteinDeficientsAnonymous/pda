@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
-import { type Event, type RsvpInputStatus, RsvpStatus } from '@/models/event';
+import { type Event, goingWouldWaitlist, type RsvpInputStatus, RsvpStatus } from '@/models/event';
 
+import { orderTotalCents } from './orderTotal';
 import { PaymentConfirmStep } from './PaymentConfirmStep';
 import { RsvpCommentField } from './RsvpCommentField';
 import { RsvpQuestionFields } from './RsvpQuestionFields';
@@ -35,14 +36,14 @@ interface Props {
   // Shown in place of the +1 button when allowPlusOnes is false, so the missing option isn't silent.
   plusOneNote?: string | null;
   allowComment?: boolean;
-  atCapacity?: boolean;
   // Already in line: "going" keeps their place rather than joining the waitlist.
   onWaitlist?: boolean;
   busy?: boolean;
   error?: string | null;
   questions?: readonly RsvpQuestionDraft[];
   initialAnswers?: Readonly<Record<string, RsvpAnswerValue | undefined>>;
-  onConfirm: (args: ConfirmArgs) => void;
+  // openPaymentStep: for when the server asks for payment the client didn't predict.
+  onConfirm: (args: ConfirmArgs, openPaymentStep: () => void) => void;
   onRemove?: (() => void) | undefined;
   onClose: () => void;
 }
@@ -56,7 +57,6 @@ export function RsvpBox({
   allowPlusOnes,
   plusOneNote = null,
   allowComment,
-  atCapacity = false,
   onWaitlist = false,
   busy = false,
   error = null,
@@ -78,7 +78,8 @@ export function RsvpBox({
 
   const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;
-  const joiningWaitlist = status === RsvpStatus.Attending && atCapacity && !onWaitlist;
+  const wouldWaitlist = goingWouldWaitlist(event, hasPlusOne);
+  const joiningWaitlist = status === RsvpStatus.Attending && wouldWaitlist && !onWaitlist;
   const showQuestions = questions.length > 0 && rsvpQuestionsApplyToStatus(status);
 
   function filledQuestionnaireResponses(): Record<string, RsvpAnswerValue> {
@@ -102,7 +103,9 @@ export function RsvpBox({
     };
     if (showComment && trimmed) args.comment = trimmed;
     if (paidConfirmed) args.paidConfirmed = true;
-    onConfirm(args);
+    onConfirm(args, () => {
+      setShowPayment(true);
+    });
   }
 
   function confirm() {
@@ -116,7 +119,7 @@ export function RsvpBox({
       }
     }
     setQuestionErrors({});
-    if (needsPaymentFor(status)) {
+    if (needsPaymentFor(status, hasPlusOne)) {
       setShowPayment(true);
       return;
     }
@@ -129,6 +132,7 @@ export function RsvpBox({
         <PaymentConfirmStep
           event={event}
           busy={busy}
+          orderTotalCents={orderTotalCents(questions, answers)}
           onConfirm={() => {
             submit(true);
           }}
@@ -145,7 +149,7 @@ export function RsvpBox({
               disabled={busy}
               labelFor={(s, defaultLabel) =>
                 s === RsvpStatus.Attending
-                  ? attendingLabel(onWaitlist, atCapacity, defaultLabel)
+                  ? attendingLabel(onWaitlist, wouldWaitlist, defaultLabel)
                   : defaultLabel
               }
             />
@@ -224,9 +228,9 @@ export function RsvpBox({
   );
 }
 
-function attendingLabel(onWaitlist: boolean, atCapacity: boolean, defaultLabel: string): string {
+function attendingLabel(onWaitlist: boolean, wouldWaitlist: boolean, defaultLabel: string): string {
   if (onWaitlist) return 'stay on the waitlist';
-  if (atCapacity) return 'join the waitlist';
+  if (wouldWaitlist) return 'join the waitlist';
   return defaultLabel;
 }
 

@@ -43,7 +43,7 @@ def _mark_attending(rsvps: list[EventRSVP]) -> None:
 
 
 def _waitlist_closed(event: Event) -> bool:
-    return event.max_attendees is None or event.is_past
+    return event.max_attendees is None or event.is_past or event.rsvps_closed
 
 
 def promote_from_waitlist(event: Event) -> list[str]:

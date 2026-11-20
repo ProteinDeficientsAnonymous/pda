@@ -1,14 +1,14 @@
 import logging
 from uuid import UUID
 
-from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log, audit_log_before_raise
 from config.auth import gated_jwt
 from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
 
 from community.events.helpers import can_edit_event
-from community.events.schemas import (
+from community.events.rsvp_question_schemas import (
     EventRsvpQuestionOut,
     EventRsvpQuestionSyncPayload,
     validate_event_rsvp_question,
@@ -27,7 +27,7 @@ def _load_editable_event(request, event_id: UUID) -> Event:
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not can_edit_event(request.auth, event):
-        audit_log(
+        audit_log_before_raise(
             logging.WARNING,
             "permission_denied",
             request,
@@ -66,11 +66,18 @@ def replace_event_rsvp_questions(request, event_id: UUID, payload: EventRsvpQues
     }
     current = sorted(existing.values(), key=lambda question: question.display_order)
     current_state = [
-        (question.id, question.label, question.field_type, question.options, question.required)
+        (
+            question.id,
+            question.label,
+            question.field_type,
+            question.options,
+            question.option_prices,
+            question.required,
+        )
         for question in current
     ]
     expected_state = [
-        (item.id, item.label, item.field_type, item.options, item.required)
+        (item.id, item.label, item.field_type, item.options, item.option_prices, item.required)
         for item in payload.expected
     ]
     if current_state != expected_state:
@@ -94,6 +101,7 @@ def replace_event_rsvp_questions(request, event_id: UUID, payload: EventRsvpQues
         question.label = item.label
         question.field_type = item.field_type
         question.options = item.options
+        question.option_prices = item.option_prices
         question.required = item.required
         question.display_order = display_order
         question.save()

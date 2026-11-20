@@ -355,6 +355,13 @@ describe('EventMemberSection — capacity note', () => {
     renderSection({ ...BASE_EVENT, rsvpEnabled: true, maxAttendees: null, attendingCount: 8 });
     expect(screen.queryByText(/spots left/i)).not.toBeInTheDocument();
   });
+
+  it('says rsvps closed instead of spots left once a host closes them', () => {
+    setAuthed(CREATOR);
+    renderSection({ ...BASE_EVENT, rsvpEnabled: true, maxAttendees: 20, rsvpsClosed: true });
+    expect(screen.getByText('rsvps closed')).toBeInTheDocument();
+    expect(screen.queryByText(/spots left/i)).not.toBeInTheDocument();
+  });
 });
 
 describe('EventMemberSection — invite gating on member rsvp (#688)', () => {

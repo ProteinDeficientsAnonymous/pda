@@ -17,7 +17,7 @@ test('admin screens', async ({ page }) => {
     screen('flagged-events', '/admin/flagged-events', { heading: 'flagged events' }),
     screen('attendance', '/admin/attendance', {
       heading: 'attendance',
-      text: 'no attendance marked yet',
+      text: 'hike',
     }),
     screen('surveys', '/admin/surveys', { heading: 'surveys' }),
     screen('survey', `/admin/surveys/${data.survey_id}`, { heading: 'potluck feedback' }),

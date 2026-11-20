@@ -5,7 +5,7 @@ access they end up with (see test_limited_access.py), not the path in.
 """
 
 import pytest
-from community.models import JoinRequestStatus
+from community.models import JoinRequestEvent
 from django.utils import timezone
 from users.models import MagicLoginToken, PublicRsvpToken
 
@@ -17,7 +17,7 @@ pytestmark = pytest.mark.django_db
 def _tentatively_approve(api_client, vettor_headers, join_request):
     return api_client.patch(
         f"/api/community/join-requests/{join_request.id}/",
-        {"status": JoinRequestStatus.TENTATIVE},
+        {"event": JoinRequestEvent.MARK_TENTATIVE},
         content_type="application/json",
         **vettor_headers,
     )

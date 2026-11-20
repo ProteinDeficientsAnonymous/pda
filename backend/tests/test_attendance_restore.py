@@ -31,15 +31,10 @@ def paused(db):
         phone_number="+12025557101", first_name="Paused", email="paused@example.com"
     )
     user.roles.clear()
+    fields = user.apply_attendance_pause(by=None)
     user.attendance_paused_at = timezone.now() - timedelta(days=10)
     user.attendance_grace_notified_at = timezone.now() - timedelta(days=20)
-    user.save(
-        update_fields=[
-            "attendance_paused_at",
-            "attendance_grace_notified_at",
-            *user.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED, by=None),
-        ]
-    )
+    user.save(update_fields=["attendance_grace_notified_at", *fields])
     return user
 
 
@@ -93,9 +88,10 @@ class TestRestoreOnCheckIn:
             paused.roles.filter(name="member").exists()
             == Role.objects.filter(name="member", is_default=True).exists()
         )
-        assert AuditLogEntry.objects.filter(
+        entry = AuditLogEntry.objects.get(
             action="user_attendance_restored", target_id=str(paused.pk)
-        ).exists()
+        )
+        assert entry.details["full_name"] == paused.full_name
 
     def test_qualifying_event_older_than_a_year_does_not_count(self, api_client, host, paused):
         _attended(paused, days_ago=400)

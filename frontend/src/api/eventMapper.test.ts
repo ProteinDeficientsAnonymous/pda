@@ -84,11 +84,23 @@ describe('mapEvent', () => {
         label: 'dietary?',
         fieldType: 'textarea',
         options: [],
+        optionPrices: [],
         required: true,
       },
     ]);
     expect(result.myQuestionnaireResponses).toEqual({
       q1: { label: 'dietary?', answer: 'none' },
+    });
+  });
+
+  it('maps the price saved with an answer', () => {
+    const result = mapEvent(
+      wireEvent({
+        my_questionnaire_responses: { q1: { label: 'meal', answer: 'plate', price_cents: 1850 } },
+      }),
+    );
+    expect(result.myQuestionnaireResponses).toEqual({
+      q1: { label: 'meal', answer: 'plate', priceCents: 1850 },
     });
   });
 

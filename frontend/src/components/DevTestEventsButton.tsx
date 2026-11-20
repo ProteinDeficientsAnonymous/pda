@@ -6,6 +6,7 @@ import { type DevTestEventOptions, useCreateDevTestEvents } from '@/api/devTools
 import { useVersion } from '@/api/version';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { EventFormat } from '@/models/event';
 
 import { DevTestEventOverrides } from './DevTestEventOverrides';
 
@@ -14,6 +15,7 @@ const DEFAULT_OPTIONS: DevTestEventOptions = {
   isCanceled: false,
   isOfficial: false,
   isClub: false,
+  eventFormat: EventFormat.Walk,
   makeMeHost: false,
   makeMeGuest: false,
   price: '',
