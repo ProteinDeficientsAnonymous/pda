@@ -14,11 +14,14 @@ from notifications.service import (
 from users.helpers import grant_membership
 from users.models import MembershipStatus, User
 
-from community.attendance.analytics import compute_member_stats, is_compliant
+from community.attendance.analytics import (
+    EMPTY_MEMBER_STATS,
+    is_compliant,
+    member_stats_by_user,
+)
 from community.join_requests._vetting_email import send_vetting_email
 from community.join_requests.approval import maybe_promote_tentative
 from community.models import (
-    EventRSVP,
     MemberRestoredEmailTemplate,
     WhatsAppLinkConfig,
     is_official_or_club,
@@ -74,8 +77,8 @@ def _restore_attendance_paused(request, user: User) -> bool:
     locked = User.objects.select_for_update().get(pk=user.pk)
     if locked.membership_status != MembershipStatus.ATTENDANCE_PAUSED:
         return False
-    rsvps = EventRSVP.objects.filter(user=user).select_related("event")
-    if not is_compliant(compute_member_stats(rsvps)):
+    stats = member_stats_by_user(User.objects.filter(pk=user.pk)).get(user.pk, EMPTY_MEMBER_STATS)
+    if not is_compliant(stats):
         return False
 
     user.attendance_paused_at = None
