@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import type { RefObject } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuthStore } from '@/auth/store';
@@ -6,23 +7,23 @@ import type { CommentReactionSummary, CommentReactor } from '@/models/eventComme
 
 interface Props {
   reaction: CommentReactionSummary;
+  insideRef: RefObject<HTMLElement | null>;
   onClose: () => void;
 }
 
-export function ReactionVoterPopover({ reaction, onClose }: Props) {
-  const ref = useRef<HTMLDivElement | null>(null);
+export function ReactionVoterPopover({ reaction, insideRef, onClose }: Props) {
   const authed = useAuthStore((s) => s.status === 'authed');
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose();
     }
+    // pointerdown, not mousedown: iOS replays a mouse press on the emoji after a long press lifts
     function onDown(e: PointerEvent) {
-      // the pill owns its toggles; iOS replays a mouse press on the emoji when a long-press lifts
-      const pill = ref.current?.parentElement;
-      if (pill && !pill.contains(e.target as Node)) onClose();
+      if (!insideRef.current?.contains(e.target as Node)) onClose();
     }
     document.addEventListener('keydown', onKey);
+    // deferred so the press that opened the popover can't also dismiss it
     const bind = setTimeout(() => {
       document.addEventListener('pointerdown', onDown);
     });
@@ -31,11 +32,10 @@ export function ReactionVoterPopover({ reaction, onClose }: Props) {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onDown);
     };
-  }, [onClose]);
+  }, [insideRef, onClose]);
 
   return (
     <div
-      ref={ref}
       role="dialog"
       aria-label={`who reacted with ${reaction.emoji}`}
       className="border-border bg-surface absolute top-full left-0 z-20 mt-1 min-w-40 rounded-md border p-2 shadow-(--shadow-lg)"

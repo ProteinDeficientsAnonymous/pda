@@ -119,6 +119,53 @@ describe('ReactionBar', () => {
     vi.useRealTimers();
   });
 
+  it('closes the voters when the count is tapped again', () => {
+    vi.useFakeTimers();
+    render(
+      <ReactionBar
+        reactions={[
+          summary(ReactionEmoji.Heart, 1, true, [{ userId: 'u1', name: 'ash', photoUrl: '' }]),
+        ]}
+        onToggle={vi.fn()}
+      />,
+    );
+    const count = screen.getByRole('button', { name: /who reacted with ❤️/u });
+    fireEvent.click(count);
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    fireEvent.pointerDown(count);
+    fireEvent.click(count);
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('closes the voters when the emoji is tapped to toggle', () => {
+    vi.useFakeTimers();
+    const onToggle = vi.fn();
+    render(
+      <ReactionBar
+        reactions={[
+          summary(ReactionEmoji.Heart, 2, true, [{ userId: 'u1', name: 'ash', photoUrl: '' }]),
+        ]}
+        onToggle={onToggle}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /who reacted with ❤️/u }));
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    const emoji = screen.getByRole('button', { name: /react with ❤️/u });
+    fireEvent.pointerDown(emoji, { clientX: 0, clientY: 0, button: 0 });
+    fireEvent.pointerUp(emoji, { button: 0 });
+    fireEvent.click(emoji);
+
+    expect(onToggle).toHaveBeenCalledWith(ReactionEmoji.Heart);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
   it('keeps the voters open when the press drifts off the button', () => {
     vi.useFakeTimers();
     render(

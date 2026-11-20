@@ -105,9 +105,11 @@ function ReactionPill({
   onCloseVoters,
 }: PillProps) {
   const longPress = useLongPress(onOpenVoters);
+  const pillRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
+      ref={pillRef}
       className={[
         'relative inline-flex items-center gap-1 rounded-full border pl-2 text-sm transition',
         r.reactedByMe
@@ -122,6 +124,7 @@ function ReactionPill({
         {...longPress.handlers}
         onClick={() => {
           if (longPress.didLongPress()) return;
+          onCloseVoters();
           onToggle(r.emoji);
         }}
         className="-my-1 inline-flex min-h-11 touch-none items-center select-none [-webkit-touch-callout:none]"
@@ -143,7 +146,9 @@ function ReactionPill({
       >
         {r.count}
       </button>
-      {votersOpen ? <ReactionVoterPopover reaction={r} onClose={onCloseVoters} /> : null}
+      {votersOpen ? (
+        <ReactionVoterPopover reaction={r} insideRef={pillRef} onClose={onCloseVoters} />
+      ) : null}
     </div>
   );
 }

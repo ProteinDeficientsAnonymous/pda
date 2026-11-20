@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { createRef } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -30,7 +31,7 @@ const wrap = (ui: ReactNode) => render(<MemoryRouter>{ui}</MemoryRouter>);
 describe('ReactionVoterPopover', () => {
   it('links each reactor to their profile when authed', () => {
     authStatus.value = 'authed';
-    wrap(<ReactionVoterPopover reaction={reaction} onClose={vi.fn()} />);
+    wrap(<ReactionVoterPopover reaction={reaction} insideRef={createRef()} onClose={vi.fn()} />);
 
     expect(screen.getByRole('link', { name: /ash/ })).toHaveAttribute('href', '/members/u1');
     expect(screen.getByRole('link', { name: /robin/ })).toHaveAttribute('href', '/members/u2');
@@ -40,7 +41,7 @@ describe('ReactionVoterPopover', () => {
     authStatus.value = 'authed';
     const onClose = vi.fn();
     const { default: userEvent } = await import('@testing-library/user-event');
-    wrap(<ReactionVoterPopover reaction={reaction} onClose={onClose} />);
+    wrap(<ReactionVoterPopover reaction={reaction} insideRef={createRef()} onClose={onClose} />);
 
     await userEvent.click(screen.getByRole('link', { name: /ash/ }));
     expect(onClose).toHaveBeenCalled();
@@ -48,7 +49,7 @@ describe('ReactionVoterPopover', () => {
 
   it('renders names without links when signed out', () => {
     authStatus.value = 'unauthed';
-    wrap(<ReactionVoterPopover reaction={reaction} onClose={vi.fn()} />);
+    wrap(<ReactionVoterPopover reaction={reaction} insideRef={createRef()} onClose={vi.fn()} />);
 
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
     expect(screen.getByText('ash')).toBeInTheDocument();
