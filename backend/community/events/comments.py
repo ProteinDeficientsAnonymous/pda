@@ -38,6 +38,7 @@ from community.models import (
     EventCommentReaction,
     EventRSVP,
     ReactionEmoji,
+    RSVPStatus,
 )
 from community.shared import ErrorOut, optional_jwt
 from community.validation import Code, raise_validation
@@ -51,7 +52,9 @@ router = Router()
 def _viewer_has_rsvp(event: Event, user) -> bool:
     if user is None:
         return False
-    return EventRSVP.objects.filter(event=event, user=user).exists()
+    return (
+        EventRSVP.objects.filter(event=event, user=user).exclude(status=RSVPStatus.REMOVED).exists()
+    )
 
 
 def _can_post_comments(

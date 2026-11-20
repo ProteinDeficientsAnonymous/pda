@@ -19,12 +19,13 @@ from community.dev_tools._populate import (
     populate_rsvps,
 )
 from community.dev_tools.seed_guard import is_seed_allowed
-from community.events.helpers import event_out
+from community.events.helpers import event_out, validated_event_format
 from community.events.price import parse_price
 from community.events.schemas import EventOut
 from community.field_limits import FieldLimit
 from community.models import (
     Event,
+    EventFormat,
     EventRSVP,
     EventStatus,
     EventType,
@@ -46,6 +47,7 @@ class DevTestEventIn(BaseModel):
     is_canceled: bool = False
     is_official: bool = False
     is_club: bool = False
+    event_format: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     make_me_host: bool = False
     make_me_guest: bool = False
     price: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
@@ -103,9 +105,16 @@ def _event_type(payload: DevTestEventIn) -> str:
     return EventType.COMMUNITY
 
 
+def _event_format(payload: DevTestEventIn, event_type: str) -> str:
+    event_format = validated_event_format(payload.event_format, event_type)
+    if event_type == EventType.OFFICIAL:
+        return event_format or EventFormat.WALK
+    return event_format
+
+
 @router.post(
     "/dev/test-events/",
-    response={201: EventOut, 404: ErrorOut},
+    response={201: EventOut, 404: ErrorOut, 422: ErrorOut},
     auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
@@ -115,6 +124,7 @@ def create_dev_test_event(request, payload: DevTestEventIn):
     start, end = _event_datetimes(payload)
     status = EventStatus.CANCELLED if payload.is_canceled else EventStatus.ACTIVE
     event_type = _event_type(payload)
+    event_format = _event_format(payload, event_type)
     # Mirrors create_event's official/club rules, which this dev endpoint bypasses.
     official_or_club = is_official_or_club(event_type)
     visibility = PageVisibility.PUBLIC if official_or_club else payload.visibility
@@ -132,6 +142,7 @@ def create_dev_test_event(request, payload: DevTestEventIn):
         start_datetime=start,
         end_datetime=end,
         event_type=event_type,
+        event_format=event_format,
         visibility=visibility,
         rsvp_enabled=payload.rsvp_enabled,
         max_attendees=max_attendees,

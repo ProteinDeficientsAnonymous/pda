@@ -8,7 +8,7 @@ from users._auth import router as auth_router
 from users._magic_links import router as magic_links_router
 from users._magic_login import router as magic_login_router
 from users._management import router as management_router
-from users._management import search_users, update_user  # re-exported
+from users._management import search_users, update_user, update_user_roles  # re-exported
 from users._members import router as members_router
 from users._restored import router as restored_router
 from users._roles import list_roles  # re-exported
@@ -30,6 +30,7 @@ __all__ = [
     "router",
     "search_users",
     "update_user",
+    "update_user_roles",
 ]
 
 assert user_deletion_router is management_router

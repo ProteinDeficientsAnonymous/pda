@@ -69,7 +69,7 @@ test('member screens', async ({ page }) => {
     screen('notifications', '/notifications', { heading: 'notifications' }),
     screen('members', '/members', { text: 'Jamie Okafor' }),
     screen('my-events', '/events/mine', { text: 'potluck' }),
-    screen('event', '/events/potluck', { text: 'the park' }),
+    screen('event', '/events/potluck', { text: '$10 · deposit' }),
     screen('calendar-member', `/calendar?date=${data.calendar_date}&view=month`, {
       text: 'potluck',
     }),
@@ -90,6 +90,17 @@ test('member screens', async ({ page }) => {
     screen('past-event', '/events/hike', { text: 'the woods' }),
     screen('cancelled-event', '/events/picnic', { text: 'cancelled' }),
   ]);
+
+  // Money is collapsed on create/edit; open it so the price note field is in the shot.
+  await page.goto('/events/potluck/edit');
+  await expect(page.getByLabel('title')).toBeVisible();
+  await page.getByRole('button', { name: 'money' }).click();
+  const money = page.locator('section').filter({
+    has: page.getByRole('button', { name: 'money' }),
+  });
+  await expect(money.getByLabel('price note')).toHaveValue('deposit');
+  await hideBottomNav(page);
+  await shot(page, 'event-money', { locator: money });
 
   await page.goto('/events/mine');
   await page.locator('label', { has: page.getByRole('radio', { name: 'past' }) }).click();

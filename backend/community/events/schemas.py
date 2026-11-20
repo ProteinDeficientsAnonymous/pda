@@ -142,6 +142,7 @@ class EventListOut(BaseModel):
     event_type: str = EventType.COMMUNITY
     visibility: str = PageVisibility.PUBLIC
     price: str = ""
+    price_note: str = ""
     co_host_ids: list[str] = []
     datetime_tbd: bool = False
     has_poll: bool = False
@@ -172,6 +173,7 @@ class EventOut(BaseModel):
     partiful_link: str = ""
     other_link: str = ""
     price: str = ""
+    price_note: str = ""
     venmo_link: str = ""
     cashapp_link: str = ""
     zelle_info: str = ""
@@ -326,6 +328,7 @@ class EventIn(BaseModel):
     partiful_link: str = Field(default="", max_length=FieldLimit.URL)
     other_link: str = Field(default="", max_length=FieldLimit.URL)
     price: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
+    price_note: str = Field(default="", max_length=FieldLimit.PRICE_NOTE)
     venmo_link: str = Field(default="", max_length=FieldLimit.PAYMENT_HANDLE)
     cashapp_link: str = Field(default="", max_length=FieldLimit.PAYMENT_HANDLE)
     zelle_info: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
@@ -408,6 +411,7 @@ class EventPatchIn(BaseModel):
     partiful_link: str | None = Field(default=None, max_length=FieldLimit.URL)
     other_link: str | None = Field(default=None, max_length=FieldLimit.URL)
     price: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    price_note: str | None = Field(default=None, max_length=FieldLimit.PRICE_NOTE)
     venmo_link: str | None = Field(default=None, max_length=FieldLimit.PAYMENT_HANDLE)
     cashapp_link: str | None = Field(default=None, max_length=FieldLimit.PAYMENT_HANDLE)
     zelle_info: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
