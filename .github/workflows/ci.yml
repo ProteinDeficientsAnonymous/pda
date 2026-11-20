@@ -256,8 +256,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      # A PR must not be able to weaken the gate that judges it: run the base branch's copy.
+      - name: Load gate scripts from the base branch
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          for f in scripts/check_anti_tampering.py scripts/check_diff_tampering.py; do
+            git checkout "$BASE_SHA" -- "$f" 2>/dev/null || echo "::notice::$f is new in this PR; using the PR copy"
+          done
+
       - name: Check for suppressions or skipped tests
-        run: make check-anti-tampering
+        run: python3 scripts/check_anti_tampering.py
+
+      # observe mode: annotates weakened tests and gate-config edits; switch to --enforce once quiet
+      - name: Check diff for weakened tests and gate-config edits
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python3 scripts/check_diff_tampering.py --base "$BASE_SHA"
 
   secrets:
     name: Secrets
@@ -272,6 +287,7 @@ jobs:
       - name: gitleaks
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git checkout "${{ github.event.pull_request.base.sha }}" -- .gitleaks.toml
             range="${{ github.event.pull_request.base.sha }}..HEAD"
           elif [ "${{ github.event_name }}" = "merge_group" ]; then
             range="${{ github.event.merge_group.base_sha }}..HEAD"
@@ -283,6 +299,57 @@ jobs:
           docker run --rm -v "$PWD:/repo" -w /repo \
             zricethezav/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
             detect --redact --config .gitleaks.toml --log-opts="$range"
+
+  # observe mode: both steps annotate and write a summary but never fail; add --enforce once trusted
+  test-strength:
+    name: Test strength
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pda
+          POSTGRES_PASSWORD: pda
+          POSTGRES_DB: pda
+        ports:
+          - 5432:5432
+        options: >-
+          --tmpfs /var/lib/postgresql/data
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://pda:pda@localhost:5432/pda
+      SECRET_KEY: ci-only-not-used-in-prod
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Fail-to-pass (fix PRs only)
+        if: startsWith(github.event.pull_request.title, 'fix')
+        run: python3 scripts/check_fail_to_pass.py --base "$BASE_SHA"
+
+      - name: Diff-scoped mutation testing
+        run: python3 scripts/run_mutation.py --base "$BASE_SHA"
 
   sast:
     name: SAST

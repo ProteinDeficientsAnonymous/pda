@@ -62,7 +62,7 @@ endif
         agent-frontend-oxlint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
         agent-frontend-test agent-frontend-e2e agent-frontend-typecheck \
         diff-coverage agent-diff-coverage-backend agent-diff-coverage-frontend \
-        check-anti-tampering sast mutation
+        check-anti-tampering check-diff-tampering check-fail-to-pass sast mutation
 
 help:
 	@echo "Backend commands:"
@@ -118,6 +118,8 @@ help:
 	@echo "  make agent-test-since Quiet test-since (same selection rules)"
 	@echo "  make diff-coverage    Run tests with coverage; fail if changed lines vs DIFF_COVER_BASE (origin/main) are <80% covered"
 	@echo "  make check-anti-tampering  Fail if the tree has lint/type suppressions or skipped tests"
+	@echo "  make check-diff-tampering  Warn on weakened tests or gate-config edits vs DIFF_COVER_BASE"
+	@echo "  make check-fail-to-pass  For a fix: changed backend tests must fail on the base code"
 	@echo "  make sast             Run bandit high-severity SAST scan on backend"
 	@echo "  make mutation         Run diff-scoped mutation testing on changed backend files"
 
@@ -403,6 +405,12 @@ diff-coverage:
 
 check-anti-tampering:
 	python3 scripts/check_anti_tampering.py
+
+check-diff-tampering:
+	python3 scripts/check_diff_tampering.py
+
+check-fail-to-pass:
+	python3 scripts/check_fail_to_pass.py
 
 sast:
 	UV_NO_PROGRESS=1 uvx -q bandit -q -lll -r backend -x backend/tests,backend/community/migrations,backend/users/migrations
