@@ -1,3 +1,10 @@
+# [0.270.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.269.0...v0.270.0) (2026-11-20)
+
+
+### Features
+
+* 2122 - add per-event paypal toggle with fee-inclusive price ([#2266](https://github.com/ProteinDeficientsAnonymous/pda/issues/2266)) ([3048554](https://github.com/ProteinDeficientsAnonymous/pda/commit/3048554bb8a44ef9ff955c5d1732027d050e0440))
+
 # [0.269.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.268.1...v0.269.0) (2026-11-20)
 
 
