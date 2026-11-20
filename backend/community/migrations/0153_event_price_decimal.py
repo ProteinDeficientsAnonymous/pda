@@ -4,6 +4,7 @@ from django.db import migrations, models
 
 _AMOUNT = re.compile(r"\$?(?:\d[\d,]*(?:\.\d+)?|\.\d+)")
 _MAX_PRICE = 100000
+_PAYMENT_METHODS = {"cashapp", "cash app", "venmo", "zelle", "paypal"}
 
 
 def split_price(raw: str | None) -> tuple[str | None, str]:
@@ -16,7 +17,9 @@ def split_price(raw: str | None) -> tuple[str | None, str]:
     amount = amounts[0].lstrip("$").replace(",", "")
     if not 0 < float(amount) < _MAX_PRICE:
         return None, raw
-    return amount, raw.replace(amounts[0], "", 1).strip(" -–—:,")
+    note = raw.replace(amounts[0], "", 1).strip(" -–—:,")
+    # The payment links already name the method, so "$10 - cashapp" needs no note.
+    return amount, "" if note.lower() in _PAYMENT_METHODS else note
 
 
 def to_numeric_text(apps, schema_editor):
