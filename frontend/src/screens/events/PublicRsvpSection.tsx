@@ -6,7 +6,7 @@ import { areRsvpsClosed, type Event } from '@/models/event';
 
 import { CostSection } from './EventMemberSection';
 import { PublicRsvpForm } from './PublicRsvpForm';
-import { RsvpDeadlineNote } from './RsvpDeadline';
+import { RsvpDeadlineNote, RsvpsClosedButton } from './RsvpDeadline';
 
 interface Props {
   event: Event;
@@ -26,6 +26,7 @@ export function PublicRsvpSection({ event }: Props) {
     return (
       <div className="mt-8 flex flex-col gap-6">
         <CostSection event={event} />
+        <RsvpsClosedButton />
         <RsvpDeadlineNote event={event} closed />
         <p className="text-foreground-secondary text-center text-sm">
           already going? sign in, or use the link in your confirmation email, to change your rsvp

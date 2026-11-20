@@ -74,6 +74,7 @@ describe('MyRsvpSection — past the rsvp deadline', () => {
   it('hides the rsvp button and explains why', () => {
     renderSection(makeEvent({ myRsvp: null, rsvpDeadline: deadline }), true);
     expect(screen.queryByRole('button', { name: 'rsvp' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'rsvps are closed' })).toBeDisabled();
     expect(screen.getByText(/new rsvps aren't being taken/)).toBeInTheDocument();
   });
 
@@ -119,5 +120,20 @@ describe('MyRsvpSection — host past the rsvp deadline', () => {
     renderSection(makeEvent({ myRsvp: null, rsvpDeadline: deadline }));
     rsvpMaybe();
     await expectSavedWithoutPopUp();
+  });
+});
+
+describe('MyRsvpSection — host closed rsvps', () => {
+  const closed = makeEvent({ myRsvp: null, rsvpsClosed: true, maxAttendees: 1, attendingCount: 1 });
+
+  it('shows a dimmed closed button instead of join the waitlist', () => {
+    renderSection(closed, true);
+    expect(screen.queryByRole('button', { name: 'join the waitlist' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'rsvps are closed' })).toBeDisabled();
+  });
+
+  it('shows it to a host too, who skips the guest gate', () => {
+    renderSection(closed);
+    expect(screen.getByRole('button', { name: 'rsvps are closed' })).toBeDisabled();
   });
 });

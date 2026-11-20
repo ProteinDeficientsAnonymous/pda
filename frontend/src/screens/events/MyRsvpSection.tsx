@@ -19,7 +19,8 @@ import {
 
 import { MyOrderTotal } from './MyOrderTotal';
 import { RsvpBox } from './RsvpBox';
-import { MaybeDeadlineDialog, RsvpDeadlineNote } from './RsvpDeadline';
+import { MaybeDeadlineDialog, RsvpDeadlineNote, RsvpsClosedButton } from './RsvpDeadline';
+import { RSVP_PILL_CLASSES } from './rsvpPill';
 import type { RsvpAnswerValue } from './rsvpQuestions';
 
 interface Props {
@@ -186,6 +187,7 @@ export function MyRsvpSection({ event, token, locked = false, rsvpsClosed = fals
           busy={busy}
           locked={locked}
           closed={rsvpsClosed}
+          noNewRsvps={rsvpsClosed || event.rsvpsClosed}
           onOpenCreate={(status) => {
             setError(null);
             setBox({ mode: 'create', initialStatus: status });
@@ -257,15 +259,13 @@ export function MyRsvpSection({ event, token, locked = false, rsvpsClosed = fals
   );
 }
 
-const RSVP_PILL_CLASSES =
-  'mx-auto inline-flex h-12 min-w-28 items-center justify-center rounded-full px-5 text-base font-medium bg-brand-600 text-brand-on';
-
 function RsvpControls({
   myInputStatus,
   atCapacity,
   busy,
   locked,
   closed,
+  noNewRsvps,
   onOpenCreate,
   onOpenEdit,
 }: {
@@ -274,9 +274,12 @@ function RsvpControls({
   busy: boolean;
   locked?: boolean;
   closed: boolean;
+  // Hosts skip `closed` but still shouldn't be offered a fresh rsvp on a host-closed event.
+  noNewRsvps: boolean;
   onOpenCreate: (status: RsvpInputStatus) => void;
   onOpenEdit: () => void;
 }) {
+  if (!myInputStatus && noNewRsvps && !locked) return <RsvpsClosedButton />;
   if (locked || closed) {
     if (!myInputStatus) return null;
     const labels = locked ? PAST_STATUS_LABELS : STATUS_BADGE_LABELS;

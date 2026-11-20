@@ -172,9 +172,7 @@ describe('PublicRsvpSection — rsvp deadline', () => {
       </MemoryRouter>,
     );
     expect(screen.queryByRole('heading', { name: 'rsvp' })).not.toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(
-      "rsvps are closed — new rsvps aren't being taken",
-    );
+    expect(screen.getByRole('button', { name: 'rsvps are closed' })).toBeDisabled();
   });
 
   it('closes on its own when the deadline passes while the page is open', () => {
