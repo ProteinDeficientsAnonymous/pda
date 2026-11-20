@@ -36,6 +36,7 @@ Object.defineProperty(window, 'localStorage', { value: storageMock, writable: tr
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  vi.mocked(window.scrollTo).mockClear();
 });
 
 // jsdom doesn't implement ResizeObserver — provide a no-op stub so components
