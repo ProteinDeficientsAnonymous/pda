@@ -6,6 +6,7 @@ from community.events.limited_access import (
 )
 from community.events.unpublish import clear_unpublished_side_effects
 from community.models import (
+    HELD_RSVP_STATUSES,
     AttendanceStatus,
     CancelReason,
     CoHostInviteStatus,
@@ -27,7 +28,6 @@ from notifications.event_unpublished_email import (
 from notifications.service import create_event_unpublished_notifications
 
 from users._archive import (
-    HELD_RSVP_STATUSES,
     leave_cohost,
     release_upcoming_rsvps,
     step_down_as_cohost,

@@ -2,6 +2,7 @@ from collections.abc import Iterable
 
 from community.events.helpers import broadcast_capacity_change
 from community.models import (
+    HELD_RSVP_STATUSES,
     CancelReason,
     CoHostInviteStatus,
     Event,
@@ -20,7 +21,6 @@ from notifications.service import broadcast_cohost_change
 
 from users.models import User
 
-HELD_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.WAITLISTED)
 _LIVE_EVENT_STATUSES = (EventStatus.DRAFT, EventStatus.ACTIVE)
 
 

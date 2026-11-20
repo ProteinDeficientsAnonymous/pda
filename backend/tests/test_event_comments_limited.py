@@ -21,14 +21,16 @@ def attendance_paused_user(db):
     return make_attendance_paused(first_name="Paused")
 
 
-def _event_with_released_rsvp(host: User, user: User, event_type: EventType) -> Event:
+def _event_with_released_rsvp(
+    host: User, user: User, event_type: EventType, status: RSVPStatus = RSVPStatus.CANT_GO
+) -> Event:
     event = Event.objects.create(
         title="Event",
         start_datetime=future_iso(days=10),
         created_by=host,
         event_type=event_type,
     )
-    EventRSVP.objects.create(event=event, user=user, status=RSVPStatus.CANT_GO)
+    EventRSVP.objects.create(event=event, user=user, status=status)
     return event
 
 
@@ -77,7 +79,10 @@ class TestLimitedUserComments:
     def test_paused_user_can_post_on_official_event_they_rsvpd_to(
         self, api_client, test_user, attendance_paused_user
     ):
-        event = _event_with_released_rsvp(test_user, attendance_paused_user, EventType.OFFICIAL)
+        # Pausing keeps official-event rsvps held.
+        event = _event_with_released_rsvp(
+            test_user, attendance_paused_user, EventType.OFFICIAL, RSVPStatus.ATTENDING
+        )
         response = _post(api_client, event, attendance_paused_user)
         assert response.status_code == 201, response.content
 

@@ -33,6 +33,7 @@ from community.events.limited_access import enforce_limited_write_access, event_
 from community.events.read_visibility import enforce_event_read_visibility
 from community.events.viewer import resolve_event_viewer
 from community.models import (
+    HELD_RSVP_STATUSES,
     Event,
     EventComment,
     EventCommentReaction,
@@ -51,7 +52,7 @@ router = Router()
 def _viewer_has_rsvp(event: Event, user) -> bool:
     if user is None:
         return False
-    return EventRSVP.objects.filter(event=event, user=user).exists()
+    return EventRSVP.objects.filter(event=event, user=user, status__in=HELD_RSVP_STATUSES).exists()
 
 
 def _can_post_comments(
