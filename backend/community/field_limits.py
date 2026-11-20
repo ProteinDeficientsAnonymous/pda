@@ -16,6 +16,7 @@ class FieldLimit:
     OPTION_TEXT = 200
     CHOICE = 20
     PAYMENT_HANDLE = 100
+    PRICE_NOTE = 100
     BIO = 500
     PRONOUNS = 100
     NICKNAME = 64
