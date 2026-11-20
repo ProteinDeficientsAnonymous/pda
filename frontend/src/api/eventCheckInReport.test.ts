@@ -23,17 +23,17 @@ beforeEach(() => {
 });
 
 describe('useCheckInReport', () => {
-  it('maps unmarked going and not-going guests into separate lists', async () => {
+  it('maps unmarked going, not-going and canceled guests', async () => {
     mockedGet.mockResolvedValueOnce({
       data: {
         attended_count: 0,
         no_show_count: 0,
-        canceled_count: 0,
+        canceled_count: 1,
         unmarked_going_count: 1,
         unmarked_not_going_count: 1,
         attended: [],
         no_shows: [],
-        canceled: [],
+        canceled: [{ ...wirePerson('left'), cancelled_at: '2026-11-01T12:00:00Z' }],
         unmarked_going: [wirePerson('going')],
         unmarked_not_going: [wirePerson('maybe')],
       },
@@ -47,5 +47,6 @@ describe('useCheckInReport', () => {
     expect(result.current.data?.unmarkedNotGoingCount).toBe(1);
     expect(result.current.data?.unmarkedGoing.map((p) => p.userId)).toEqual(['going']);
     expect(result.current.data?.unmarkedNotGoing.map((p) => p.userId)).toEqual(['maybe']);
+    expect(result.current.data?.canceled[0]?.cancelledAt).toEqual(new Date('2026-11-01T12:00:00Z'));
   });
 });
