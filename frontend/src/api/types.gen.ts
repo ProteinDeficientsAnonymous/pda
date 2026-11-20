@@ -3360,16 +3360,6 @@ export interface components {
              */
             canceled_count: number;
             /**
-             * Didnt Go
-             * @default []
-             */
-            didnt_go: components["schemas"]["CheckInReportPersonOut"][];
-            /**
-             * Didnt Go Count
-             * @default 0
-             */
-            didnt_go_count: number;
-            /**
              * No Show Count
              * @default 0
              */
@@ -3380,15 +3370,25 @@ export interface components {
              */
             no_shows: components["schemas"]["CheckInReportPersonOut"][];
             /**
-             * Unmarked
+             * Unmarked Going
              * @default []
              */
-            unmarked: components["schemas"]["CheckInReportPersonOut"][];
+            unmarked_going: components["schemas"]["CheckInReportPersonOut"][];
             /**
-             * Unmarked Count
+             * Unmarked Going Count
              * @default 0
              */
-            unmarked_count: number;
+            unmarked_going_count: number;
+            /**
+             * Unmarked Not Going
+             * @default []
+             */
+            unmarked_not_going: components["schemas"]["CheckInReportPersonOut"][];
+            /**
+             * Unmarked Not Going Count
+             * @default 0
+             */
+            unmarked_not_going_count: number;
         };
         /** CheckInReportPersonOut */
         CheckInReportPersonOut: {
