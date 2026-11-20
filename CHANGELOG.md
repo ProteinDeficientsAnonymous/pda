@@ -1,3 +1,10 @@
+# [0.259.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.258.1...v0.259.0) (2026-11-20)
+
+
+### Features
+
+* **mcp:** let hosts read event questionnaire responses ([#2253](https://github.com/ProteinDeficientsAnonymous/pda/issues/2253)) ([cd31f1c](https://github.com/ProteinDeficientsAnonymous/pda/commit/cd31f1ce6b0371f7b2d7951c2179d4be33954ee9))
+
 ## [0.258.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.258.0...v0.258.1) (2026-11-19)
 
 
