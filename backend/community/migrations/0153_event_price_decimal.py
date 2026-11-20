@@ -26,7 +26,7 @@ def to_blank_text(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0150_join_form_checkbox_question"),
+        ("community", "0152_perf_indexes"),
     ]
 
     operations = [

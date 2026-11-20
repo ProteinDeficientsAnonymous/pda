@@ -6533,6 +6533,11 @@ export interface components {
              */
             cant_go: string[];
             /**
+             * Co Hosts
+             * @default []
+             */
+            co_hosts: string[];
+            /**
              * Invited
              * @default []
              */
