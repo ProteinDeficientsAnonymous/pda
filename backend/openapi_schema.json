@@ -2980,11 +2980,6 @@
             "title": "Paypal Price",
             "type": "string"
           },
-          "paypal_price_plus_one": {
-            "default": "",
-            "title": "Paypal Price Plus One",
-            "type": "string"
-          },
           "pending_cohost_invites": {
             "default": [],
             "items": {

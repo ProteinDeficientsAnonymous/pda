@@ -371,9 +371,6 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
         zelle_info=gated(event.zelle_info, "", show_payment_details),
         accept_paypal=event.accept_paypal,
         paypal_price=price_text(offered_paypal_price(event)),
-        paypal_price_plus_one=price_text(
-            offered_paypal_price(event, 2) if event.allow_plus_ones else None
-        ),
         rsvp_enabled=event.rsvp_enabled,
         datetime_tbd=event.datetime_tbd,
         allow_plus_ones=event.allow_plus_ones,

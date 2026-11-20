@@ -2,9 +2,15 @@ import json
 from decimal import ROUND_HALF_UP, Decimal
 
 import pytest
+from community.models import Event, EventType
 from community.paypal.price import FIXED_FEE, PERCENT_FEE, offered_paypal_price, paypal_price
 from community.rsvps.payment import event_requires_payment_confirmation
+from community.validation import Code
+from users.models import User
+from users.permissions import PermissionKey
+from users.roles import Role
 
+from tests._auth import auth_headers_for
 from tests._payment_helpers import build_paid_event
 from tests._time import future_iso
 
@@ -40,9 +46,9 @@ class TestOfferedPaypalPrice:
     def test_none_without_a_price(self):
         assert offered_paypal_price(build_paid_event(price=None, accept_paypal=True)) is None
 
-    def test_plus_one_doubles_the_base_not_the_fee(self):
+    def test_fee_inclusive_when_on(self):
         event = build_paid_event(price=Decimal("10"), accept_paypal=True)
-        assert offered_paypal_price(event, 2) == Decimal("21.24")
+        assert offered_paypal_price(event) == Decimal("10.87")
 
 
 def test_paypal_alone_counts_as_a_payment_method():
@@ -50,39 +56,65 @@ def test_paypal_alone_counts_as_a_payment_method():
     assert event_requires_payment_confirmation(event) is True
 
 
+@pytest.fixture
+def official_headers(db):
+    user = User.objects.create_user(phone_number="+14155558888", password="pass12345")
+    user.roles.add(
+        Role.objects.create(name="official_tagger", permissions=[PermissionKey.TAG_OFFICIAL_EVENT])
+    )
+    return auth_headers_for(user)
+
+
 @pytest.mark.django_db
 class TestEventPaypalApi:
-    def _create(self, api_client, auth_headers, **fields):
-        body = {"title": "Dinner", "start_datetime": future_iso(), **fields}
-        resp = api_client.post(
+    def _post(self, api_client, headers, **fields):
+        body = {"title": "Dinner", "start_datetime": future_iso(), "price": "10", **fields}
+        return api_client.post(
             "/api/community/events/",
             data=json.dumps(body),
             content_type="application/json",
-            **auth_headers,
+            **headers,
         )
+
+    def _patch(self, api_client, headers, event_id, **fields):
+        return api_client.patch(
+            f"/api/community/events/{event_id}/",
+            data=json.dumps(fields),
+            content_type="application/json",
+            **headers,
+        )
+
+    def _official(self, api_client, headers):
+        resp = self._post(api_client, headers, event_type=EventType.OFFICIAL, accept_paypal=True)
         assert resp.status_code == 201
         return resp.json()
 
     def test_paypal_is_off_by_default(self, api_client, auth_headers):
-        body = self._create(api_client, auth_headers, price="10")
+        body = self._post(api_client, auth_headers).json()
         assert (body["accept_paypal"], body["paypal_price"]) == (False, "")
 
-    def test_on_with_a_price_returns_fee_inclusive_prices(self, api_client, auth_headers):
-        body = self._create(
-            api_client, auth_headers, price="10", accept_paypal=True, allow_plus_ones=True
-        )
-        assert (body["paypal_price"], body["paypal_price_plus_one"]) == ("10.87", "21.24")
+    def test_official_event_returns_the_fee_inclusive_price(self, api_client, official_headers):
+        body = self._official(api_client, official_headers)
+        assert (body["accept_paypal"], body["paypal_price"]) == (True, "10.87")
 
-    def test_plus_one_price_is_blank_when_plus_ones_are_off(self, api_client, auth_headers):
-        body = self._create(api_client, auth_headers, price="10", accept_paypal=True)
-        assert (body["paypal_price"], body["paypal_price_plus_one"]) == ("10.87", "")
+    def test_create_rejects_paypal_on_a_community_event(self, api_client, auth_headers):
+        resp = self._post(api_client, auth_headers, accept_paypal=True)
+        assert resp.status_code == 422
+        assert [e["code"] for e in resp.json()["detail"]] == [Code.Event.PAYPAL_OFFICIAL_ONLY]
 
-    def test_patch_turns_paypal_off(self, api_client, auth_headers):
-        event_id = self._create(api_client, auth_headers, price="10", accept_paypal=True)["id"]
-        resp = api_client.patch(
-            f"/api/community/events/{event_id}/",
-            data=json.dumps({"accept_paypal": False}),
-            content_type="application/json",
-            **auth_headers,
-        )
+    def test_patch_rejects_paypal_on_a_community_event(self, api_client, auth_headers):
+        event_id = self._post(api_client, auth_headers).json()["id"]
+        resp = self._patch(api_client, auth_headers, event_id, accept_paypal=True)
+        assert resp.status_code == 422
+        assert Event.objects.get(pk=event_id).accept_paypal is False
+
+    def test_patch_turns_paypal_off(self, api_client, official_headers):
+        event_id = self._official(api_client, official_headers)["id"]
+        resp = self._patch(api_client, official_headers, event_id, accept_paypal=False)
         assert (resp.json()["accept_paypal"], resp.json()["paypal_price"]) == (False, "")
+
+    def test_leaving_official_turns_paypal_off(self, api_client, official_headers):
+        event_id = self._official(api_client, official_headers)["id"]
+        resp = self._patch(api_client, official_headers, event_id, event_type=EventType.COMMUNITY)
+        assert resp.status_code == 200
+        assert resp.json()["accept_paypal"] is False

@@ -4305,11 +4305,6 @@ export interface components {
              */
             paypal_price: string;
             /**
-             * Paypal Price Plus One
-             * @default
-             */
-            paypal_price_plus_one: string;
-            /**
              * Pending Cohost Invites
              * @default []
              */

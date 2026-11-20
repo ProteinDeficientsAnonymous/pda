@@ -73,6 +73,7 @@ from community.models import (
     is_official_or_club,
     parse_event_ref,
 )
+from community.paypal.eligibility import ensure_paypal_allowed
 from community.rsvps.answers import can_see_guest_questionnaire_responses
 from community.rsvps.host_auto import auto_rsvp_host, auto_rsvp_hosts
 from community.rsvps.serialize import with_guest_photos
@@ -217,6 +218,7 @@ def create_event(request, payload: EventIn):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
 
     event_format = validated_event_format(payload.event_format, payload.event_type)
+    ensure_paypal_allowed(payload.accept_paypal, payload.event_type)
 
     if payload.allow_plus_ones and is_official_or_club(payload.event_type):
         raise_validation(Code.Event.OFFICIAL_NO_PLUS_ONES, status_code=400)

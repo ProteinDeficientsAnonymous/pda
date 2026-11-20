@@ -176,9 +176,8 @@ class EventOut(BaseModel):
     cashapp_link: str = ""
     zelle_info: str = ""
     accept_paypal: bool = False
-    # Fee-inclusive totals; "" when paypal isn't offered (or, for plus_one, +1s aren't allowed).
+    # Fee-inclusive total; "" when paypal isn't offered.
     paypal_price: str = ""
-    paypal_price_plus_one: str = ""
     rsvp_enabled: bool = False
     created_by_id: str | None = None
     created_by_name: str | None = None

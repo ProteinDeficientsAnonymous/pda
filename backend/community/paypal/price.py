@@ -13,8 +13,8 @@ def paypal_price(amount: Decimal) -> Decimal:
     return ((amount + FIXED_FEE) / (1 - PERCENT_FEE)).quantize(_CENT, rounding=ROUND_CEILING)
 
 
-def offered_paypal_price(event: Event, people: int = 1) -> Decimal | None:
+def offered_paypal_price(event: Event) -> Decimal | None:
     """return(None): the event doesn't take paypal or has no price."""
     if not event.accept_paypal or not event.price:
         return None
-    return paypal_price(Decimal(event.price) * people)
+    return paypal_price(Decimal(event.price))
