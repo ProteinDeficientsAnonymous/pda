@@ -1,3 +1,10 @@
+## [0.277.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.277.0...v0.277.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **events:** drop didn't-go section, split unmarked on check-in report ([#2630](https://github.com/ProteinDeficientsAnonymous/pda/issues/2630)) ([a9ff187](https://github.com/ProteinDeficientsAnonymous/pda/commit/a9ff1871b4484b16ed320b1914d2f0554553aa2a))
+
 # [0.277.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.276.0...v0.277.0) (2026-11-20)
 
 
