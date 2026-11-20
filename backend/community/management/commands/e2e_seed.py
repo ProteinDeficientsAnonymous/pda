@@ -42,6 +42,7 @@ from ._e2e_common import (
     random_event,
     random_phone,
 )
+from ._e2e_planning import seed_view_planner
 
 
 def _seed_member() -> dict:
@@ -468,6 +469,7 @@ SCENARIOS = {
     "attendance-analytics": seed_attendance_analytics,
     "waitlist-screens": _seed_waitlist_screens,
     "event-feedback": _seed_event_feedback,
+    "view-planner": seed_view_planner,
 }
 
 
