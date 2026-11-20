@@ -10,6 +10,7 @@ import { Code } from '@/api/validationCodes';
 import { QuestionField } from '@/components/questions/QuestionField';
 import { visibleQuestionIds } from '@/components/questions/questionVisibility';
 import { Button } from '@/components/ui/Button';
+import { useScrollToTopOnMount } from '@/hooks/useScrollToTopOnMount';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 const INVALID_LINK = "this feedback link doesn't work — it may have expired";
@@ -49,6 +50,7 @@ export default function FeedbackScreen() {
 }
 
 function Notice({ message }: { message: string }) {
+  useScrollToTopOnMount();
   return (
     <ContentContainer>
       <p

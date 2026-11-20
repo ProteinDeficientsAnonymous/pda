@@ -6,6 +6,8 @@ import time
 
 bind = "0.0.0.0:8000"
 worker_class = "uvicorn.workers.UvicornWorker"
+# Keep nginx as REMOTE_ADDR; uvicorn would swap in the 100.64 XFF hop and defeat client_ip().
+forwarded_allow_ips = ""
 # >1 so a max-age recycle never leaves the app with no worker accepting requests.
 workers = int(os.environ.get("WEB_CONCURRENCY", "2"))
 # Sized above observed production bursts (~1900 req/hour); max-age bounds RSS.

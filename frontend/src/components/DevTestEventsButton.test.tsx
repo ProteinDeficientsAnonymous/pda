@@ -113,6 +113,32 @@ describe('DevTestEventsButton', () => {
     expect(plusOnes).toHaveAttribute('aria-checked', 'false');
   });
 
+  it('shows the walk toggle only for official events and sends the format', async () => {
+    const user = userEvent.setup();
+    mockUseVersion.mockReturnValue({
+      data: { commitSha: 'a', commitShaShort: 'a', environment: 'local' },
+    } as ReturnType<typeof useVersion>);
+    const mutateAsync = vi.fn().mockResolvedValue({ id: '1', slug: 'test-event' });
+    mockUseCreate.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useCreateDevTestEvents>);
+
+    renderButton();
+    await user.click(screen.getByLabelText('dev test events'));
+    expect(screen.queryByRole('switch', { name: "it's a walk" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('switch', { name: 'official event' }));
+    const walk = screen.getByRole('switch', { name: "it's a walk" });
+    expect(walk).toHaveAttribute('aria-checked', 'true');
+    await user.click(walk);
+    await user.click(screen.getByRole('button', { name: 'create' }));
+
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ isOfficial: true, eventFormat: 'restaurant' }),
+    );
+  });
+
   it('sends question and waitlist counts, capping questions at 10', async () => {
     const user = userEvent.setup();
     mockUseVersion.mockReturnValue({
