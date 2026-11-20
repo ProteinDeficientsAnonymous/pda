@@ -10,7 +10,7 @@ COPY frontend/ ./
 RUN pnpm build:docker
 
 # Stage 2: Python/Django + nginx runtime
-FROM python:3.13-slim AS runtime
+FROM python:3.15-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends nginx gettext-base procps && rm -rf /var/lib/apt/lists/*
 
