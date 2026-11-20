@@ -1,5 +1,6 @@
 import pytest
-from community.models import Event, EventSpeech, EventStatus, EventType
+from community.content.pages import DAY_OF_GUIDE_SLUG
+from community.models import EditablePage, Event, EventSpeech, EventStatus, EventType
 from community.scheduled.checkin_nudge import (
     due_checkin_nudge_events,
     send_checkin_nudge,
@@ -214,3 +215,36 @@ class TestSendDueCheckinNudges:
             Notification.objects.filter(notification_type=NotificationType.CHECKIN_NUDGE).count()
             == 1
         )
+
+
+@pytest.mark.django_db
+class TestCheckinNudgeDayOfGuide:
+    @pytest.fixture(autouse=True)
+    def _guide_page(self, db):
+        EditablePage.objects.create(slug=DAY_OF_GUIDE_SLUG, content_html="<p>arrive early</p>")
+
+    def test_official_event_links_day_of_guide(self, test_user, fake_email_sender, db):
+        _, sent = _send_for(test_user, fake_email_sender, event_type=EventType.OFFICIAL)
+
+        assert '/day-of"' in sent["html"]
+        assert "/day-of\n" in sent["text"]
+        assert "arrive early" not in sent["html"]
+
+    def test_club_event_has_no_day_of_guide(self, test_user, fake_email_sender, db):
+        _, sent = _send_for(test_user, fake_email_sender)
+
+        assert "day-of guide" not in sent["html"]
+        assert "day-of guide" not in sent["text"]
+
+    def test_no_day_of_guide_link_when_page_empty(self, test_user, fake_email_sender, db):
+        EditablePage.objects.filter(slug=DAY_OF_GUIDE_SLUG).update(content_html="")
+
+        _, sent = _send_for(test_user, fake_email_sender, event_type=EventType.OFFICIAL)
+
+        assert "day-of guide" not in sent["html"]
+        assert "day-of guide" not in sent["text"]
+
+
+@pytest.mark.django_db
+def test_event_guide_page_defaults_to_members_only(api_client, db):
+    assert api_client.get(f"/api/community/pages/{DAY_OF_GUIDE_SLUG}/").status_code == 403

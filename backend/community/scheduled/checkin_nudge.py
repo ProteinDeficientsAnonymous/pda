@@ -11,7 +11,8 @@ from notifications.email_helpers import CheckinReminderEmailDetails, send_checki
 from notifications.email_sender import get_email_sender
 from notifications.service import notify_checkin_reminder
 
-from community.models import Event, EventStatus, EventType
+from community.content.pages import DAY_OF_GUIDE_SLUG
+from community.models import EditablePage, Event, EventStatus, EventType
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -57,8 +58,17 @@ def _speech_url(event: Event) -> str:
     return f"{settings.FRONTEND_BASE_URL}/events/{event.pk}/speech"
 
 
+def _day_of_guide_url(event: Event) -> str:
+    if event.event_type != EventType.OFFICIAL:
+        return ""
+    if not EditablePage.objects.filter(slug=DAY_OF_GUIDE_SLUG).exclude(content_html="").exists():
+        return ""
+    return f"{settings.FRONTEND_BASE_URL}/day-of"
+
+
 def send_checkin_nudge(event: Event) -> bool:
     """Claim the event, then email + in-app notify the host team. Returns False if already claimed."""
+    guide_url = _day_of_guide_url(event)
     if not _claim_checkin_nudge(event):
         return False
 
@@ -79,6 +89,7 @@ def send_checkin_nudge(event: Event) -> bool:
                     event_title=event.title,
                     event_url=event_url,
                     speech_url=speech_url,
+                    guide_url=guide_url,
                 ),
             )
         except Exception:
