@@ -2624,6 +2624,12 @@
             "title": "Price",
             "type": "string"
           },
+          "price_note": {
+            "default": "",
+            "maxLength": 100,
+            "title": "Price Note",
+            "type": "string"
+          },
           "rsvp_deadline": {
             "anyOf": [
               {
@@ -2815,6 +2821,11 @@
           "price": {
             "default": "",
             "title": "Price",
+            "type": "string"
+          },
+          "price_note": {
+            "default": "",
+            "title": "Price Note",
             "type": "string"
           },
           "slug": {
@@ -3238,6 +3249,11 @@
             "title": "Price",
             "type": "string"
           },
+          "price_note": {
+            "default": "",
+            "title": "Price Note",
+            "type": "string"
+          },
           "rsvp_deadline": {
             "anyOf": [
               {
@@ -3555,6 +3571,18 @@
               }
             ],
             "title": "Price"
+          },
+          "price_note": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Note"
           },
           "rsvp_deadline": {
             "anyOf": [

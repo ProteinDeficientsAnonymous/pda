@@ -17,6 +17,11 @@
         "params": []
       },
       {
+        "name": "PRICE_INVALID",
+        "value": "event.price_invalid",
+        "params": []
+      },
+      {
         "name": "START_DATETIME_MUST_BE_FUTURE",
         "value": "event.start_datetime_must_be_future",
         "params": []
