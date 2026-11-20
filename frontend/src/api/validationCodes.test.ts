@@ -36,6 +36,24 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says when an event does not take paypal', () => {
+    expect(messageForCode({ code: Code.Event.PaypalNotAccepted, field: null })).toBe(
+      "this event doesn't take paypal",
+    );
+  });
+
+  it('says when there is no rsvp to pay for', () => {
+    expect(messageForCode({ code: Code.Event.PaypalNothingToPay, field: null })).toBe(
+      'you have no rsvp here that needs paying',
+    );
+  });
+
+  it('says when a paypal order no longer matches the event', () => {
+    expect(messageForCode({ code: Code.Event.PaypalOrderInvalid, field: null })).toBe(
+      "this paypal payment doesn't match the event — start it again",
+    );
+  });
+
   it('says the rsvp deadline must come before the start', () => {
     expect(
       messageForCode({ code: Code.Event.RsvpDeadlineAfterStart, field: 'rsvp_deadline' }),

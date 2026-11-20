@@ -15,3 +15,8 @@ export function rateLimitBackoffDelay(rand: number = Math.random()): number {
 export function isRateLimitError(err: unknown): boolean {
   return getApiStatus(err) === 429;
 }
+
+// The rsvp token or event no longer qualifies for a scoped ticket; retrying can't succeed.
+export function isScopeGoneError(err: unknown): boolean {
+  return getApiStatus(err) === 404;
+}
