@@ -156,6 +156,7 @@ def event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         event_type=e.event_type,
         visibility=e.visibility,
         price=price_text(e.price),
+        price_note=e.price_note,
         co_host_ids=[str(c.id) for c in e.co_hosts.all()] if is_authed else [],
         datetime_tbd=e.datetime_tbd,
         has_poll=hasattr(e, "poll"),
