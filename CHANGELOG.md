@@ -1,3 +1,10 @@
+## [0.266.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.266.0...v0.266.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **audit:** audit un-archive on tentative approval ([#2600](https://github.com/ProteinDeficientsAnonymous/pda/issues/2600)) ([c16fe29](https://github.com/ProteinDeficientsAnonymous/pda/commit/c16fe299fd4ae78f0f6bf29b2d0ffb994ee8ef6a))
+
 # [0.266.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.265.0...v0.266.0) (2026-11-20)
 
 
