@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as JoinApi from '@/api/join';
-import { JoinRequestStatus } from '@/api/join';
 import { RejectionReason } from '@/api/rejectionEmail';
 import { makeRequest } from '@/test/fixtures';
 
@@ -36,7 +35,7 @@ describe('RejectJoinRequestDialog', () => {
     await waitFor(() => {
       expect(mutateAsyncMock).toHaveBeenCalledWith({
         id: 'jr-1',
-        status: JoinRequestStatus.REJECTED,
+        event: 'reject',
         rejectionReason: null,
         rejectionNote: '',
       });

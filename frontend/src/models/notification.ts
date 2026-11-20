@@ -19,6 +19,7 @@ export const NotificationType = {
   PaymentRevoked: 'payment_revoked',
   EventFeedback: 'event_feedback',
   SurveyResponse: 'survey_response',
+  PollSeatedUnpaid: 'poll_seated_unpaid',
   EventUnpublished: 'event_unpublished',
   MemberRestored: 'member_restored',
   CheckInPromotionFailed: 'check_in_promotion_failed',

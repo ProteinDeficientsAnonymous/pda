@@ -1,16 +1,19 @@
-import { render, screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { apiClient } from '@/api/client';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType } from '@/models/event';
 import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeEvent, makeGuest, makeUser } from '@/test/fixtures';
+import { renderWithProviders } from '@/test/render';
 
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 
 const HOST_ID = 'host-user';
+
+vi.mock('@/api/client');
 
 vi.mock('./EmailBlastDialog', () => ({
   EmailBlastDialog: ({ open }: { open: boolean }) =>
@@ -29,15 +32,13 @@ function renderMenu(
     event?: Partial<Event>;
   } = {},
 ) {
-  return render(
-    <MemoryRouter>
-      <EventDetailKebabMenu
-        event={makeEvent(overrides.event)}
-        eventHasEnded={overrides.eventHasEnded ?? false}
-        canManageRsvps={overrides.canManageRsvps ?? true}
-        showSpeech={overrides.showSpeech ?? false}
-      />
-    </MemoryRouter>,
+  return renderWithProviders(
+    <EventDetailKebabMenu
+      event={makeEvent(overrides.event)}
+      eventHasEnded={overrides.eventHasEnded ?? false}
+      canManageRsvps={overrides.canManageRsvps ?? true}
+      showSpeech={overrides.showSpeech ?? false}
+    />,
   );
 }
 
@@ -311,5 +312,48 @@ describe('EventDetailKebabMenu', () => {
 
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     expect(screen.getByTestId('group-text-dialog')).toBeInTheDocument();
+  });
+
+  describe('close rsvps', () => {
+    beforeEach(() => {
+      vi.mocked(apiClient.patch).mockReset();
+      vi.mocked(apiClient.patch).mockResolvedValue({ data: { id: 'ev1', title: 'e' } });
+    });
+
+    it('hides the toggle when the viewer cannot manage rsvps', async () => {
+      renderMenu({ canManageRsvps: false, event: { rsvpEnabled: true } });
+      await openMenu();
+      expect(screen.queryByRole('menuitem', { name: /rsvps$/ })).toBeNull();
+    });
+
+    it('hides the toggle when rsvps are off', async () => {
+      renderMenu({ event: { rsvpEnabled: false } });
+      await openMenu();
+      expect(screen.queryByRole('menuitem', { name: 'close rsvps' })).toBeNull();
+    });
+
+    it('closes rsvps after confirming', async () => {
+      renderMenu({ event: { rsvpEnabled: true } });
+      await openMenu();
+      await userEvent.click(screen.getByRole('menuitem', { name: 'close rsvps' }));
+      expect(apiClient.patch).not.toHaveBeenCalled();
+      await userEvent.click(screen.getByRole('button', { name: 'close rsvps' }));
+      await waitFor(() => {
+        expect(apiClient.patch).toHaveBeenCalledWith('/api/community/events/ev1/', {
+          rsvps_closed: true,
+        });
+      });
+    });
+
+    it('reopens rsvps without a confirm', async () => {
+      renderMenu({ event: { rsvpEnabled: true, rsvpsClosed: true } });
+      await openMenu();
+      await userEvent.click(screen.getByRole('menuitem', { name: 'reopen rsvps' }));
+      await waitFor(() => {
+        expect(apiClient.patch).toHaveBeenCalledWith('/api/community/events/ev1/', {
+          rsvps_closed: false,
+        });
+      });
+    });
   });
 });

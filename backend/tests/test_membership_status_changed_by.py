@@ -1,5 +1,6 @@
 import pytest
-from community.models import JoinRequestStatus
+from community.models import JoinRequestEvent
+from community.validation import InvalidStateTransition
 from django.utils import timezone
 from users.models import MembershipStatus, User
 
@@ -9,14 +10,16 @@ from tests._users import make_user
 
 pytestmark = pytest.mark.django_db
 
+_DECISION_EVENTS = (JoinRequestEvent.MARK_TENTATIVE, JoinRequestEvent.APPROVE)
 
-@pytest.mark.parametrize("decision", [JoinRequestStatus.TENTATIVE, JoinRequestStatus.APPROVED])
+
+@pytest.mark.parametrize("event", _DECISION_EVENTS)
 def test_vetting_a_new_applicant_records_the_vetter(
-    api_client, vettor_user, vettor_headers, sample_join_request, decision
+    api_client, vettor_user, vettor_headers, sample_join_request, event
 ):
     response = api_client.patch(
         f"/api/community/join-requests/{sample_join_request.id}/",
-        {"status": decision},
+        {"event": event},
         content_type="application/json",
         **vettor_headers,
     )
@@ -25,10 +28,10 @@ def test_vetting_a_new_applicant_records_the_vetter(
     assert user.membership_status_changed_by == vettor_user
 
 
-@pytest.mark.parametrize("decision", [JoinRequestStatus.TENTATIVE, JoinRequestStatus.APPROVED])
+@pytest.mark.parametrize("event", _DECISION_EVENTS)
 @pytest.mark.parametrize("status", [MembershipStatus.NONE, MembershipStatus.ARCHIVED])
 def test_vetting_an_existing_account_records_the_vetter(
-    api_client, vettor_user, sample_join_request, decision, status
+    api_client, vettor_user, sample_join_request, event, status
 ):
     archived_at = timezone.now() if status == MembershipStatus.ARCHIVED else None
     existing = make_user(
@@ -40,7 +43,7 @@ def test_vetting_an_existing_account_records_the_vetter(
     sample_join_request.save(update_fields=["user"])
     response = api_client.patch(
         f"/api/community/join-requests/{sample_join_request.id}/",
-        {"status": decision},
+        {"event": event},
         content_type="application/json",
         **auth_headers_for(vettor_user),
     )
@@ -57,9 +60,10 @@ def test_public_rsvp_stamps_no_actor(api_client):
     assert rsvper.membership_status_changed_by is None
 
 
-def test_unchanged_status_keeps_the_stamp():
+def test_rejected_same_status_transition_keeps_the_stamp():
     member = make_user()
-    member.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=member)
+    with pytest.raises(InvalidStateTransition):
+        member.approve_membership(by=member)
     assert member.membership_status_changed_at is None
 
 
