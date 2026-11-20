@@ -1,12 +1,19 @@
 import asyncio
 import logging
+from types import SimpleNamespace
 
 import pytest
 from audit.models import AuditLogEntry, AuditTargetType
 from community.join_requests import check_in_promotion
 from community.models import Event, EventType
 from community.validation import Code, InvalidStateTransition, TransitionFailure
-from config.audit import AuditTarget, actor_request, audit_log, audit_rejected_transition
+from config.audit import (
+    AuditTarget,
+    actor_request,
+    audit_log,
+    audit_rejected_transition,
+    flush_rollback_safe_audits,
+)
 from config.validation_handlers import register_validation_handlers, serialize_validation_exception
 from django.db import transaction
 from django.test import RequestFactory
@@ -255,10 +262,9 @@ class TestTransitionAuditPersistence:
         }
 
     @pytest.mark.django_db
-    def test_audit_rejected_transition_repeated_call_persists_once(
-        self, django_capture_on_commit_callbacks
-    ):
+    def test_audit_rejected_transition_repeated_call_persists_once(self):
         actor = make_user(first_name="Once")
+        request = SimpleNamespace(auth=actor)
         exc = InvalidStateTransition(
             Code.JoinRequest.ALREADY_DECIDED,
             TransitionFailure(
@@ -271,9 +277,9 @@ class TestTransitionAuditPersistence:
             ),
         )
 
-        with django_capture_on_commit_callbacks(execute=True):
-            audit_rejected_transition(None, exc, actor=actor)
-            audit_rejected_transition(None, exc, actor=actor)
+        audit_rejected_transition(request, exc, actor=actor)
+        audit_rejected_transition(request, exc, actor=actor)
+        flush_rollback_safe_audits(request)
 
         entries = AuditLogEntry.objects.filter(target_id="jr-123")
         assert entries.count() == 1
