@@ -88,7 +88,7 @@ def _send_blast(event: Event, subject: str, message: str, recipients: list) -> i
                     message=message,
                 ),
             )
-        except Exception:  # noqa: BLE001 — one bad send must not abort the batch
+        except Exception:
             logger.warning("event_blast_send_exception", exc_info=True)
             failed += 1
             continue

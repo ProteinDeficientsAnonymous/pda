@@ -330,7 +330,10 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
         poll.save(update_fields=["winning_option", "finalized_by", "finalized_at", "is_active"])
         event.start_datetime = winning_option.datetime
         event.datetime_tbd = False
-        event.save(update_fields=["start_datetime", "datetime_tbd"])
+        # A deadline picked while the date was tbd can't land after the chosen start.
+        if event.rsvp_deadline and event.rsvp_deadline > event.start_datetime:
+            event.rsvp_deadline = None
+        event.save(update_fields=["start_datetime", "datetime_tbd", "rsvp_deadline"])
         # Save the date first: seating re-reads the event, and its past/upcoming
         # check has to see the finalized start, not the pre-finalize TBD one.
         seat_yes_voters(event, winning_option)

@@ -1,16 +1,21 @@
+from users.permissions import PermissionKey
+
 from community.cohosts.invite_helpers import has_pending_cohost_invite
-from community.events.helpers import can_edit_event, can_see_invite_only
+from community.events._hosts import is_draft_host
+from community.events.helpers import can_see_invite_only, event_co_host_ids
 from community.models import Event, PageVisibility
 from community.validation import Code, raise_validation
 
 
 def _can_see_draft(event: Event, auth_user) -> bool:
-    """Pending cohost invitees can see the draft they were invited to so they
-    can find the accept/decline banner. They aren't accepted co-hosts yet,
-    so `can_edit_event` returns False — without this branch, they'd 404."""
+    """Draft hosts (as the drafts list shows them), managers, and pending cohost invitees."""
     if not auth_user:
         return False
-    return can_edit_event(auth_user, event) or has_pending_cohost_invite(event, auth_user)
+    return (
+        is_draft_host(event, auth_user)
+        or auth_user.has_permission(PermissionKey.MANAGE_EVENTS)
+        or has_pending_cohost_invite(event, auth_user)
+    )
 
 
 def enforce_event_read_visibility(event: Event, auth_user) -> None:
@@ -32,8 +37,6 @@ def _can_see_invite_only_event(user, event: Event) -> bool:
     """Invite-only visibility without hydrating invitees."""
     if user is None:
         return False
-    if can_see_invite_only(
-        user, {str(c.id) for c in event.co_hosts.all()}, set(), event.created_by_id
-    ):
+    if can_see_invite_only(user, event_co_host_ids(event), set(), event.created_by_id):
         return True
     return event.invited_users.filter(pk=user.pk).exists()

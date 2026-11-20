@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import { MembershipStatus } from '@/models/user';
 import { makeUser } from '@/test/fixtures';
 
 import { EmailPreferences } from './EmailPreferences';
@@ -43,12 +44,15 @@ describe('EmailPreferences', () => {
   });
 
   it('hides the in-person reminder toggle from full members', () => {
-    renderPrefs({ isMember: true });
+    renderPrefs({ membershipStatus: MembershipStatus.ActiveMember });
     expect(screen.queryByRole('switch', { name: /come to an event in person/i })).toBeNull();
   });
 
   it('lets a tentative member opt out of in-person reminders', async () => {
-    const { onChange } = renderPrefs({ isMember: false, attendanceNudgeOptOut: false });
+    const { onChange } = renderPrefs({
+      membershipStatus: MembershipStatus.Tentative,
+      attendanceNudgeOptOut: false,
+    });
     const toggle = screen.getByRole('switch', { name: /come to an event in person/i });
     expect(toggle).toHaveAttribute('aria-checked', 'true');
     await userEvent.click(toggle);
@@ -76,7 +80,7 @@ describe('EmailPreferences', () => {
   });
 
   it('leaves veganniversaries out of the monthly digest label for tentative members', () => {
-    renderPrefs({ isMember: false });
+    renderPrefs({ membershipStatus: MembershipStatus.Tentative });
     expect(screen.getByRole('switch', { name: 'monthly digest of events' })).toBeInTheDocument();
   });
 

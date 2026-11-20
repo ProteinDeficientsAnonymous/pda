@@ -7,7 +7,9 @@ access they end up with (see test_limited_access.py), not the path in.
 import pytest
 from community.models import JoinRequestStatus
 from django.utils import timezone
-from users.models import MagicLoginToken
+from users.models import MagicLoginToken, PublicRsvpToken
+
+from tests._public_rsvp_helpers import make_public_rsvper
 
 pytestmark = pytest.mark.django_db
 
@@ -70,3 +72,15 @@ def test_tentative_carries_the_form_consents(api_client, vettor_headers, sample_
     sample_join_request.refresh_from_db()
     assert sample_join_request.user.guidelines_consent_at is not None
     assert sample_join_request.user.sms_consent_at is not None
+
+
+def test_tentative_revokes_an_existing_public_rsvpers_manage_links(
+    api_client, vettor_headers, sample_join_request
+):
+    rsvper = make_public_rsvper(sample_join_request.phone_number, "rsvper@example.com")
+    token = PublicRsvpToken.issue(rsvper)
+    _tentatively_approve(api_client, vettor_headers, sample_join_request)
+    token.refresh_from_db()
+    assert token.is_revoked
+    sample_join_request.refresh_from_db()
+    assert sample_join_request.user == rsvper
