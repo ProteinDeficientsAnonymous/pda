@@ -75,7 +75,7 @@ function RecipientPicker({
       });
   }
 
-  if (options.length === 0) {
+  if (options.length === 0 && recipients.coHosts.length === 0) {
     return <p className="text-muted text-sm">no one has a number to text yet</p>;
   }
 
@@ -99,6 +99,7 @@ function RecipientPicker({
         {disabled
           ? 'no one selected'
           : `${String(phones.length)} ${phones.length === 1 ? 'number' : 'numbers'} selected`}
+        {recipients.coHosts.length > 0 && ' · co-hosts are always included'}
       </p>
       <div className="mt-4 flex items-center justify-between gap-2">
         <button
