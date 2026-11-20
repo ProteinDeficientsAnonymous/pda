@@ -270,5 +270,5 @@ def test_matching_shares_the_bulk_verify_statuses_without_its_side_effects():
         for node in ast.walk(ast.parse(inspect.getsource(matching)))
         if isinstance(node, ast.ImportFrom)
     }
-    assert "community.rsvps._payment_verification" not in imported
+    assert "community.rsvps.payment_verification" not in imported
     assert matching.MATCHABLE_RSVP_STATUSES is MATCHABLE_RSVP_STATUSES

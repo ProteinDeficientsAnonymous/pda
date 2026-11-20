@@ -10,7 +10,8 @@ from ninja.responses import Status
 from pydantic import BaseModel
 
 from community.models import Event, EventRSVP, EventStatus, RSVPStatus
-from community.paypal._client import create_order, paypal_configured
+from community.paypal._capture import covers_price, record_capture
+from community.paypal._client import create_order, get, paypal_configured, post
 from community.paypal.price import offered_paypal_price
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
@@ -20,6 +21,7 @@ logger = logging.getLogger("pda")
 router = Router()
 
 PAYABLE_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED, RSVPStatus.MAYBE)
+CAPTURABLE_ORDER_STATUSES = ("APPROVED", "COMPLETED")
 
 
 class PayPalOrderOut(BaseModel):
@@ -27,13 +29,39 @@ class PayPalOrderOut(BaseModel):
     amount: Decimal
 
 
-def unpaid_rsvp(event: Event, user) -> EventRSVP | None:
+class PayPalCaptureOut(BaseModel):
+    paid: bool
+
+
+def unpaid_rsvp(event_id: UUID, user) -> EventRSVP | None:
     return EventRSVP.objects.filter(
-        event=event,
+        event_id=event_id,
         user=user,
         status__in=PAYABLE_RSVP_STATUSES,
         payment_verified_at__isnull=True,
+        paypal_capture_id__isnull=True,
     ).first()
+
+
+def payable_event(event_id: UUID) -> tuple[Event, Decimal]:
+    """return(tuple): the event and its fee-inclusive paypal price."""
+    event = Event.objects.filter(id=event_id).first()
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    amount = offered_paypal_price(event)
+    if amount is None or event.status != EventStatus.ACTIVE:
+        raise_validation(Code.Event.PAYPAL_NOT_ACCEPTED, status_code=400)
+    return event, amount
+
+
+def order_matches(order: dict, rsvp: EventRSVP, event: Event) -> bool:
+    units = order.get("purchase_units") or []
+    return (
+        order.get("status") in CAPTURABLE_ORDER_STATUSES
+        and len(units) == 1
+        and units[0].get("custom_id") == str(rsvp.pk)
+        and covers_price(units[0].get("amount") or {}, event)
+    )
 
 
 @router.post(
@@ -45,13 +73,8 @@ def unpaid_rsvp(event: Event, user) -> EventRSVP | None:
 def create_paypal_order(request, event_id: UUID):
     if not paypal_configured():
         return Status(503, {"detail": "paypal is not configured"})
-    event = Event.objects.filter(id=event_id).first()
-    if event is None:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    amount = offered_paypal_price(event)
-    if amount is None or event.status != EventStatus.ACTIVE:
-        raise_validation(Code.Event.PAYPAL_NOT_ACCEPTED, status_code=400)
-    rsvp = unpaid_rsvp(event, request.auth)
+    event, amount = payable_event(event_id)
+    rsvp = unpaid_rsvp(event.id, request.auth)
     if rsvp is None:
         raise_validation(Code.Event.PAYPAL_NOTHING_TO_PAY, status_code=400)
     try:
@@ -60,3 +83,36 @@ def create_paypal_order(request, event_id: UUID):
         logger.exception("paypal_create_order_failed", extra={"event_id": str(event_id)})
         return Status(502, {"detail": "paypal is unavailable, try again"})
     return Status(200, PayPalOrderOut(order_id=order_id, amount=amount))
+
+
+@router.post(
+    "/events/{event_id}/paypal/order/{order_id}/capture/",
+    response={200: PayPalCaptureOut, frozenset({400, 404, 429, 502, 503}): ErrorOut},
+    auth=gated_jwt,
+)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/h")
+def capture_paypal_order(request, event_id: UUID, order_id: str):
+    if not paypal_configured():
+        return Status(503, {"detail": "paypal is not configured"})
+    event, _ = payable_event(event_id)
+    # Checked before capturing so a guest who already paid isn't charged twice.
+    rsvp = unpaid_rsvp(event_id, request.auth)
+    if rsvp is None or not (order_id.isascii() and order_id.isalnum()):
+        raise_validation(Code.Event.PAYPAL_NOTHING_TO_PAY, status_code=400)
+    path = f"/v2/checkout/orders/{order_id}"
+    try:
+        # Checked before capturing: a capture takes the money even if we then can't record it.
+        order = get(path)
+        if order_matches(order, rsvp, event):
+            order = post(f"{path}/capture", {}, request_id=f"capture-{order_id}")
+        else:
+            order = None
+    except httpx.HTTPError:
+        logger.exception("paypal_capture_failed", extra={"order_id": order_id})
+        return Status(502, {"detail": "paypal is unavailable, try again"})
+    if order is None:
+        raise_validation(Code.Event.PAYPAL_ORDER_INVALID, status_code=400)
+    units = order.get("purchase_units", [])
+    captures = [c for unit in units for c in unit.get("payments", {}).get("captures", [])]
+    paid = rsvp in [record_capture(request, c) for c in captures]
+    return Status(200, PayPalCaptureOut(paid=paid))

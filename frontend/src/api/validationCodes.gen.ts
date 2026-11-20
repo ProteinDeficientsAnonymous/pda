@@ -65,6 +65,7 @@ export const Code = {
     PaypalOfficialOnly: 'event.paypal_official_only',
     PaypalNotAccepted: 'event.paypal_not_accepted',
     PaypalNothingToPay: 'event.paypal_nothing_to_pay',
+    PaypalOrderInvalid: 'event.paypal_order_invalid',
   },
   Poll: {
     NotFound: 'poll.not_found',
@@ -400,6 +401,7 @@ export type ValidationCode =
   | 'event.paypal_official_only'
   | 'event.paypal_not_accepted'
   | 'event.paypal_nothing_to_pay'
+  | 'event.paypal_order_invalid'
   | 'poll.not_found'
   | 'poll.options_required'
   | 'poll.options_must_be_future'
@@ -655,6 +657,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.paypal_official_only': [],
   'event.paypal_not_accepted': [],
   'event.paypal_nothing_to_pay': [],
+  'event.paypal_order_invalid': [],
   'poll.not_found': [],
   'poll.options_required': [],
   'poll.options_must_be_future': [],

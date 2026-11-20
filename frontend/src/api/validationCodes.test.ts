@@ -48,6 +48,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says when a paypal order no longer matches the event', () => {
+    expect(messageForCode({ code: Code.Event.PaypalOrderInvalid, field: null })).toBe(
+      "this paypal payment doesn't match the event — start it again",
+    );
+  });
+
   it('says the rsvp deadline must come before the start', () => {
     expect(
       messageForCode({ code: Code.Event.RsvpDeadlineAfterStart, field: 'rsvp_deadline' }),
