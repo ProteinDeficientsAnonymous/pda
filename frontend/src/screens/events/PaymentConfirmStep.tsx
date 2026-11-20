@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/Button';
+import { buttonClass } from '@/components/ui/buttonClass';
 import type { Event } from '@/models/event';
 import { cn } from '@/utils/cn';
 import { formatPrice } from '@/utils/eventCost';
 import { toCashAppPayUrl, toVenmoUrl } from '@/utils/paymentHandle';
 
-const PAYMENT_LINK_CLASS =
-  'bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 w-full items-center justify-center rounded-md px-4 text-sm font-medium transition-colors';
+const PAYMENT_LINK_CLASS = buttonClass('primary', 'w-full');
 
 interface Props {
   event: Event;

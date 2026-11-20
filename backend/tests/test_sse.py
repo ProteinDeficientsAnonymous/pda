@@ -99,7 +99,7 @@ class TestSseStreamAuth:
 
     def test_jwt_in_query_no_longer_works(self, test_user, api_client):
         """Regression guard: the old ?token=<jwt> path must not authenticate."""
-        token = str(RefreshToken.for_user(test_user).access_token)  # ty: ignore[unresolved-attribute]
+        token = str(getattr(RefreshToken.for_user(test_user), "access_token"))
         response = api_client.get(f"/api/notifications/stream/?token={token}")
         assert response.status_code == 401
 

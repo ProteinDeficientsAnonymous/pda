@@ -72,6 +72,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "can't edit the date while a poll is active — finalize the poll first";
     case Code.Event.PermDenied:
       return "you don't have permission to see this event";
+    case Code.Event.GuestNotEligible:
+      return "they can't be added to this event";
     case Code.Event.AuthRequired:
       return 'you need to sign in for that';
     case Code.Event.CancelledCannotBeEdited:
@@ -100,6 +102,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'rsvps are closed for cancelled events';
     case Code.Event.RsvpsClosedPast:
       return 'rsvps are closed for past events';
+    case Code.Event.RsvpsClosedDeadline:
+      return "the rsvp deadline has passed — going guests can only switch to can't go or drop their +1";
+    case Code.Event.RsvpDeadlineAfterStart:
+      return 'the rsvp deadline must be before the event starts';
     case Code.Event.NoPlusOneSpots:
       return 'no spots available for a +1';
     case Code.Event.RsvpNotFound:
@@ -116,6 +122,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'check-in opens an hour before the event starts';
     case Code.Event.NoPlusOneToCheckIn:
       return "this guest doesn't have a +1 to check in";
+    case Code.Event.DidntGoRequiresGoing:
+      return "only guests who rsvp'd going can be marked didn't attend";
     case Code.Event.BlastInvalidAudience:
       return 'that audience choice is not valid';
     case Code.Event.BlastNoRecipients:
@@ -211,6 +219,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Tag.NameAlreadyExists:
       return 'a tag with that name already exists';
 
+    // Reserve
+    case Code.Reserve.NotFound:
+      return 'reserve entry not found';
+
     // URL
     case Code.Url.Invalid:
       return 'enter a valid url';
@@ -264,8 +276,12 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "that phone number and password don't match — try again";
     case Code.Auth.AccountArchived:
       return 'this account is no longer active';
-    case Code.Auth.AccountPaused:
-      return 'your membership is currently paused';
+    case Code.Auth.AccountGuidelinesPaused:
+      return "your membership is paused — you can't log in right now";
+    case Code.Auth.AccountRejected:
+      return "your request to join wasn't approved — you can request to join again";
+    case Code.Auth.NotAMember:
+      return "this account isn't a member — request to join to sign in";
     case Code.Auth.MagicLinkInvalidOrExpired:
       return 'this login link is invalid or has expired';
     case Code.Auth.MagicLinkAlreadyUsed:
@@ -348,6 +364,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "you can't pause your own account";
     case Code.User.CannotPauseAdmin:
       return "admins can't be paused";
+    case Code.User.GuidelinesPaused:
+      return 'lift the guidelines pause before pausing for attendance';
+    case Code.User.AttendancePauseLiftsOnCheckIn:
+      return 'an event rqmt pause lifts when they check in at an official or club event';
     case Code.User.RoleIdsNotFound:
       return 'one or more role IDs not found';
     case Code.User.InvalidBirthday:
@@ -444,6 +464,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'join request not found';
     case Code.JoinRequest.AlreadyDecided:
       return 'this request has already been decided';
+    case Code.JoinRequest.TentativeCannotBeRejected:
+      return "tentative members can't be rejected — archive them from the members screen instead";
     case Code.JoinRequest.OnlyRejectedCanBeUnRejected:
       return 'only rejected requests can be un-rejected';
     case Code.JoinRequest.AlreadyMember:
@@ -681,6 +703,34 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'this connection request was already used';
     case Code.Connect.AppNotFound:
       return 'connected app not found';
+
+    // Planning
+    case Code.Planning.YearExists:
+      return 'that planning year already exists';
+    case Code.Planning.YearNotFound:
+      return "that planning year doesn't exist";
+    case Code.Planning.SlotNotFound:
+      return "that slot doesn't exist anymore";
+    case Code.Planning.SlotNotInYear:
+      return "one of those slots isn't part of this year";
+    case Code.Planning.NotAPlanner:
+      return "they're not a planner";
+    case Code.Planning.AlreadyAssigned:
+      return "they're already proposed or committed for this slot";
+    case Code.Planning.AssignmentNotFound:
+      return "that proposal doesn't exist anymore";
+    case Code.Planning.NotPending:
+      return "that proposal's already been answered";
+    case Code.Planning.NotEventHost:
+      return 'you need to be a host of that event to link it';
+    case Code.Planning.SlotHasEvent:
+      return 'that slot already has an event';
+    case Code.Planning.AvailabilityAlreadyOpen:
+      return 'planners were already asked for their availability';
+    case Code.Planning.EventAlreadyLinked:
+      return 'that event is already linked to another slot';
+    case Code.Planning.ChecklistItemNotFound:
+      return "that checklist item doesn't exist anymore";
 
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)
     case Code.Generic.FieldRequired:
