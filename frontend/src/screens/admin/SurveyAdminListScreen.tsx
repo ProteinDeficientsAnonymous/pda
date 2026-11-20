@@ -87,7 +87,7 @@ function SurveyRow({
   onDelete: (s: SurveySummary) => void;
 }) {
   return (
-    <article className="border-border bg-surface flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+    <article className="border-border bg-surface flex flex-col gap-2 rounded-lg border p-3 md:flex-row md:items-center md:justify-between md:gap-3">
       <div className="min-w-0">
         <Link
           to={`/admin/surveys/${survey.id}`}
@@ -101,7 +101,7 @@ function SurveyRow({
           {format(new Date(survey.createdAt), 'MMM d, yyyy').toLowerCase()}
         </p>
       </div>
-      <div className="flex flex-wrap items-center gap-1 sm:shrink-0 sm:flex-nowrap">
+      <div className="flex flex-wrap items-center gap-1 md:shrink-0 md:flex-nowrap">
         <span
           className={cn('rounded-full px-2 py-0.5 text-xs', STATUS_CLASS[surveyStatus(survey)])}
         >
