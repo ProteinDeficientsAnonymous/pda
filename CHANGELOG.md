@@ -1,3 +1,10 @@
+## [0.260.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.260.0...v0.260.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **audit:** keep refused-request audits through rollbacks ([#2293](https://github.com/ProteinDeficientsAnonymous/pda/issues/2293)) ([eee58a4](https://github.com/ProteinDeficientsAnonymous/pda/commit/eee58a40230bb1ed22682bd7b157b67122cee692))
+
 # [0.260.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.259.1...v0.260.0) (2026-11-20)
 
 
