@@ -31,6 +31,7 @@ from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import EventOut, RSVPIn
 from community.models import CancelReason, Event, EventComment, EventRSVP, RSVPStatus
 from community.rsvps._deadline import enforce_rsvp_deadline
+from community.rsvps._waitlist_place import keep_waitlist_place, save_would_seat_waitlister
 from community.rsvps.answers import (
     AnswersIn,
     answers_required_for_status,
@@ -95,22 +96,6 @@ def resolve_rsvp_status(
     # New attending RSVP (or +1 party) at capacity — waitlist the whole party.
     # Keep has_plus_one so promotion seats them together later; never drop the +1.
     return RSVPStatus.WAITLISTED, has_plus_one
-
-
-def _keep_waitlist_place(event: Event, existing: EventRSVP | None, final_status: str) -> str:
-    """Keep a waitlisted row waitlisted when it re-saves "going" (e.g. to add a +1).
-
-    Only promote_from_waitlist seats people, in line order, so an edit can't
-    skip whoever is ahead.
-    """
-    if (
-        event.max_attendees is not None
-        and existing is not None
-        and existing.status == RSVPStatus.WAITLISTED
-        and final_status == RSVPStatus.ATTENDING
-    ):
-        return RSVPStatus.WAITLISTED
-    return final_status
 
 
 def _line_may_move(existing: EventRSVP | None, final_status: str, final_plus_one: bool) -> bool:
@@ -322,10 +307,13 @@ def apply_rsvp_in_transaction(event_id, user, rsvp: RsvpApply) -> tuple[str, lis
     final_status, final_plus_one = resolve_rsvp_status(
         event, user, rsvp.status, rsvp.has_plus_one, existing
     )
-    final_status = _keep_waitlist_place(event, existing, final_status)
+    # A waitlister whose own save gets them seated pays first, else a +1 detour skips payment.
+    would_seat = save_would_seat_waitlister(event, existing, final_status)
+    final_status = keep_waitlist_place(event, existing, final_status)
+    gate_status = RSVPStatus.ATTENDING if would_seat else final_status
     # Joining the waitlist is free; promotion asks the guest to pay.
     gate_exempt = rsvp.paid_confirmed or rsvp.skip_host_gates or not rsvp.enforce_payment_gate
-    if not gate_exempt and requires_payment_gate(event, existing, final_status):
+    if not gate_exempt and requires_payment_gate(event, existing, gate_status):
         raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
     answers_snapshot = _snapshot_rsvp_answers(
         event, existing, final_status, rsvp.answers, require_answers=not rsvp.skip_host_gates

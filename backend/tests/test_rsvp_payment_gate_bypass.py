@@ -92,6 +92,65 @@ class TestWaitlistPromotionBypass:
         assert response.status_code == 400
         assert_error_code(response, Code.Event.PAYMENT_CONFIRMATION_REQUIRED)
 
+    def test_plus_one_detour_to_an_open_seat_is_gated(
+        self, api_client, auth_headers, test_user, django_user_model
+    ):
+        event = _paid_event(test_user, max_attendees=2, allow_plus_ones=True)
+        seated = django_user_model.objects.create_user(
+            phone_number="+14155550111",
+            first_name="Seated",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
+        )
+        EventRSVP.objects.create(event=event, user=seated, status=RSVPStatus.ATTENDING)
+        url = RSVP_URL.format(event_id=event.id)
+
+        api_client.post(
+            url,
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": True},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert EventRSVP.objects.get(event=event, user=test_user).status == RSVPStatus.WAITLISTED
+
+        response = api_client.post(
+            url,
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": False},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 400
+        assert_error_code(response, Code.Event.PAYMENT_CONFIRMATION_REQUIRED)
+        assert EventRSVP.objects.get(event=event, user=test_user).status == RSVPStatus.WAITLISTED
+
+    def test_waitlister_behind_a_blocked_party_keeps_their_place_unpaid(
+        self, api_client, auth_headers, test_user, django_user_model
+    ):
+        event = _paid_event(test_user, max_attendees=2, allow_plus_ones=True)
+        seated = django_user_model.objects.create_user(
+            phone_number="+14155550111",
+            first_name="Seated",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
+        )
+        ahead = django_user_model.objects.create_user(
+            phone_number="+14155550112",
+            first_name="Ahead",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
+        )
+        EventRSVP.objects.create(event=event, user=seated, status=RSVPStatus.ATTENDING)
+        EventRSVP.objects.create(
+            event=event, user=ahead, status=RSVPStatus.WAITLISTED, has_plus_one=True
+        )
+        EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.WAITLISTED)
+
+        response = api_client.post(
+            RSVP_URL.format(event_id=event.id),
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": False},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert EventRSVP.objects.get(event=event, user=test_user).status == RSVPStatus.WAITLISTED
+
 
 @pytest.mark.django_db
 class TestPaidConfirmedOnUngatedStatus:
