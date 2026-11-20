@@ -51,8 +51,10 @@ def list_notifications(
 def _event_for_anonymous_stream(request, event_id: UUID) -> Event:
     """The event an anonymous ticket may follow: one whose comments this rsvp token can read."""
     event = Event.objects.filter(id=event_id).first()
-    viewer = resolve_event_viewer(request, event_id)
-    if event is None or viewer is None:
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    viewer = resolve_event_viewer(request, event)
+    if viewer is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     enforce_event_read_visibility(event, viewer)
     if not can_post_comments(event, viewer):
