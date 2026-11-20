@@ -27,10 +27,8 @@ def _locked_rsvp(custom_id: str | None) -> EventRSVP | None:
 def _covers_price(capture: dict, event: Event) -> bool:
     # Buyers can create orders client-side with any custom_id, so the amount must be checked here.
     amount = capture.get("amount") or {}
-    if amount.get("currency_code") != "USD":
+    if amount.get("currency_code") != "USD" or not event.price:
         return False
-    if not event.price:
-        return True
     try:
         return Decimal(amount.get("value", "")) >= paypal_price(Decimal(event.price))
     except InvalidOperation:

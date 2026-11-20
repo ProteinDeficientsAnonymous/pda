@@ -1,6 +1,6 @@
 import pytest
 from audit.models import AuditLogEntry
-from community.models import EventRSVP
+from community.models import Event, EventRSVP
 from community.validation import Code
 from django.utils import timezone
 
@@ -55,8 +55,10 @@ class TestCapture:
         rsvp.refresh_from_db()
         assert rsvp.paypal_capture_id is None
 
-    def test_capture_short_of_the_price_is_not_paid(self, api_client, rsvp, auth_headers):
-        with mock_paypal(_order(rsvp, value="0.01")):
+    @pytest.mark.parametrize(("value", "price"), [("0.01", "10"), ("10.87", None)])
+    def test_capture_must_cover_a_price(self, api_client, rsvp, auth_headers, value, price):
+        Event.objects.filter(pk=rsvp.event_id).update(price=price)
+        with mock_paypal(_order(rsvp, value=value)):
             response = _post(api_client, rsvp, auth_headers)
 
         assert response.json() == {"paid": False}
