@@ -109,3 +109,53 @@ class TestAddCohostsEndpoint:
         resp = _add_cohosts(api_client, event, creator, [])
 
         assert resp.status_code == 422
+
+
+@pytest.mark.django_db
+class TestManageEventsHolderManagesCohosts:
+    def test_can_add_and_sees_the_pending_invite(
+        self, api_client, event, manage_events_user, alice
+    ):
+        resp = _add_cohosts(api_client, event, manage_events_user, [alice.id])
+
+        assert resp.status_code == 200
+        pending = resp.json()["pending_cohost_invites"]
+        assert [p["user_id"] for p in pending] == [str(alice.id)]
+
+    def test_sees_pending_invites_on_event_detail(
+        self, api_client, event, creator, manage_events_user, alice
+    ):
+        _add_cohosts(api_client, event, creator, [alice.id])
+
+        resp = api_client.get(
+            f"/api/community/events/{event.id}/", **auth_headers_for(manage_events_user)
+        )
+
+        assert resp.status_code == 200
+        assert [p["user_id"] for p in resp.json()["pending_cohost_invites"]] == [str(alice.id)]
+
+    def test_can_rescind_a_pending_invite(
+        self, api_client, event, creator, manage_events_user, alice
+    ):
+        _add_cohosts(api_client, event, creator, [alice.id])
+        invite = EventCoHostInvite.objects.get(event=event, user=alice)
+
+        resp = api_client.delete(
+            f"/api/community/events/{event.id}/cohost-invites/{invite.id}/",
+            **auth_headers_for(manage_events_user),
+        )
+
+        assert resp.status_code == 200
+        invite.refresh_from_db()
+        assert invite.status == CoHostInviteStatus.RESCINDED
+
+    def test_can_remove_an_accepted_cohost(self, api_client, event, manage_events_user, alice):
+        event.co_hosts.add(alice)
+
+        resp = api_client.delete(
+            f"/api/community/events/{event.id}/cohosts/{alice.id}/",
+            **auth_headers_for(manage_events_user),
+        )
+
+        assert resp.status_code == 200
+        assert not event.co_hosts.filter(pk=alice.pk).exists()

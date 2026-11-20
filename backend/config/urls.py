@@ -1,3 +1,4 @@
+from audit.api import router as audit_router
 from community.api import router as community_router
 from django.urls import path, re_path
 from mcp_gateway.api import router as connect_router
@@ -13,6 +14,7 @@ from config.validation_handlers import register_validation_handlers
 
 api = NinjaAPI(title="PDA API", version="1.0.0")
 register_validation_handlers(api)
+api.add_router("/audit/", audit_router, tags=["audit"])
 api.add_router("/auth/", auth_router, tags=["auth"])
 api.add_router("/community/", community_router, tags=["community"])
 api.add_router("/connect/", connect_router, tags=["connect"])

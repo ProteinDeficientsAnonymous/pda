@@ -24,6 +24,18 @@ describe('messageForCode', () => {
     );
   });
 
+  it('asks for a dollar amount when the event price is invalid', () => {
+    expect(messageForCode({ code: Code.Event.PriceInvalid, field: 'price' })).toBe(
+      'price must be a dollar amount, like 10 or 12.50 — leave blank if free',
+    );
+  });
+
+  it('says only official events can take paypal', () => {
+    expect(messageForCode({ code: Code.Event.PaypalOfficialOnly, field: 'accept_paypal' })).toBe(
+      'only official events can take paypal',
+    );
+  });
+
   it('says the rsvp deadline must come before the start', () => {
     expect(
       messageForCode({ code: Code.Event.RsvpDeadlineAfterStart, field: 'rsvp_deadline' }),
@@ -33,6 +45,12 @@ describe('messageForCode', () => {
   it('says going guests can only step down after the rsvp deadline', () => {
     expect(messageForCode({ code: Code.Event.RsvpsClosedDeadline, field: null })).toBe(
       "the rsvp deadline has passed — going guests can only switch to can't go or drop their +1",
+    );
+  });
+
+  it('says going guests can only step down once a host closes rsvps', () => {
+    expect(messageForCode({ code: Code.Event.RsvpsClosedByHost, field: null })).toBe(
+      "rsvps are closed — going guests can only switch to can't go or drop their +1",
     );
   });
 
@@ -146,6 +164,19 @@ describe('messageForCode', () => {
     expect(out).toContain('5 mb');
   });
 
+  it('names the question for an invalid join answer format', () => {
+    expect(
+      messageForCode({
+        code: Code.JoinRequest.AnswerInvalidFormat,
+        field: 'answers',
+        params: { label: 'how did you hear' },
+      }),
+    ).toBe('invalid answer format for "how did you hear"');
+    expect(messageForCode({ code: Code.JoinRequest.AnswerInvalidFormat, field: 'answers' })).toBe(
+      'invalid answer format',
+    );
+  });
+
   it('names the question for an invalid rsvp answer format', () => {
     expect(
       messageForCode({
@@ -227,6 +258,12 @@ describe('messageForCode', () => {
 
   it.each(Object.values(Code.Planning))('gives planning code %s its own copy', (code) => {
     expect(messageForCode({ code, field: null })).not.toMatch(/double-check/i);
+  });
+
+  it('should return lowercase copy when user status transition is invalid', () => {
+    expect(messageForCode({ code: Code.User.InvalidStatusTransition, field: null })).toBe(
+      "that status change isn't allowed",
+    );
   });
 
   it('returns a safe fallback for unknown codes', () => {

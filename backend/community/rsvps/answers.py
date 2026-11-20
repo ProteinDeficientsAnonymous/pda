@@ -1,17 +1,21 @@
 from users.permissions import PermissionKey
 
 from community._question_answers import (
-    assert_checkbox_members,
-    assert_single_choice_member,
-    checkbox_values,
+    AnswerCodes,
+    ChoiceAnswer,
     is_answer_empty,
+    normalize_answer,
 )
 from community.field_limits import FieldLimit
-from community.models import EventRsvpQuestion, RsvpQuestionType, RSVPStatus
+from community.models import EventRsvpQuestion, RSVPStatus
 from community.validation import Code, raise_validation
 
-RsvpAnswerIn = str | list[str]
-AnswersIn = dict[str, RsvpAnswerIn]
+AnswersIn = dict[str, ChoiceAnswer]
+
+_ANSWER_CODES = AnswerCodes(
+    invalid_option=Code.Event.RSVP_ANSWER_INVALID_OPTION,
+    invalid_format=Code.Event.RSVP_ANSWER_INVALID_FORMAT,
+)
 
 
 def can_see_guest_questionnaire_responses(requesting_user, creator, co_host_ids: set[str]) -> bool:
@@ -47,35 +51,13 @@ def _require_if_needed(q: EventRsvpQuestion, *, require_answers: bool) -> None:
         )
 
 
-def _normalize_checkbox_answer(q: EventRsvpQuestion, answer: RsvpAnswerIn) -> list[str]:
-    field = f"questionnaire_responses.{q.id}"
-    assert_checkbox_members(
-        answer,
-        q.options,
-        code=Code.Event.RSVP_ANSWER_INVALID_OPTION,
-        field=field,
-        label=q.label,
-    )
-    return list(dict.fromkeys(checkbox_values(answer)))
-
-
-def _normalize_answer(q: EventRsvpQuestion, answer: RsvpAnswerIn) -> RsvpAnswerIn:
-    if q.field_type == RsvpQuestionType.CHECKBOX:
-        return _normalize_checkbox_answer(q, answer)
-    field = f"questionnaire_responses.{q.id}"
-    if isinstance(answer, list):
-        raise_validation(Code.Event.RSVP_ANSWER_INVALID_FORMAT, field=field, label=q.label)
-
-    text = str(answer).strip()
-    if q.field_type == RsvpQuestionType.SELECT:
-        assert_single_choice_member(
-            text,
-            q.options,
-            code=Code.Event.RSVP_ANSWER_INVALID_OPTION,
-            field=field,
-            label=q.label,
-        )
-    return text
+def answer_price_cents(q: EventRsvpQuestion, answer: ChoiceAnswer) -> int | None:
+    """return(None): the question isn't priced."""
+    if not q.option_prices:
+        return None
+    price_by_option = dict(zip(q.options, q.option_prices, strict=False))
+    chosen = answer if isinstance(answer, list) else [answer]
+    return sum(price_by_option[option] for option in chosen)
 
 
 def build_rsvp_answers(
@@ -101,10 +83,14 @@ def build_rsvp_answers(
                 label=q.label,
                 max=FieldLimit.DESCRIPTION,
             )
-        normalized = _normalize_answer(q, answer)
+        field = f"questionnaire_responses.{key}"
+        normalized = normalize_answer(answer, q, codes=_ANSWER_CODES, field=field)
         # Checkbox ",,," or [" "] normalizes to [] — treat as unanswered.
         if is_answer_empty(normalized):
             _require_if_needed(q, require_answers=require_answers)
             continue
         snapshot[key] = {"label": q.label, "answer": normalized}
+        price_cents = answer_price_cents(q, normalized)
+        if price_cents is not None:
+            snapshot[key]["price_cents"] = price_cents
     return snapshot

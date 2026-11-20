@@ -4,7 +4,14 @@ import secrets
 from datetime import timedelta
 
 import pytest
-from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
+from community.models import (
+    Event,
+    EventCoHostInvite,
+    EventRSVP,
+    EventType,
+    PageVisibility,
+    RSVPStatus,
+)
 from community.validation import Code
 from django.utils import timezone
 from users.models import User
@@ -341,6 +348,42 @@ class TestTextRecipients:
             **auth_headers_for(co_host),
         )
         assert response.status_code == 200
+
+    def test_co_hosts_returned_without_rsvp_and_exclude_requester(self, api_client):
+        creator = self._make_user("+12025550250", "Creator50")
+        co_host = self._make_user("+12025550251", "CoHost51")
+        event = self._make_event(creator, co_host=co_host)
+
+        response = api_client.get(
+            f"/api/community/events/{event.id}/text-recipients/",
+            **auth_headers_for(creator),
+        )
+        body = response.json()
+        assert body["co_hosts"] == [co_host.phone_number]
+        assert body["attending"] == []
+
+    def test_co_hosts_include_creator_when_requested_by_another_host(self, api_client):
+        creator = self._make_user("+12025550252", "Creator52")
+        co_host = self._make_user("+12025550253", "CoHost53")
+        event = self._make_event(creator, co_host=co_host)
+
+        response = api_client.get(
+            f"/api/community/events/{event.id}/text-recipients/",
+            **auth_headers_for(co_host),
+        )
+        assert response.json()["co_hosts"] == [creator.phone_number]
+
+    def test_pending_co_host_invite_is_not_included(self, api_client):
+        creator = self._make_user("+12025550254", "Creator54")
+        pending = self._make_user("+12025550255", "Pending55")
+        event = self._make_event(creator)
+        EventCoHostInvite.objects.create(event=event, user=pending, invited_by=creator)
+
+        response = api_client.get(
+            f"/api/community/events/{event.id}/text-recipients/",
+            **auth_headers_for(creator),
+        )
+        assert response.json()["co_hosts"] == []
 
     def test_non_host_member_gets_403(self, api_client):
         creator = self._make_user("+12025550246", "Creator46")

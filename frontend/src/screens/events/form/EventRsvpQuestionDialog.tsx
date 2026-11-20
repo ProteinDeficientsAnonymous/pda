@@ -12,6 +12,7 @@ import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
+import { centsToDollars, dollarsToCents } from '@/utils/orderPrice';
 
 import {
   newQuestionId,
@@ -20,6 +21,7 @@ import {
   type RsvpQuestionType,
   wantsOptions,
 } from '../rsvpQuestions';
+import { OptionPricesEditor } from './OptionPricesEditor';
 
 const MAX_OPTION_LENGTH = 200;
 
@@ -28,6 +30,16 @@ interface Props {
   onClose: () => void;
   onSave: (question: RsvpQuestionDraft) => void;
   existing?: RsvpQuestionDraft | undefined;
+}
+
+function initialPrices(existing: RsvpQuestionDraft | undefined): Record<string, string> {
+  const prices = existing?.optionPrices ?? [];
+  return Object.fromEntries(
+    (existing?.options ?? []).map((option, i) => {
+      const cents = prices[i];
+      return [option, cents === undefined ? '' : centsToDollars(cents)];
+    }),
+  );
 }
 
 export function EventRsvpQuestionDialog(props: Props) {
@@ -44,6 +56,8 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
   const [options, setOptions] = useState<string[]>(() =>
     existing?.options.length ? [...existing.options] : [''],
   );
+  const [priced, setPriced] = useState(() => Boolean(existing?.optionPrices?.length));
+  const [prices, setPrices] = useState(() => initialPrices(existing));
   const [error, setError] = useState<string | null>(null);
 
   function onSubmit(e: SyntheticEvent) {
@@ -65,11 +79,18 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
       setError(`options must be ${String(MAX_OPTION_LENGTH)} characters or fewer`);
       return;
     }
+    const cents =
+      needsOptions && priced ? normalized.map((o) => dollarsToCents(prices[o] ?? '')) : [];
+    if (cents.includes(null)) {
+      setError('add a dollar price for each option, like 12 or 12.50');
+      return;
+    }
     onSave({
       id: existing?.id ?? newQuestionId(),
       label: label.trim(),
       fieldType,
       options: normalized,
+      optionPrices: cents.filter((c) => c !== null),
       required,
     });
     onClose();
@@ -106,6 +127,18 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
             options={options}
             onChange={setOptions}
             maxLength={MAX_OPTION_LENGTH}
+          />
+        ) : null}
+        {wantsOptions(fieldType) ? (
+          <Toggle checked={priced} onChange={setPriced} label="price per option" />
+        ) : null}
+        {wantsOptions(fieldType) && priced ? (
+          <OptionPricesEditor
+            options={normalizeQuestionOptions(options)}
+            prices={prices}
+            onChange={(option, dollars) => {
+              setPrices((prev) => ({ ...prev, [option]: dollars }));
+            }}
           />
         ) : null}
         <Toggle checked={required} onChange={setRequired} label="required" />

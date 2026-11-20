@@ -1,10 +1,10 @@
 import type { Event } from '@/models/event';
 import {
+  areRsvpsClosed,
   canLimitedRsvp,
   EventStatus,
   InvitePermission,
   isLimited,
-  isRsvpDeadlinePassed,
   RsvpStatus,
 } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
@@ -30,7 +30,7 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
   const membershipBlocksRsvp = isLimited(user) && !canLimitedRsvp(event);
   // the backend refuses rsvps on a draft to anyone who can't edit it
   const rsvpLocked = !isOpen || (event.status === EventStatus.Draft && !isHostOrEventManager);
-  const rsvpDeadlineClosed = isRsvpDeadlinePassed(event) && !isHostOrEventManager;
+  const rsvpsClosed = areRsvpsClosed(event) && !isHostOrEventManager;
   const showStandaloneInvited = !showRsvp && isHostOrEventManager && event.invitedCount > 0;
   return {
     isHostOrEventManager,
@@ -38,7 +38,7 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
     canInvite,
     showRsvp,
     rsvpLocked,
-    rsvpDeadlineClosed,
+    rsvpsClosed,
     membershipBlocksRsvp,
     showStandaloneInvited,
   };

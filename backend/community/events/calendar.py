@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from users.models import CalendarFeedScope
 from users.models import User as UserModel
 
-from community.events.helpers import can_see_invite_only
+from community.events.helpers import can_see_invite_only, event_co_host_ids
 from community.events.limited_access import event_viewer_for, is_limited, limited_access_event_q
 from community.events.read_visibility import enforce_event_read_visibility
 from community.models import (
@@ -150,7 +150,7 @@ def calendar_feed(request, token: str = ""):
 
     for event in _feed_events(user):
         if event.visibility == PageVisibility.INVITE_ONLY:
-            co_host_ids = {str(c.id) for c in event.co_hosts.all()}
+            co_host_ids = event_co_host_ids(event)
             invited_user_ids = {str(u.id) for u in event.invited_users.all()}
             if not can_see_invite_only(user, co_host_ids, invited_user_ids, event.created_by_id):
                 continue
@@ -158,7 +158,7 @@ def calendar_feed(request, token: str = ""):
         cal.add_component(_build_vevent(event, request, is_authed=is_authed))
     cal.add_missing_timezones()
 
-    response = HttpResponse(cal.to_ical(), content_type="text/calendar")
+    response = HttpResponse(_unfolded_ical(cal), content_type="text/calendar")
     response["Content-Disposition"] = 'inline; filename="pda-calendar.ics"'
     return response
 
@@ -186,7 +186,7 @@ def single_event_ics(request, event_id: str):
     cal.add_component(_build_vevent(event, request, is_authed=viewer is not None))
     cal.add_missing_timezones()
 
-    response = HttpResponse(cal.to_ical(), content_type="text/calendar")
+    response = HttpResponse(_unfolded_ical(cal), content_type="text/calendar")
     response["Content-Disposition"] = f'inline; filename="{_ics_filename(event)}"'
     return response
 
@@ -198,6 +198,11 @@ def _ics_filename(event) -> str:
     CR/LF/quote header injection in Content-Disposition.
     """
     return f"event-{event.id}.ics"
+
+
+def _unfolded_ical(cal: icalendar.Calendar) -> bytes:
+    # Google Calendar links a folded URL only up to the fold (#2208); RFC 5545 folding is a SHOULD.
+    return "".join(f"{line}\r\n" for line in cal.content_lines() if line).encode()
 
 
 def _new_calendar() -> icalendar.Calendar:

@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
+import { extractApiErrorOr } from '@/api/apiErrors';
+import { useUpdateEvent } from '@/api/eventWrites';
 import { useAuthStore } from '@/auth/store';
+import { useConfirm } from '@/components/ui/useConfirm';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType } from '@/models/event';
 
@@ -30,6 +34,9 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps, sho
   const showEmailBlast =
     canManageRsvps && event.status !== EventStatus.Draft && event.guests.length > 0;
   const showEdit = canEditEvent(event, user);
+  const showRsvpsToggle =
+    canManageRsvps && event.rsvpEnabled && event.status === EventStatus.Active && !event.isPast;
+  const rsvpsToggle = useRsvpsClosedToggle(event);
 
   useEffect(() => {
     if (!open) return;
@@ -158,6 +165,16 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps, sho
               group text
             </MenuButton>
           ) : null}
+          {showRsvpsToggle ? (
+            <MenuButton
+              onSelect={() => {
+                setOpen(false);
+                void rsvpsToggle.toggle();
+              }}
+            >
+              {event.rsvpsClosed ? 'reopen rsvps' : 'close rsvps'}
+            </MenuButton>
+          ) : null}
         </div>
       ) : null}
       <EmailBlastDialog
@@ -174,8 +191,37 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps, sho
           setGroupTextOpen(false);
         }}
       />
+      {rsvpsToggle.element}
     </div>
   );
+}
+
+function useRsvpsClosedToggle(event: Event) {
+  const update = useUpdateEvent(event.id);
+  const { confirm, element } = useConfirm();
+
+  async function toggle() {
+    const closing = !event.rsvpsClosed;
+    if (closing) {
+      const ok = await confirm({
+        title: 'close rsvps',
+        message:
+          "no one new can rsvp or join the waitlist, and cancellations won't open spots. you can reopen anytime.",
+        confirmLabel: 'close rsvps',
+      });
+      if (!ok) return;
+    }
+    update.mutate(
+      { rsvpsClosed: closing },
+      {
+        onError: (err) => {
+          toast.error(extractApiErrorOr(err, "couldn't update rsvps — try again"));
+        },
+      },
+    );
+  }
+
+  return { toggle, element };
 }
 
 function MenuLink({

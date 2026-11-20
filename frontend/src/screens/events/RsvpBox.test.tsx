@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { RsvpStatus } from '@/models/event';
+import { RsvpServerStatus, RsvpStatus } from '@/models/event';
 import { makeEvent, makePaidEvent } from '@/test/fixtures';
 
 import { RsvpBox } from './RsvpBox';
@@ -16,6 +16,8 @@ const base = {
   onClose: () => {},
   event: makeEvent(),
 };
+
+const fullEvent = makeEvent({ maxAttendees: 2, attendingCount: 2 });
 
 const requiredSelect: RsvpQuestionDraft = {
   id: 'q-transport',
@@ -56,6 +58,7 @@ describe('RsvpBox', () => {
         hasPlusOne: false,
         questionnaireResponses: {},
       }),
+      expect.any(Function),
     );
   });
 
@@ -65,6 +68,7 @@ describe('RsvpBox', () => {
     fireEvent.click(screen.getByRole('button', { name: /confirm|save/i }));
     expect(onConfirm).toHaveBeenCalledWith(
       expect.not.objectContaining({ comment: expect.anything() }),
+      expect.any(Function),
     );
   });
 
@@ -99,6 +103,7 @@ describe('RsvpBox', () => {
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpStatus.Attending, hasPlusOne: true }),
+      expect.any(Function),
     );
   });
 
@@ -118,6 +123,7 @@ describe('RsvpBox', () => {
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpStatus.Maybe, hasPlusOne: true }),
+      expect.any(Function),
     );
   });
 
@@ -137,6 +143,7 @@ describe('RsvpBox', () => {
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpStatus.CantGo, hasPlusOne: false }),
+      expect.any(Function),
     );
   });
 
@@ -175,20 +182,21 @@ describe('RsvpBox', () => {
   });
 
   it('shows "join the waitlist" instead of "i\'m going" when at capacity', () => {
-    render(<RsvpBox {...base} mode="create" atCapacity onConfirm={() => {}} />);
+    render(<RsvpBox {...base} event={fullEvent} mode="create" onConfirm={() => {}} />);
     expect(screen.getAllByRole('button', { name: /^join the waitlist$/i })).toHaveLength(2);
     expect(screen.queryByRole('button', { name: /^i'm going$/i })).not.toBeInTheDocument();
   });
 
   it('confirms with the attending status when joining the waitlist', () => {
     const onConfirm = vi.fn();
-    render(<RsvpBox {...base} mode="create" atCapacity onConfirm={onConfirm} />);
+    render(<RsvpBox {...base} event={fullEvent} mode="create" onConfirm={onConfirm} />);
     const buttons = screen.getAllByRole('button', { name: /^join the waitlist$/i });
     const confirmButton = buttons.at(-1);
     if (!confirmButton) throw new Error('expected a join the waitlist confirm button');
     fireEvent.click(confirmButton);
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpStatus.Attending }),
+      expect.any(Function),
     );
   });
 
@@ -240,6 +248,7 @@ describe('RsvpBox', () => {
     fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpStatus.Maybe, questionnaireResponses: {} }),
+      expect.any(Function),
     );
   });
 
@@ -269,6 +278,7 @@ describe('RsvpBox', () => {
         status: RsvpStatus.Attending,
         questionnaireResponses: { 'q-transport': 'driving' },
       }),
+      expect.any(Function),
     );
   });
 
@@ -277,7 +287,10 @@ describe('RsvpBox', () => {
     render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={onConfirm} />);
     fireEvent.click(screen.getByRole('button', { name: /can't go/i }));
     fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
-    expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ status: RsvpStatus.CantGo }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ status: RsvpStatus.CantGo }),
+      expect.any(Function),
+    );
   });
 });
 
@@ -299,7 +312,53 @@ describe('RsvpBox payment confirmation gate', () => {
     await userEvent.click(screen.getByRole('button', { name: /yes, i paid/i }));
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpStatus.Attending, paidConfirmed: true }),
+      expect.any(Function),
     );
+  });
+
+  it('skips the payment step when joining the waitlist', async () => {
+    const onConfirm = vi.fn();
+    const event = makePaidEvent({ maxAttendees: 2, attendingCount: 2 });
+    render(<RsvpBox {...base} event={event} mode="create" onConfirm={onConfirm} />);
+    const confirmButton = screen.getAllByRole('button', { name: /^join the waitlist$/i }).at(-1);
+    if (!confirmButton) throw new Error('expected a join the waitlist confirm button');
+    await userEvent.click(confirmButton);
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.not.objectContaining({ paidConfirmed: true }),
+      expect.any(Function),
+    );
+  });
+
+  it('waitlists a +1 party without the payment step when only one spot is left', async () => {
+    const onConfirm = vi.fn();
+    const event = makePaidEvent({ maxAttendees: 2, attendingCount: 1, allowPlusOnes: true });
+    render(<RsvpBox {...base} event={event} mode="create" onConfirm={onConfirm} />);
+    await userEvent.click(screen.getByRole('button', { name: /^add \+1$/i }));
+    const confirmButton = screen.getAllByRole('button', { name: /^join the waitlist$/i }).at(-1);
+    if (!confirmButton) throw new Error('expected a join the waitlist confirm button');
+    await userEvent.click(confirmButton);
+    expect(screen.queryByRole('button', { name: /yes, i paid/i })).not.toBeInTheDocument();
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ hasPlusOne: true, status: RsvpStatus.Attending }),
+      expect.any(Function),
+    );
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.not.objectContaining({ paidConfirmed: true }),
+      expect.any(Function),
+    );
+  });
+
+  it('still gates an unpaid attendee who holds a seat at capacity', async () => {
+    const onConfirm = vi.fn();
+    const event = makePaidEvent({
+      maxAttendees: 2,
+      attendingCount: 2,
+      myRsvp: RsvpServerStatus.Attending,
+    });
+    render(<RsvpBox {...base} event={event} mode="edit" onConfirm={onConfirm} />);
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /yes, i paid/i })).toBeInTheDocument();
   });
 
   it('skips the payment step for maybe', async () => {
