@@ -658,7 +658,7 @@
                 "type": "null"
               }
             ],
-            "description": "on or after this time",
+            "description": "on or after this time; utc unless an offset is given",
             "title": "Since"
           },
           "target_id": {
@@ -693,7 +693,7 @@
                 "type": "null"
               }
             ],
-            "description": "before this time",
+            "description": "before this time; utc unless an offset is given",
             "title": "Until"
           }
         },
@@ -9795,7 +9795,7 @@
             }
           },
           {
-            "description": "on or after this time",
+            "description": "on or after this time; utc unless an offset is given",
             "in": "query",
             "name": "since",
             "required": false,
@@ -9809,12 +9809,12 @@
                   "type": "null"
                 }
               ],
-              "description": "on or after this time",
+              "description": "on or after this time; utc unless an offset is given",
               "title": "Since"
             }
           },
           {
-            "description": "before this time",
+            "description": "before this time; utc unless an offset is given",
             "in": "query",
             "name": "until",
             "required": false,
@@ -9828,7 +9828,7 @@
                   "type": "null"
                 }
               ],
-              "description": "before this time",
+              "description": "before this time; utc unless an offset is given",
               "title": "Until"
             }
           },

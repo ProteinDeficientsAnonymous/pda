@@ -29,8 +29,12 @@ class AuditLogFilters(Schema):
     action: str | None = Field(None, max_length=64, description="exact action, e.g. user_paused")
     target_type: AuditTargetType | None = None
     target_id: str | None = Field(None, max_length=64)
-    since: datetime | None = Field(None, description="on or after this time")
-    until: datetime | None = Field(None, description="before this time")
+    since: datetime | None = Field(
+        None, description="on or after this time; utc unless an offset is given"
+    )
+    until: datetime | None = Field(
+        None, description="before this time; utc unless an offset is given"
+    )
 
 
 class AuditLogQuery(AuditLogFilters):

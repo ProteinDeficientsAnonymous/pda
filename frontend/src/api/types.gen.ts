@@ -3204,7 +3204,7 @@ export interface components {
             offset: number;
             /**
              * Since
-             * @description on or after this time
+             * @description on or after this time; utc unless an offset is given
              */
             since?: string | null;
             /** Target Id */
@@ -3212,7 +3212,7 @@ export interface components {
             target_type?: components["schemas"]["AuditTargetType"] | null;
             /**
              * Until
-             * @description before this time
+             * @description before this time; utc unless an offset is given
              */
             until?: string | null;
         };
@@ -6968,9 +6968,9 @@ export interface operations {
                 action?: string | null;
                 target_type?: components["schemas"]["AuditTargetType"] | null;
                 target_id?: string | null;
-                /** @description on or after this time */
+                /** @description on or after this time; utc unless an offset is given */
                 since?: string | null;
-                /** @description before this time */
+                /** @description before this time; utc unless an offset is given */
                 until?: string | null;
                 limit?: number;
                 offset?: number;
