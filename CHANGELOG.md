@@ -1,3 +1,10 @@
+# [0.266.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.265.0...v0.266.0) (2026-11-20)
+
+
+### Features
+
+* **audit:** add view_audit_log permission and audit log endpoint ([#2296](https://github.com/ProteinDeficientsAnonymous/pda/issues/2296)) ([3e52716](https://github.com/ProteinDeficientsAnonymous/pda/commit/3e527167f455d97b2cab4ad53c109b393c9405b8))
+
 # [0.265.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.264.0...v0.265.0) (2026-11-20)
 
 
