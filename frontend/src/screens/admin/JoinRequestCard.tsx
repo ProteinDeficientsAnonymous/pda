@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 
 import { JoinRequestStatus, type JoinRequestSummary, type RsvpBreakdown } from '@/api/join';
 import { rejectionReasonText } from '@/api/rejectionEmail';
+import { renderAnswer } from '@/components/questions/renderAnswer';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
@@ -87,7 +88,7 @@ export function JoinRequestCard({
           {request.answers.map((a) => (
             <div key={a.questionId}>
               <dt className="text-muted text-xs font-medium">{a.label}</dt>
-              <dd className="text-foreground text-sm whitespace-pre-wrap">{a.answer}</dd>
+              <dd className="text-foreground text-sm whitespace-pre-wrap">{renderAnswer(a)}</dd>
             </div>
           ))}
         </dl>
