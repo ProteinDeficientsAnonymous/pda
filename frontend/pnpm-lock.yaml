@@ -8,8 +8,9 @@ overrides:
   brace-expansion: 2.1.8
   js-yaml: 4.3.2
   moment: 2.31.0
+  openapi-typescript>typescript@^5.x: '-'
 
-pnpmfileChecksum: sha256-she6Ord03AfXACMieUICp8mxuJBiDX74hAtQH0iIMkA=
+packageExtensionsChecksum: sha256-cIWUUMK5v06GkYxp/vG4a4Dn30pXt90eNMagjReRC9g=
 
 importers:
 
