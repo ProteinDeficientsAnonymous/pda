@@ -56,13 +56,13 @@ from community.events.public_rsvper_removal import (
     guard_or_remove_ineligible_public_rsvpers,
 )
 from community.events.read_visibility import enforce_event_read_visibility
+from community.events.rsvp_question_schemas import validate_event_rsvp_question
 from community.events.schemas import (
     EventIn,
     EventListOut,
     EventOut,
     EventPatchIn,
     RSVPGuestOut,
-    validate_event_rsvp_question,
 )
 from community.events.viewer import resolve_event_viewer
 from community.models import (
