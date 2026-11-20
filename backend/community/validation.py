@@ -65,6 +65,7 @@ class Code:
         PAYPAL_OFFICIAL_ONLY = "event.paypal_official_only"
         PAYPAL_NOT_ACCEPTED = "event.paypal_not_accepted"
         PAYPAL_NOTHING_TO_PAY = "event.paypal_nothing_to_pay"
+        PAYPAL_ORDER_INVALID = "event.paypal_order_invalid"
 
     class Poll:
         NOT_FOUND = "poll.not_found"

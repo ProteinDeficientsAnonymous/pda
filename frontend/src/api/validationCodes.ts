@@ -74,6 +74,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "this event doesn't take paypal";
     case Code.Event.PaypalNothingToPay:
       return 'you have no rsvp here that needs paying';
+    case Code.Event.PaypalOrderInvalid:
+      return "this paypal payment doesn't match the event — start it again";
     case Code.Event.InvalidCreateStatus:
       return 'new events can only be saved as active or draft';
     case Code.Event.DateLockedByPoll:

@@ -307,6 +307,11 @@
         "name": "PAYPAL_NOTHING_TO_PAY",
         "value": "event.paypal_nothing_to_pay",
         "params": []
+      },
+      {
+        "name": "PAYPAL_ORDER_INVALID",
+        "value": "event.paypal_order_invalid",
+        "params": []
       }
     ],
     "Poll": [
