@@ -6,6 +6,13 @@ import { MembershipStatus, type User } from './user';
 /** checkbox answers are a list of ticked options; older ones are comma-joined strings */
 export type QuestionnaireAnswer = string | string[];
 
+export interface QuestionnaireSnapshot {
+  label: string;
+  answer: QuestionnaireAnswer;
+  /** What a priced answer cost when it was saved. */
+  priceCents?: number;
+}
+
 export const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
 
 export const EventType = {
@@ -102,6 +109,8 @@ export interface EventRsvpQuestion {
   label: string;
   fieldType: EventRsvpQuestionType;
   options: string[];
+  /** Cents, parallel to options; empty when the question isn't priced. */
+  optionPrices?: number[];
   required: boolean;
 }
 
@@ -118,7 +127,7 @@ export interface EventGuest {
   paidConfirmed: boolean;
   paymentVerified: boolean;
   /** Host-only RSVP question snapshots; empty for non-hosts. */
-  questionnaireResponses: Record<string, { label: string; answer: QuestionnaireAnswer }>;
+  questionnaireResponses: Record<string, QuestionnaireSnapshot>;
 }
 
 export interface EventCancellation {
@@ -195,7 +204,7 @@ export interface Event {
   myRsvp: string | null;
   myPaidConfirmed: boolean;
   /** Snapshot responses for the viewer's RSVP: questionId → { label, answer }. */
-  myQuestionnaireResponses: Record<string, { label: string; answer: QuestionnaireAnswer }>;
+  myQuestionnaireResponses: Record<string, QuestionnaireSnapshot>;
   rsvpQuestions: EventRsvpQuestion[];
   viewerUserId: string | null;
   invitedUserIds: string[];
@@ -281,6 +290,14 @@ export function eventClass(e: Event): string {
 export function spotsLeft(e: Event): number | null {
   if (e.maxAttendees === null) return null;
   return Math.max(0, e.maxAttendees - e.attendingCount);
+}
+
+// Mirrors the backend: a held seat or place in line is kept; a party that doesn't fit is waitlisted whole.
+export function goingWouldWaitlist(e: Event, hasPlusOne: boolean): boolean {
+  if (e.myRsvp === RsvpServerStatus.Attending) return false;
+  const left = spotsLeft(e);
+  if (left !== null && e.myRsvp === RsvpServerStatus.Waitlisted) return true;
+  return left !== null && left < (hasPlusOne && e.allowPlusOnes ? 2 : 1);
 }
 
 export function myRsvpLabel(e: Event): string | null {

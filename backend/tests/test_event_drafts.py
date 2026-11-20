@@ -1,10 +1,12 @@
 """Tests for the draft event lifecycle: create, list, detail, publish, delete."""
 
 import json
+from datetime import timedelta
 
 import pytest
 from community.models import Event, EventStatus
 from community.validation import Code
+from ninja_jwt.tokens import AccessToken
 from notifications.models import Notification
 from users.models import User
 
@@ -238,6 +240,18 @@ class TestDraftDetail:
         sample_draft.co_hosts.add(cohost)
         response = api_client.get(f"/api/community/events/{sample_draft.id}/", **cohost_headers)
         assert response.status_code == 200
+
+    @pytest.mark.parametrize("path", ["/api/community/events/{slug}/", "{comments}"])
+    def test_expired_token_401s_instead_of_draft_403(self, api_client, sample_draft, creator, path):
+        # A 401 makes the client refresh and retry; a 403 showed the host the draft-mode notice.
+        access = AccessToken.for_user(creator)
+        access.set_exp(lifetime=-timedelta(minutes=1))
+        url = path.format(
+            slug=sample_draft.slug,
+            comments=f"/api/community/events/{sample_draft.id}/comments/",
+        )
+        response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {access}")
+        assert response.status_code == 401
 
 
 @pytest.mark.django_db

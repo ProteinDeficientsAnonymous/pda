@@ -31,15 +31,10 @@ def paused(db):
         phone_number="+12025557101", first_name="Paused", email="paused@example.com"
     )
     user.roles.clear()
+    fields = user.apply_attendance_pause(by=None)
     user.attendance_paused_at = timezone.now() - timedelta(days=10)
     user.attendance_grace_notified_at = timezone.now() - timedelta(days=20)
-    user.save(
-        update_fields=[
-            "attendance_paused_at",
-            "attendance_grace_notified_at",
-            *user.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED, by=None),
-        ]
-    )
+    user.save(update_fields=["attendance_grace_notified_at", *fields])
     return user
 
 

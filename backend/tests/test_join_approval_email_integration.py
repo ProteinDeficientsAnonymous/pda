@@ -1,7 +1,7 @@
 import pytest
 from community.models import (
     AttendanceStatus,
-    JoinRequestStatus,
+    JoinRequestEvent,
     MemberPromotionEmailTemplate,
     TentativeApprovalMessageTemplate,
     WhatsAppLinkConfig,
@@ -23,13 +23,13 @@ class TestJoinApprovalEmail:
         sample_join_request.save(update_fields=["email"])
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -46,13 +46,13 @@ class TestJoinApprovalEmail:
         sample_join_request.save(update_fields=["email"])
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -110,13 +110,13 @@ class TestJoinApprovalEmail:
         sample_join_request.save(update_fields=["email"])
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -138,13 +138,13 @@ class TestJoinApprovalEmail:
         sample_join_request.save(update_fields=["email"])
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -170,13 +170,13 @@ class TestJoinApprovalEmail:
         sample_join_request.save(update_fields=["email"])
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -194,13 +194,13 @@ class TestJoinApprovalEmailWhatsAppLink:
         join_request.save(update_fields=["email"])
         api_client.patch(
             f"/api/community/join-requests/{join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
         api_client.patch(
             f"/api/community/join-requests/{join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )

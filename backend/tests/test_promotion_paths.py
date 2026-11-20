@@ -1,7 +1,7 @@
 """The two promotion paths differ in what credential the promoted user needs."""
 
 import pytest
-from community.models import AttendanceStatus, JoinRequest, JoinRequestStatus
+from community.models import AttendanceStatus, JoinRequest, JoinRequestEvent, JoinRequestStatus
 from django.utils import timezone
 from users.models import MembershipStatus, PublicRsvpToken, User
 
@@ -16,7 +16,7 @@ __all__ = ["open_official_event"]
 def _approve(api_client, vettor_headers, jr_id):
     return api_client.patch(
         f"/api/community/join-requests/{jr_id}/",
-        {"status": JoinRequestStatus.APPROVED},
+        {"event": JoinRequestEvent.APPROVE},
         content_type="application/json",
         **vettor_headers,
     )
