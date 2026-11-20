@@ -18,8 +18,8 @@
     "test:e2e": "playwright test",
     "test:visual": "node visual/shot-names.mjs && playwright test -c playwright.visual.config.ts",
     "test:staging": "playwright test -c playwright.staging.config.ts",
-    "types:api": "openapi-typescript ../backend/openapi_schema.json -o src/api/types.gen.ts",
-    "types:api:check": "openapi-typescript ../backend/openapi_schema.json -o src/api/types.gen.ts --check"
+    "types:api": "openapi-typesafe ../backend/openapi_schema.json -o src/api/types.gen.ts",
+    "types:api:check": "openapi-typesafe ../backend/openapi_schema.json -o src/api/types.gen.ts --check"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -68,7 +68,7 @@
     "axe-core": "^4.11.3",
     "axios-mock-adapter": "^2.1.0",
     "jsdom": "^29.0.2",
-    "openapi-typescript": "^7.13.0",
+    "openapi-typesafe": "1.0.0-rc.16",
     "oxfmt": "^0.78.0",
     "oxlint": "^1.87.0",
     "oxlint-tsgolint": "^7.0.2003",
