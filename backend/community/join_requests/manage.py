@@ -320,7 +320,11 @@ def _audit_reactivated(request, user: User, join_request: JoinRequest) -> None:
         target=AuditTarget(
             type=AuditTargetType.USER,
             id=str(user.pk),
-            details={"full_name": user.full_name, "join_request_id": str(join_request.id)},
+            details={
+                "full_name": user.full_name,
+                "join_request_id": str(join_request.id),
+                "membership_status": user.membership_status,
+            },
         ),
     )
 

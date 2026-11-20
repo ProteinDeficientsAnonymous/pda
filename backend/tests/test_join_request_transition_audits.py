@@ -138,6 +138,24 @@ def test_reapproval_reactivates_archived_user(
     assert entry.actor == vettor_user
     assert (entry.target_type, entry.target_id) == (AuditTargetType.USER, str(archived.pk))
     assert entry.details["join_request_id"] == str(sample_join_request.id)
+    assert entry.details["membership_status"] == MembershipStatus.ACTIVE_MEMBER
+
+
+def test_reapproval_records_pause_restored_from_archive(
+    api_client, vettor_headers, sample_join_request
+):
+    User.objects.create_user(
+        phone_number=sample_join_request.phone_number,
+        first_name="Prior",
+        membership_status=MembershipStatus.ARCHIVED,
+        archived_at=timezone.now(),
+        status_before_archive=MembershipStatus.ATTENDANCE_PAUSED,
+    )
+
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+
+    entry = _entry("user_reactivated")
+    assert entry.details["membership_status"] == MembershipStatus.ATTENDANCE_PAUSED
 
 
 def test_check_in_approves_tentative(api_client):

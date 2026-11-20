@@ -223,11 +223,9 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
 
 
 def maybe_promote_tentative(user, event, actor) -> JoinRequest | None:
-    """Promote a tentative applicant to full member when they check in.
+    """Promote a tentative applicant to full member on an ATTENDED official/club check-in.
 
-    Fires only for an ATTENDED check-in on an official/club event whose RSVP'd
-    user has a linked TENTATIVE join request. Returns the promoted join request,
-    or None when nothing was promoted.
+    return(JoinRequest | None): the promoted join request, or None when nothing was promoted.
     """
     # An archived re-applicant can be tentative under a guidelines pause; check-in doesn't lift it.
     if not is_official_or_club(event.event_type) or user.is_guidelines_paused:
@@ -256,10 +254,8 @@ class Provisioned(NamedTuple):
 def provision_approved_user(join_request, requesting_user, *, was_tentative: bool) -> Provisioned:
     """Create, reactivate, or promote the user for an approved join request.
 
-    Returns the one-time login token and whether a User was created or
-    reactivated (``user_created``, with ``reactivated_user`` set for the latter).
-    A tentative applicant already has a login, so their promotion returns no
-    token. When the phone already maps to an active member, nothing is provisioned.
+    return(Provisioned): login token (None for a tentative promotion or an existing
+    active member), user_created (also True on reactivation), and the reactivated user.
     """
     # A linked non-member is promoted in place; an archived one is reactivated below.
     # SET_NULL FK means a deleted user falls through.
