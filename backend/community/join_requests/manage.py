@@ -353,7 +353,9 @@ def _apply_status_transition(
 
         _stamp_decision(join_request, status, actor, rejection)
         if status == JoinRequestStatus.TENTATIVE:
-            _, magic_token = provision_tentative_user(join_request, actor)
+            user, magic_token, reactivated = provision_tentative_user(join_request, actor)
+            if reactivated:
+                _audit_reactivated(request, user, join_request)
             return join_request, magic_token, False, False
         if status == JoinRequestStatus.APPROVED:
             provisioned = provision_approved_user(join_request, actor, was_tentative=was_tentative)
