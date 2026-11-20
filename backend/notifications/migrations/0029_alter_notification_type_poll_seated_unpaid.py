@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("notifications", "0027_planning_availability"),
+        ("notifications", "0028_sseticket_anonymous_event_scope"),
     ]
 
     operations = [
