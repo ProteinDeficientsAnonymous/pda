@@ -198,11 +198,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
 def _audit_user_update(
     request, user: User, payload: UserPatchIn, was_guidelines_paused: bool, released: dict | None
 ) -> None:
-    """Emit the audit entries for an update_user PATCH.
-
-    A pause transition logs user_paused/user_unpaused with what the pause released;
-    field changes log user_updated.
-    """
+    """Log user_paused/user_unpaused for a guidelines-pause change and user_updated for edits."""
     user_id = str(user.pk)
     is_pause_transition = (
         payload.guidelines_paused is not None and payload.guidelines_paused != was_guidelines_paused
