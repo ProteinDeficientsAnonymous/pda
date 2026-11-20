@@ -90,5 +90,5 @@ def capture_paypal_order(request, event_id: UUID, order_id: str):
         return Status(502, {"detail": "paypal is unavailable, try again"})
     units = order.get("purchase_units", [])
     captures = [c for unit in units for c in unit.get("payments", {}).get("captures", [])]
-    paid = any(record_capture(request, c) == rsvp for c in captures)
+    paid = rsvp in [record_capture(request, c) for c in captures]
     return Status(200, PayPalCaptureOut(paid=paid))

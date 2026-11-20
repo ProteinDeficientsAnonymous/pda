@@ -31,7 +31,7 @@ def _covers_price(capture: dict, event: Event) -> bool:
         return False
     try:
         return Decimal(amount.get("value", "")) >= paypal_price(Decimal(event.price))
-    except InvalidOperation:
+    except (InvalidOperation, TypeError):
         return False
 
 
