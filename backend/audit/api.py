@@ -29,7 +29,7 @@ class AuditLogQuery(Schema):
     since: datetime | None = None
     until: datetime | None = None
     limit: int = Field(50, ge=1, le=100)
-    offset: int = Field(0, ge=0)
+    offset: int = Field(0, ge=0, le=100_000)
 
 
 class AuditLogEntryOut(Schema):

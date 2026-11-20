@@ -61,6 +61,12 @@ def test_requires_permission(api_client, member):
     assert_error_code(response, Code.Perm.DENIED)
 
 
+def test_rejects_offset_past_bound(api_client, auditor):
+    response = api_client.get(URL, {"offset": 10**20}, **auth_headers_for(auditor))
+
+    assert response.status_code == 422
+
+
 def test_member_history_includes_linked_join_requests(api_client, auditor, member):
     _entry("user_paused", auditor, (AuditTargetType.USER, str(member.pk)))
     _entry(
