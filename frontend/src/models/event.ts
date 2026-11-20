@@ -102,6 +102,8 @@ export interface EventRsvpQuestion {
   label: string;
   fieldType: EventRsvpQuestionType;
   options: string[];
+  /** Cents, parallel to options; empty when the question isn't priced. */
+  optionPrices?: number[];
   required: boolean;
 }
 

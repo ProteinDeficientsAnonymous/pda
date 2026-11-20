@@ -84,6 +84,7 @@ describe('mapEvent', () => {
         label: 'dietary?',
         fieldType: 'textarea',
         options: [],
+        optionPrices: [],
         required: true,
       },
     ]);
