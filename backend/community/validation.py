@@ -64,6 +64,7 @@ class Code:
         SLUG_INVALID = "event.slug_invalid"
         SLUG_TAKEN = "event.slug_taken"
         INVALID_EVENT_FORMAT = "event.invalid_event_format"
+        PAYPAL_OFFICIAL_ONLY = "event.paypal_official_only"
 
     class Poll:
         NOT_FOUND = "poll.not_found"
