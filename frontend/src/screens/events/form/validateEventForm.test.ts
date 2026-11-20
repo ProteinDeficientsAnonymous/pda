@@ -27,6 +27,7 @@ function validValues(overrides: Partial<EventFormValues> = {}): EventFormValues 
     partifulLink: '',
     otherLink: '',
     price: '',
+    priceNote: '',
     venmoLink: '',
     cashappLink: '',
     zelleInfo: '',

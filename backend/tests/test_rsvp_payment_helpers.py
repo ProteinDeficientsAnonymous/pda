@@ -36,6 +36,10 @@ class TestEventRequiresPaymentConfirmation:
     def test_payment_method_with_no_price_does_not_require(self):
         assert event_requires_payment_confirmation(build_paid_event(price=None)) is False
 
+    def test_price_note_without_amount_requires_confirmation(self):
+        event = build_paid_event(price=None, price_note="sliding scale $6-$8")
+        assert event_requires_payment_confirmation(event) is True
+
     def test_zero_price_does_not_require(self):
         assert event_requires_payment_confirmation(build_paid_event(price=Decimal("0"))) is False
 
