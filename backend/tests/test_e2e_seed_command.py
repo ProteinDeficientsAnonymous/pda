@@ -3,10 +3,10 @@ from datetime import UTC, datetime
 
 import pytest
 from community.attendance.analytics import (
-    compute_member_stats,
+    EMPTY_MEMBER_STATS,
     is_compliant,
     is_pause_candidate,
-    user_rsvps_for_attendance,
+    member_stats_by_user,
 )
 from community.management.commands._e2e_common import random_phone
 from community.management.commands.e2e_seed import month_end
@@ -16,6 +16,7 @@ from community.models import (
     Event,
     EventRSVP,
     JoinRequest,
+    PlanningYear,
     RSVPStatus,
     Survey,
 )
@@ -213,9 +214,8 @@ def test_e2e_seed_attendance_analytics_compliant_and_at_risk(capsys):
     assert admin.has_permission(PermissionKey.MANAGE_EVENTS)
     assert admin.has_permission(PermissionKey.MANAGE_USERS)
     members = User.objects.filter(first_name__icontains=out["search"])
-    stats = {
-        u.full_name.lower(): compute_member_stats(user_rsvps_for_attendance(u)) for u in members
-    }
+    by_user = member_stats_by_user(members)
+    stats = {u.full_name.lower(): by_user.get(u.pk, EMPTY_MEMBER_STATS) for u in members}
     assert is_compliant(stats[out["compliant_name"]])
     assert is_pause_candidate(stats[out["at_risk_name"]])
     assert out["at_risk_name"] > out["compliant_name"]
@@ -244,6 +244,23 @@ def test_e2e_seed_member_screens_clears_waitlist_screens(capsys):
     call_command("e2e_seed", "waitlist-screens")
     call_command("e2e_seed", "member-screens")
     assert not Event.objects.filter(slug="supper").exists()
+
+
+@pytest.mark.django_db
+def test_e2e_seed_view_planner_has_only_view_planning(capsys):
+    call_command("e2e_seed", "view-planner")
+    out = json.loads(capsys.readouterr().out)
+    planner = User.objects.get(id=RefreshToken(out["refresh_token"])["user_id"])
+    perms = [p for role in planner.roles.all() for p in role.permissions]
+    assert perms == [PermissionKey.VIEW_EVENT_PLANNING]
+    assert PlanningYear.objects.exists()
+
+
+@pytest.mark.django_db
+def test_e2e_seed_view_planner_reuses_existing_year(capsys):
+    PlanningYear.create_with_default_slots(2000)
+    call_command("e2e_seed", "view-planner")
+    assert list(PlanningYear.objects.values_list("year", flat=True)) == [2000]
 
 
 @pytest.mark.django_db
