@@ -56,6 +56,7 @@ function apiError(status: number, code: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.spyOn(window, 'scrollTo');
 });
 
 describe('FeedbackScreen', () => {
@@ -96,9 +97,11 @@ describe('FeedbackScreen', () => {
     fireEvent.change(await screen.findByLabelText('thoughts · required'), {
       target: { value: 'great night' },
     });
+    expect(window.scrollTo).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
 
     expect(await screen.findByText('thanks for sharing 🌱')).toBeInTheDocument();
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
     expect(mockedPost).toHaveBeenCalledWith(
       '/api/community/event-feedback/respond/',
       { answers: { q1: 'great night' } },

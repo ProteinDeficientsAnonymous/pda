@@ -70,3 +70,6 @@ HTMLCanvasElement.prototype.getContext = (() => null) as never;
 
 // jsdom doesn't implement scrollIntoView — provide a no-op stub.
 Element.prototype.scrollIntoView = () => {};
+
+// jsdom doesn't implement window.scrollTo — provide a no-op stub.
+window.scrollTo = () => {};
