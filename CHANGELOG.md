@@ -1,3 +1,10 @@
+# [0.273.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.272.0...v0.273.0) (2026-11-20)
+
+
+### Features
+
+* **users:** encode MembershipStatus as an event-driven state machine ([#2577](https://github.com/ProteinDeficientsAnonymous/pda/issues/2577)) ([0eb2b26](https://github.com/ProteinDeficientsAnonymous/pda/commit/0eb2b267bd593a6f46f1509b01a1ce80219918b2))
+
 # [0.272.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.5...v0.272.0) (2026-11-20)
 
 
