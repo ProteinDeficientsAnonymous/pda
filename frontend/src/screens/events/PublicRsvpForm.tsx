@@ -51,9 +51,6 @@ interface SubmitError {
 }
 
 function messageForStatus(status: number | null, err: unknown): SubmitError {
-  if (hasErrorCode(err, Code.Event.PaymentConfirmationRequired)) {
-    return { text: extractApiErrorOr(err, 'confirm you paid before rsvping'), showSignIn: false };
-  }
   if (hasErrorCode(err, Code.Event.RsvpCouldNotBeCreated)) {
     return {
       text: "we couldn't set up your rsvp with those details — reach out and we'll help",
@@ -162,6 +159,11 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
       });
       onSuccess(result);
     } catch (err) {
+      // Our capacity guess was stale (or they hold an unpaid seat): the server wants payment.
+      if (hasErrorCode(err, Code.Event.PaymentConfirmationRequired)) {
+        setShowPayment(true);
+        return;
+      }
       setSubmitError(messageForStatus(getApiStatus(err), err));
     }
   }

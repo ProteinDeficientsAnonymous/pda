@@ -41,7 +41,8 @@ interface Props {
   error?: string | null;
   questions?: readonly RsvpQuestionDraft[];
   initialAnswers?: Readonly<Record<string, RsvpAnswerValue | undefined>>;
-  onConfirm: (args: ConfirmArgs) => void;
+  // openPaymentStep: for when the server asks for payment the client didn't predict.
+  onConfirm: (args: ConfirmArgs, openPaymentStep: () => void) => void;
   onRemove?: (() => void) | undefined;
   onClose: () => void;
 }
@@ -101,7 +102,9 @@ export function RsvpBox({
     };
     if (showComment && trimmed) args.comment = trimmed;
     if (paidConfirmed) args.paidConfirmed = true;
-    onConfirm(args);
+    onConfirm(args, () => {
+      setShowPayment(true);
+    });
   }
 
   function confirm() {
