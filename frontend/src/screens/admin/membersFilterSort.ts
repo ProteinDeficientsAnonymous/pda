@@ -1,17 +1,21 @@
 import type { Member } from '@/api/users';
 
+import { isTentative } from './memberPause';
+
 export type SortKey = 'name' | 'newest' | 'lastAttended';
 
-export type StatusFilter = 'neverAttended' | 'notInWhatsapp';
+export type StatusFilter = 'neverAttended' | 'notInWhatsapp' | 'tentative';
 
 export const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: 'neverAttended', label: 'never attended an event' },
   { value: 'notInWhatsapp', label: 'not in whatsapp' },
+  { value: 'tentative', label: 'tentative' },
 ];
 
 const STATUS_PREDICATES: Record<StatusFilter, (member: Member) => boolean> = {
   neverAttended: (m) => m.lastAttendedAt === null,
   notInWhatsapp: (m) => !m.hasJoinedWhatsapp,
+  tentative: isTentative,
 };
 
 export const SORT_OPTIONS: { value: SortKey; label: string }[] = [

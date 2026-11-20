@@ -55,9 +55,9 @@ class TestRequestLoggingMiddleware:
             middleware(request)
         assert len(caplog.records) >= 1
         record = caplog.records[0]
-        assert record.method == "GET"  # type: ignore[attr-defined]
-        assert record.path == "/api/auth/me/"  # type: ignore[attr-defined]
-        assert record.status_code == 200  # type: ignore[attr-defined]
+        assert getattr(record, "method") == "GET"
+        assert getattr(record, "path") == "/api/auth/me/"
+        assert getattr(record, "status_code") == 200
         assert hasattr(record, "duration_ms")
 
 
@@ -126,7 +126,7 @@ class TestApplicationEventLogging:
             caplog.at_level(logging.ERROR, logger="pda.community"),
             pytest.MonkeyPatch.context() as mp,
         ):
-            mp.setattr("community.join_requests.submit.send_mail", _fail_send_mail)
+            mp.setattr("community.join_requests._vetting_email.send_mail", _fail_send_mail)
             response = client.post(
                 "/api/community/join-request/",
                 data={

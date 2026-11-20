@@ -2,7 +2,7 @@
 
 import logging
 
-from notifications.email_sender import SendResult, validate_recipient
+from notifications.email_types import SendResult, validate_recipient
 
 logger = logging.getLogger("notifications.console_sender")
 

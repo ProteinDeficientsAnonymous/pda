@@ -5,7 +5,7 @@ import uuid
 
 import pytest
 from community.models import Event, EventPoll, PollAvailability, PollOption, PollVote
-from users.models import User  # noqa: F401 (imported for create_user side effect)
+from users.models import User
 
 from tests._auth import auth_headers_for
 from tests._time import future_iso

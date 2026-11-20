@@ -8,6 +8,7 @@ from mcp.server.auth.provider import AccessToken, RefreshToken, TokenError
 from mcp_gateway.models import OAuthAuthCode, OAuthAuthRequest, OAuthGrant, OAuthToken
 from mcp_gateway.provider import AuthRequestNotPending, PdaOAuthProvider, issue_auth_code
 from mcp_gateway.tokens import hash_secret
+from users.models import MembershipStatus
 
 from tests._mcp_helpers import REDIRECT
 from tests._mcp_provider import RESOURCE, auth_params, client_info, connect_client, pending_request
@@ -111,10 +112,11 @@ def test_load_access_token_returns_subject(test_user):
 
 
 BLOCKED_STATES = [
-    ("is_paused", True),
+    ("membership_status", MembershipStatus.GUIDELINES_PAUSED),
     ("archived_at", "now"),
     ("needs_onboarding", True),
     ("is_active", False),
+    ("membership_status", MembershipStatus.NONE),
 ]
 
 
