@@ -1,3 +1,17 @@
+## [0.259.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.259.0...v0.259.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **tests:** use current public rsvper helpers in my-rsvps query count test ([#2588](https://github.com/ProteinDeficientsAnonymous/pda/issues/2588)) ([ece5b57](https://github.com/ProteinDeficientsAnonymous/pda/commit/ece5b575294584dbb81752c0a0df89da7ad73429))
+
+# [0.259.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.258.1...v0.259.0) (2026-11-20)
+
+
+### Features
+
+* **mcp:** let hosts read event questionnaire responses ([#2253](https://github.com/ProteinDeficientsAnonymous/pda/issues/2253)) ([cd31f1c](https://github.com/ProteinDeficientsAnonymous/pda/commit/cd31f1ce6b0371f7b2d7951c2179d4be33954ee9))
+
 ## [0.258.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.258.0...v0.258.1) (2026-11-19)
 
 
