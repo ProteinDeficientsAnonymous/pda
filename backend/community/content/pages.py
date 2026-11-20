@@ -25,6 +25,9 @@ from community.validation import Code, raise_validation
 
 router = Router()
 
+EVENT_PROTOCOL_SLUG = "event-protocol"
+_MEMBERS_ONLY_SLUGS = frozenset({"volunteer", EVENT_PROTOCOL_SLUG})
+
 
 class EditablePageOut(BaseModel):
     slug: str
@@ -51,6 +54,10 @@ def _page_out(page: EditablePage) -> EditablePageOut:
     )
 
 
+def _default_visibility(slug: str) -> str:
+    return PageVisibility.MEMBERS_ONLY if slug in _MEMBERS_ONLY_SLUGS else PageVisibility.PUBLIC
+
+
 def _planning_guidelines_page() -> EditablePage:
     try:
         return EditablePage.objects.get(slug=GUIDELINES_SLUG)
@@ -73,8 +80,7 @@ def get_page(request, slug: str):
         require_guidelines_view(request)
         return Status(200, _page_out(_planning_guidelines_page()))
 
-    default_vis = PageVisibility.MEMBERS_ONLY if slug == "volunteer" else PageVisibility.PUBLIC
-    page = EditablePage.get_or_create_page(slug, default_visibility=default_vis)
+    page = EditablePage.get_or_create_page(slug, default_visibility=_default_visibility(slug))
 
     # Any non-public page (members-only OR invite-only) requires authentication.
     # Previously only MEMBERS_ONLY was gated, so an INVITE_ONLY page leaked to
@@ -111,8 +117,7 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
     if slug == GUIDELINES_SLUG:
         page = _planning_guidelines_page()
     else:
-        default_vis = PageVisibility.MEMBERS_ONLY if slug == "volunteer" else PageVisibility.PUBLIC
-        page = EditablePage.get_or_create_page(slug, default_visibility=default_vis)
+        page = EditablePage.get_or_create_page(slug, default_visibility=_default_visibility(slug))
 
     changed = []
     if payload.content_pm is not None:

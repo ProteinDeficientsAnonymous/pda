@@ -15,6 +15,7 @@ from notifications.email_sender import get_email_sender
 from notifications.service import notify_checkin_reminder
 
 from community.content.html_sanitize import sanitize_content_html
+from community.content.pages import EVENT_PROTOCOL_SLUG
 from community.models import EditablePage, Event, EventStatus, EventType
 
 if TYPE_CHECKING:
@@ -23,10 +24,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 NUDGE_WINDOW = timedelta(hours=1)
-EVENT_PROTOCOL_SLUG = "event-protocol"
 
-_BLOCK_END = re.compile(r"</(?:p|h[1-6]|li|blockquote)>|<br\s*/?>", re.IGNORECASE)
+_LINE_BREAK = re.compile(r"</(?:p|li)>|<br\s*/?>", re.IGNORECASE)
+_SECTION_BREAK = re.compile(r"</(?:h[1-6]|blockquote|ul|ol)>", re.IGNORECASE)
 _LIST_ITEM = re.compile(r"<li\b[^>]*>", re.IGNORECASE)
+_BLANK_RUNS = re.compile(r"\n{3,}")
 
 
 def due_checkin_nudge_events(now) -> Iterable[Event]:
@@ -72,8 +74,10 @@ def _event_protocol_html() -> str:
 
 
 def _plain_text(html: str) -> str:
-    text = unescape(strip_tags(_BLOCK_END.sub("\n", _LIST_ITEM.sub("- ", html))))
-    return "\n".join(line.strip() for line in text.splitlines() if line.strip())
+    html = _SECTION_BREAK.sub("\n\n", _LIST_ITEM.sub("- ", html))
+    text = unescape(strip_tags(_LINE_BREAK.sub("\n", html)))
+    lines = "\n".join(line.strip() for line in text.splitlines())
+    return _BLANK_RUNS.sub("\n\n", lines).strip()
 
 
 def _official_protocol_html(event: Event, protocol_html: str | None) -> str:
@@ -84,11 +88,10 @@ def _official_protocol_html(event: Event, protocol_html: str | None) -> str:
 
 def send_checkin_nudge(event: Event, protocol_html: str | None = None) -> bool:
     """Claim the event, then email + in-app notify the host team. Returns False if already claimed."""
-    if not _claim_checkin_nudge(event):
-        return False
-
     protocol_html = _official_protocol_html(event, protocol_html)
     protocol_text = _plain_text(protocol_html)
+    if not _claim_checkin_nudge(event):
+        return False
 
     notify_checkin_reminder(event)
 
@@ -122,8 +125,7 @@ def send_checkin_nudge(event: Event, protocol_html: str | None = None) -> bool:
 
 def send_due_checkin_nudges() -> int:
     """Send + stamp every event currently due a check-in nudge. Returns the count sent."""
-    protocol_html = _event_protocol_html()
-    return sum(
-        send_checkin_nudge(event, protocol_html)
-        for event in due_checkin_nudge_events(timezone.now())
-    )
+    events = list(due_checkin_nudge_events(timezone.now()))
+    has_official = any(event.event_type == EventType.OFFICIAL for event in events)
+    protocol_html = _event_protocol_html() if has_official else ""
+    return sum(send_checkin_nudge(event, protocol_html) for event in events)

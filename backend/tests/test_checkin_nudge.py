@@ -1,7 +1,7 @@
 import pytest
+from community.content.pages import EVENT_PROTOCOL_SLUG
 from community.models import EditablePage, Event, EventSpeech, EventStatus, EventType
 from community.scheduled.checkin_nudge import (
-    EVENT_PROTOCOL_SLUG,
     due_checkin_nudge_events,
     send_checkin_nudge,
     send_due_checkin_nudges,
@@ -236,7 +236,7 @@ class TestCheckinNudgeEventProtocol:
         assert "<h2>arrive early</h2>" in sent["html"]
         assert "<script>" not in sent["html"]
         assert "event protocol" in sent["text"]
-        assert "arrive early\n- set up tables\nbring snacks & water" in sent["text"]
+        assert "arrive early\n\n- set up tables\n\nbring snacks & water" in sent["text"]
 
     def test_club_event_has_no_protocol(self, test_user, fake_email_sender, db):
         _, sent = _send_for(test_user, fake_email_sender)
@@ -260,3 +260,8 @@ class TestCheckinNudgeEventProtocol:
         send_due_checkin_nudges()
 
         assert "<h2>arrive early</h2>" in fake_email_sender.send.call_args.kwargs["html"]
+
+
+@pytest.mark.django_db
+def test_event_protocol_page_defaults_to_members_only(api_client, db):
+    assert api_client.get(f"/api/community/pages/{EVENT_PROTOCOL_SLUG}/").status_code == 403
