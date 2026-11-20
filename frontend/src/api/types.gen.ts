@@ -4999,11 +4999,11 @@ export interface components {
          * @description Question types supported by join forms.
          * @enum {string}
          */
-        JoinFormQuestionType: "text" | "textarea" | "select";
+        JoinFormQuestionType: "text" | "textarea" | "select" | "checkbox";
         /** JoinRequestAnswerOut */
         JoinRequestAnswerOut: {
             /** Answer */
-            answer: string;
+            answer: string | string[];
             /** Label */
             label: string;
             /** Question Id */
@@ -5016,7 +5016,7 @@ export interface components {
              * @default {}
              */
             answers: {
-                [key: string]: string;
+                [key: string]: string | string[];
             };
             /**
              * Email

@@ -4745,7 +4745,8 @@
         "enum": [
           "text",
           "textarea",
-          "select"
+          "select",
+          "checkbox"
         ],
         "title": "JoinFormQuestionType",
         "type": "string"
@@ -4753,8 +4754,18 @@
       "JoinRequestAnswerOut": {
         "properties": {
           "answer": {
-            "title": "Answer",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Answer"
           },
           "label": {
             "title": "Label",
@@ -4777,7 +4788,17 @@
         "properties": {
           "answers": {
             "additionalProperties": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
             },
             "default": {},
             "title": "Answers",
