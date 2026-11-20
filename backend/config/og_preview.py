@@ -5,11 +5,10 @@ from community.models import (
     SurveyVisibility,
     parse_event_ref,
 )
-from django.conf import settings
 from django.http import Http404
 from django.shortcuts import render
 
-from config.media_proxy import media_path
+from config.media_proxy import absolute, media_path
 
 # OG descriptions are truncated by most scrapers around 200 chars; trimming
 # here keeps the tag tidy and avoids dumping a 2000-char body into <head>.
@@ -31,15 +30,6 @@ _STATIC_PAGES = {
     "sms-policy": ("sms policy · pda", "how pda uses text messaging"),
     "guidelines": ("community guidelines · pda", "how we show up for each other"),
 }
-
-
-def absolute(path: str) -> str:
-    """Absolute URL under FRONTEND_BASE_URL; pass through existing http(s) URLs."""
-    if not path:
-        return ""
-    if path.startswith(("http://", "https://")):
-        return path
-    return f"{settings.FRONTEND_BASE_URL.rstrip('/')}{path}"
 
 
 def _truncate(text: str, limit: int) -> str:

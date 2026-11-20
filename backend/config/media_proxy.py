@@ -58,6 +58,15 @@ def media_path(field) -> str:
     return url
 
 
+def absolute(path: str) -> str:
+    """Absolute URL under FRONTEND_BASE_URL; pass through existing http(s) URLs."""
+    if not path:
+        return ""
+    if path.startswith(("http://", "https://")):
+        return path
+    return f"{settings.FRONTEND_BASE_URL.rstrip('/')}{path}"
+
+
 def preload_media_storage() -> None:
     """Load botocore in this process before the first media_path() call.
 

@@ -2,8 +2,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from datetime import date, datetime
 
-from config.media_proxy import media_path
-from config.og_preview import absolute
+from config.media_proxy import absolute, media_path
 from django.conf import settings
 from django.db.models import QuerySet
 from notifications.email_helpers import format_event_when

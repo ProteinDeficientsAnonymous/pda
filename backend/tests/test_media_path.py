@@ -1,8 +1,7 @@
 from types import SimpleNamespace
 
 import pytest
-from config.media_proxy import media_path
-from config.og_preview import absolute
+from config.media_proxy import absolute, media_path
 from django.core.cache import caches
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
