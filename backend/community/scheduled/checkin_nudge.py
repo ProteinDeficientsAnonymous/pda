@@ -11,7 +11,7 @@ from notifications.email_helpers import CheckinReminderEmailDetails, send_checki
 from notifications.email_sender import get_email_sender
 from notifications.service import notify_checkin_reminder
 
-from community.models import Event, EventSpeech, EventStatus, EventType
+from community.models import Event, EventStatus, EventType
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -31,7 +31,7 @@ def due_checkin_nudge_events(now) -> Iterable[Event]:
             start_datetime__lte=now,
             start_datetime__gte=now - NUDGE_WINDOW,
         )
-        .select_related("created_by")
+        .select_related("created_by", "speech")
         .prefetch_related("co_hosts")
     )
 
@@ -53,7 +53,7 @@ def _claim_checkin_nudge(event: Event) -> bool:
 
 def _speech_url(event: Event) -> str:
     """Speech page link when an official event's speech hasn't been saved yet, else ""."""
-    if event.event_type != EventType.OFFICIAL or EventSpeech.objects.filter(event=event).exists():
+    if event.event_type != EventType.OFFICIAL or getattr(event, "speech", None) is not None:
         return ""
     return f"{settings.FRONTEND_BASE_URL}/events/{event.pk}/speech"
 
