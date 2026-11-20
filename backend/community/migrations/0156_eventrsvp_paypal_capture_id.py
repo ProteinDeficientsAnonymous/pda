@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0154_event_accept_paypal"),
+        ("community", "0155_eventrsvpquestion_option_prices"),
     ]
 
     operations = [
