@@ -1,3 +1,10 @@
+# [0.261.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.260.1...v0.261.0) (2026-11-20)
+
+
+### Features
+
+* 2587 - list roles in the mcp ([#2591](https://github.com/ProteinDeficientsAnonymous/pda/issues/2591)) ([4694797](https://github.com/ProteinDeficientsAnonymous/pda/commit/4694797404e1485a8d70ef445858a577bbeb7ad8))
+
 ## [0.260.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.260.0...v0.260.1) (2026-11-20)
 
 

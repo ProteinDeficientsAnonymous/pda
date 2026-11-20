@@ -8790,6 +8790,14 @@
             "title": "Cant Go",
             "type": "array"
           },
+          "co_hosts": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Co Hosts",
+            "type": "array"
+          },
           "invited": {
             "default": [],
             "items": {
