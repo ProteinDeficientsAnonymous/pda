@@ -1,4 +1,5 @@
 import logging
+from typing import NamedTuple
 
 from django.conf import settings
 from django.utils import timezone
@@ -21,6 +22,7 @@ from users.models import (
 )
 
 from community.models import (
+    JoinRequest,
     JoinRequestStatus,
     MemberPromotionEmailTemplate,
     WhatsAppLinkConfig,
@@ -175,7 +177,7 @@ def _make_tentative(user, join_request, by: User) -> list[str]:
     return [*fields, "first_name", "last_name"]
 
 
-def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
+def provision_tentative_user(join_request, requesting_user) -> tuple[User, str, bool]:
     """Provision the non-member User backing a tentatively-approved join request.
 
     Reuses a non-member or archived account linked or matched by phone, un-archiving
@@ -183,7 +185,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     They get the same way in as a fully-approved member — onboarding plus a
     magic token — but stay non-members with no member role, which is what
     limits them to official/club events (see ``community/events/limited_access``).
-    Returns ``(user, magic_token)``.
+    Returns ``(user, magic_token, reactivated)``; reactivated is True when it un-archived them.
     """
     user = applicant_user(join_request)
     if user is None:
@@ -205,6 +207,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     # Carry the form's consents forward, same as _promote_non_member — they
     # consented when they applied, so the consent gate must not ask again.
     changed = ["needs_onboarding"] if not user.needs_onboarding else []
+    was_archived = user.archived_at is not None
     changed += _make_tentative(user, join_request, requesting_user)
     user.needs_onboarding = True
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
@@ -217,22 +220,20 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
         user.save(update_fields=changed)
     revoke_public_rsvp_tokens(user)
 
-    return user, create_magic_token(user)
+    return user, create_magic_token(user), was_archived and user.archived_at is None
 
 
-def maybe_promote_tentative(user, event, actor) -> bool:
-    """Promote a tentative applicant to full member when they check in.
+def maybe_promote_tentative(user, event, actor) -> JoinRequest | None:
+    """Promote a tentative applicant to full member on an ATTENDED official/club check-in.
 
-    Fires only for an ATTENDED check-in on an official/club event whose RSVP'd
-    user has a linked TENTATIVE join request. Returns whether a promotion
-    happened, so the caller knows to send the approval email.
+    return(JoinRequest | None): the promoted join request, or None when nothing was promoted.
     """
     # An archived re-applicant can be tentative under a guidelines pause; check-in doesn't lift it.
     if not is_official_or_club(event.event_type) or user.is_guidelines_paused:
-        return False
+        return None
     join_request = user.join_requests.filter(status=JoinRequestStatus.TENTATIVE).first()
     if join_request is None:
-        return False
+        return None
 
     promote_tentative_member(user, join_request, actor)
     join_request.status = JoinRequestStatus.APPROVED
@@ -242,18 +243,20 @@ def maybe_promote_tentative(user, event, actor) -> bool:
     join_request.save(
         update_fields=["status", "status_changed_at", "status_changed_by", "approved_via_event"]
     )
-    return True
+    return join_request
 
 
-def provision_approved_user(
-    join_request, requesting_user, *, was_tentative: bool
-) -> tuple[str | None, bool]:
+class Provisioned(NamedTuple):
+    magic_token: str | None
+    user_created: bool
+    reactivated_user: User | None = None
+
+
+def provision_approved_user(join_request, requesting_user, *, was_tentative: bool) -> Provisioned:
     """Create, reactivate, or promote the user for an approved join request.
 
-    Returns ``(magic_token, user_created)``: the one-time login token and whether
-    a brand-new User row was created. A tentative applicant already has a login,
-    so their promotion returns no token. When the phone already maps to an active
-    member, nothing is provisioned and ``(None, False)`` is returned.
+    return(Provisioned): login token (None for a tentative promotion or an existing
+    active member), user_created (also True on reactivation), and the reactivated user.
     """
     # A linked non-member is promoted in place; an archived one is reactivated below.
     # SET_NULL FK means a deleted user falls through.
@@ -261,8 +264,10 @@ def provision_approved_user(
     if linked is not None and linked.membership_status not in MEMBER_OR_ARCHIVED:
         if was_tentative:
             promote_tentative_member(join_request.user, join_request, requesting_user)
-            return None, False
-        return _promote_public_rsvper(join_request.user, join_request, requesting_user), False
+            return Provisioned(None, False)
+        return Provisioned(
+            _promote_public_rsvper(join_request.user, join_request, requesting_user), False
+        )
 
     existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
     if existing_user is None:
@@ -280,7 +285,11 @@ def provision_approved_user(
                 sms_consent_at=join_request.sms_consent_at,
             ),
         )
-        return magic_token, True
+        return Provisioned(magic_token, True)
     if existing_user.archived_at is not None:
-        return _reactivate_archived_user(existing_user, join_request, requesting_user), True
-    return None, False
+        return Provisioned(
+            _reactivate_archived_user(existing_user, join_request, requesting_user),
+            True,
+            existing_user,
+        )
+    return Provisioned(None, False)

@@ -288,6 +288,7 @@ describe('JoinScreen', () => {
     });
     expect(screen.getByText(/vetting member will review/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /back to home/i })).toBeInTheDocument();
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
   });
 });
 
