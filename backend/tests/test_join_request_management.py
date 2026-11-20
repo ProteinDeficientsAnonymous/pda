@@ -103,6 +103,39 @@ class TestJoinRequestManagement:
         sample_join_request.refresh_from_db()
         assert sample_join_request.status == JoinRequestStatus.APPROVED
 
+    @pytest.mark.parametrize(
+        ("legacy_status", "expected"),
+        [
+            (JoinRequestStatus.APPROVED, JoinRequestStatus.APPROVED),
+            (JoinRequestStatus.REJECTED, JoinRequestStatus.REJECTED),
+            (JoinRequestStatus.TENTATIVE, JoinRequestStatus.TENTATIVE),
+        ],
+    )
+    def test_legacy_status_payload_maps_to_event(
+        self, api_client, vettor_headers, sample_join_request, legacy_status, expected
+    ):
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": legacy_status},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 200
+        sample_join_request.refresh_from_db()
+        assert sample_join_request.status == expected
+
+    def test_missing_event_and_status_rejected(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 400
+        assert_error_code(response, Code.JoinRequest.INVALID_STATUS)
+
     def test_invalid_status_rejected(self, api_client, vettor_headers, sample_join_request):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",

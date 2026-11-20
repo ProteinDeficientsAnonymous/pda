@@ -5331,6 +5331,7 @@
         "description": "Decision payload: fire an event, not a target status.",
         "properties": {
           "event": {
+            "default": "",
             "maxLength": 20,
             "title": "Event",
             "type": "string"
@@ -5344,11 +5345,15 @@
             "default": "",
             "title": "Rejection Reason",
             "type": "string"
+          },
+          "status": {
+            "default": "",
+            "deprecated": true,
+            "maxLength": 20,
+            "title": "Status",
+            "type": "string"
           }
         },
-        "required": [
-          "event"
-        ],
         "title": "JoinRequestStatusIn",
         "type": "object"
       },

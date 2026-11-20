@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Iterable
 from datetime import datetime, timedelta
-from typing import NamedTuple
+from typing import Any, NamedTuple
 from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
@@ -11,7 +11,7 @@ from django.db.models import Prefetch, Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from users.models import User
 from users.permissions import PermissionKey
 
@@ -98,12 +98,29 @@ class JoinRequestOut(BaseModel):
     attended_events: list[AttendedEventOut] = []
 
 
+_LEGACY_STATUS_EVENTS = {
+    JoinRequestStatus.TENTATIVE: JoinRequestEvent.MARK_TENTATIVE,
+    JoinRequestStatus.APPROVED: JoinRequestEvent.APPROVE,
+    JoinRequestStatus.REJECTED: JoinRequestEvent.REJECT,
+}
+
+
 class JoinRequestStatusIn(BaseModel):
     """Decision payload: fire an event, not a target status."""
 
-    event: str = Field(max_length=FieldLimit.CHOICE)
+    event: str = Field("", max_length=FieldLimit.CHOICE)
+    # SPAs loaded before the event rename still send a target status; drop once they've aged out.
+    status: str = Field("", max_length=FieldLimit.CHOICE, deprecated=True)
     rejection_reason: str = ""
     rejection_note: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def event_from_legacy_status(cls, data: Any) -> Any:
+        if isinstance(data, dict) and not data.get("event") and data.get("status"):
+            status = data["status"]
+            data = {**data, "event": _LEGACY_STATUS_EVENTS.get(status, status)}
+        return data
 
 
 # Vetter PATCH may only fire these; close / unreject / promote use other paths.
@@ -365,9 +382,7 @@ def _apply_status_transition(
                 _audit_reactivated(request, user, join_request)
             return join_request, magic_token, False, before_status
         if payload.event == JoinRequestEvent.APPROVE:
-            provisioned = provision_approved_user(
-                join_request, actor, was_tentative=was_tentative
-            )
+            provisioned = provision_approved_user(join_request, actor, was_tentative=was_tentative)
             if provisioned.reactivated_user is not None:
                 _audit_reactivated(request, provisioned.reactivated_user, join_request)
             return (

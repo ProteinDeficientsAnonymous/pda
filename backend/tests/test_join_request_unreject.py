@@ -48,6 +48,24 @@ class TestUnrejectJoinRequest:
         sample_join_request.refresh_from_db()
         assert sample_join_request.status == JoinRequestStatus.REJECTED
 
+    def test_unreject_race_past_precheck_returns_open_request_exists(
+        self, api_client, vettor_headers, sample_join_request, monkeypatch
+    ):
+        sample_join_request.status = JoinRequestStatus.REJECTED
+        sample_join_request.save(update_fields=["status"])
+        JoinRequest.objects.create(phone_number=sample_join_request.phone_number)
+        # Simulate a concurrent open request appearing after the precheck ran.
+        monkeypatch.setattr("community.join_requests.unreject.OPEN_JOIN_REQUEST_STATUSES", ())
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/unreject/",
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 400
+        assert_error_code(response, Code.JoinRequest.OPEN_REQUEST_EXISTS)
+        sample_join_request.refresh_from_db()
+        assert sample_join_request.status == JoinRequestStatus.REJECTED
+
     def test_unreject_pending_fails(self, api_client, vettor_headers, sample_join_request):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/unreject/",

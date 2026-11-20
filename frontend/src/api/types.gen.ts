@@ -5269,7 +5269,10 @@ export interface components {
          * @description Decision payload: fire an event, not a target status.
          */
         JoinRequestStatusIn: {
-            /** Event */
+            /**
+             * Event
+             * @default
+             */
             event: string;
             /**
              * Rejection Note
@@ -5281,6 +5284,12 @@ export interface components {
              * @default
              */
             rejection_reason: string;
+            /**
+             * Status
+             * @deprecated
+             * @default
+             */
+            status: string;
         };
         /** JoinRequestSubmittedOut */
         JoinRequestSubmittedOut: {

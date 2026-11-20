@@ -1,9 +1,10 @@
 import logging
+from typing import NoReturn
 from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from ninja import Router
 from ninja.responses import Status
 from users.permissions import PermissionKey
@@ -20,6 +21,21 @@ from community.shared import ErrorOut
 from community.validation import Code, InvalidStateTransition, TransitionFailure, raise_validation
 
 router = Router()
+
+
+def _raise_open_request_exists(join_request: JoinRequest, before_status: str) -> NoReturn:
+    raise InvalidStateTransition(
+        Code.JoinRequest.OPEN_REQUEST_EXISTS,
+        TransitionFailure(
+            action="join_request_transition_rejected",
+            target_type=AuditTargetType.JOIN_REQUEST,
+            target_id=str(join_request.id),
+            event=JoinRequestEvent.UNREJECT,
+            from_status=before_status,
+            to_status=JoinRequestStatus.PENDING,
+            extra={"full_name": join_request.full_name},
+        ),
+    )
 
 
 @router.patch(
@@ -57,19 +73,13 @@ def unreject_join_request(request, id: UUID):
             phone_number=join_request.phone_number,
             status__in=OPEN_JOIN_REQUEST_STATUSES,
         ).exists():
-            raise InvalidStateTransition(
-                Code.JoinRequest.OPEN_REQUEST_EXISTS,
-                TransitionFailure(
-                    action="join_request_transition_rejected",
-                    target_type=AuditTargetType.JOIN_REQUEST,
-                    target_id=str(join_request.id),
-                    event=JoinRequestEvent.UNREJECT,
-                    from_status=before_status,
-                    to_status=JoinRequestStatus.PENDING,
-                    extra={"full_name": join_request.full_name},
-                ),
-            )
-        join_request.save(update_fields=fields)
+            _raise_open_request_exists(join_request, before_status)
+        # Only this row is locked; a concurrent unreject or submit for the phone trips the constraint.
+        try:
+            with transaction.atomic():
+                join_request.save(update_fields=fields)
+        except IntegrityError:
+            _raise_open_request_exists(join_request, before_status)
 
     user = applicant_user(join_request)
     audit_log(
