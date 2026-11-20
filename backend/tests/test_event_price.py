@@ -1,3 +1,4 @@
+import importlib
 import json
 from decimal import Decimal
 
@@ -7,6 +8,8 @@ from community.models import Event
 from community.validation import Code, ValidationException
 
 from tests._time import future_iso
+
+migration = importlib.import_module("community.migrations.0153_event_price_decimal")
 
 
 @pytest.mark.parametrize(
@@ -59,6 +62,27 @@ def test_price_text(amount, expected):
     assert price_text(amount) == expected
 
 
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("14", ("14", "")),
+        ("$21", ("21", "")),
+        ("33.50", ("33.50", "")),
+        ("$10 deposit", ("10", "deposit")),
+        ("$10 - cashapp", ("10", "")),
+        ("$10 venmo", ("10", "")),
+        ("~$35 - ~$60 sliding scale + cookbook", (None, "~$35 - ~$60 sliding scale + cookbook")),
+        ("$6-$8 per rehearsal", (None, "$6-$8 per rehearsal")),
+        ("", (None, "")),
+        ("pwyc", (None, "pwyc")),
+        ("$0", (None, "$0")),
+        ("venmo 9175551234", (None, "venmo 9175551234")),
+    ],
+)
+def test_migration_splits_price_and_note(raw, expected):
+    assert migration.split_price(raw) == expected
+
+
 @pytest.mark.django_db
 class TestEventPriceApi:
     def _create(self, api_client, auth_headers, price):
@@ -73,7 +97,7 @@ class TestEventPriceApi:
         resp = self._create(api_client, auth_headers, "$12.50")
         assert resp.status_code == 201
         assert resp.json()["price"] == "12.50"
-        assert Event.objects.get(pk=resp.json()["id"]).price == "12.50"
+        assert Event.objects.get(pk=resp.json()["id"]).price == Decimal("12.50")
 
     def test_create_rejects_free_text(self, api_client, auth_headers):
         resp = self._create(api_client, auth_headers, "sliding scale")
@@ -90,4 +114,16 @@ class TestEventPriceApi:
         )
         assert resp.status_code == 200
         assert resp.json()["price"] == ""
-        assert Event.objects.get(pk=event_id).price == ""
+        assert Event.objects.get(pk=event_id).price is None
+
+    def test_price_note_round_trips(self, api_client, auth_headers):
+        event_id = self._create(api_client, auth_headers, "").json()["id"]
+        resp = api_client.patch(
+            f"/api/community/events/{event_id}/",
+            data=json.dumps({"price_note": "sliding scale $6-$8"}),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["price"] == ""
+        assert resp.json()["price_note"] == "sliding scale $6-$8"

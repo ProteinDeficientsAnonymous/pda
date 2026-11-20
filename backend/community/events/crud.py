@@ -50,6 +50,7 @@ from community.events.listing import (
     list_count_annotations,
 )
 from community.events.official_defaults import apply_official_defaults
+from community.events.price import parse_price
 from community.events.public_rsvper_removal import (
     email_removed_public_rsvpers,
     guard_or_remove_ineligible_public_rsvpers,
@@ -248,7 +249,8 @@ def create_event(request, payload: EventIn):
         whatsapp_link=payload.whatsapp_link,
         partiful_link=payload.partiful_link,
         other_link=payload.other_link,
-        price=payload.price,
+        price=parse_price(payload.price),
+        price_note=payload.price_note,
         venmo_link=payload.venmo_link,
         cashapp_link=payload.cashapp_link,
         zelle_info=payload.zelle_info,
