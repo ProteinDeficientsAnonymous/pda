@@ -13,6 +13,8 @@ __all__ = [
     "AuditTarget",
     "AuditTargetType",
     "audit_log",
+    "audit_log_before_raise",
+    "flush_rollback_safe_audits",
     "is_request_anonymized",
     "is_request_via_mcp",
     "mark_request_anonymized",
@@ -21,6 +23,7 @@ __all__ = [
 
 _ANONYMIZED_ATTR = "pda_anonymized"
 _VIA_MCP_ATTR = "pda_via_mcp"
+_HELD_AUDITS_ATTR = "pda_held_audits"
 
 
 def mark_request_anonymized(request) -> None:
@@ -75,23 +78,8 @@ def _actor_and_ip(request):
     return (user if user and hasattr(user, "pk") else None), client_ip(request)
 
 
-def audit_log(
-    level: int,
-    action: str,
-    request,
-    target: AuditTarget | None = None,
-    *,
-    persist: bool = True,
-) -> None:
-    """Emit a structured audit log entry.
-
-    Args:
-        level: logging.INFO or logging.WARNING
-        action: verb describing the event (e.g. 'login_success', 'user_deleted')
-        request: the Django/Ninja HttpRequest (used for actor and IP)
-        target: AuditTarget(type, id, details) for the affected object
-        persist: write a row to the audit table; False for console-only noise
-    """
+def _emit(level: int, action: str, request, target: AuditTarget | None) -> dict:
+    """Log the entry and return the audit row's fields."""
     target_type, target_id, details = target or AuditTarget()
     details = {**(details or {}), "via": "mcp"} if is_request_via_mcp(request) else details or {}
     user, ip_address = _actor_and_ip(request)
@@ -118,11 +106,7 @@ def audit_log(
             "ip_address": ip_address,
         },
     )
-
-    if not persist:
-        return
-
-    fields = {
+    return {
         "action": action,
         "actor": user,
         "actor_label": actor_name,
@@ -132,5 +116,45 @@ def audit_log(
         "ip_address": _valid_ip(ip_address),
         "level": level,
     }
-    # on_commit so a rolled-back action leaves no row — the action didn't happen.
-    transaction.on_commit(lambda: _persist(**fields))
+
+
+def audit_log(
+    level: int,
+    action: str,
+    request,
+    target: AuditTarget | None = None,
+    *,
+    persist: bool = True,
+) -> None:
+    """Emit a structured audit log entry.
+
+    Args:
+        level: logging.INFO or logging.WARNING
+        action: verb describing the event (e.g. 'login_success', 'user_deleted')
+        request: the Django/Ninja HttpRequest (used for actor and IP)
+        target: AuditTarget(type, id, details) for the affected object
+        persist: write a row to the audit table; False for console-only noise
+    """
+    fields = _emit(level, action, request, target)
+    if persist:
+        # on_commit so a rolled-back action leaves no row — the action didn't happen.
+        transaction.on_commit(lambda: _persist(**fields))
+
+
+def audit_log_before_raise(
+    level: int, action: str, request, target: AuditTarget | None = None
+) -> None:
+    """Audit a refused request right before raising; the row outlives the rollback the raise causes."""
+    fields = _emit(level, action, request, target)
+    if not transaction.get_connection().in_atomic_block:
+        _persist(**fields)
+        return
+    held = getattr(request, _HELD_AUDITS_ATTR, [])
+    setattr(request, _HELD_AUDITS_ATTR, [*held, fields])
+
+
+def flush_rollback_safe_audits(request) -> None:
+    """Write rows held by audit_log_before_raise; RequestLoggingMiddleware and MCP call_view call this."""
+    for fields in getattr(request, _HELD_AUDITS_ATTR, []):
+        _persist(**fields)
+    setattr(request, _HELD_AUDITS_ATTR, [])

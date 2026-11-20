@@ -1,3 +1,45 @@
+## [0.262.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.262.0...v0.262.1) (2026-11-20)
+
+
+### Performance Improvements
+
+* 1922 - index join request, rsvp and event status lookups ([#1932](https://github.com/ProteinDeficientsAnonymous/pda/issues/1932)) ([2785a7f](https://github.com/ProteinDeficientsAnonymous/pda/commit/2785a7f9dd5e1a179e8cd246af29968d8e61fcaa))
+
+# [0.262.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.261.0...v0.262.0) (2026-11-20)
+
+
+### Features
+
+* 2299 - let the mcp read survey responses for admins ([#2590](https://github.com/ProteinDeficientsAnonymous/pda/issues/2590)) ([fabfdfa](https://github.com/ProteinDeficientsAnonymous/pda/commit/fabfdfabec8ea9960818e92b6b4161bbcefe3c80))
+* 2569 - always include co-hosts in group texts ([#2589](https://github.com/ProteinDeficientsAnonymous/pda/issues/2589)) ([cf1a1a7](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf1a1a7d57d5fa59992a003c05cfc018b529de31))
+* **audit:** record user_id on join-request transition audits ([#2307](https://github.com/ProteinDeficientsAnonymous/pda/issues/2307)) ([c4ffcbe](https://github.com/ProteinDeficientsAnonymous/pda/commit/c4ffcbe08f9b240a39519af024a32babc4d73041))
+
+# [0.261.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.260.1...v0.261.0) (2026-11-20)
+
+
+### Features
+
+* 2587 - list roles in the mcp ([#2591](https://github.com/ProteinDeficientsAnonymous/pda/issues/2591)) ([4694797](https://github.com/ProteinDeficientsAnonymous/pda/commit/4694797404e1485a8d70ef445858a577bbeb7ad8))
+
+## [0.260.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.260.0...v0.260.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **audit:** keep refused-request audits through rollbacks ([#2293](https://github.com/ProteinDeficientsAnonymous/pda/issues/2293)) ([eee58a4](https://github.com/ProteinDeficientsAnonymous/pda/commit/eee58a40230bb1ed22682bd7b157b67122cee692))
+
+# [0.260.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.259.1...v0.260.0) (2026-11-20)
+
+
+### Bug Fixes
+
+* **comments:** block limited users from commenting on community events ([#2252](https://github.com/ProteinDeficientsAnonymous/pda/issues/2252)) ([238b8b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/238b8b2a3e7d131e7c3250414d2bf68835703fa4))
+
+
+### Features
+
+* **join-requests:** allow checkbox questions on the join form ([#2388](https://github.com/ProteinDeficientsAnonymous/pda/issues/2388)) ([8a20c42](https://github.com/ProteinDeficientsAnonymous/pda/commit/8a20c42e8a6f3c0cf38cc0bc4e40c72a2c61627b))
+
 ## [0.259.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.259.0...v0.259.1) (2026-11-20)
 
 
