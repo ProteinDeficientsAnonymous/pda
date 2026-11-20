@@ -362,6 +362,8 @@ class CheckinReminderEmailDetails:
     event_title: str
     event_url: str
     speech_url: str = ""
+    protocol_html: str = ""
+    protocol_text: str = ""
 
 
 def send_checkin_reminder_email(
@@ -375,6 +377,8 @@ def send_checkin_reminder_email(
         "event_title": details.event_title,
         "event_url": details.event_url,
         "speech_url": details.speech_url,
+        "protocol_html": details.protocol_html,
+        "protocol_text": details.protocol_text,
     }
     html = render_to_string("emails/attendance_checkin_reminder.html", context)
     text = render_to_string("emails/attendance_checkin_reminder.txt", context)

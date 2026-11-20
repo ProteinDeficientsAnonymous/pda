@@ -9,6 +9,10 @@ go to check-in:
 the event speech hasn't been filled in yet — fill it in here:
 
 {{ speech_url }}
+{% endif %}{% if protocol_text %}
+event protocol:
+
+{% autoescape off %}{{ protocol_text }}{% endautoescape %}
 {% endif %}
 — pda
 

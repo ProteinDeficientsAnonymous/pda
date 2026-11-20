@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import timedelta
+from html import unescape
 from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from django.utils.html import strip_tags
 from notifications.email_helpers import CheckinReminderEmailDetails, send_checkin_reminder_email
 from notifications.email_sender import get_email_sender
 from notifications.service import notify_checkin_reminder
 
-from community.models import Event, EventStatus, EventType
+from community.content.html_sanitize import sanitize_content_html
+from community.models import EditablePage, Event, EventStatus, EventType
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -19,6 +23,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 NUDGE_WINDOW = timedelta(hours=1)
+EVENT_PROTOCOL_SLUG = "event-protocol"
+
+_BLOCK_END = re.compile(r"</(?:p|h[1-6]|li|blockquote)>|<br\s*/?>", re.IGNORECASE)
+_LIST_ITEM = re.compile(r"<li\b[^>]*>", re.IGNORECASE)
 
 
 def due_checkin_nudge_events(now) -> Iterable[Event]:
@@ -57,10 +65,30 @@ def _speech_url(event: Event) -> str:
     return f"{settings.FRONTEND_BASE_URL}/events/{event.pk}/speech"
 
 
-def send_checkin_nudge(event: Event) -> bool:
+def _event_protocol_html() -> str:
+    page = EditablePage.objects.filter(slug=EVENT_PROTOCOL_SLUG).only("content_html").first()
+    # the django admin can write content_html directly, bypassing the save-time sanitizer
+    return sanitize_content_html(page.content_html) if page and page.content_html else ""
+
+
+def _plain_text(html: str) -> str:
+    text = unescape(strip_tags(_BLOCK_END.sub("\n", _LIST_ITEM.sub("- ", html))))
+    return "\n".join(line.strip() for line in text.splitlines() if line.strip())
+
+
+def _official_protocol_html(event: Event, protocol_html: str | None) -> str:
+    if event.event_type != EventType.OFFICIAL:
+        return ""
+    return _event_protocol_html() if protocol_html is None else protocol_html
+
+
+def send_checkin_nudge(event: Event, protocol_html: str | None = None) -> bool:
     """Claim the event, then email + in-app notify the host team. Returns False if already claimed."""
     if not _claim_checkin_nudge(event):
         return False
+
+    protocol_html = _official_protocol_html(event, protocol_html)
+    protocol_text = _plain_text(protocol_html)
 
     notify_checkin_reminder(event)
 
@@ -79,6 +107,8 @@ def send_checkin_nudge(event: Event) -> bool:
                     event_title=event.title,
                     event_url=event_url,
                     speech_url=speech_url,
+                    protocol_html=protocol_html,
+                    protocol_text=protocol_text,
                 ),
             )
         except Exception:
@@ -92,4 +122,8 @@ def send_checkin_nudge(event: Event) -> bool:
 
 def send_due_checkin_nudges() -> int:
     """Send + stamp every event currently due a check-in nudge. Returns the count sent."""
-    return sum(send_checkin_nudge(event) for event in due_checkin_nudge_events(timezone.now()))
+    protocol_html = _event_protocol_html()
+    return sum(
+        send_checkin_nudge(event, protocol_html)
+        for event in due_checkin_nudge_events(timezone.now())
+    )

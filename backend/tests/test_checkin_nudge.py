@@ -1,6 +1,7 @@
 import pytest
-from community.models import Event, EventSpeech, EventStatus, EventType
+from community.models import EditablePage, Event, EventSpeech, EventStatus, EventType
 from community.scheduled.checkin_nudge import (
+    EVENT_PROTOCOL_SLUG,
     due_checkin_nudge_events,
     send_checkin_nudge,
     send_due_checkin_nudges,
@@ -214,3 +215,48 @@ class TestSendDueCheckinNudges:
             Notification.objects.filter(notification_type=NotificationType.CHECKIN_NUDGE).count()
             == 1
         )
+
+
+_PROTOCOL_HTML = (
+    "<h2>arrive early</h2><ul><li><p>set up tables</p></li></ul>"
+    "<p>bring snacks &amp; water</p><script>x()</script>"
+)
+
+
+@pytest.mark.django_db
+class TestCheckinNudgeEventProtocol:
+    @pytest.fixture(autouse=True)
+    def _protocol_page(self, db):
+        EditablePage.objects.create(slug=EVENT_PROTOCOL_SLUG, content_html=_PROTOCOL_HTML)
+
+    def test_official_event_includes_protocol(self, test_user, fake_email_sender, db):
+        _, sent = _send_for(test_user, fake_email_sender, event_type=EventType.OFFICIAL)
+
+        assert "event protocol" in sent["html"]
+        assert "<h2>arrive early</h2>" in sent["html"]
+        assert "<script>" not in sent["html"]
+        assert "event protocol" in sent["text"]
+        assert "arrive early\n- set up tables\nbring snacks & water" in sent["text"]
+
+    def test_club_event_has_no_protocol(self, test_user, fake_email_sender, db):
+        _, sent = _send_for(test_user, fake_email_sender)
+
+        assert "event protocol" not in sent["html"]
+        assert "arrive early" not in sent["text"]
+
+    def test_no_protocol_block_when_page_empty(self, test_user, fake_email_sender, db):
+        EditablePage.objects.filter(slug=EVENT_PROTOCOL_SLUG).update(content_html="")
+
+        _, sent = _send_for(test_user, fake_email_sender, event_type=EventType.OFFICIAL)
+
+        assert "event protocol" not in sent["html"]
+        assert "event protocol" not in sent["text"]
+
+    def test_due_run_includes_protocol_for_official_events(self, test_user, fake_email_sender, db):
+        test_user.email = "creator@example.com"
+        test_user.save(update_fields=["email"])
+        _make_event(created_by=test_user, event_type=EventType.OFFICIAL)
+
+        send_due_checkin_nudges()
+
+        assert "<h2>arrive early</h2>" in fake_email_sender.send.call_args.kwargs["html"]
