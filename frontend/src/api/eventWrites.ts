@@ -44,6 +44,7 @@ export interface EventFormValues {
   partifulLink: string;
   otherLink: string;
   price: string;
+  priceNote: string;
   venmoLink: string;
   cashappLink: string;
   zelleInfo: string;
@@ -92,6 +93,7 @@ const FIELD_TO_WIRE: WireFieldMap = {
   partifulLink: ['partiful_link', (v) => v],
   otherLink: ['other_link', (v) => v],
   price: ['price', (v) => v],
+  priceNote: ['price_note', (v) => v],
   venmoLink: ['venmo_link', (v) => toVenmoUrl(v)],
   cashappLink: ['cashapp_link', (v) => toCashAppUrl(v)],
   zelleInfo: ['zelle_info', (v) => v],
@@ -330,6 +332,7 @@ export function emptyEventFormValues(): EventFormValues {
     partifulLink: '',
     otherLink: '',
     price: '',
+    priceNote: '',
     venmoLink: '',
     cashappLink: '',
     zelleInfo: '',
@@ -396,6 +399,7 @@ export function eventToFormValues(e: Event): EventFormValues {
     partifulLink: e.partifulLink,
     otherLink: e.otherLink,
     price: e.price,
+    priceNote: e.priceNote,
     venmoLink: fromVenmoUrl(e.venmoLink),
     cashappLink: fromCashAppUrl(e.cashappLink),
     zelleInfo: e.zelleInfo,

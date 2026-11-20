@@ -177,6 +177,7 @@ export interface Event {
   cashappLink: string;
   zelleInfo: string;
   price: string;
+  priceNote: string;
 
   rsvpEnabled: boolean;
   allowPlusOnes: boolean;

@@ -8,7 +8,7 @@ from community.surveys.schemas import SurveyPatchIn, SurveyQuestionOrderIn
 from mcp.server.mcpserver.exceptions import ToolError
 
 from mcp_gateway.fields import build
-from mcp_gateway.survey_edit_fields import normalize_settings, settings_diff
+from mcp_gateway.survey_edit_fields import SurveyChanges, normalize_settings, settings_diff
 from mcp_gateway.survey_fields import feedback_emails
 
 
@@ -43,24 +43,26 @@ def operation(number: int) -> Iterator[None]:
         raise ToolError(f"nothing was saved: operation {number}: {exc}") from exc
 
 
-def _force_anonymous(detail: dict[str, Any], changed: dict[str, Any]) -> dict[str, Any]:
+def _force_anonymous(detail: dict[str, Any], changes: SurveyChanges) -> SurveyChanges:
     # The website forces anonymous on a feedback survey, so any other value would never be saved.
-    if changed.get("anonymous") is False:
+    if changes.anonymous is False:
         raise ToolError("feedback surveys are always anonymous")
     if not detail["anonymous"] and detail["response_count"]:
         raise ToolError(
             "feedback surveys are always anonymous, and anonymous can't change once a survey "
             "has responses"
         )
-    return {**changed, "anonymous": True}
+    return changes.model_copy(update={"anonymous": True})
 
 
-def plan_settings(edit: Edit, detail: dict[str, Any], changed: dict[str, Any]) -> None:
-    changed = normalize_settings(changed, detail["title"])
-    feedback = changed.get("feedback_event_type", detail["feedback_event_type"])
+def plan_settings(edit: Edit, detail: dict[str, Any], changes: SurveyChanges) -> None:
+    changes = normalize_settings(changes, detail["title"])
+    feedback = detail["feedback_event_type"]
+    if "feedback_event_type" in changes.model_fields_set:
+        feedback = changes.feedback_event_type
     if feedback:
-        changed = _force_anonymous(detail, changed)
-    diff = settings_diff(detail, changed)
+        changes = _force_anonymous(detail, changes)
+    diff = settings_diff(detail, changes)
     if "feedback_event_type" in diff and feedback and detail["is_active"]:
         edit.notes.append(
             f"making this the feedback survey for {feedback} events starts "
@@ -73,5 +75,5 @@ def plan_settings(edit: Edit, detail: dict[str, Any], changed: dict[str, Any]) -
         )
     if diff:
         edit.changes["settings"] = diff
-        payload = build(SurveyPatchIn, {key: changed[key] for key in diff})
+        payload = build(SurveyPatchIn, changes.model_dump(mode="json", include=set(diff)))
         edit.steps.append(Step("settings", update_survey_view, (payload,)))
