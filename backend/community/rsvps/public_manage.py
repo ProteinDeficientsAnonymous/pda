@@ -13,7 +13,8 @@ from pydantic import BaseModel, Field
 from users.models import PublicRsvpToken, User
 
 from community.events.helpers import broadcast_capacity_change, event_out
-from community.events.schemas import EventOut, RsvpAnswer
+from community.events.rsvp_question_schemas import RsvpAnswer
+from community.events.schemas import EventOut
 from community.field_limits import FieldLimit
 from community.models import Event, EventRSVP, RSVPStatus
 from community.models.event import public_rsvp_eligible_q
