@@ -412,6 +412,8 @@ class EventRsvpQuestion(models.Model):
     label = models.CharField(max_length=300)
     field_type = models.CharField(max_length=20, choices=RSVP_QUESTION_TYPE_CHOICES)
     options = models.JSONField(default=list, blank=True)
+    # Cents, parallel to options; empty means the question isn't priced.
+    option_prices = models.JSONField(default=list, blank=True)
     required = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(default=0)
 

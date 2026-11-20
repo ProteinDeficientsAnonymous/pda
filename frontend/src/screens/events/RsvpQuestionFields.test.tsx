@@ -73,4 +73,29 @@ describe('RsvpQuestionFields', () => {
     );
     expect(screen.getByText('required', { selector: 'p' })).toBeInTheDocument();
   });
+
+  it('lists option prices and the live total for priced questions', () => {
+    const priced: RsvpQuestionDraft[] = [
+      { ...questions[1]!, optionPrices: [500, 250] },
+      { ...questions[2]!, optionPrices: [1000, 1250] },
+    ];
+    render(
+      <RsvpQuestionFields
+        questions={priced}
+        answers={{ 'q-one': 'car', 'q-multi': ['setup', 'cleanup'] }}
+        onChange={vi.fn()}
+        errors={{}}
+      />,
+    );
+
+    expect(screen.getByText('car $5 · bus $2.50')).toBeInTheDocument();
+    expect(screen.getByText('your total: $27.50')).toBeInTheDocument();
+  });
+
+  it('shows no total without priced questions', () => {
+    render(
+      <RsvpQuestionFields questions={questions} answers={{}} onChange={vi.fn()} errors={{}} />,
+    );
+    expect(screen.queryByText(/your total/)).not.toBeInTheDocument();
+  });
 });

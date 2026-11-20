@@ -3962,6 +3962,16 @@
             "title": "Label",
             "type": "string"
           },
+          "option_prices": {
+            "description": "Cents per option, parallel to options; empty = unpriced.",
+            "items": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "title": "Option Prices",
+            "type": "array"
+          },
           "options": {
             "default": [],
             "items": {
@@ -4000,6 +4010,16 @@
             "maxLength": 300,
             "title": "Label",
             "type": "string"
+          },
+          "option_prices": {
+            "description": "Cents per option, parallel to options; empty = unpriced.",
+            "items": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "title": "Option Prices",
+            "type": "array"
           },
           "options": {
             "default": [],
@@ -4045,6 +4065,14 @@
           "label": {
             "title": "Label",
             "type": "string"
+          },
+          "option_prices": {
+            "default": [],
+            "items": {
+              "type": "integer"
+            },
+            "title": "Option Prices",
+            "type": "array"
           },
           "options": {
             "default": [],
@@ -4096,6 +4124,16 @@
             "maxLength": 300,
             "title": "Label",
             "type": "string"
+          },
+          "option_prices": {
+            "description": "Cents per option, parallel to options; empty = unpriced.",
+            "items": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "title": "Option Prices",
+            "type": "array"
           },
           "options": {
             "default": [],
@@ -9812,6 +9850,10 @@
     },
     "securitySchemes": {
       "GatedJWTAuth": {
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "GatedJWTOrAnonymousAuth": {
         "scheme": "bearer",
         "type": "http"
       },
@@ -22202,9 +22244,27 @@
     },
     "/api/notifications/sse-ticket/": {
       "post": {
-        "description": "Mint a short-lived single-use ticket for opening the SSE stream.\n\nLets the client open the stream with ?ticket= instead of the JWT (EventSource\ncan't send an auth header).",
+        "description": "Mint a single-use stream ticket; without a JWT, ?event_id= and ?token= scope it to one event.",
         "operationId": "notifications_api_create_sse_ticket",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "event_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -22215,6 +22275,26 @@
               }
             },
             "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
           },
           "429": {
             "content": {
@@ -22229,7 +22309,7 @@
         },
         "security": [
           {
-            "GatedJWTAuth": []
+            "GatedJWTOrAnonymousAuth": []
           }
         ],
         "summary": "Create Sse Ticket",
