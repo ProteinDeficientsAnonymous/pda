@@ -9,6 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from users.models import User
 
 from community.events.helpers import (
     can_edit_event,
@@ -83,7 +84,7 @@ def get_event_stats(request, event_id: UUID):
     )
 
 
-def _build_text_recipients(event: Event) -> TextRecipientsOut:
+def _build_text_recipients(event: Event, requester: User) -> TextRecipientsOut:
     by_status: dict[str, list[str]] = {
         RSVPStatus.ATTENDING: [],
         RSVPStatus.MAYBE: [],
@@ -95,12 +96,16 @@ def _build_text_recipients(event: Event) -> TextRecipientsOut:
         if phone and rsvp.status in by_status:
             by_status[rsvp.status].append(phone)
     invited = [u.phone_number for u in event.invited_users.all() if u.phone_number]
+    co_hosts = sorted(
+        h.phone_number for h in event.co_hosts.all() if h.phone_number and h.pk != requester.pk
+    )
     return TextRecipientsOut(
         attending=by_status[RSVPStatus.ATTENDING],
         maybe=by_status[RSVPStatus.MAYBE],
         cant_go=by_status[RSVPStatus.CANT_GO],
         waitlisted=by_status[RSVPStatus.WAITLISTED],
         invited=invited,
+        co_hosts=co_hosts,
     )
 
 
@@ -115,7 +120,7 @@ def get_text_recipients(request, event_id: UUID):
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not can_edit_event(request.auth, event):
         raise_validation(Code.Perm.DENIED, status_code=403, action="get_text_recipients")
-    return Status(200, _build_text_recipients(event))
+    return Status(200, _build_text_recipients(event, request.auth))
 
 
 def _apply_attendance_mark(
