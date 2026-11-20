@@ -2897,10 +2897,7 @@ export interface paths {
         put?: never;
         /**
          * Create Sse Ticket
-         * @description Mint a short-lived single-use ticket for opening the SSE stream.
-         *
-         *     Lets the client open the stream with ?ticket= instead of the JWT (EventSource
-         *     can't send an auth header).
+         * @description Mint a single-use stream ticket; without a JWT, ?event_id= and ?token= scope it to one event.
          */
         post: operations["notifications_api_create_sse_ticket"];
         delete?: never;
@@ -3994,6 +3991,11 @@ export interface components {
         /** EventIn */
         EventIn: {
             /**
+             * Accept Paypal
+             * @default false
+             */
+            accept_paypal: boolean;
+            /**
              * Allow Plus Ones
              * @default false
              */
@@ -4255,6 +4257,11 @@ export interface components {
         /** EventOut */
         EventOut: {
             /**
+             * Accept Paypal
+             * @default false
+             */
+            accept_paypal: boolean;
+            /**
              * Allow Plus Ones
              * @default false
              */
@@ -4401,6 +4408,11 @@ export interface components {
              */
             partiful_link: string;
             /**
+             * Paypal Price
+             * @default
+             */
+            paypal_price: string;
+            /**
              * Pending Cohost Invites
              * @default []
              */
@@ -4483,6 +4495,8 @@ export interface components {
         };
         /** EventPatchIn */
         EventPatchIn: {
+            /** Accept Paypal */
+            accept_paypal?: boolean | null;
             /** Allow Plus Ones */
             allow_plus_ones?: boolean | null;
             /** Cashapp Link */
@@ -15377,7 +15391,9 @@ export interface operations {
     };
     notifications_api_create_sse_ticket: {
         parameters: {
-            query?: never;
+            query?: {
+                event_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15391,6 +15407,24 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SseTicketOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Too Many Requests */
