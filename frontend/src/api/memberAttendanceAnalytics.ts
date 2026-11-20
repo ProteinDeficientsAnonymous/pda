@@ -6,7 +6,8 @@ export interface MemberAttendanceRow {
   userId: string;
   fullName: string;
   phoneNumber: string;
-  isPaused: boolean;
+  isGuidelinesPaused: boolean;
+  isAttendancePaused: boolean;
   lastQualifyingAt: Date | null;
   qualifyingCount12mo: number;
   compliant: boolean;
@@ -21,7 +22,8 @@ interface WireRow {
   user_id: string;
   full_name: string;
   phone_number: string;
-  is_paused: boolean;
+  is_guidelines_paused: boolean;
+  is_attendance_paused: boolean;
   last_qualifying_at: string | null;
   qualifying_count_12mo: number;
   compliant: boolean;
@@ -41,7 +43,8 @@ function mapRow(w: WireRow): MemberAttendanceRow {
     userId: w.user_id,
     fullName: w.full_name,
     phoneNumber: w.phone_number,
-    isPaused: w.is_paused,
+    isGuidelinesPaused: w.is_guidelines_paused,
+    isAttendancePaused: w.is_attendance_paused,
     lastQualifyingAt: w.last_qualifying_at ? new Date(w.last_qualifying_at) : null,
     qualifyingCount12mo: w.qualifying_count_12mo,
     compliant: w.compliant,

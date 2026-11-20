@@ -4,7 +4,7 @@ import pytest
 from community.events.public_rsvper_removal import guard_or_remove_ineligible_public_rsvpers
 from community.models import EventRSVP, RSVPStatus
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._events import make_event, make_rsvp
 
@@ -115,7 +115,11 @@ class TestStatusChangedAt:
         _assert_untouched(rsvp)
 
     def test_set_by_public_rsvper_bulk_removal(self, event):
-        guest = User.objects.create_user(phone_number="+12025558400", password="x", is_member=False)
+        guest = User.objects.create_user(
+            phone_number="+12025558400",
+            password="x",
+            membership_status=MembershipStatus.NONE,
+        )
         row = _backdate(make_rsvp(event, guest))
 
         assert len(guard_or_remove_ineligible_public_rsvpers(event, force=True)) == 1

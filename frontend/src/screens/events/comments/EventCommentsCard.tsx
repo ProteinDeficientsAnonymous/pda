@@ -33,6 +33,13 @@ function ComposerOrPrompt({
   if (cannotPostReason === 'rsvp_required') {
     return <p className="text-foreground-tertiary mb-4 text-sm">rsvp to join the conversation.</p>;
   }
+  if (cannotPostReason === 'members_only') {
+    return (
+      <p className="text-foreground-tertiary mb-4 text-sm">
+        comments are for members — attend an official or club event to join in
+      </p>
+    );
+  }
   return <p className="text-foreground-tertiary mb-4 text-sm">log in to comment.</p>;
 }
 

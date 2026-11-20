@@ -1,54 +1,44 @@
-import hashlib
 import logging
 import threading
 from collections.abc import Callable
 from enum import StrEnum
-from typing import Protocol, runtime_checkable
 
 from django.conf import settings
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.validators import validate_email
-from pydantic import BaseModel
+
+from notifications._brevo_sender import BrevoSender
+from notifications._console_sender import ConsoleSender
+from notifications._resend_sender import ResendSender
+from notifications._routing_email_sender import RoutingEmailSender
+from notifications.email_types import (
+    TEST_EMAIL_DOMAIN,
+    EmailSender,
+    SendResult,
+    mask_recipient,
+    validate_recipient,
+)
+
+# Re-export the shared contract so existing ``from notifications.email_sender import …``
+# call sites keep working.
+__all__ = [
+    "TEST_EMAIL_DOMAIN",
+    "EmailSender",
+    "EmailStream",
+    "SendResult",
+    "get_email_sender",
+    "mask_recipient",
+    "reset_email_sender_cache",
+    "send_best_effort",
+    "validate_recipient",
+]
 
 logger = logging.getLogger("notifications.email_sender")
-
-
-class SendResult(BaseModel):
-    success: bool
-    provider_message_id: str | None = None
-    error: str | None = None
-
-
-def mask_recipient(to: str) -> str:
-    """Return a non-reversible, low-cardinality token for log correlation.
-
-    Avoids logging the raw recipient address (PII). Lives at the email boundary
-    so every sender masks recipients the same way and logs stay correlatable
-    without exposing the address. Keep only a short hash prefix.
-    """
-    digest = hashlib.sha256(to.strip().lower().encode("utf-8")).hexdigest()
-    return f"sha256:{digest[:12]}"
-
-
-def validate_recipient(to: str) -> None:
-    """Reject malformed recipients and header-injection attempts.
-
-    Validated at the sender boundary so every email type and every concrete
-    sender is protected — not just whichever helper remembers to call it.
-    ``validate_email`` already rejects embedded newlines/carriage returns
-    (the header-injection vector), so it is the sole check needed.
-    """
-    try:
-        validate_email(to)
-    except DjangoValidationError as exc:
-        raise ValueError(f"invalid recipient address: {to!r}") from exc
 
 
 def send_best_effort(send: Callable[[], SendResult], log_key: str) -> bool:
     """param(send): performs one send; param(log_key): log action prefix; return(bool): success."""
     try:
         result = send()
-    except Exception:  # noqa: BLE001 — one bad send must not abort the caller's batch
+    except Exception:
         logger.warning(f"{log_key}_send_exception", exc_info=True)
         return False
     if not result.success:
@@ -56,56 +46,38 @@ def send_best_effort(send: Callable[[], SendResult], log_key: str) -> bool:
     return result.success
 
 
-@runtime_checkable
-class EmailSender(Protocol):
-    def send(self, to: str, subject: str, html: str, text: str) -> SendResult: ...
-
-
 class EmailStream(StrEnum):
     TRANSACTIONAL = "transactional"
     BULK = "bulk"
 
 
-def _console_sender() -> EmailSender:
-    # lazy import avoids circular dependency with email_sender
-    from notifications._console_sender import ConsoleSender
+def _resolve_provider(stream: EmailStream) -> EmailSender:
+    if stream is EmailStream.TRANSACTIONAL:
+        if settings.RESEND_API_KEY:
+            return ResendSender()
+        if getattr(settings, "IS_PRODUCTION", False):
+            raise RuntimeError("RESEND_API_KEY is required in production but is not set")
+        return ConsoleSender()
 
-    return ConsoleSender()
-
-
-def _resolve_transactional() -> EmailSender:
-    if settings.RESEND_API_KEY:
-        from notifications._resend_sender import ResendSender
-
-        return ResendSender()
-    if getattr(settings, "IS_PRODUCTION", False):
-        raise RuntimeError("RESEND_API_KEY is required in production but is not set")
-    return _console_sender()
-
-
-def _resolve_bulk() -> EmailSender:
     if settings.BREVO_API_KEY:
-        from notifications._brevo_sender import BrevoSender
-
         return BrevoSender()
     if getattr(settings, "IS_PRODUCTION", False):
         # Deliberately no Resend fallback: bulk fan-out is what exhausts the
         # transactional allowance, so an unconfigured provider must fail loudly.
         raise RuntimeError("BREVO_API_KEY is required in production but is not set")
-    return _console_sender()
+    return ConsoleSender()
 
-
-_RESOLVERS: dict[EmailStream, Callable[[], EmailSender]] = {
-    EmailStream.TRANSACTIONAL: _resolve_transactional,
-    EmailStream.BULK: _resolve_bulk,
-}
 
 _cached_senders: dict[EmailStream, EmailSender] = {}
 _cache_lock = threading.Lock()
 
 
 def get_email_sender(stream: EmailStream = EmailStream.TRANSACTIONAL) -> EmailSender:
-    """Resolve the configured sender for a stream. Cached per process (thread-safe)."""
+    """Factory: pick the provider for ``stream``, then wrap in a recipient router.
+
+    Cached per process (thread-safe). The router sends seeded test-domain
+    addresses to ConsoleSender and everything else to the resolved provider.
+    """
     cached = _cached_senders.get(stream)
     if cached is not None:
         return cached
@@ -116,10 +88,14 @@ def get_email_sender(stream: EmailStream = EmailStream.TRANSACTIONAL) -> EmailSe
         if cached is not None:
             return cached
 
-        sender = _RESOLVERS[stream]()
+        provider = _resolve_provider(stream)
+        sender = RoutingEmailSender(provider=provider, log_only=ConsoleSender())
         _cached_senders[stream] = sender
         logger.info(
-            "email sender resolved: stream=%s sender=%s", stream.value, type(sender).__name__
+            "email sender resolved: stream=%s sender=%s provider=%s",
+            stream.value,
+            type(sender).__name__,
+            type(provider).__name__,
         )
         return sender
 

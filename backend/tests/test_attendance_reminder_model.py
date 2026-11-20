@@ -5,7 +5,7 @@ from datetime import date
 import pytest
 from community.models import AttendanceMilestone, AttendanceReminder
 from django.db import IntegrityError
-from users.models import User
+from users.models import MembershipStatus, User
 
 
 @pytest.fixture
@@ -14,7 +14,7 @@ def member(db) -> User:
         phone_number="+12025550199",
         password="testpass123",
         first_name="Test",
-        is_member=True,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
