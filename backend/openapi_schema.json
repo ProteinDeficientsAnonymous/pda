@@ -3908,6 +3908,16 @@
             "title": "Label",
             "type": "string"
           },
+          "option_prices": {
+            "description": "Cents per option, parallel to options; empty = unpriced.",
+            "items": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "title": "Option Prices",
+            "type": "array"
+          },
           "options": {
             "default": [],
             "items": {
@@ -3946,6 +3956,16 @@
             "maxLength": 300,
             "title": "Label",
             "type": "string"
+          },
+          "option_prices": {
+            "description": "Cents per option, parallel to options; empty = unpriced.",
+            "items": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "title": "Option Prices",
+            "type": "array"
           },
           "options": {
             "default": [],
@@ -3991,6 +4011,14 @@
           "label": {
             "title": "Label",
             "type": "string"
+          },
+          "option_prices": {
+            "default": [],
+            "items": {
+              "type": "integer"
+            },
+            "title": "Option Prices",
+            "type": "array"
           },
           "options": {
             "default": [],
@@ -4042,6 +4070,16 @@
             "maxLength": 300,
             "title": "Label",
             "type": "string"
+          },
+          "option_prices": {
+            "description": "Cents per option, parallel to options; empty = unpriced.",
+            "items": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "title": "Option Prices",
+            "type": "array"
           },
           "options": {
             "default": [],

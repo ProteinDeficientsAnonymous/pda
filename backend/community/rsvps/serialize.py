@@ -22,6 +22,7 @@ def event_rsvp_question_out(question: EventRsvpQuestion) -> EventRsvpQuestionOut
         label=question.label,
         field_type=question.field_type,
         options=list(question.options or []),
+        option_prices=list(question.option_prices or []),
         required=question.required,
         display_order=question.display_order,
     )

@@ -273,6 +273,7 @@ def create_event(request, payload: EventIn):
                 label=question.label,
                 field_type=question.field_type,
                 options=question.options,
+                option_prices=question.option_prices,
                 required=question.required,
                 display_order=display_order,
             )
