@@ -1,5 +1,5 @@
 import pytest
-from community.models import Event, EventStatus, EventType
+from community.models import Event, EventSpeech, EventStatus, EventType
 from community.scheduled.checkin_nudge import (
     due_checkin_nudge_events,
     send_checkin_nudge,
@@ -143,6 +143,45 @@ class TestSendCheckinNudge:
         sent = fake_email_sender.send.call_args.kwargs
         assert f"/events/{event.pk}/check-in" in sent["html"]
         assert f"/events/{event.pk}/check-in" in sent["text"]
+
+
+def _send_for(test_user, fake_email_sender, **kwargs):
+    test_user.email = "creator@example.com"
+    test_user.save(update_fields=["email"])
+    event = _make_event(created_by=test_user, title="Potluck", **kwargs)
+    send_checkin_nudge(event)
+    return event, fake_email_sender.send.call_args.kwargs
+
+
+@pytest.mark.django_db
+class TestCheckinNudgeSpeechReminder:
+    def test_official_without_speech_adds_speech_reminder(self, test_user, fake_email_sender, db):
+        event, sent = _send_for(test_user, fake_email_sender, event_type=EventType.OFFICIAL)
+
+        assert sent["subject"] == "potluck just started — check people in and fill in the speech"
+        assert f"/events/{event.pk}/speech" in sent["html"]
+        assert f"/events/{event.pk}/speech" in sent["text"]
+
+    def test_official_with_saved_speech_keeps_plain_reminder(
+        self, test_user, fake_email_sender, db
+    ):
+        test_user.email = "creator@example.com"
+        test_user.save(update_fields=["email"])
+        event = _make_event(created_by=test_user, event_type=EventType.OFFICIAL, title="Potluck")
+        EventSpeech.objects.create(event=event, values={}, updated_by=test_user)
+
+        send_checkin_nudge(event)
+
+        sent = fake_email_sender.send.call_args.kwargs
+        assert sent["subject"] == "potluck just started — check people in"
+        assert "speech" not in sent["html"]
+        assert "speech" not in sent["text"]
+
+    def test_club_event_has_no_speech_reminder(self, test_user, fake_email_sender, db):
+        _, sent = _send_for(test_user, fake_email_sender)
+
+        assert sent["subject"] == "potluck just started — check people in"
+        assert "speech" not in sent["text"]
 
 
 @pytest.mark.django_db

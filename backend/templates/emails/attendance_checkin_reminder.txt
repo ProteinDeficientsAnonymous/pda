@@ -5,7 +5,11 @@ hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 go to check-in:
 
 {{ event_url }}
+{% if speech_url %}
+the event speech hasn't been filled in yet — fill it in before you read it:
 
+{{ speech_url }}
+{% endif %}
 — pda
 
 {% include "emails/_no_reply_footer.txt" %}
