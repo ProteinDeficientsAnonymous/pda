@@ -187,7 +187,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
         released = None
         if payload.guidelines_paused and not was_guidelines_paused:
             released = release_held_events(request, user, MembershipStatus.GUIDELINES_PAUSED)[1]
-        _audit_user_update(request, user_id, payload, was_guidelines_paused, released)
+        _audit_user_update(request, user, payload, was_guidelines_paused, released)
     if apply_attendance_pause_patch(request, user, payload.attendance_paused):
         user = editable.get(pk=user_id)
     if was_guidelines_paused and not user.is_guidelines_paused:
@@ -196,25 +196,22 @@ def update_user(request, user_id: str, payload: UserPatchIn):
 
 
 def _audit_user_update(
-    request, user_id: str, payload: UserPatchIn, was_guidelines_paused: bool, released: dict | None
+    request, user: User, payload: UserPatchIn, was_guidelines_paused: bool, released: dict | None
 ) -> None:
-    """Emit the audit entry for an update_user PATCH.
-
-    A pause transition takes priority, recording what the pause released. Otherwise a
-    plain field change logs user_updated.
-    """
+    """Log user_paused/user_unpaused for a guidelines-pause change and user_updated for edits."""
+    user_id = str(user.pk)
     is_pause_transition = (
         payload.guidelines_paused is not None and payload.guidelines_paused != was_guidelines_paused
     )
     if is_pause_transition:
         action = "user_paused" if payload.guidelines_paused else "user_unpaused"
+        details = {"full_name": user.full_name, **(released or {})}
         audit_log(
             logging.WARNING,
             action,
             request,
-            target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=released),
+            target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=details),
         )
-        return
 
     changed = [
         f

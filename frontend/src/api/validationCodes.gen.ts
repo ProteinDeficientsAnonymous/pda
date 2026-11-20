@@ -207,6 +207,7 @@ export const Code = {
     AnswerRequired: 'join_request.answer_required',
     AnswerTooLong: 'join_request.answer_too_long',
     AnswerInvalidOption: 'join_request.answer_invalid_option',
+    AnswerInvalidFormat: 'join_request.answer_invalid_format',
     InvalidStatus: 'join_request.invalid_status',
     NotApproved: 'join_request.not_approved',
     AlreadyLoggedIn: 'join_request.already_logged_in',
@@ -505,6 +506,7 @@ export type ValidationCode =
   | 'join_request.answer_required'
   | 'join_request.answer_too_long'
   | 'join_request.answer_invalid_option'
+  | 'join_request.answer_invalid_format'
   | 'join_request.invalid_status'
   | 'join_request.not_approved'
   | 'join_request.already_logged_in'
@@ -755,6 +757,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.answer_required': ['label'],
   'join_request.answer_too_long': ['label', 'max'],
   'join_request.answer_invalid_option': ['label'],
+  'join_request.answer_invalid_format': ['label'],
   'join_request.invalid_status': ['allowed'],
   'join_request.not_approved': [],
   'join_request.already_logged_in': [],
