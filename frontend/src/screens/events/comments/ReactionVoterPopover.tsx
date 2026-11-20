@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuthStore } from '@/auth/store';
@@ -13,14 +13,19 @@ interface Props {
 
 export function ReactionVoterPopover({ reaction, insideRef, onClose }: Props) {
   const authed = useAuthStore((s) => s.status === 'authed');
+  // the parent passes a fresh onClose each render; rebinding would leave a gap with no outside listener
+  const close = useRef(onClose);
+  useEffect(() => {
+    close.current = onClose;
+  });
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') close.current();
     }
     // pointerdown, not mousedown: iOS replays a mouse press on the emoji after a long press lifts
     function onDown(e: PointerEvent) {
-      if (!insideRef.current?.contains(e.target as Node)) onClose();
+      if (!insideRef.current?.contains(e.target as Node)) close.current();
     }
     document.addEventListener('keydown', onKey);
     // deferred so the press that opened the popover can't also dismiss it
@@ -32,7 +37,7 @@ export function ReactionVoterPopover({ reaction, insideRef, onClose }: Props) {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onDown);
     };
-  }, [insideRef, onClose]);
+  }, [insideRef]);
 
   return (
     <div
