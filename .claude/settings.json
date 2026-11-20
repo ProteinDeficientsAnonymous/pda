@@ -40,6 +40,26 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-top-of-file-comments.py\""
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-gate-files.py\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-fast-gates.py\"",
+            "timeout": 600
+          }
+        ]
       }
     ]
   },
