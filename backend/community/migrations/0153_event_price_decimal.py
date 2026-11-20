@@ -2,22 +2,28 @@ import re
 
 from django.db import migrations, models
 
-_FIRST_NUMBER = re.compile(r"\d+(?:\.\d+)?|\.\d+")
+_AMOUNT = re.compile(r"\$?(?:\d[\d,]*(?:\.\d+)?|\.\d+)")
 _MAX_PRICE = 100000
 
 
-def numeric_text(raw: str | None) -> str | None:
-    # Prod only had past free-text prices ("$10 deposit", "~$35 - ~$60 sliding scale"); keep the first amount.
-    match = _FIRST_NUMBER.search((raw or "").replace(",", ""))
-    # Out-of-range amounts (e.g. a phone number) would overflow numeric(8,2) and abort the migration.
-    return match.group(0) if match and 0 < float(match.group(0)) < _MAX_PRICE else None
+def split_price(raw: str | None) -> tuple[str | None, str]:
+    """return(tuple): the amount as numeric text (or None) and the leftover note."""
+    raw = (raw or "").strip()
+    amounts = _AMOUNT.findall(raw)
+    if len(amounts) != 1:
+        # Ranges ("$6-$8") and amount-free text ("pwyc") keep their wording as the note.
+        return None, raw
+    amount = amounts[0].lstrip("$").replace(",", "")
+    if not 0 < float(amount) < _MAX_PRICE:
+        return None, raw
+    return amount, raw.replace(amounts[0], "", 1).strip(" -–—:,")
 
 
 def to_numeric_text(apps, schema_editor):
     Event = apps.get_model("community", "Event")
     for event in Event.objects.exclude(price__isnull=True).only("id", "price"):
-        event.price = numeric_text(event.price)
-        event.save(update_fields=["price"])
+        event.price, event.price_note = split_price(event.price)
+        event.save(update_fields=["price", "price_note"])
 
 
 def to_blank_text(apps, schema_editor):
@@ -30,6 +36,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AddField(
+            model_name="event",
+            name="price_note",
+            field=models.CharField(max_length=100, blank=True, default=""),
+            preserve_default=False,
+        ),
         migrations.AlterField(
             model_name="event",
             name="price",
