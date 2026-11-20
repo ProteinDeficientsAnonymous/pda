@@ -84,16 +84,38 @@ describe('ReactionBar', () => {
     act(() => {
       vi.advanceTimersByTime(500);
     });
-    fireEvent.mouseDown(emoji, { clientX: 0, clientY: 0, button: 0 });
-    fireEvent.pointerUp(emoji, { button: 0 });
-    fireEvent.mouseUp(emoji, { button: 0 });
-    fireEvent.click(emoji);
+    // let the outside-click listener bind before the finger lifts
     act(() => {
       vi.advanceTimersByTime(50);
     });
+    fireEvent.pointerUp(emoji, { button: 0 });
+    // iOS replays mouse events on the pressed emoji after a long press lifts
+    fireEvent.mouseDown(emoji, { clientX: 0, clientY: 0, button: 0 });
+    fireEvent.mouseUp(emoji, { button: 0 });
+    fireEvent.click(emoji);
 
     expect(onToggle).not.toHaveBeenCalled();
     expect(screen.getByRole('dialog', { name: /who reacted with ❤️/u })).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('closes the voters when tapping outside the pill', () => {
+    vi.useFakeTimers();
+    render(
+      <ReactionBar
+        reactions={[
+          summary(ReactionEmoji.Heart, 1, true, [{ userId: 'u1', name: 'ash', photoUrl: '' }]),
+        ]}
+        onToggle={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /who reacted with ❤️/u }));
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    fireEvent.pointerDown(document.body);
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     vi.useRealTimers();
   });
 

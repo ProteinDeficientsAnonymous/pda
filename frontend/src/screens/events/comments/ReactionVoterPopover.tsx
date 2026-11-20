@@ -17,19 +17,19 @@ export function ReactionVoterPopover({ reaction, onClose }: Props) {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose();
     }
-    function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    function onDown(e: PointerEvent) {
+      // the pill owns its toggles; iOS replays a mouse press on the emoji when a long-press lifts
+      const pill = ref.current?.parentElement;
+      if (pill && !pill.contains(e.target as Node)) onClose();
     }
     document.addEventListener('keydown', onKey);
-    // deferred: a long-press opens this while the pointer is still down, and
-    // binding synchronously would let that same gesture close it immediately
     const bind = setTimeout(() => {
-      document.addEventListener('mousedown', onDown);
+      document.addEventListener('pointerdown', onDown);
     });
     return () => {
       clearTimeout(bind);
       document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('pointerdown', onDown);
     };
   }, [onClose]);
 

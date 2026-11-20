@@ -124,7 +124,7 @@ function ReactionPill({
           if (longPress.didLongPress()) return;
           onToggle(r.emoji);
         }}
-        className="-my-1 inline-flex min-h-11 touch-none items-center select-none"
+        className="-my-1 inline-flex min-h-11 touch-none items-center select-none [-webkit-touch-callout:none]"
       >
         {r.emoji}
       </button>
