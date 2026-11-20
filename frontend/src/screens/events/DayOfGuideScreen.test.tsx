@@ -8,7 +8,7 @@ import { setAuthed } from '@/test/auth';
 import { makeUserWithPermissions } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
-import EventProtocolScreen from './EventProtocolScreen';
+import DayOfGuideScreen from './DayOfGuideScreen';
 
 const update = vi.fn();
 let page: { isPending: boolean; error: unknown; data?: { contentHtml: string; contentPm: string } };
@@ -41,16 +41,16 @@ beforeEach(() => {
   setAuthed(makeUserWithPermissions([]));
 });
 
-describe('EventProtocolScreen', () => {
-  it('shows the protocol read-only to members', () => {
-    renderWithProviders(<EventProtocolScreen />);
-    expect(screen.getByRole('heading', { name: 'event protocol' })).toBeInTheDocument();
+describe('DayOfGuideScreen', () => {
+  it('shows the guide read-only to members', () => {
+    renderWithProviders(<DayOfGuideScreen />);
+    expect(screen.getByRole('heading', { name: 'day-of guide' })).toBeInTheDocument();
     expect(screen.getByText('bring signs')).toBeInTheDocument();
   });
 
   it('lets planning managers edit and saves the new content', async () => {
     setAuthed(makeUserWithPermissions([Permission.ManageEventPlanning]));
-    renderWithProviders(<EventProtocolScreen />);
+    renderWithProviders(<DayOfGuideScreen />);
     expect(screen.getByText('bring signs (editable)')).toBeInTheDocument();
     await savedWith?.('{"type":"doc"}');
     expect(update).toHaveBeenCalledWith({ contentPm: '{"type":"doc"}' });
@@ -58,15 +58,13 @@ describe('EventProtocolScreen', () => {
 
   it('says members only on a 403', () => {
     page = { isPending: false, error: apiError(403, Code.Page.MembersOnly) };
-    renderWithProviders(<EventProtocolScreen />);
+    renderWithProviders(<DayOfGuideScreen />);
     expect(screen.getByText('this page is for members only')).toBeInTheDocument();
   });
 
   it('shows a load error otherwise', () => {
     page = { isPending: false, error: new Error('boom') };
-    renderWithProviders(<EventProtocolScreen />);
-    expect(
-      screen.getByText("couldn't load the event protocol — try refreshing"),
-    ).toBeInTheDocument();
+    renderWithProviders(<DayOfGuideScreen />);
+    expect(screen.getByText("couldn't load the day-of guide — try refreshing")).toBeInTheDocument();
   });
 });

@@ -49,8 +49,8 @@ export default function EventAttendanceScreen() {
         {event.eventType === EventType.Official ? (
           <>
             {' · '}
-            <Link to="/event-protocol" className="underline">
-              event protocol
+            <Link to="/day-of" className="underline">
+              day-of guide
             </Link>
           </>
         ) : null}

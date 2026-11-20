@@ -72,7 +72,7 @@ describe('EventAttendanceScreen', () => {
     expect(screen.getByText(BASE_EVENT.title)).toBeInTheDocument();
   });
 
-  it('links official-event hosts to the event protocol', () => {
+  it('links official-event hosts to the day-of guide', () => {
     vi.mocked(useEvent).mockReturnValue({
       data: { ...BASE_EVENT, eventType: EventType.Official },
       isPending: false,
@@ -81,17 +81,14 @@ describe('EventAttendanceScreen', () => {
     setAuthed(creator);
     renderScreen();
 
-    expect(screen.getByRole('link', { name: 'event protocol' })).toHaveAttribute(
-      'href',
-      '/event-protocol',
-    );
+    expect(screen.getByRole('link', { name: 'day-of guide' })).toHaveAttribute('href', '/day-of');
   });
 
-  it('leaves the protocol link off other events', () => {
+  it('leaves the day-of guide link off other events', () => {
     setAuthed(creator);
     renderScreen();
 
-    expect(screen.queryByRole('link', { name: 'event protocol' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'day-of guide' })).not.toBeInTheDocument();
   });
 
   it('blocks non-host members with a forbidden notice', () => {

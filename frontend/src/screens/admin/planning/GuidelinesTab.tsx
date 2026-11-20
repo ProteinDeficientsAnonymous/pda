@@ -16,9 +16,9 @@ export function GuidelinesTab() {
     return (
       <>
         <p className="text-foreground-secondary mb-4 text-sm">
-          day-of steps live in the{' '}
-          <Link to="/event-protocol" className="underline">
-            event protocol
+          for the event itself, see the{' '}
+          <Link to="/day-of" className="underline">
+            day-of guide
           </Link>
         </p>
         <EditableHtmlBlock

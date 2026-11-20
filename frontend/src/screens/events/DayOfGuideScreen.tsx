@@ -5,9 +5,9 @@ import { EditableHtmlBlock } from '@/components/EditableHtmlBlock';
 import { Permission } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
-const SLUG = 'event-protocol';
+const SLUG = 'day-of-guide';
 
-export default function EventProtocolScreen() {
+export default function DayOfGuideScreen() {
   const { data, isPending, error } = useEditablePage(SLUG);
   const update = useUpdateEditablePage(SLUG);
   const canEdit = useHasPermission(Permission.ManageEventPlanning);
@@ -17,11 +17,11 @@ export default function EventProtocolScreen() {
     if (getApiStatus(error) === 403) {
       return <ContentError message="this page is for members only" />;
     }
-    return <ContentError message="couldn't load the event protocol — try refreshing" />;
+    return <ContentError message="couldn't load the day-of guide — try refreshing" />;
   }
   return (
     <ContentContainer>
-      <h1 className="mb-1 text-2xl font-medium tracking-tight">event protocol</h1>
+      <h1 className="mb-1 text-2xl font-medium tracking-tight">day-of guide</h1>
       <p className="text-foreground-secondary mb-6 text-sm">
         what needs to happen on the day of an official event
       </p>
@@ -30,7 +30,7 @@ export default function EventProtocolScreen() {
         contentHtml={data.contentHtml}
         initialPm={data.contentPm}
         onSave={(contentPm) => update.mutateAsync({ contentPm }).then(() => undefined)}
-        placeholder="event protocol"
+        placeholder="day-of guide"
       />
     </ContentContainer>
   );
