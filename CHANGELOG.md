@@ -1,3 +1,17 @@
+# [0.272.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.5...v0.272.0) (2026-11-20)
+
+
+### Features
+
+* **audit:** persist rejected state transitions after rollback ([#2576](https://github.com/ProteinDeficientsAnonymous/pda/issues/2576)) ([b10b9aa](https://github.com/ProteinDeficientsAnonymous/pda/commit/b10b9aad2c73e1dc96536687a4c8718049357f62))
+
+## [0.271.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.4...v0.271.5) (2026-11-20)
+
+
+### Bug Fixes
+
+* 2117 - send option prices when creating an event ([#2620](https://github.com/ProteinDeficientsAnonymous/pda/issues/2620)) ([7e35b13](https://github.com/ProteinDeficientsAnonymous/pda/commit/7e35b13d2f79e5d52101f7bd202dcfcdcdbf196c))
+
 ## [0.271.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.3...v0.271.4) (2026-11-20)
 
 
