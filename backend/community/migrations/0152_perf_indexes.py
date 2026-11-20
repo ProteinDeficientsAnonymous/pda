@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0150_join_form_checkbox_question"),
+        ("community", "0151_drop_joinrequest_decision_stamps"),
     ]
 
     operations = [
