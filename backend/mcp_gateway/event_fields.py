@@ -22,7 +22,10 @@ class EventFields(BaseModel):
     latitude: float | None = Field(None, description="meetup point latitude (see find_location)")
     longitude: float | None = Field(None, description="meetup point longitude")
     price: str = Field(
-        "", description="dollar amount per person, e.g. '15' or '12.50'; blank if free"
+        "", description="dollar amount per person, e.g. '15' or '12.50'; blank if free or a range"
+    )
+    price_note: str = Field(
+        "", description="shown after the price, e.g. 'deposit' or 'sliding scale $6-$8'"
     )
     venmo_link: str = Field("", description="full link, e.g. https://venmo.com/u/handle")
     cashapp_link: str = Field("", description="full link, e.g. https://cash.app/$cashtag")

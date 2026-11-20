@@ -3957,6 +3957,11 @@ export interface components {
              * @default
              */
             price: string;
+            /**
+             * Price Note
+             * @default
+             */
+            price_note: string;
             /** Rsvp Deadline */
             rsvp_deadline?: string | null;
             /**
@@ -4073,6 +4078,11 @@ export interface components {
              * @default
              */
             price: string;
+            /**
+             * Price Note
+             * @default
+             */
+            price_note: string;
             /**
              * Slug
              * @default
@@ -4306,6 +4316,11 @@ export interface components {
              * @default
              */
             price: string;
+            /**
+             * Price Note
+             * @default
+             */
+            price_note: string;
             /** Rsvp Deadline */
             rsvp_deadline?: string | null;
             /**
@@ -4403,6 +4418,8 @@ export interface components {
             partiful_link?: string | null;
             /** Price */
             price?: string | null;
+            /** Price Note */
+            price_note?: string | null;
             /** Rsvp Deadline */
             rsvp_deadline?: string | null;
             /** Rsvp Enabled */

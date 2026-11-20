@@ -250,6 +250,7 @@ def create_event(request, payload: EventIn):
         partiful_link=payload.partiful_link,
         other_link=payload.other_link,
         price=parse_price(payload.price),
+        price_note=payload.price_note,
         venmo_link=payload.venmo_link,
         cashapp_link=payload.cashapp_link,
         zelle_info=payload.zelle_info,

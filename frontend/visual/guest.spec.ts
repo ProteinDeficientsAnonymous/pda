@@ -8,6 +8,6 @@ test('guest screens', async ({ page }) => {
   await prepare(page);
   await shootAll(page, [
     screen('guest-rsvps', `/my-rsvps?token=${data.guest_token}`, { text: 'potluck' }),
-    screen('guest-event', '/events/potluck', { text: 'the park' }),
+    screen('guest-event', '/events/potluck', { text: '$10 · deposit' }),
   ]);
 });

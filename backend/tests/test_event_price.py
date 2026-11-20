@@ -115,3 +115,15 @@ class TestEventPriceApi:
         assert resp.status_code == 200
         assert resp.json()["price"] == ""
         assert Event.objects.get(pk=event_id).price is None
+
+    def test_price_note_round_trips(self, api_client, auth_headers):
+        event_id = self._create(api_client, auth_headers, "").json()["id"]
+        resp = api_client.patch(
+            f"/api/community/events/{event_id}/",
+            data=json.dumps({"price_note": "sliding scale $6-$8"}),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["price"] == ""
+        assert resp.json()["price_note"] == "sliding scale $6-$8"

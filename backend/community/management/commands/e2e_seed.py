@@ -2,6 +2,7 @@ import calendar
 import json
 import secrets
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 from django.core.cache import caches
 from django.core.management.base import BaseCommand
@@ -245,6 +246,8 @@ def _seed_member_screens() -> dict:
         status=EventStatus.ACTIVE,
         rsvp_enabled=True,
         created_by=seed,
+        price=Decimal("10.00"),
+        price_note="deposit",
     )
     EventRsvpQuestion.objects.create(
         event=event,
