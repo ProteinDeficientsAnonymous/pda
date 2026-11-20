@@ -36,6 +36,18 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says when an event does not take paypal', () => {
+    expect(messageForCode({ code: Code.Event.PaypalNotAccepted })).toBe(
+      "this event doesn't take paypal",
+    );
+  });
+
+  it('says when there is no rsvp to pay for', () => {
+    expect(messageForCode({ code: Code.Event.PaypalNothingToPay })).toBe(
+      'you have no rsvp here that needs paying',
+    );
+  });
+
   it('says the rsvp deadline must come before the start', () => {
     expect(
       messageForCode({ code: Code.Event.RsvpDeadlineAfterStart, field: 'rsvp_deadline' }),
