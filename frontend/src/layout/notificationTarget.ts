@@ -29,6 +29,14 @@ export function notificationTarget(n: AppNotification): string | null {
     case NotificationType.MemberRestored:
     case NotificationType.CheckInPromotionFailed:
       return '/join-requests';
+    case NotificationType.PlanningProposed:
+    case NotificationType.PlanningWithdrawn:
+    case NotificationType.PlanningCommitted:
+    case NotificationType.PlanningDeclined:
+    case NotificationType.PlanningUpcoming:
+      return '/admin/planning';
+    case NotificationType.PlanningAvailability:
+      return '/admin/planning?tab=availability';
     case NotificationType.MagicLinkRequest:
       return n.relatedUserId ? `/admin/members/${n.relatedUserId}` : '/admin/members';
     default:

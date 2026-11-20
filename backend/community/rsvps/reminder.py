@@ -51,7 +51,7 @@ def _send(sender: EmailSender, event: Event, rsvp: EventRSVP, member_ids: set[st
                 rsvp_url=_rsvp_url(event, rsvp, member_ids),
             ),
         )
-    except Exception:  # noqa: BLE001 — one bad send must not abort the batch
+    except Exception:
         logger.warning("rsvp_reminder_email_send_exception", exc_info=True)
         return False
     if not result.success:

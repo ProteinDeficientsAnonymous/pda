@@ -118,13 +118,7 @@ describe('useUsers', () => {
     expect(result.current.error).toBe(apiError);
   });
 
-  // TODO(tier3-mismatch): Flutter `useUsers returns 403 distinctly` — React
-  // `useUsers` does not special-case 403 responses (no error branch in the
-  // queryFn), so there's nothing distinct to assert. Route-level guards
-  // handle permission gating instead.
-  it.skip('surfaces 403 distinctly from other errors', () => {
-    // Intentionally empty — mismatch vs Flutter behavior, documented above.
-  });
+  // React useUsers does not special-case 403 (route guards handle gating).
 });
 
 // ---------------------------------------------------------------------------

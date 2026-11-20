@@ -102,6 +102,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'rsvps are closed for cancelled events';
     case Code.Event.RsvpsClosedPast:
       return 'rsvps are closed for past events';
+    case Code.Event.RsvpsClosedDeadline:
+      return "the rsvp deadline has passed — going guests can only switch to can't go or drop their +1";
+    case Code.Event.RsvpDeadlineAfterStart:
+      return 'the rsvp deadline must be before the event starts';
     case Code.Event.NoPlusOneSpots:
       return 'no spots available for a +1';
     case Code.Event.RsvpNotFound:
@@ -214,6 +218,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'enter a tag name';
     case Code.Tag.NameAlreadyExists:
       return 'a tag with that name already exists';
+
+    // Reserve
+    case Code.Reserve.NotFound:
+      return 'reserve entry not found';
 
     // URL
     case Code.Url.Invalid:
@@ -695,6 +703,34 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'this connection request was already used';
     case Code.Connect.AppNotFound:
       return 'connected app not found';
+
+    // Planning
+    case Code.Planning.YearExists:
+      return 'that planning year already exists';
+    case Code.Planning.YearNotFound:
+      return "that planning year doesn't exist";
+    case Code.Planning.SlotNotFound:
+      return "that slot doesn't exist anymore";
+    case Code.Planning.SlotNotInYear:
+      return "one of those slots isn't part of this year";
+    case Code.Planning.NotAPlanner:
+      return "they're not a planner";
+    case Code.Planning.AlreadyAssigned:
+      return "they're already proposed or committed for this slot";
+    case Code.Planning.AssignmentNotFound:
+      return "that proposal doesn't exist anymore";
+    case Code.Planning.NotPending:
+      return "that proposal's already been answered";
+    case Code.Planning.NotEventHost:
+      return 'you need to be a host of that event to link it';
+    case Code.Planning.SlotHasEvent:
+      return 'that slot already has an event';
+    case Code.Planning.AvailabilityAlreadyOpen:
+      return 'planners were already asked for their availability';
+    case Code.Planning.EventAlreadyLinked:
+      return 'that event is already linked to another slot';
+    case Code.Planning.ChecklistItemNotFound:
+      return "that checklist item doesn't exist anymore";
 
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)
     case Code.Generic.FieldRequired:

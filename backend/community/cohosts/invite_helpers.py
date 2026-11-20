@@ -10,8 +10,10 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from notifications.cohost_notifications import create_cohost_invite_notifications
 from notifications.email_helpers import CohostInviteEmailDetails, send_cohost_invite_email
 from notifications.email_sender import get_email_sender
+from notifications.service import broadcast_cohost_change
 from users.helpers import visible_display_name
 from users.models import MembershipStatus, User
 
@@ -76,6 +78,17 @@ def _rescind_invite(invite: EventCoHostInvite) -> bool:
     invite.decided_at = timezone.now()
     invite.save(update_fields=["status", "decided_at"])
     return was_accepted
+
+
+def rescind_pending_cohost_invite(event: Event, user_id) -> bool:
+    """Rescind the user's PENDING invite; accepted co-hosts are left for the hosts to manage."""
+    invite = EventCoHostInvite.objects.filter(
+        event=event, user_id=user_id, status=CoHostInviteStatus.PENDING
+    ).first()
+    if invite is None:
+        return False
+    _rescind_invite(invite)
+    return True
 
 
 def diff_cohost_invites(
@@ -158,6 +171,24 @@ def add_cohost_invites(
         for user_id in next_ids:
             if _upsert_pending_invite(event, user_id, inviter, existing_by_user.get(user_id)):
                 newly_invited.append(user_id)
+    return newly_invited
+
+
+def invite_cohosts_and_notify(
+    event: Event,
+    co_host_ids: Iterable[str],
+    inviter: UserModel,
+) -> list[str]:
+    """Invite with set-union semantics, then notify, email and live-ping the newly invited."""
+    newly_invited = add_cohost_invites(event, co_host_ids, inviter)
+    if newly_invited:
+        create_cohost_invite_notifications(event, newly_invited, inviter)
+        send_cohost_invite_emails(event, newly_invited, inviter)
+        broadcast_cohost_change(
+            event,
+            exclude_user_ids={str(inviter.pk)},
+            extra_user_ids=set(newly_invited),
+        )
     return newly_invited
 
 
@@ -245,7 +276,7 @@ def send_cohost_invite_emails(
                     event_url=event_url,
                 ),
             )
-        except Exception:  # noqa: BLE001 — one bad send must not abort the batch
+        except Exception:
             logger.warning("cohost_invite_email_send_exception", exc_info=True)
             continue
         if not result.success:

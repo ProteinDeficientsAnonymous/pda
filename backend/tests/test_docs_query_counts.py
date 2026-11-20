@@ -3,7 +3,9 @@ from community.models import DocFolder, Document
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
-from tests._docs_helpers import BASE, manage_docs_headers, manage_docs_user  # noqa: F401
+pytest_plugins = ["tests._docs_helpers"]
+
+BASE = "/api/community/docs"
 
 
 def _make_trees(count: int) -> None:
@@ -24,14 +26,14 @@ def _count(api_client, method: str, url: str, headers: dict, **kwargs) -> int:
 
 @pytest.mark.django_db
 class TestDocsQueryCounts:
-    def test_folder_tree_is_constant(self, api_client, manage_docs_headers):  # noqa: F811
+    def test_folder_tree_is_constant(self, api_client, manage_docs_headers):
         _make_trees(2)
         small = _count(api_client, "get", f"{BASE}/folders/", manage_docs_headers)
         _make_trees(6)
         large = _count(api_client, "get", f"{BASE}/folders/", manage_docs_headers)
         assert large == small
 
-    def test_folder_tree_shape(self, api_client, manage_docs_headers):  # noqa: F811
+    def test_folder_tree_shape(self, api_client, manage_docs_headers):
         _make_trees(1)
         data = api_client.get(f"{BASE}/folders/", **manage_docs_headers).json()
         assert [f["name"] for f in data] == ["root 0"]
@@ -42,7 +44,7 @@ class TestDocsQueryCounts:
     @pytest.mark.parametrize(
         "model,url", [(DocFolder, "/folders/reorder/"), (Document, "/reorder/")]
     )
-    def test_reorder_is_constant(self, api_client, manage_docs_headers, model, url):  # noqa: F811
+    def test_reorder_is_constant(self, api_client, manage_docs_headers, model, url):
         _make_trees(4)
         ids = [str(pk) for pk in model.objects.values_list("id", flat=True)]
 
@@ -60,7 +62,7 @@ class TestDocsQueryCounts:
         orders = {str(pk): o for pk, o in model.objects.values_list("id", "display_order")}
         assert [orders[pk] for pk in ids[::-1]] == list(range(len(ids)))
 
-    def test_reorder_accepts_non_canonical_ids(self, api_client, manage_docs_headers):  # noqa: F811
+    def test_reorder_accepts_non_canonical_ids(self, api_client, manage_docs_headers):
         first, second = (DocFolder.objects.create(name=n) for n in ("a", "b"))
         response = api_client.put(
             f"{BASE}/folders/reorder/",

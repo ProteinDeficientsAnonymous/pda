@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { EventStatus } from '@/models/event';
+import { EventStatus, RsvpStatus } from '@/models/event';
+import { MembershipStatus } from '@/models/user';
 import { makeEvent, makeUser } from '@/test/fixtures';
 
 import { eventMemberSectionFlags } from './eventMemberFlags';
@@ -16,4 +17,36 @@ describe('eventMemberSectionFlags rsvpLocked', () => {
     const hosted = { ...draft, coHostIds: ['user1'] };
     expect(eventMemberSectionFlags(hosted, makeUser()).rsvpLocked).toBe(false);
   });
+});
+
+describe('eventMemberSectionFlags rsvpDeadlineClosed', () => {
+  const pastDeadline = makeEvent({
+    rsvpDeadline: new Date(Date.now() - 60 * 60 * 1000),
+    coHostIds: ['host'],
+  });
+
+  it('closes rsvps for a guest once the deadline passes', () => {
+    expect(eventMemberSectionFlags(pastDeadline, makeUser()).rsvpDeadlineClosed).toBe(true);
+  });
+
+  it('keeps rsvps open for a co-host past the deadline', () => {
+    const host = makeUser({ id: 'host' });
+    expect(eventMemberSectionFlags(pastDeadline, host).rsvpDeadlineClosed).toBe(false);
+  });
+});
+
+describe('eventMemberSectionFlags canInvite', () => {
+  const rsvpd = makeEvent({ rsvpEnabled: true, myRsvp: RsvpStatus.Attending });
+
+  it('lets a member who rsvpd invite', () => {
+    expect(eventMemberSectionFlags(rsvpd, makeUser()).canInvite).toBe(true);
+  });
+
+  it.each([MembershipStatus.Tentative, MembershipStatus.AttendancePaused])(
+    'hides the invite button from a %s user',
+    (membershipStatus) => {
+      const user = makeUser({ membershipStatus });
+      expect(eventMemberSectionFlags(rsvpd, user).canInvite).toBe(false);
+    },
+  );
 });
