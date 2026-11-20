@@ -97,6 +97,8 @@ def get_page(request, slug: str):
 def update_page(request, slug: str, payload: EditablePagePatchIn):
     if slug == GUIDELINES_SLUG:
         require_guidelines_edit(request)
+    elif slug == DAY_OF_GUIDE_SLUG:
+        require_guidelines_edit(request, "update_day_of_guide")
     elif not request.auth.has_permission(PermissionKey.EDIT_GUIDELINES):
         audit_log(
             logging.WARNING,

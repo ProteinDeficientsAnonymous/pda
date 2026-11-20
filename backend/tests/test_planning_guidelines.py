@@ -55,3 +55,27 @@ class TestPlanningGuidelines:
             api_client, "patch", URL, {"content_pm": _doc("x")}, headers_for(permission)
         )
         assert response.status_code == 403
+
+
+GUIDE_URL = "/api/community/pages/day-of-guide/"
+
+
+@pytest.mark.django_db
+class TestDayOfGuidePage:
+    def test_planning_manager_edits(self, api_client):
+        headers = headers_for(PermissionKey.MANAGE_EVENT_PLANNING)
+        response = send(api_client, "patch", GUIDE_URL, {"content_pm": _doc("be early")}, headers)
+        assert response.status_code == 200
+        assert response.json()["content_html"] == "<p>be early</p>"
+
+    @pytest.mark.parametrize(
+        "permission", [PermissionKey.VIEW_EVENT_PLANNING, PermissionKey.EDIT_GUIDELINES]
+    )
+    def test_others_cannot_edit(self, api_client, permission):
+        response = send(
+            api_client, "patch", GUIDE_URL, {"content_pm": _doc("x")}, headers_for(permission)
+        )
+        assert response.status_code == 403
+
+    def test_any_member_can_read(self, api_client):
+        assert send(api_client, "get", GUIDE_URL, headers=headers_for()).status_code == 200

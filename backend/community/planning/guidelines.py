@@ -132,5 +132,5 @@ def require_guidelines_view(request) -> None:
     require_view(request, "get_planning_guidelines")
 
 
-def require_guidelines_edit(request) -> None:
-    require_manage(request, "update_planning_guidelines")
+def require_guidelines_edit(request, action: str = "update_planning_guidelines") -> None:
+    require_manage(request, action)
