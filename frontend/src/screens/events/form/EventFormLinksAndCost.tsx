@@ -59,6 +59,16 @@ export function EventFormMoney({ values, onChange }: Props) {
         hint="dollar amount per person — only for covering costs (food, supplies, etc)"
       />
       <TextField
+        label="price note"
+        value={values.priceNote}
+        onChange={(e) => {
+          onChange({ priceNote: e.target.value });
+        }}
+        placeholder="deposit, or sliding scale $6–$8"
+        maxLength={100}
+        hint="shown next to the price — leave the price blank for a range"
+      />
+      <TextField
         label="venmo"
         value={values.venmoLink}
         onChange={(e) => {

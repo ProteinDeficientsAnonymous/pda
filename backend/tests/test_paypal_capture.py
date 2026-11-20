@@ -21,8 +21,9 @@ def rsvp(db, test_user):
     return create_paypal_rsvp(test_user)
 
 
-def _order(rsvp, status="COMPLETED") -> dict:
-    return {"purchase_units": [{"payments": {"captures": [completed_capture(rsvp, status)]}}]}
+def _order(rsvp, status="COMPLETED", value="10.87") -> dict:
+    capture = completed_capture(rsvp, status, value)
+    return {"purchase_units": [{"payments": {"captures": [capture]}}]}
 
 
 def _post(api_client, rsvp, headers):
@@ -48,6 +49,14 @@ class TestCapture:
 
     def test_pending_capture_is_not_paid_yet(self, api_client, rsvp, auth_headers):
         with mock_paypal(_order(rsvp, status="PENDING")):
+            response = _post(api_client, rsvp, auth_headers)
+
+        assert response.json() == {"paid": False}
+        rsvp.refresh_from_db()
+        assert rsvp.paypal_capture_id is None
+
+    def test_capture_short_of_the_price_is_not_paid(self, api_client, rsvp, auth_headers):
+        with mock_paypal(_order(rsvp, value="0.01")):
             response = _post(api_client, rsvp, auth_headers)
 
         assert response.json() == {"paid": False}

@@ -366,6 +366,7 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
         partiful_link=gated(event.partiful_link, "", is_authed),
         other_link=gated(event.other_link, "", is_authed),
         price=price_text(event.price),
+        price_note=event.price_note,
         venmo_link=gated(event.venmo_link, "", show_payment_details),
         cashapp_link=gated(event.cashapp_link, "", show_payment_details),
         zelle_info=gated(event.zelle_info, "", show_payment_details),

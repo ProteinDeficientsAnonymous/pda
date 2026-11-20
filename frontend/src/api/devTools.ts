@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import type { EventFormat } from '@/models/event';
+
 import { apiClient } from './client';
 import { eventKeys } from './events';
 
@@ -10,6 +12,7 @@ export interface DevTestEventOptions {
   isCanceled: boolean;
   isOfficial: boolean;
   isClub: boolean;
+  eventFormat: EventFormat;
   makeMeHost: boolean;
   makeMeGuest: boolean;
   price: string;
@@ -48,6 +51,7 @@ export function useCreateDevTestEvents() {
           is_canceled: options.isCanceled,
           is_official: options.isOfficial,
           is_club: options.isClub,
+          event_format: options.isOfficial ? options.eventFormat : null,
           make_me_host: options.makeMeHost,
           make_me_guest: options.makeMeGuest,
           price: options.price,

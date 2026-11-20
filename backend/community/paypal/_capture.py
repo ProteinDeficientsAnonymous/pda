@@ -1,9 +1,11 @@
 import logging
+from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 from django.utils import timezone
 
-from community.models import EventRSVP
+from community.models import Event, EventRSVP
+from community.paypal.price import paypal_price
 from community.rsvps.payment_verification import (
     PaymentVerificationChange,
     record_payment_verification,
@@ -22,10 +24,23 @@ def _locked_rsvp(custom_id: str | None) -> EventRSVP | None:
     return EventRSVP.objects.select_for_update().select_related("event").filter(pk=rsvp_id).first()
 
 
+def _covers_price(capture: dict, event: Event) -> bool:
+    # Buyers can create orders client-side with any custom_id, so the amount must be checked here.
+    amount = capture.get("amount") or {}
+    if amount.get("currency_code") != "USD":
+        return False
+    if not event.price:
+        return True
+    try:
+        return Decimal(amount.get("value", "")) >= paypal_price(Decimal(event.price))
+    except InvalidOperation:
+        return False
+
+
 def record_capture(request, capture: dict) -> EventRSVP | None:
     """Mark the rsvp in the capture's custom_id paid; a capture already recorded is a no-op.
 
-    return(None): the capture isn't completed or names no rsvp.
+    return(None): the capture isn't completed, names no rsvp, or doesn't cover the price.
     """
     if capture.get("status") != CAPTURE_COMPLETED:
         return None
@@ -36,6 +51,9 @@ def record_capture(request, capture: dict) -> EventRSVP | None:
             return None
         if rsvp.paypal_capture_id is not None:
             return rsvp
+        if not _covers_price(capture, rsvp.event):
+            logger.warning("paypal_capture_short", extra={"capture_id": capture.get("id")})
+            return None
         now = timezone.now()
         change = PaymentVerificationChange(
             user_id=str(rsvp.user_id),
