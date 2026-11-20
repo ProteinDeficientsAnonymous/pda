@@ -57,6 +57,21 @@ def test_submitted(api_client):
     assert entry.details["user_id"] == str(rsvper.pk)
 
 
+def test_approved_names_user_linked_by_email(api_client, vettor_headers, sample_join_request):
+    linked = User.objects.create_user(
+        phone_number="+14155550199",
+        email="sprout@example.com",
+        first_name="Sprout",
+        membership_status=MembershipStatus.NONE,
+    )
+    sample_join_request.user = linked
+    sample_join_request.save(update_fields=["user"])
+
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+
+    assert _entry("join_request_approved").details["user_id"] == str(linked.pk)
+
+
 @pytest.mark.parametrize("status", [JoinRequestStatus.TENTATIVE, JoinRequestStatus.APPROVED])
 def test_admitted_names_actor_and_user(
     api_client, vettor_headers, vettor_user, sample_join_request, status

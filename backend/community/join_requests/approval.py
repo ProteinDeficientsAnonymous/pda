@@ -185,7 +185,7 @@ def provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     limits them to official/club events (see ``community/events/limited_access``).
     Returns ``(user, magic_token)``.
     """
-    user = join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
+    user = applicant_user(join_request)
     if user is None:
         user = User.objects.create(
             phone_number=join_request.phone_number,
