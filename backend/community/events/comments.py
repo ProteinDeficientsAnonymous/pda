@@ -57,7 +57,7 @@ def _viewer_has_rsvp(event: Event, user) -> bool:
     )
 
 
-def _can_post_comments(
+def can_post_comments(
     event: Event,
     user,
     co_host_pks: set[str] | None = None,
@@ -168,7 +168,7 @@ def _cannot_post_reason(event: Event, viewer, user) -> CannotPostReason:
 
 def _build_list_out(event: Event, viewer, user) -> EventCommentListOut:
     co_host_pks = event_co_host_ids(event)
-    can_post = _can_post_comments(event, viewer, co_host_pks=co_host_pks)
+    can_post = can_post_comments(event, viewer, co_host_pks=co_host_pks)
     # Reading requires the same standing as posting — no peeking without an active rsvp.
     if not can_post:
         return EventCommentListOut(
@@ -191,7 +191,7 @@ def _build_list_out(event: Event, viewer, user) -> EventCommentListOut:
 
 def _require_rsvp_for_post(event: Event, user) -> None:
     enforce_limited_write_access(user, event, "post_comment")
-    if not _can_post_comments(event, user):
+    if not can_post_comments(event, user):
         raise_validation(Code.Comment.RSVP_REQUIRED, status_code=403)
 
 
