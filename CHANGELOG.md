@@ -1,3 +1,10 @@
+## [0.263.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.263.0...v0.263.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* 2251 - event speech page back link ([#2593](https://github.com/ProteinDeficientsAnonymous/pda/issues/2593)) ([d4716de](https://github.com/ProteinDeficientsAnonymous/pda/commit/d4716de77c09df284ae534f2003be6abdd61b483))
+
 # [0.263.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.262.1...v0.263.0) (2026-11-20)
 
 
