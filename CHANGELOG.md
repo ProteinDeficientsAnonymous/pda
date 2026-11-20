@@ -1,3 +1,24 @@
+# [0.264.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.263.1...v0.264.0) (2026-11-20)
+
+
+### Bug Fixes
+
+* 2180 - scroll to top when a thank-you replaces the form ([#2594](https://github.com/ProteinDeficientsAnonymous/pda/issues/2594)) ([ec7d243](https://github.com/ProteinDeficientsAnonymous/pda/commit/ec7d24300551c6ebd7cc2bd6d0ddcb420391c769))
+* 2208 - keep calendar links whole in ics feeds ([#2597](https://github.com/ProteinDeficientsAnonymous/pda/issues/2597)) ([2f3c86d](https://github.com/ProteinDeficientsAnonymous/pda/commit/2f3c86d67d22a2d562426b2a2848a7a4cf71872a))
+* **ratelimit:** key client_ip past Railway's internal proxy hops ([#2390](https://github.com/ProteinDeficientsAnonymous/pda/issues/2390)) ([2d1928a](https://github.com/ProteinDeficientsAnonymous/pda/commit/2d1928a25facb777b151f40b731cf0e19487f836))
+
+
+### Features
+
+* 2165 - add event speech reminder to check-in nudge ([#2596](https://github.com/ProteinDeficientsAnonymous/pda/issues/2596)) ([136aee4](https://github.com/ProteinDeficientsAnonymous/pda/commit/136aee481732824dc1dbfc661ff4202ef5618e1c))
+
+## [0.263.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.263.0...v0.263.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* 2251 - event speech page back link ([#2593](https://github.com/ProteinDeficientsAnonymous/pda/issues/2593)) ([d4716de](https://github.com/ProteinDeficientsAnonymous/pda/commit/d4716de77c09df284ae534f2003be6abdd61b483))
+
 # [0.263.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.262.1...v0.263.0) (2026-11-20)
 
 
