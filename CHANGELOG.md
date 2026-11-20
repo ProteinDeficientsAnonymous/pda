@@ -1,3 +1,10 @@
+## [0.259.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.259.0...v0.259.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **tests:** use current public rsvper helpers in my-rsvps query count test ([#2588](https://github.com/ProteinDeficientsAnonymous/pda/issues/2588)) ([ece5b57](https://github.com/ProteinDeficientsAnonymous/pda/commit/ece5b575294584dbb81752c0a0df89da7ad73429))
+
 # [0.259.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.258.1...v0.259.0) (2026-11-20)
 
 
