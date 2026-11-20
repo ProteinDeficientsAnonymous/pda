@@ -2,8 +2,8 @@ from community.models import Event, EventRSVP, RSVPStatus
 
 
 def event_requires_payment_confirmation(event: Event) -> bool:
-    has_price = bool(event.price.strip())
-    has_payment_method = any(
+    has_price = bool(event.price) or bool(event.price_note.strip())
+    has_payment_method = event.accept_paypal or any(
         bool(value.strip()) for value in (event.venmo_link, event.cashapp_link, event.zelle_info)
     )
     return has_price and has_payment_method

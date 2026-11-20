@@ -22,7 +22,7 @@ interface WireGuest {
   is_member?: boolean;
   paid_confirmed?: boolean;
   payment_verified?: boolean;
-  questionnaire_responses?: Record<string, { label?: string; answer?: QuestionnaireAnswer }>;
+  questionnaire_responses?: Record<string, WireQuestionnaireSnapshot>;
 }
 
 export interface WireEvent {
@@ -44,6 +44,7 @@ export interface WireEvent {
   cashapp_link?: string;
   zelle_info?: string;
   price?: string;
+  price_note?: string;
 
   rsvp_enabled?: boolean;
   allow_plus_ones?: boolean;
@@ -67,7 +68,7 @@ export interface WireEvent {
   guests?: WireGuest[];
   my_rsvp?: string | null;
   my_paid_confirmed?: boolean;
-  my_questionnaire_responses?: Record<string, { label?: string; answer?: QuestionnaireAnswer }>;
+  my_questionnaire_responses?: Record<string, WireQuestionnaireSnapshot>;
   rsvp_questions?: {
     id: string;
     label: string;
@@ -123,13 +124,23 @@ function mapAttendance(value: string | undefined): AttendanceStatusValue {
   return AttendanceStatus.Unknown;
 }
 
+interface WireQuestionnaireSnapshot {
+  label?: string;
+  answer?: QuestionnaireAnswer;
+  price_cents?: number;
+}
+
 function mapQuestionnaireResponses(
-  raw: Record<string, { label?: string; answer?: QuestionnaireAnswer }> | undefined,
+  raw: Record<string, WireQuestionnaireSnapshot> | undefined,
 ): Event['myQuestionnaireResponses'] {
   return Object.fromEntries(
     Object.entries(raw ?? {}).map(([id, snap]) => [
       id,
-      { label: snap.label ?? '', answer: snap.answer ?? '' },
+      {
+        label: snap.label ?? '',
+        answer: snap.answer ?? '',
+        ...(snap.price_cents === undefined ? {} : { priceCents: snap.price_cents }),
+      },
     ]),
   );
 }
@@ -185,6 +196,7 @@ export function mapEvent(e: WireEvent): Event {
     cashappLink: e.cashapp_link ?? '',
     zelleInfo: e.zelle_info ?? '',
     price: e.price ?? '',
+    priceNote: e.price_note ?? '',
 
     rsvpEnabled: e.rsvp_enabled ?? false,
     allowPlusOnes: e.allow_plus_ones ?? false,

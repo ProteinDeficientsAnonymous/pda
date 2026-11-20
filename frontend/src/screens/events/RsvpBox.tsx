@@ -5,6 +5,7 @@ import { Dialog } from '@/components/ui/Dialog';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import { type Event, goingWouldWaitlist, type RsvpInputStatus, RsvpStatus } from '@/models/event';
 
+import { orderTotalCents } from './orderTotal';
 import { PaymentConfirmStep } from './PaymentConfirmStep';
 import { RsvpCommentField } from './RsvpCommentField';
 import { RsvpQuestionFields } from './RsvpQuestionFields';
@@ -131,6 +132,7 @@ export function RsvpBox({
         <PaymentConfirmStep
           event={event}
           busy={busy}
+          orderTotalCents={orderTotalCents(questions, answers)}
           onConfirm={() => {
             submit(true);
           }}

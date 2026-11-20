@@ -72,10 +72,12 @@ class Event(models.Model):
     whatsapp_link = models.URLField(blank=True)
     partiful_link = models.URLField(blank=True)
     other_link = models.URLField(blank=True)
-    price = models.CharField(max_length=100, blank=True)
+    price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    price_note = models.CharField(max_length=100, blank=True)
     venmo_link = models.URLField(blank=True)
     cashapp_link = models.URLField(blank=True)
     zelle_info = models.CharField(max_length=200, blank=True)
+    accept_paypal = models.BooleanField(default=False)
     rsvp_enabled = models.BooleanField(default=False)
     is_partiful_import = models.BooleanField(default=False)
     is_legacy = models.BooleanField(default=False)
@@ -148,6 +150,9 @@ class Event(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["start_datetime"]
+        indexes = [
+            models.Index(fields=["status", "start_datetime"], name="event_status_start_idx"),
+        ]
 
     def save(self, *args, **kwargs):
         # Assigned once and never regenerated on title edits, so shared links never break.
@@ -282,6 +287,9 @@ class EventRSVP(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["event", "user"], name="unique_event_rsvp"),
         ]
+        indexes = [
+            models.Index(fields=["event", "status"], name="eventrsvp_event_status_idx"),
+        ]
 
     @classmethod
     def from_db(cls, db, field_names, values, *, fetch_mode=None):
@@ -402,6 +410,8 @@ class EventRsvpQuestion(models.Model):
     label = models.CharField(max_length=300)
     field_type = models.CharField(max_length=20, choices=RSVP_QUESTION_TYPE_CHOICES)
     options = models.JSONField(default=list, blank=True)
+    # Cents, parallel to options; empty means the question isn't priced.
+    option_prices = models.JSONField(default=list, blank=True)
     required = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(default=0)
 

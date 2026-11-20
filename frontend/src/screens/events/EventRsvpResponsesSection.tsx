@@ -2,7 +2,9 @@ import { QuestionType } from '@/api/questionTypes';
 import { checkboxValues } from '@/components/questions/checkboxAnswer';
 import type { Event, EventGuest, EventRsvpQuestion } from '@/models/event';
 import { rsvpGroupLabel } from '@/models/event';
+import { formatCents } from '@/utils/orderPrice';
 
+import { savedOrderTotalCents } from './orderTotal';
 import { isAnswerFilled, isRsvpRespondentStatus, type RsvpAnswerValue } from './rsvpQuestions';
 
 interface ResponseColumn {
@@ -46,6 +48,13 @@ export function EventRsvpResponsesSection({ event }: Props) {
   const columns = responseColumns(event.rsvpQuestions, respondents);
   if (columns.length === 0) return null;
 
+  const totals = new Map(
+    respondents.map((g) => [
+      g.userId,
+      savedOrderTotalCents(event.rsvpQuestions, g.questionnaireResponses),
+    ]),
+  );
+  const showTotals = [...totals.values()].some((total) => total !== null);
   const choiceColumns = columns.filter(
     (q) => q.fieldType === QuestionType.Select || q.fieldType === QuestionType.Checkbox,
   );
@@ -79,6 +88,7 @@ export function EventRsvpResponsesSection({ event }: Props) {
                     {q.label}
                   </th>
                 ))}
+                {showTotals ? <th className="px-3 py-2">total</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -91,6 +101,11 @@ export function EventRsvpResponsesSection({ event }: Props) {
                       {renderAnswer(g.questionnaireResponses[q.id]?.answer)}
                     </td>
                   ))}
+                  {showTotals ? (
+                    <td className="text-foreground px-3 py-2 tabular-nums">
+                      {formatCents(totals.get(g.userId) ?? 0)}
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>

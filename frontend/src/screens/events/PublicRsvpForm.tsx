@@ -25,6 +25,7 @@ import {
   ValidationMessage,
 } from '@/utils/validators';
 
+import { orderTotalCents } from './orderTotal';
 import { PaymentConfirmStep } from './PaymentConfirmStep';
 import { PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
 import { RsvpCommentField } from './RsvpCommentField';
@@ -233,6 +234,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
         <PaymentConfirmStep
           event={event}
           busy={submit.isPending}
+          orderTotalCents={orderTotalCents(questions, answers)}
           onConfirm={() => {
             void onSubmit(true);
           }}

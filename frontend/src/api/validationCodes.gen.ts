@@ -10,6 +10,7 @@ export const Code = {
     NotFound: 'event.not_found',
     StartDatetimeRequiredUnlessTbd: 'event.start_datetime_required_unless_tbd',
     MaxAttendeesMustBeAtLeastOne: 'event.max_attendees_must_be_at_least_one',
+    PriceInvalid: 'event.price_invalid',
     StartDatetimeMustBeFuture: 'event.start_datetime_must_be_future',
     EndBeforeStart: 'event.end_before_start',
     DatetimeOffsetRequired: 'event.datetime_offset_required',
@@ -61,6 +62,7 @@ export const Code = {
     SlugInvalid: 'event.slug_invalid',
     SlugTaken: 'event.slug_taken',
     InvalidEventFormat: 'event.invalid_event_format',
+    PaypalOfficialOnly: 'event.paypal_official_only',
   },
   Poll: {
     NotFound: 'poll.not_found',
@@ -207,6 +209,7 @@ export const Code = {
     AnswerRequired: 'join_request.answer_required',
     AnswerTooLong: 'join_request.answer_too_long',
     AnswerInvalidOption: 'join_request.answer_invalid_option',
+    AnswerInvalidFormat: 'join_request.answer_invalid_format',
     InvalidStatus: 'join_request.invalid_status',
     NotApproved: 'join_request.not_approved',
     AlreadyLoggedIn: 'join_request.already_logged_in',
@@ -340,6 +343,7 @@ export type ValidationCode =
   | 'event.not_found'
   | 'event.start_datetime_required_unless_tbd'
   | 'event.max_attendees_must_be_at_least_one'
+  | 'event.price_invalid'
   | 'event.start_datetime_must_be_future'
   | 'event.end_before_start'
   | 'event.datetime_offset_required'
@@ -391,6 +395,7 @@ export type ValidationCode =
   | 'event.slug_invalid'
   | 'event.slug_taken'
   | 'event.invalid_event_format'
+  | 'event.paypal_official_only'
   | 'poll.not_found'
   | 'poll.options_required'
   | 'poll.options_must_be_future'
@@ -505,6 +510,7 @@ export type ValidationCode =
   | 'join_request.answer_required'
   | 'join_request.answer_too_long'
   | 'join_request.answer_invalid_option'
+  | 'join_request.answer_invalid_format'
   | 'join_request.invalid_status'
   | 'join_request.not_approved'
   | 'join_request.already_logged_in'
@@ -590,6 +596,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
   'event.start_datetime_required_unless_tbd': [],
   'event.max_attendees_must_be_at_least_one': [],
+  'event.price_invalid': [],
   'event.start_datetime_must_be_future': [],
   'event.end_before_start': [],
   'event.datetime_offset_required': [],
@@ -641,6 +648,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.slug_invalid': [],
   'event.slug_taken': [],
   'event.invalid_event_format': [],
+  'event.paypal_official_only': [],
   'poll.not_found': [],
   'poll.options_required': [],
   'poll.options_must_be_future': [],
@@ -755,6 +763,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.answer_required': ['label'],
   'join_request.answer_too_long': ['label', 'max'],
   'join_request.answer_invalid_option': ['label'],
+  'join_request.answer_invalid_format': ['label'],
   'join_request.invalid_status': ['allowed'],
   'join_request.not_approved': [],
   'join_request.already_logged_in': [],

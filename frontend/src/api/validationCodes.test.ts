@@ -24,6 +24,18 @@ describe('messageForCode', () => {
     );
   });
 
+  it('asks for a dollar amount when the event price is invalid', () => {
+    expect(messageForCode({ code: Code.Event.PriceInvalid, field: 'price' })).toBe(
+      'price must be a dollar amount, like 10 or 12.50 — leave blank if free',
+    );
+  });
+
+  it('says only official events can take paypal', () => {
+    expect(messageForCode({ code: Code.Event.PaypalOfficialOnly, field: 'accept_paypal' })).toBe(
+      'only official events can take paypal',
+    );
+  });
+
   it('says the rsvp deadline must come before the start', () => {
     expect(
       messageForCode({ code: Code.Event.RsvpDeadlineAfterStart, field: 'rsvp_deadline' }),
@@ -144,6 +156,19 @@ describe('messageForCode', () => {
       params: { max_mb: 5 },
     });
     expect(out).toContain('5 mb');
+  });
+
+  it('names the question for an invalid join answer format', () => {
+    expect(
+      messageForCode({
+        code: Code.JoinRequest.AnswerInvalidFormat,
+        field: 'answers',
+        params: { label: 'how did you hear' },
+      }),
+    ).toBe('invalid answer format for "how did you hear"');
+    expect(messageForCode({ code: Code.JoinRequest.AnswerInvalidFormat, field: 'answers' })).toBe(
+      'invalid answer format',
+    );
   });
 
   it('names the question for an invalid rsvp answer format', () => {

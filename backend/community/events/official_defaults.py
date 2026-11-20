@@ -3,7 +3,7 @@ from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel
 
-from community.events.schemas import EventRsvpQuestionIn
+from community.events.rsvp_question_schemas import EventRsvpQuestionIn
 from community.models import Event, EventRsvpQuestion, EventType, RsvpQuestionType
 
 router = Router()

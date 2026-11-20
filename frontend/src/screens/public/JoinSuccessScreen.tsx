@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 
+import { useScrollToTopOnMount } from '@/hooks/useScrollToTopOnMount';
+
 import { ContentContainer } from './ContentContainer';
 
 export default function JoinSuccessScreen() {
+  useScrollToTopOnMount();
   return (
     <ContentContainer>
       <div className="flex flex-col items-center gap-4 text-center">

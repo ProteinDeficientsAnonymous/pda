@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 """Tests for the payment-confirmation helper predicates."""
 
 import pytest
@@ -32,13 +34,17 @@ class TestEventRequiresPaymentConfirmation:
         assert event_requires_payment_confirmation(build_paid_event(venmo_link="")) is False
 
     def test_payment_method_with_no_price_does_not_require(self):
-        assert event_requires_payment_confirmation(build_paid_event(price="")) is False
+        assert event_requires_payment_confirmation(build_paid_event(price=None)) is False
 
-    def test_blank_price_whitespace_does_not_require(self):
-        assert event_requires_payment_confirmation(build_paid_event(price="   ")) is False
+    def test_price_note_without_amount_requires_confirmation(self):
+        event = build_paid_event(price=None, price_note="sliding scale $6-$8")
+        assert event_requires_payment_confirmation(event) is True
+
+    def test_zero_price_does_not_require(self):
+        assert event_requires_payment_confirmation(build_paid_event(price=Decimal("0"))) is False
 
     def test_free_event_does_not_require(self):
-        event = build_paid_event(price="", venmo_link="", cashapp_link="", zelle_info="")
+        event = build_paid_event(price=None, venmo_link="", cashapp_link="", zelle_info="")
         assert event_requires_payment_confirmation(event) is False
 
 
@@ -75,7 +81,7 @@ class TestRequiresPaymentGate:
         assert requires_payment_gate(build_paid_event(), existing, RSVPStatus.ATTENDING) is False
 
     def test_free_event_never_gates(self):
-        free = build_paid_event(price="", venmo_link="")
+        free = build_paid_event(price=None, venmo_link="")
         assert requires_payment_gate(free, None, RSVPStatus.ATTENDING) is False
 
 
@@ -85,7 +91,7 @@ class TestPaymentEnforcedForEvent:
         assert payment_enforced_for_event(build_paid_event()) is True
 
     def test_free_event_does_not(self):
-        assert payment_enforced_for_event(build_paid_event(price="")) is False
+        assert payment_enforced_for_event(build_paid_event(price=None)) is False
 
 
 @pytest.mark.django_db
@@ -101,7 +107,7 @@ class TestCanSeePaymentDetails:
         assert can_see_payment_details(community, is_authed=False) is False
 
     def test_anon_does_not_see_on_free_event(self):
-        free = build_eligible_event(price="", venmo_link="")
+        free = build_eligible_event(price=None, venmo_link="")
         assert can_see_payment_details(free, is_authed=False) is False
 
     def test_needs_no_query(self, django_assert_num_queries):
