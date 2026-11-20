@@ -1,3 +1,10 @@
+## [0.268.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.268.0...v0.268.1) (2026-11-20)
+
+
+### Performance Improvements
+
+* 1923 - expire stale co-host invites once per read ([#1950](https://github.com/ProteinDeficientsAnonymous/pda/issues/1950)) ([1f5accc](https://github.com/ProteinDeficientsAnonymous/pda/commit/1f5acccd47e68f0d02d10feebf510f7e5a40d667))
+
 # [0.268.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.267.1...v0.268.0) (2026-11-20)
 
 
