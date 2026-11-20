@@ -158,6 +158,39 @@ def test_reapproval_records_pause_restored_from_archive(
     assert entry.details["membership_status"] == MembershipStatus.ATTENDANCE_PAUSED
 
 
+def test_tentative_reactivates_archived_user(
+    api_client, vettor_headers, vettor_user, sample_join_request
+):
+    archived = User.objects.create_user(
+        phone_number=sample_join_request.phone_number,
+        first_name="Prior",
+        membership_status=MembershipStatus.ARCHIVED,
+        archived_at=timezone.now(),
+    )
+
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
+
+    entry = _entry("user_reactivated")
+    assert entry.actor == vettor_user
+    assert (entry.target_type, entry.target_id) == (AuditTargetType.USER, str(archived.pk))
+    assert entry.details["join_request_id"] == str(sample_join_request.id)
+    assert entry.details["membership_status"] == MembershipStatus.TENTATIVE
+
+
+def test_tentative_non_member_writes_no_reactivation(
+    api_client, vettor_headers, sample_join_request
+):
+    User.objects.create_user(
+        phone_number=sample_join_request.phone_number,
+        first_name="Sprout",
+        membership_status=MembershipStatus.NONE,
+    )
+
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
+
+    assert not AuditLogEntry.objects.filter(action="user_reactivated").exists()
+
+
 def test_check_in_approves_tentative(api_client):
     host = User.objects.create_user(phone_number="+12025557100", first_name="Host")
     user = User.objects.create_user(

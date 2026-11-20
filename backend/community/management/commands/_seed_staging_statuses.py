@@ -74,7 +74,7 @@ def _seed_tentative(spec: StatusSpec, index: int, admin: User) -> tuple[User, bo
     )
     if not created and join_request.user is not None:
         return join_request.user, False
-    user, _ = provision_tentative_user(join_request, admin)
+    user, _, _ = provision_tentative_user(join_request, admin)
     # Skip the magic link's /new-password step so testers sign in with the seed password.
     user.set_password(PASSWORD)
     user.needs_onboarding = False
