@@ -1,3 +1,12 @@
+# [0.277.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.276.0...v0.277.0) (2026-11-20)
+
+
+### Features
+
+* 2116 - day-of guide page for official-event hosts ([#2621](https://github.com/ProteinDeficientsAnonymous/pda/issues/2621)) ([393d895](https://github.com/ProteinDeficientsAnonymous/pda/commit/393d8957fbf0113fd464b9142ac58dd6ec339aab))
+* 2116 - include day-of guide in check-in reminders ([#2616](https://github.com/ProteinDeficientsAnonymous/pda/issues/2616)) ([3e73517](https://github.com/ProteinDeficientsAnonymous/pda/commit/3e73517b4ab4a170efae24ef3c143953f17bdca8))
+* send check-in nudges 2 hours before the event ([#2628](https://github.com/ProteinDeficientsAnonymous/pda/issues/2628)) ([e08dff0](https://github.com/ProteinDeficientsAnonymous/pda/commit/e08dff0c8145e8d08f0654f3d513c3781e938315))
+
 # [0.276.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.275.0...v0.276.0) (2026-11-20)
 
 
