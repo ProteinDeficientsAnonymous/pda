@@ -1,6 +1,7 @@
 import re
 import uuid
 
+import icalendar
 import pytest
 from community.models import Event, EventStatus, EventType, PageVisibility
 from django.conf import settings
@@ -59,8 +60,14 @@ class TestSingleEventIcs:
             created_by=test_user,
         )
 
-        content = api_client.get(f"/api/community/events/{event.slug}/ics/").content.decode()
+        raw = api_client.get(f"/api/community/events/{event.slug}/ics/").content
+        content = raw.decode()
         assert f"View on PDA: http://testserver/events/{event.slug}\r\n" in content
+        assert "\r\n " not in content
+        vevent = icalendar.Calendar.from_ical(raw).walk("VEVENT")[0]
+        assert vevent["description"] == (
+            f"Bring hummus!\nView on PDA: http://testserver/events/{event.slug}"
+        )
 
     def test_returns_404_for_unknown_slug(self, api_client):
         resp = api_client.get("/api/community/events/no-such-event/ics/")

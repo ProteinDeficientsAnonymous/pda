@@ -1,6 +1,5 @@
 """Calendar feed and token endpoints."""
 
-import re
 import secrets
 from datetime import timedelta
 
@@ -203,7 +202,7 @@ def _ics_filename(event) -> str:
 
 def _unfolded_ical(cal: icalendar.Calendar) -> bytes:
     # Google Calendar links a folded URL only up to the fold (#2208); RFC 5545 folding is a SHOULD.
-    return re.sub(rb"\r\n[ \t]", b"", cal.to_ical())
+    return "".join(f"{line}\r\n" for line in cal.content_lines() if line).encode()
 
 
 def _new_calendar() -> icalendar.Calendar:

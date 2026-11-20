@@ -147,6 +147,7 @@ class TestCalendarFeed:
 
         content = api_client.get(f"/api/community/calendar/feed/?token={token}").content.decode()
         assert f"View on PDA: http://testserver/events/{event.slug}\r\n" in content
+        assert "\r\n " not in content
 
     def test_feed_invalid_token_403(self, api_client):
         resp = api_client.get("/api/community/calendar/feed/?token=bogus-token")
