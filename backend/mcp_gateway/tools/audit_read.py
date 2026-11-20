@@ -1,11 +1,15 @@
 from typing import Annotated, Any
 
-from audit.api import MAX_OFFSET, AuditLogFilters, AuditLogQuery, list_audit_log
-from pydantic import Field
+from audit.api import MAX_LIMIT, MAX_OFFSET, AuditLogFilters, AuditLogQuery, list_audit_log
+from pydantic import ConfigDict, Field
 from users.permissions import PermissionKey
 
 from mcp_gateway.server import current_user, pda_tool
 from mcp_gateway.view_calls import call_view
+
+
+class AuditHistoryFilters(AuditLogFilters):
+    model_config = ConfigDict(extra="forbid")
 
 
 @pda_tool(
@@ -24,11 +28,13 @@ from mcp_gateway.view_calls import call_view
     ),
 )
 async def audit_history(
-    filters: AuditLogFilters | None = None,
-    limit: Annotated[int, Field(ge=1, le=100, description="entries per page")] = 50,
+    filters: AuditHistoryFilters | None = None,
+    limit: Annotated[int, Field(ge=1, le=MAX_LIMIT, description="entries per page")] = 50,
     offset: Annotated[
         int, Field(ge=0, le=MAX_OFFSET, description="next_offset from the previous page")
     ] = 0,
 ) -> dict[str, Any]:
-    query = AuditLogQuery(**(filters or AuditLogFilters()).model_dump(), limit=limit, offset=offset)
+    query = AuditLogQuery(
+        **(filters or AuditHistoryFilters()).model_dump(), limit=limit, offset=offset
+    )
     return await call_view(list_audit_log, await current_user(), params=query)

@@ -62,6 +62,21 @@ def test_recent_actions_by_an_admin(auditor, test_user):
     assert (body["total"], body["next_offset"]) == (1, None)
 
 
-def test_offset_past_the_cap_is_rejected(auditor):
+def test_pages_follow_next_offset(auditor, test_user):
+    for action in ("user_paused", "user_unpaused", "user_archived"):
+        _entry(action, auditor, (AuditTargetType.USER, str(test_user.pk)))
+
+    first = run_tool(auditor, "audit_history", limit=2)
+    last = run_tool(auditor, "audit_history", limit=2, offset=first["next_offset"])
+
+    assert (first["total"], first["next_offset"]) == (3, 2)
+    assert (len(last["entries"]), last["next_offset"]) == (1, None)
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [{"offset": MAX_OFFSET + 1}, {"filters": {"user_id": "00000000-0000-0000-0000-000000000000"}}],
+)
+def test_bad_arguments_are_rejected(auditor, arguments):
     with pytest.raises(ToolError):
-        run_tool(auditor, "audit_history", offset=MAX_OFFSET + 1)
+        run_tool(auditor, "audit_history", **arguments)

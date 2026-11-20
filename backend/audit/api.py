@@ -14,6 +14,7 @@ from users.permissions import PermissionKey
 
 from audit.models import AuditLogEntry, AuditTargetType
 
+MAX_LIMIT = 100
 MAX_OFFSET = 100_000
 
 router = Router()
@@ -33,7 +34,7 @@ class AuditLogFilters(Schema):
 
 
 class AuditLogQuery(AuditLogFilters):
-    limit: int = Field(50, ge=1, le=100)
+    limit: int = Field(50, ge=1, le=MAX_LIMIT)
     offset: int = Field(0, ge=0, le=MAX_OFFSET)
 
 
