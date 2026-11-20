@@ -31,4 +31,16 @@ describe('SurveyResponsesTable', () => {
     render(<SurveyResponsesTable survey={survey} responses={[response]} onDelete={vi.fn()} />);
     expect(screen.getByText(/^https:\/\/example\.com\/x+$/)).toHaveClass('break-words');
   });
+
+  it('should show answers to removed questions under their stored label', () => {
+    const withRemoved = {
+      ...response,
+      answers: { ...response.answers, 'q-gone': { label: 'anyone to shout out?', answer: 'sam!' } },
+    } as SurveyResponseAdmin;
+    render(<SurveyResponsesTable survey={survey} responses={[withRemoved]} onDelete={vi.fn()} />);
+    expect(
+      screen.getByRole('columnheader', { name: 'anyone to shout out? (removed)' }),
+    ).toBeVisible();
+    expect(screen.getByText('sam!')).toBeVisible();
+  });
 });
