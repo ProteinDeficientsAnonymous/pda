@@ -2,7 +2,8 @@ from collections.abc import Iterable
 
 from config.media_proxy import media_path
 
-from community.events.schemas import EventRsvpQuestionOut, RSVPGuestOut
+from community.events.rsvp_question_schemas import EventRsvpQuestionOut
+from community.events.schemas import RSVPGuestOut
 from community.models import EventRsvpQuestion, RSVPStatus
 
 # Keep in sync with frontend PREVIEW_LIMIT in guestSort.ts (members-first going/maybe chips).

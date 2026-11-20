@@ -6,7 +6,7 @@ import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
 import { eventHostCount, spotsLeft } from '@/models/event';
-import { formatPrice } from '@/utils/eventCost';
+import { formatPriceWithNote } from '@/utils/eventCost';
 import { buildEventLinks } from '@/utils/eventLinks';
 import { toCashAppPayUrl } from '@/utils/paymentHandle';
 import { ensureHttps } from '@/utils/url';
@@ -179,7 +179,7 @@ export function LinksSection({ event }: { event: Event }) {
 
 export function CostSection({ event }: { event: Event }) {
   const items: { label: string; url?: string }[] = [];
-  if (event.price) items.push({ label: formatPrice(event.price) });
+  if (event.price || event.priceNote) items.push({ label: formatPriceWithNote(event) });
   if (event.venmoLink) items.push({ label: 'venmo', url: ensureHttps(event.venmoLink) });
   if (event.cashappLink) {
     items.push({
