@@ -17,7 +17,7 @@ from users.models import MagicLoginToken, MagicLoginTokenSource, User, can_sign_
 from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community.field_limits import FieldLimit
-from community.shared import ErrorOut, logger  # noqa: F401
+from community.shared import ErrorOut, logger
 from community.validation import ValidationException
 
 router = Router()

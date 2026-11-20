@@ -139,56 +139,6 @@ export function useMemberAttendedEvents(userId: string) {
   });
 }
 
-export interface CreateUserInput {
-  phoneNumber: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  roleId?: string;
-}
-
-export interface CreateUserResult {
-  id: string;
-  phoneNumber: string;
-  fullName: string;
-  firstName: string;
-  magicLinkToken: string;
-}
-
-interface WireCreateResult {
-  id: string;
-  phone_number: string;
-  first_name?: string;
-  full_name: string;
-  magic_link_token: string;
-}
-
-export function useCreateUser() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: CreateUserInput): Promise<CreateUserResult> => {
-      const body: Record<string, unknown> = {
-        phone_number: input.phoneNumber,
-        email: input.email,
-      };
-      if (input.firstName !== undefined) body.first_name = input.firstName;
-      if (input.lastName !== undefined) body.last_name = input.lastName;
-      if (input.roleId !== undefined) body.role_id = input.roleId;
-      const { data } = await apiClient.post<WireCreateResult>('/api/auth/create-user/', body);
-      return {
-        id: data.id,
-        phoneNumber: data.phone_number,
-        fullName: data.full_name,
-        firstName: data.first_name ?? '',
-        magicLinkToken: data.magic_link_token,
-      };
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: USERS_KEY });
-    },
-  });
-}
-
 export interface UpdateUserInput {
   phoneNumber?: string;
   firstName?: string;
@@ -217,62 +167,6 @@ export function useUpdateUser(userId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: USERS_KEY });
       void qc.invalidateQueries({ queryKey: memberAttendanceAnalyticsKey });
-    },
-  });
-}
-
-export interface BulkCreateResult {
-  row: number;
-  phoneNumber: string;
-  success: boolean;
-  error?: string;
-  magicLinkToken?: string;
-}
-
-export interface BulkCreateResponse {
-  results: BulkCreateResult[];
-  created: number;
-  failed: number;
-}
-
-interface WireBulkResult {
-  row: number;
-  phone_number: string;
-  success: boolean;
-  error?: string;
-  magic_link_token?: string;
-}
-
-interface WireBulkResponse {
-  results: WireBulkResult[];
-  created: number;
-  failed: number;
-}
-
-export function useBulkCreateUsers() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (phoneNumbers: string[]): Promise<BulkCreateResponse> => {
-      const { data } = await apiClient.post<WireBulkResponse>('/api/auth/bulk-create-users/', {
-        phone_numbers: phoneNumbers,
-      });
-      return {
-        created: data.created,
-        failed: data.failed,
-        results: data.results.map((r) => {
-          const result: BulkCreateResult = {
-            row: r.row,
-            phoneNumber: r.phone_number,
-            success: r.success,
-          };
-          if (r.error !== undefined) result.error = r.error;
-          if (r.magic_link_token !== undefined) result.magicLinkToken = r.magic_link_token;
-          return result;
-        }),
-      };
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: USERS_KEY });
     },
   });
 }

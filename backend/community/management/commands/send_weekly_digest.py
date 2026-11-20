@@ -4,7 +4,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
-from notifications.digest_emails import send_weekly_digest_email
+from notifications.digest_emails import DigestMail, send_weekly_digest_email
 from notifications.email_sender import EmailStream, get_email_sender
 from users.models import User
 
@@ -39,8 +39,7 @@ class Command(BaseCommand):
         result = send_weekly_digest_email(
             sender=sender,
             to=to,
-            display_name=user.first_name if user else "",
-            **payload,
+            mail=DigestMail(display_name=user.first_name if user else "", **payload),
         )
         if not result.success:
             raise CommandError(f"test digest failed: {result.error}")
@@ -103,13 +102,13 @@ class Command(BaseCommand):
             send_weekly_digest_email,
             sender,
             recipients(User.objects.active_members()),
-            payload,
+            lambda name: DigestMail(display_name=name, **payload),
         )
         tentative_sent, tentative_failed = send_digest_to_all(
             send_weekly_digest_email,
             sender,
             recipients(User.objects.active_limited_users()),
-            payload,
+            lambda name: DigestMail(display_name=name, **payload),
         )
         sent_count += tentative_sent
         failed_count += tentative_failed

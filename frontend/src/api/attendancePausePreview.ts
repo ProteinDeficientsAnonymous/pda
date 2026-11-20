@@ -12,21 +12,31 @@ export interface PauseImpactEvent {
   outcome: PauseOutcome;
 }
 
-export function fetchAttendancePausePreview(userId: string): Promise<PauseImpactEvent[]> {
+export interface PausePreview {
+  events: PauseImpactEvent[];
+  strippedRoles: string[];
+  clearsWhatsapp: boolean;
+}
+
+export function fetchAttendancePausePreview(userId: string): Promise<PausePreview> {
   return fetchPausePreview(`/api/auth/users/${userId}/attendance-pause-preview/`);
 }
 
-export function fetchGuidelinesPausePreview(userId: string): Promise<PauseImpactEvent[]> {
+export function fetchGuidelinesPausePreview(userId: string): Promise<PausePreview> {
   return fetchPausePreview(`/api/auth/users/${userId}/guidelines-pause-preview/`);
 }
 
-async function fetchPausePreview(path: string): Promise<PauseImpactEvent[]> {
+async function fetchPausePreview(path: string): Promise<PausePreview> {
   const { data } = await apiClient.get<components['schemas']['PausePreviewOut']>(path);
-  return data.events.map((e) => ({
-    id: e.id,
-    title: e.title,
-    startDatetime: e.start_datetime ? new Date(e.start_datetime) : null,
-    role: e.role,
-    outcome: e.outcome,
-  }));
+  return {
+    events: data.events.map((e) => ({
+      id: e.id,
+      title: e.title,
+      startDatetime: e.start_datetime ? new Date(e.start_datetime) : null,
+      role: e.role,
+      outcome: e.outcome,
+    })),
+    strippedRoles: data.stripped_roles,
+    clearsWhatsapp: data.clears_whatsapp,
+  };
 }

@@ -7,8 +7,6 @@ from enum import StrEnum
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
-from django.conf import settings
-from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from ninja import Router
@@ -20,6 +18,7 @@ from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community._question_answers import assert_single_choice_member, is_answer_empty
 from community.field_limits import FieldLimit
+from community.join_requests._vetting_email import send_vetting_email
 from community.models import (
     OPEN_JOIN_REQUEST_STATUSES,
     JoinFormQuestion,
@@ -29,7 +28,6 @@ from community.models import (
 )
 from community.shared import (
     ErrorOut,
-    flatten_to_single_line,
     logger,
     validate_display_name,
 )
@@ -137,22 +135,13 @@ def _build_custom_answers(
 
 def send_join_request_email(full_name: str, phone: str, custom_answers: dict) -> None:
     """Send vetting email for a new join request."""
-    if not settings.VETTING_EMAIL:
-        return
-    try:
-        # Flatten to single-line so a newline in the name can't forge email headers.
-        safe_subject = flatten_to_single_line(f"New PDA Join Request: {full_name}")
-        answer_lines = "\n".join(
-            f"{data['label']}: {data['answer']}" for data in custom_answers.values()
-        )
-        send_mail(
-            subject=safe_subject,
-            message=f"Name: {full_name}\nPhone: {phone}\n\n{answer_lines}",
-            from_email=settings.DEFAULT_FROM_EMAIL or "noreply@pda.org",
-            recipient_list=[settings.VETTING_EMAIL],
-        )
-    except Exception:
-        logger.exception("Failed to send vetting email for join request")
+    answer_lines = "\n".join(
+        f"{data['label']}: {data['answer']}" for data in custom_answers.values()
+    )
+    send_vetting_email(
+        f"New PDA Join Request: {full_name}",
+        f"Name: {full_name}\nPhone: {phone}\n\n{answer_lines}",
+    )
 
 
 def _honeypot_decoy_response(first_name: str, full_name: str) -> JoinRequestSubmittedOut:

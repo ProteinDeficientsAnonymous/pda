@@ -28,6 +28,8 @@ class Code:
         RSVPS_NOT_ENABLED = "event.rsvps_not_enabled"
         RSVPS_CLOSED_CANCELLED = "event.rsvps_closed_cancelled"
         RSVPS_CLOSED_PAST = "event.rsvps_closed_past"
+        RSVPS_CLOSED_DEADLINE = "event.rsvps_closed_deadline"
+        RSVP_DEADLINE_AFTER_START = "event.rsvp_deadline_after_start"
         RSVP_INVALID_STATUS = "event.rsvp_invalid_status"
         NO_PLUS_ONE_SPOTS = "event.no_plus_one_spots"
         RSVP_NOT_FOUND = "event.rsvp_not_found"
@@ -37,7 +39,9 @@ class Code:
         RSVP_COULD_NOT_BE_CREATED = "event.rsvp_could_not_be_created"  # generic, no-oracle
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         NO_PLUS_ONE_TO_CHECK_IN = "event.no_plus_one_to_check_in"
+        DIDNT_GO_REQUIRES_GOING = "event.didnt_go_requires_going"
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }
+        GUEST_NOT_ELIGIBLE = "event.guest_not_eligible"
         BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"
         BLAST_NO_RECIPIENTS = "event.blast_no_recipients"
         WOULD_REMOVE_NON_MEMBERS = "event.would_remove_non_members"  # params: { count: int }
@@ -76,6 +80,9 @@ class Code:
         NOT_FOUND = "tag.not_found"
         NAME_REQUIRED = "tag.name_required"
         NAME_ALREADY_EXISTS = "tag.name_already_exists"
+
+    class Reserve:
+        NOT_FOUND = "reserve.not_found"
 
     class Comment:
         NOT_FOUND = "comment.not_found"
@@ -319,6 +326,21 @@ class Code:
         REQUEST_EXPIRED = "connect.request_expired"
         REQUEST_ALREADY_USED = "connect.request_already_used"
         APP_NOT_FOUND = "connect.app_not_found"
+
+    class Planning:
+        YEAR_EXISTS = "planning.year_exists"
+        YEAR_NOT_FOUND = "planning.year_not_found"
+        SLOT_NOT_FOUND = "planning.slot_not_found"
+        SLOT_NOT_IN_YEAR = "planning.slot_not_in_year"
+        NOT_A_PLANNER = "planning.not_a_planner"
+        ALREADY_ASSIGNED = "planning.already_assigned"
+        ASSIGNMENT_NOT_FOUND = "planning.assignment_not_found"
+        NOT_PENDING = "planning.not_pending"
+        NOT_EVENT_HOST = "planning.not_event_host"
+        SLOT_HAS_EVENT = "planning.slot_has_event"
+        AVAILABILITY_ALREADY_OPEN = "planning.availability_already_open"
+        EVENT_ALREADY_LINKED = "planning.event_already_linked"
+        CHECKLIST_ITEM_NOT_FOUND = "planning.checklist_item_not_found"
 
 
 class ValidationException(Exception):

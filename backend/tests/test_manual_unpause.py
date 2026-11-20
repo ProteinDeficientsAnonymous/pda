@@ -79,26 +79,9 @@ class TestManualUnpause:
         patch_user(user, payload)
         assert user.unpaused_at is None
 
-    @pytest.mark.parametrize(
-        ("pause", "payload"),
-        [
-            (
-                {
-                    "membership_status": MembershipStatus.ARCHIVED,
-                    "archived_at": timezone.now(),
-                    "status_before_archive": MembershipStatus.GUIDELINES_PAUSED,
-                },
-                {"guidelines_paused": False},
-            ),
-            ({**GUIDELINES, "email": ""}, {"guidelines_paused": False}),
-        ],
-        ids=["archived", "no_email"],
-    )
-    def test_ineligible_member_is_stamped_but_not_emailed(
-        self, patch_user, fake_email_sender, pause, payload
-    ):
-        user = _member(**pause)
-        patch_user(user, payload)
+    def test_member_without_email_is_stamped_but_not_emailed(self, patch_user, fake_email_sender):
+        user = _member(**GUIDELINES, email="")
+        patch_user(user, {"guidelines_paused": False})
         assert user.unpaused_at is not None
         fake_email_sender.send.assert_not_called()
 

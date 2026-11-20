@@ -38,8 +38,12 @@ vi.mock('@/api/roles', () => ({
 }));
 
 vi.mock('@/api/attendancePausePreview', () => ({
-  fetchAttendancePausePreview: vi.fn().mockResolvedValue([]),
-  fetchGuidelinesPausePreview: vi.fn().mockResolvedValue([]),
+  fetchAttendancePausePreview: vi
+    .fn()
+    .mockResolvedValue({ events: [], strippedRoles: [], clearsWhatsapp: false }),
+  fetchGuidelinesPausePreview: vi
+    .fn()
+    .mockResolvedValue({ events: [], strippedRoles: [], clearsWhatsapp: false }),
 }));
 
 const member: Member = {

@@ -1,0 +1,166 @@
+import pytest
+from audit.models import AuditLogEntry
+from community.join_requests import check_in_promotion
+from community.models import AttendanceStatus, EventRSVP, JoinRequestStatus, RSVPStatus
+from django.core import mail
+from django.utils import timezone
+from notifications.models import Notification, NotificationType
+from users.models import MembershipStatus, User
+
+from tests._tentative_helpers import (
+    check_in,
+    decide,
+    open_official_event,
+    tentative_user_with_rsvp,
+)
+from tests._users import make_user
+
+__all__ = ["open_official_event"]
+
+pytestmark = pytest.mark.django_db
+
+PHONE = "+16505551234"
+STALE_NAME = "rsvp guest 2"
+
+
+@pytest.fixture
+def stale_tentative(sample_join_request, vettor_user, open_official_event):
+    """Tentative under an old public-rsvp name that fails display-name validation."""
+    user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+    User.objects.filter(pk=user.pk).update(first_name=STALE_NAME, last_name="")
+    return user
+
+
+@pytest.mark.parametrize("archived", [False, True])
+def test_tentative_takes_the_join_form_name(
+    api_client, vettor_headers, sample_join_request, archived
+):
+    archive = {
+        "membership_status": MembershipStatus.ARCHIVED,
+        "status_before_archive": MembershipStatus.NONE,
+        "archived_at": timezone.now(),
+    }
+    existing = make_user(
+        phone_number=PHONE,
+        first_name="Rsvp",
+        last_name="Guest",
+        **(archive if archived else {"membership_status": MembershipStatus.NONE}),
+    )
+    resp = decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
+    assert resp.status_code == 200
+    existing.refresh_from_db()
+    assert existing.membership_status == MembershipStatus.TENTATIVE
+    assert (existing.first_name, existing.last_name) == ("Sprout", "Seedling")
+
+
+def test_check_in_promotes_without_touching_the_name(
+    api_client, stale_tentative, open_official_event, fake_email_sender
+):
+    resp = check_in(api_client, open_official_event, stale_tentative)
+    assert resp.status_code == 200
+    stale_tentative.refresh_from_db()
+    assert stale_tentative.is_member is True
+    assert stale_tentative.first_name == STALE_NAME
+
+
+def test_manual_approve_promotes_without_touching_the_name(
+    api_client, vettor_headers, stale_tentative, sample_join_request, fake_email_sender
+):
+    resp = decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+    assert resp.status_code == 200
+    stale_tentative.refresh_from_db()
+    assert stale_tentative.is_member is True
+    assert stale_tentative.first_name == STALE_NAME
+
+
+@pytest.fixture
+def failing_promotion(monkeypatch):
+    def fail(*_args, **_kwargs):
+        raise RuntimeError("promotion failed")
+
+    monkeypatch.setattr(check_in_promotion, "maybe_promote_tentative", fail)
+
+
+@pytest.mark.usefixtures("failing_promotion")
+def test_failed_promotion_keeps_the_check_in(
+    api_client,
+    stale_tentative,
+    open_official_event,
+    fake_email_sender,
+    django_capture_on_commit_callbacks,
+):
+    join_request = stale_tentative.join_requests.get()
+    with django_capture_on_commit_callbacks(execute=True):
+        resp = check_in(api_client, open_official_event, stale_tentative)
+    assert resp.status_code == 200
+    rsvp = EventRSVP.objects.get(event=open_official_event, user=stale_tentative)
+    assert rsvp.attendance == AttendanceStatus.ATTENDED
+    assert rsvp.checked_in_at is not None
+    stale_tentative.refresh_from_db()
+    join_request.refresh_from_db()
+    assert stale_tentative.membership_status == MembershipStatus.TENTATIVE
+    assert join_request.status == JoinRequestStatus.TENTATIVE
+    assert AuditLogEntry.objects.filter(
+        action="check_in_promotion_failed", target_id=str(stale_tentative.pk)
+    ).exists()
+    fake_email_sender.send.assert_not_called()
+
+
+def vetter_alerts():
+    return Notification.objects.filter(notification_type=NotificationType.CHECK_IN_PROMOTION_FAILED)
+
+
+@pytest.fixture
+def committed_check_in(api_client, open_official_event, django_capture_on_commit_callbacks):
+    def run(user):
+        with django_capture_on_commit_callbacks(execute=True):
+            return check_in(api_client, open_official_event, user)
+
+    return run
+
+
+@pytest.mark.usefixtures("failing_promotion", "fake_email_sender")
+def test_failed_promotion_alerts_vetters(
+    committed_check_in, stale_tentative, vettor_user, settings
+):
+    settings.VETTING_EMAIL = "vetting@pda.org"
+    committed_check_in(stale_tentative)
+    alert = vetter_alerts().get()
+    assert (alert.recipient, alert.related_user) == (vettor_user, stale_tentative)
+    assert alert.message == (
+        f"manually approve {STALE_NAME}'s join request — their check-in at"
+        " official meetup didn't promote them"
+    )
+    assert [m.to for m in mail.outbox] == [["vetting@pda.org"]]
+
+
+@pytest.mark.usefixtures("failing_promotion", "fake_email_sender")
+def test_failed_alert_never_breaks_the_check_in(
+    committed_check_in, stale_tentative, monkeypatch, settings
+):
+    def fail(*_args):
+        raise RuntimeError("notify failed")
+
+    settings.VETTING_EMAIL = "vetting@pda.org"
+    monkeypatch.setattr(check_in_promotion, "create_check_in_promotion_failed_notifications", fail)
+    assert committed_check_in(stale_tentative).status_code == 200
+    assert len(mail.outbox) == 1
+
+
+@pytest.mark.usefixtures("fake_email_sender")
+def test_no_vetter_alert_when_promoted(
+    committed_check_in, sample_join_request, vettor_user, open_official_event
+):
+    user = tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+    committed_check_in(user)
+    user.refresh_from_db()
+    assert user.is_member is True
+    assert not vetter_alerts().exists()
+
+
+@pytest.mark.usefixtures("failing_promotion", "fake_email_sender", "vettor_user")
+def test_no_vetter_alert_when_not_tentative(committed_check_in, open_official_event):
+    user = make_user(phone_number=PHONE, membership_status=MembershipStatus.NONE)
+    EventRSVP.objects.create(event=open_official_event, user=user, status=RSVPStatus.ATTENDING)
+    committed_check_in(user)
+    assert not vetter_alerts().exists()

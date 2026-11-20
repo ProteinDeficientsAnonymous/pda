@@ -1,32 +1,8 @@
 import { useState } from 'react';
-import { toast } from 'sonner';
 
-import { extractApiErrorOr } from '@/api/apiErrors';
-import {
-  fetchAttendancePausePreview,
-  fetchGuidelinesPausePreview,
-  type PauseImpactEvent,
-  type PauseOutcome,
-  type PauseRole,
-} from '@/api/attendancePausePreview';
 import { Toggle } from '@/components/ui/Toggle';
-import { useConfirm } from '@/components/ui/useConfirm';
-import { formatShortDateTime } from '@/utils/datetime';
 
-const ROLE_LABEL: Record<PauseRole, string> = { rsvp: "rsvp'd", hosting: 'hosting' };
-const OUTCOME_LABEL: Record<PauseOutcome, string> = {
-  kept: 'kept',
-  removed: 'removed',
-  drafted: 'moved to draft',
-};
-
-const PAUSE_DIALOG = {
-  guidelinesPaused: {
-    fetchPreview: fetchGuidelinesPausePreview,
-    title: 'pause for guidelines violation?',
-  },
-  attendancePaused: { fetchPreview: fetchAttendancePausePreview, title: 'pause for event rqmt?' },
-};
+import { usePauseConfirm } from './usePauseConfirm';
 
 export interface PauseState {
   guidelinesPaused: boolean;
@@ -41,9 +17,8 @@ interface Props {
 }
 
 export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }: Props) {
-  const [loading, setLoading] = useState(false);
   const [initial] = useState(value);
-  const { confirm, element: confirmElement } = useConfirm();
+  const { confirmPause, loading, element: confirmElement } = usePauseConfirm();
 
   async function onToggle(field: keyof PauseState, next: boolean) {
     // A guidelines pause replaces an event rqmt pause, so drop any pending event rqmt change.
@@ -51,27 +26,8 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
       field === 'guidelinesPaused'
         ? { ...value, attendancePaused: initial.attendancePaused }
         : value;
-    if (!next || initial[field]) {
+    if (!next || initial[field] || (await confirmPause(memberId, field))) {
       onChange({ ...base, [field]: next });
-      return;
-    }
-    const { fetchPreview, title } = PAUSE_DIALOG[field];
-    setLoading(true);
-    try {
-      const events = await fetchPreview(memberId);
-      const ok =
-        events.length === 0 ||
-        (await confirm({
-          title,
-          message: `here's what happens to their upcoming events once you save:\n\n${events.map(describeImpact).join('\n')}`,
-          confirmLabel: 'pause',
-          destructive: true,
-        }));
-      if (ok) onChange({ ...base, [field]: true });
-    } catch (err) {
-      toast.error(extractApiErrorOr(err, "couldn't load their upcoming events — try again"));
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -103,9 +59,4 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
       {confirmElement}
     </>
   );
-}
-
-function describeImpact(e: PauseImpactEvent): string {
-  const when = e.startDatetime ? formatShortDateTime(e.startDatetime) : 'date tbd';
-  return `• ${e.title.toLowerCase()} (${when}) — ${ROLE_LABEL[e.role]} · ${OUTCOME_LABEL[e.outcome]}`;
 }

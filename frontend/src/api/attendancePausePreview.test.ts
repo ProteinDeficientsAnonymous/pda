@@ -7,7 +7,7 @@ import { fetchAttendancePausePreview, fetchGuidelinesPausePreview } from './atte
 vi.mock('@/api/client');
 
 describe('fetchAttendancePausePreview', () => {
-  it('fetches and maps the affected events', async () => {
+  it('fetches and maps the preview', async () => {
     vi.mocked(apiClient.get).mockResolvedValueOnce({
       data: {
         events: [
@@ -20,13 +20,17 @@ describe('fetchAttendancePausePreview', () => {
           },
           { id: 'e2', title: 'Hike', start_datetime: null, role: 'rsvp', outcome: 'removed' },
         ],
+        stripped_roles: ['vetter'],
+        clears_whatsapp: true,
       },
     });
 
-    const events = await fetchAttendancePausePreview('u1');
+    const preview = await fetchAttendancePausePreview('u1');
 
     expect(apiClient.get).toHaveBeenCalledWith('/api/auth/users/u1/attendance-pause-preview/');
-    expect(events).toEqual([
+    expect(preview.strippedRoles).toEqual(['vetter']);
+    expect(preview.clearsWhatsapp).toBe(true);
+    expect(preview.events).toEqual([
       {
         id: 'e1',
         title: 'Potluck',
@@ -39,9 +43,15 @@ describe('fetchAttendancePausePreview', () => {
   });
 
   it('fetches the guidelines pause preview', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: { events: [] } });
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: { events: [], stripped_roles: [], clears_whatsapp: false },
+    });
 
-    expect(await fetchGuidelinesPausePreview('u1')).toEqual([]);
+    expect(await fetchGuidelinesPausePreview('u1')).toEqual({
+      events: [],
+      strippedRoles: [],
+      clearsWhatsapp: false,
+    });
     expect(apiClient.get).toHaveBeenCalledWith('/api/auth/users/u1/guidelines-pause-preview/');
   });
 });

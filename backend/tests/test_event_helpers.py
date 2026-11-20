@@ -3,7 +3,7 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from community.api import build_guest_list, find_my_rsvp, is_cohost
+from community.events.helpers import build_guest_list, find_my_rsvp, is_cohost
 from community.models import AttendanceStatus, RSVPStatus
 
 

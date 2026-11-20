@@ -100,6 +100,63 @@
         "title": "ApproveJoinRequestOut",
         "type": "object"
       },
+      "AssignmentOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "proposed_at": {
+            "format": "date-time",
+            "title": "Proposed At",
+            "type": "string"
+          },
+          "responded_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responded At"
+          },
+          "slot_id": {
+            "title": "Slot Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssignmentStatus"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slot_id",
+          "user_id",
+          "status",
+          "proposed_at",
+          "responded_at"
+        ],
+        "title": "AssignmentOut",
+        "type": "object"
+      },
+      "AssignmentStatus": {
+        "enum": [
+          "draft",
+          "proposed",
+          "committed",
+          "declined",
+          "withdrawn"
+        ],
+        "title": "AssignmentStatus",
+        "type": "string"
+      },
       "AttendanceImportCommitIn": {
         "properties": {
           "event_date": {
@@ -444,6 +501,94 @@
         "title": "AttendedPersonOut",
         "type": "object"
       },
+      "AvailabilityIn": {
+        "properties": {
+          "biannual_interest": {
+            "$ref": "#/components/schemas/BiannualInterest"
+          },
+          "monthly_count": {
+            "maximum": 12,
+            "minimum": 0,
+            "title": "Monthly Count",
+            "type": "integer"
+          },
+          "slot_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Slot Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slot_ids",
+          "biannual_interest",
+          "monthly_count"
+        ],
+        "title": "AvailabilityIn",
+        "type": "object"
+      },
+      "AvailabilityOut": {
+        "properties": {
+          "biannual_interest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BiannualInterest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "monthly_count": {
+            "title": "Monthly Count",
+            "type": "integer"
+          },
+          "slot_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Slot Ids",
+            "type": "array"
+          },
+          "submitted": {
+            "title": "Submitted",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "submitted",
+          "biannual_interest",
+          "monthly_count",
+          "slot_ids",
+          "updated_at"
+        ],
+        "title": "AvailabilityOut",
+        "type": "object"
+      },
+      "BiannualInterest": {
+        "enum": [
+          "yes",
+          "maybe",
+          "no"
+        ],
+        "title": "BiannualInterest",
+        "type": "string"
+      },
       "BirthdayIn": {
         "properties": {
           "day": {
@@ -555,93 +700,6 @@
           "event_verified_total"
         ],
         "title": "BulkPaymentVerifyOut",
-        "type": "object"
-      },
-      "BulkUserCreateIn": {
-        "properties": {
-          "phone_numbers": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Phone Numbers",
-            "type": "array"
-          }
-        },
-        "required": [
-          "phone_numbers"
-        ],
-        "title": "BulkUserCreateIn",
-        "type": "object"
-      },
-      "BulkUserCreateOut": {
-        "properties": {
-          "created": {
-            "title": "Created",
-            "type": "integer"
-          },
-          "failed": {
-            "title": "Failed",
-            "type": "integer"
-          },
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/BulkUserResult"
-            },
-            "title": "Results",
-            "type": "array"
-          }
-        },
-        "required": [
-          "results",
-          "created",
-          "failed"
-        ],
-        "title": "BulkUserCreateOut",
-        "type": "object"
-      },
-      "BulkUserResult": {
-        "properties": {
-          "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          },
-          "magic_link_token": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Magic Link Token"
-          },
-          "phone_number": {
-            "title": "Phone Number",
-            "type": "string"
-          },
-          "row": {
-            "title": "Row",
-            "type": "integer"
-          },
-          "success": {
-            "title": "Success",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "row",
-          "phone_number",
-          "success"
-        ],
-        "title": "BulkUserResult",
         "type": "object"
       },
       "CalendarTokenOut": {
@@ -926,6 +984,109 @@
         ],
         "title": "CheckPhoneStatus",
         "type": "string"
+      },
+      "ChecklistItemIn": {
+        "properties": {
+          "detail": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Detail",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 300,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ChecklistItemIn",
+        "type": "object"
+      },
+      "ChecklistItemOut": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "detail"
+        ],
+        "title": "ChecklistItemOut",
+        "type": "object"
+      },
+      "ChecklistItemPatchIn": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "title": "ChecklistItemPatchIn",
+        "type": "object"
+      },
+      "ChecklistOrderIn": {
+        "properties": {
+          "ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "title": "ChecklistOrderIn",
+        "type": "object"
+      },
+      "ChecklistTickIn": {
+        "properties": {
+          "done": {
+            "title": "Done",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "done"
+        ],
+        "title": "ChecklistTickIn",
+        "type": "object"
       },
       "CommentBodyIn": {
         "properties": {
@@ -1707,7 +1868,8 @@
               {
                 "enum": [
                   "login_required",
-                  "rsvp_required"
+                  "rsvp_required",
+                  "members_only"
                 ],
                 "type": "string"
               },
@@ -1856,6 +2018,10 @@
       },
       "EventDescriptionTemplatesOut": {
         "properties": {
+          "club": {
+            "title": "Club",
+            "type": "string"
+          },
           "official_non_walk": {
             "title": "Official Non Walk",
             "type": "string"
@@ -1867,7 +2033,8 @@
         },
         "required": [
           "official_walk",
-          "official_non_walk"
+          "official_non_walk",
+          "club"
         ],
         "title": "EventDescriptionTemplatesOut",
         "type": "object"
@@ -2212,6 +2379,18 @@
             "maxLength": 300,
             "title": "Price",
             "type": "string"
+          },
+          "rsvp_deadline": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsvp Deadline"
           },
           "rsvp_enabled": {
             "default": false,
@@ -2815,6 +2994,18 @@
             "title": "Price",
             "type": "string"
           },
+          "rsvp_deadline": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsvp Deadline"
+          },
           "rsvp_enabled": {
             "default": false,
             "title": "Rsvp Enabled",
@@ -3120,6 +3311,18 @@
               }
             ],
             "title": "Price"
+          },
+          "rsvp_deadline": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsvp Deadline"
           },
           "rsvp_enabled": {
             "anyOf": [
@@ -3799,6 +4002,16 @@
         "title": "EventStatsOut",
         "type": "object"
       },
+      "EventStatus": {
+        "enum": [
+          "draft",
+          "active",
+          "cancelled",
+          "deleted"
+        ],
+        "title": "EventStatus",
+        "type": "string"
+      },
       "FeedbackIn": {
         "properties": {
           "description": {
@@ -4068,6 +4281,38 @@
           "results"
         ],
         "title": "GiphySearchOut",
+        "type": "object"
+      },
+      "GridOut": {
+        "properties": {
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/AssignmentOut"
+            },
+            "title": "Assignments",
+            "type": "array"
+          },
+          "planners": {
+            "items": {
+              "$ref": "#/components/schemas/PlannerColumnOut"
+            },
+            "title": "Planners",
+            "type": "array"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/PlanningSlotOut"
+            },
+            "title": "Slots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slots",
+          "planners",
+          "assignments"
+        ],
+        "title": "GridOut",
         "type": "object"
       },
       "GuidelinesOut": {
@@ -4847,6 +5092,20 @@
         "title": "JoinRequestSubmittedOut",
         "type": "object"
       },
+      "LinkEventIn": {
+        "properties": {
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id"
+        ],
+        "title": "LinkEventIn",
+        "type": "object"
+      },
       "LoginIn": {
         "properties": {
           "password": {
@@ -5537,6 +5796,48 @@
         "title": "MyEventFeedbackOut",
         "type": "object"
       },
+      "MySlotOut": {
+        "properties": {
+          "assignment_id": {
+            "title": "Assignment Id",
+            "type": "string"
+          },
+          "checklist_done_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Checklist Done Ids",
+            "type": "array"
+          },
+          "slot": {
+            "$ref": "#/components/schemas/PlanningSlotOut"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssignmentStatus"
+          },
+          "teammates": {
+            "items": {
+              "$ref": "#/components/schemas/TeammateOut"
+            },
+            "title": "Teammates",
+            "type": "array"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assignment_id",
+          "status",
+          "year",
+          "slot",
+          "teammates",
+          "checklist_done_ids"
+        ],
+        "title": "MySlotOut",
+        "type": "object"
+      },
       "NotificationOut": {
         "properties": {
           "created_at": {
@@ -5740,23 +6041,37 @@
         "enum": [
           "kept",
           "removed",
-          "drafted"
+          "drafted",
+          "rescinded"
         ],
         "title": "PauseOutcome",
         "type": "string"
       },
       "PausePreviewOut": {
         "properties": {
+          "clears_whatsapp": {
+            "title": "Clears Whatsapp",
+            "type": "boolean"
+          },
           "events": {
             "items": {
               "$ref": "#/components/schemas/PauseImpactEventOut"
             },
             "title": "Events",
             "type": "array"
+          },
+          "stripped_roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stripped Roles",
+            "type": "array"
           }
         },
         "required": [
-          "events"
+          "events",
+          "stripped_roles",
+          "clears_whatsapp"
         ],
         "title": "PausePreviewOut",
         "type": "object"
@@ -5764,7 +6079,8 @@
       "PauseRole": {
         "enum": [
           "rsvp",
-          "hosting"
+          "hosting",
+          "cohost_invite"
         ],
         "title": "PauseRole",
         "type": "string"
@@ -5801,6 +6117,250 @@
           "invited_at"
         ],
         "title": "PendingCoHostInviteOut",
+        "type": "object"
+      },
+      "PlannerColumnOut": {
+        "properties": {
+          "available_slot_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Available Slot Ids",
+            "type": "array"
+          },
+          "biannual_interest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BiannualInterest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "has_email": {
+            "title": "Has Email",
+            "type": "boolean"
+          },
+          "is_planner": {
+            "title": "Is Planner",
+            "type": "boolean"
+          },
+          "monthly_count": {
+            "title": "Monthly Count",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "submitted": {
+            "title": "Submitted",
+            "type": "boolean"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "name",
+          "is_planner",
+          "has_email",
+          "submitted",
+          "biannual_interest",
+          "monthly_count",
+          "available_slot_ids"
+        ],
+        "title": "PlannerColumnOut",
+        "type": "object"
+      },
+      "PlanningSlotIn": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/PlanningSlotKind"
+          },
+          "label": {
+            "maxLength": 100,
+            "title": "Label",
+            "type": "string"
+          },
+          "month": {
+            "maximum": 12,
+            "minimum": 1,
+            "title": "Month",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "month",
+          "kind"
+        ],
+        "title": "PlanningSlotIn",
+        "type": "object"
+      },
+      "PlanningSlotKind": {
+        "enum": [
+          "monthly",
+          "biannual"
+        ],
+        "title": "PlanningSlotKind",
+        "type": "string"
+      },
+      "PlanningSlotOut": {
+        "properties": {
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "event_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Slug"
+          },
+          "event_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PlanningSlotKind"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "month": {
+            "title": "Month",
+            "type": "integer"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "month",
+          "kind",
+          "order",
+          "event_id",
+          "event_slug",
+          "event_status"
+        ],
+        "title": "PlanningSlotOut",
+        "type": "object"
+      },
+      "PlanningSlotPatchIn": {
+        "properties": {
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanningSlotKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "month": {
+            "anyOf": [
+              {
+                "maximum": 12,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Month"
+          }
+        },
+        "title": "PlanningSlotPatchIn",
+        "type": "object"
+      },
+      "PlanningYearIn": {
+        "properties": {
+          "year": {
+            "maximum": 2100,
+            "minimum": 2020,
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year"
+        ],
+        "title": "PlanningYearIn",
+        "type": "object"
+      },
+      "PlanningYearOut": {
+        "properties": {
+          "availability_opened_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Availability Opened At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "year",
+          "availability_opened_at"
+        ],
+        "title": "PlanningYearOut",
         "type": "object"
       },
       "PollOptionIn": {
@@ -5933,6 +6493,38 @@
           }
         },
         "title": "PreviousRejectionOut",
+        "type": "object"
+      },
+      "ProposalsSentOut": {
+        "properties": {
+          "planners_notified": {
+            "title": "Planners Notified",
+            "type": "integer"
+          },
+          "proposals_sent": {
+            "title": "Proposals Sent",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "planners_notified",
+          "proposals_sent"
+        ],
+        "title": "ProposalsSentOut",
+        "type": "object"
+      },
+      "ProposeIn": {
+        "properties": {
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id"
+        ],
+        "title": "ProposeIn",
         "type": "object"
       },
       "PublicRsvpIn": {
@@ -6639,6 +7231,256 @@
         "title": "ResendManageLinkOut",
         "type": "object"
       },
+      "ReserveEntryIn": {
+        "properties": {
+          "collected": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Collected"
+          },
+          "facilitator_drinks": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Facilitator Drinks"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReserveEntryKind"
+              }
+            ],
+            "default": "event"
+          },
+          "label": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "occurred_on": {
+            "format": "date",
+            "title": "Occurred On",
+            "type": "string"
+          },
+          "paid_out": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "title": "Paid Out"
+          }
+        },
+        "required": [
+          "label",
+          "occurred_on"
+        ],
+        "title": "ReserveEntryIn",
+        "type": "object"
+      },
+      "ReserveEntryKind": {
+        "enum": [
+          "event",
+          "cost",
+          "donation"
+        ],
+        "title": "ReserveEntryKind",
+        "type": "string"
+      },
+      "ReserveEntryOut": {
+        "properties": {
+          "collected": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Collected",
+            "type": "string"
+          },
+          "facilitator_drinks": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Facilitator Drinks",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ReserveEntryKind"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "left_over": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Left Over",
+            "type": "string"
+          },
+          "occurred_on": {
+            "format": "date",
+            "title": "Occurred On",
+            "type": "string"
+          },
+          "paid_out": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Paid Out",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "kind",
+          "occurred_on",
+          "collected",
+          "paid_out",
+          "facilitator_drinks",
+          "left_over"
+        ],
+        "title": "ReserveEntryOut",
+        "type": "object"
+      },
+      "ReserveEntryPatchIn": {
+        "properties": {
+          "collected": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collected"
+          },
+          "facilitator_drinks": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Facilitator Drinks"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReserveEntryKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "paid_out": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid Out"
+          }
+        },
+        "title": "ReserveEntryPatchIn",
+        "type": "object"
+      },
+      "ReserveOut": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/ReserveEntryOut"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "entries",
+          "updated_at"
+        ],
+        "title": "ReserveOut",
+        "type": "object"
+      },
       "ResetPasswordOut": {
         "properties": {
           "detail": {
@@ -6892,6 +7734,22 @@
           "value"
         ],
         "title": "ShowIfOut",
+        "type": "object"
+      },
+      "SlotChecklistOut": {
+        "properties": {
+          "done_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Done Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "done_ids"
+        ],
+        "title": "SlotChecklistOut",
         "type": "object"
       },
       "SpeechTemplateOut": {
@@ -7840,6 +8698,23 @@
         "title": "TagOut",
         "type": "object"
       },
+      "TeammateOut": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssignmentStatus"
+          }
+        },
+        "required": [
+          "name",
+          "status"
+        ],
+        "title": "TeammateOut",
+        "type": "object"
+      },
       "TentativeApprovalMessageOut": {
         "properties": {
           "body": {
@@ -7946,87 +8821,6 @@
           "count"
         ],
         "title": "UnreadCountOut",
-        "type": "object"
-      },
-      "UserCreateIn": {
-        "properties": {
-          "email": {
-            "format": "email",
-            "title": "Email",
-            "type": "string"
-          },
-          "first_name": {
-            "default": "",
-            "maxLength": 64,
-            "title": "First Name",
-            "type": "string"
-          },
-          "last_name": {
-            "default": "",
-            "maxLength": 64,
-            "title": "Last Name",
-            "type": "string"
-          },
-          "phone_number": {
-            "maxLength": 20,
-            "title": "Phone Number",
-            "type": "string"
-          },
-          "role_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role Id"
-          }
-        },
-        "required": [
-          "phone_number",
-          "email"
-        ],
-        "title": "UserCreateIn",
-        "type": "object"
-      },
-      "UserCreateOut": {
-        "properties": {
-          "first_name": {
-            "default": "",
-            "title": "First Name",
-            "type": "string"
-          },
-          "full_name": {
-            "default": "",
-            "title": "Full Name",
-            "type": "string"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "last_name": {
-            "default": "",
-            "title": "Last Name",
-            "type": "string"
-          },
-          "magic_link_token": {
-            "title": "Magic Link Token",
-            "type": "string"
-          },
-          "phone_number": {
-            "title": "Phone Number",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "phone_number",
-          "magic_link_token"
-        ],
-        "title": "UserCreateOut",
         "type": "object"
       },
       "UserOut": {
@@ -8713,53 +9507,6 @@
         ]
       }
     },
-    "/api/auth/bulk-create-users/": {
-      "post": {
-        "operationId": "users__management_bulk_create_users",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BulkUserCreateIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BulkUserCreateOut"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "GatedJWTAuth": []
-          }
-        ],
-        "summary": "Bulk Create Users",
-        "tags": [
-          "auth"
-        ]
-      }
-    },
     "/api/auth/change-password/": {
       "post": {
         "operationId": "users__auth_change_password",
@@ -8869,73 +9616,6 @@
           }
         ],
         "summary": "Complete Onboarding",
-        "tags": [
-          "auth"
-        ]
-      }
-    },
-    "/api/auth/create-user/": {
-      "post": {
-        "operationId": "users__management_create_user",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UserCreateIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserCreateOut"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Conflict"
-          }
-        },
-        "security": [
-          {
-            "GatedJWTAuth": []
-          }
-        ],
-        "summary": "Create User",
         "tags": [
           "auth"
         ]
@@ -9760,6 +10440,16 @@
               }
             },
             "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
           }
         },
         "security": [
@@ -16801,6 +17491,1472 @@
         ]
       }
     },
+    "/api/community/planning/assignments/{assignment_id}/": {
+      "delete": {
+        "operationId": "community_planning_proposals_withdraw_assignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assignment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Withdraw Assignment",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/assignments/{assignment_id}/commit/": {
+      "post": {
+        "operationId": "community_planning_responses_commit_assignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assignment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Commit Assignment",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/assignments/{assignment_id}/decline/": {
+      "post": {
+        "operationId": "community_planning_responses_decline_assignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assignment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Decline Assignment",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/checklist/": {
+      "get": {
+        "operationId": "community_planning_checklist_list_checklist",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChecklistItemOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List Checklist",
+        "tags": [
+          "community"
+        ]
+      },
+      "post": {
+        "operationId": "community_planning_checklist_create_checklist_item",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChecklistItemIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChecklistItemOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Checklist Item",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/checklist/order/": {
+      "put": {
+        "operationId": "community_planning_checklist_reorder_checklist",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChecklistOrderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChecklistItemOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Reorder Checklist",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/checklist/{item_id}/": {
+      "delete": {
+        "operationId": "community_planning_checklist_delete_checklist_item",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Delete Checklist Item",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community_planning_checklist_update_checklist_item",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChecklistItemPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChecklistItemOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Checklist Item",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/me/": {
+      "get": {
+        "operationId": "community_planning_mine_list_my_slots",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MySlotOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List My Slots",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/slots/{slot_id}/": {
+      "delete": {
+        "operationId": "community_planning_years_delete_slot",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slot_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Slot Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Delete Slot",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community_planning_years_update_slot",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slot_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Slot Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanningSlotPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningSlotOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Slot",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/slots/{slot_id}/assignments/": {
+      "post": {
+        "operationId": "community_planning_proposals_propose_assignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slot_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Slot Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Propose Assignment",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/slots/{slot_id}/assignments/confirm/": {
+      "post": {
+        "operationId": "community_planning_proposals_confirm_assignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slot_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Slot Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Confirm Assignment",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/slots/{slot_id}/checklist/{item_id}/": {
+      "put": {
+        "operationId": "community_planning_checklist_tick_checklist_item",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slot_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Slot Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChecklistTickIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlotChecklistOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Tick Checklist Item",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/slots/{slot_id}/event/": {
+      "post": {
+        "operationId": "community_planning_event_link_link_slot_event",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slot_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Slot Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkEventIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningSlotOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Link Slot Event",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/years/": {
+      "get": {
+        "operationId": "community_planning_years_list_years",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlanningYearOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List Years",
+        "tags": [
+          "community"
+        ]
+      },
+      "post": {
+        "operationId": "community_planning_years_create_year",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanningYearIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningYearOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Year",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/years/{year}/availability/me/": {
+      "get": {
+        "operationId": "community_planning_availability_get_my_availability",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get My Availability",
+        "tags": [
+          "community"
+        ]
+      },
+      "put": {
+        "operationId": "community_planning_availability_put_my_availability",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailabilityIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Put My Availability",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/years/{year}/availability/open/": {
+      "post": {
+        "operationId": "community_planning_availability_open_availability",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningYearOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Open Availability",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/years/{year}/grid/": {
+      "get": {
+        "operationId": "community_planning_grid_get_grid",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GridOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Grid",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/years/{year}/proposals/send/": {
+      "post": {
+        "operationId": "community_planning_proposals_send_proposals",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalsSentOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Send Proposals",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/planning/years/{year}/slots/": {
+      "get": {
+        "operationId": "community_planning_years_list_slots",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlanningSlotOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "List Slots",
+        "tags": [
+          "community"
+        ]
+      },
+      "post": {
+        "operationId": "community_planning_years_create_slot",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanningSlotIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningSlotOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Slot",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/public/events/{event_id}/rsvp-phone-check/": {
       "post": {
         "description": "Resolve a phone number to member/non-member/new; non-members always get an emailed manage link so the response never reveals whether they attended.",
@@ -17337,6 +19493,192 @@
           }
         },
         "summary": "Request Login Link",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/reserve/": {
+      "get": {
+        "operationId": "community_reserve_read_get_reserve",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReserveOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get Reserve",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/reserve/entries/": {
+      "post": {
+        "operationId": "community_reserve_manage_create_reserve_entry",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReserveEntryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReserveEntryOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Reserve Entry",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/reserve/entries/{entry_id}/": {
+      "delete": {
+        "operationId": "community_reserve_manage_delete_reserve_entry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Delete Reserve Entry",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community_reserve_manage_update_reserve_entry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReserveEntryPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReserveEntryOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Reserve Entry",
         "tags": [
           "community"
         ]

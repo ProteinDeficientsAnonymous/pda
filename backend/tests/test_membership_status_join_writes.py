@@ -2,7 +2,7 @@ import pytest
 from community.join_requests.approval import maybe_promote_tentative
 from community.models import JoinRequestStatus
 from django.utils import timezone
-from users._archive import archive_user
+from users._archive_user import archive_user
 from users.models import MEMBER_STATUSES, MembershipStatus, User
 
 from tests._public_rsvp_helpers import make_public_rsvper

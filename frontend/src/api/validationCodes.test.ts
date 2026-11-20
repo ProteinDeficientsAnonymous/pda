@@ -24,6 +24,18 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says the rsvp deadline must come before the start', () => {
+    expect(
+      messageForCode({ code: Code.Event.RsvpDeadlineAfterStart, field: 'rsvp_deadline' }),
+    ).toBe('the rsvp deadline must be before the event starts');
+  });
+
+  it('says going guests can only step down after the rsvp deadline', () => {
+    expect(messageForCode({ code: Code.Event.RsvpsClosedDeadline, field: null })).toBe(
+      "the rsvp deadline has passed — going guests can only switch to can't go or drop their +1",
+    );
+  });
+
   it('uses the field name for generic fallback codes', () => {
     expect(messageForCode({ code: Code.Generic.FieldRequired, field: 'title' })).toContain('title');
     expect(messageForCode({ code: Code.Generic.FieldInvalid, field: 'max_attendees' })).toContain(
@@ -47,9 +59,27 @@ describe('messageForCode', () => {
     );
   });
 
+  it("says only going guests can be marked didn't attend", () => {
+    expect(messageForCode({ code: Code.Event.DidntGoRequiresGoing, field: null })).toBe(
+      "only guests who rsvp'd going can be marked didn't attend",
+    );
+  });
+
+  it('says a reserve entry was not found', () => {
+    expect(messageForCode({ code: Code.Reserve.NotFound, field: null })).toBe(
+      'reserve entry not found',
+    );
+  });
+
   it('says only members can be co-hosts', () => {
     expect(messageForCode({ code: Code.CoHostInvite.NotMember, field: null })).toBe(
       'only members can be co-hosts',
+    );
+  });
+
+  it('says a host-set guest who cannot sign in cannot be added', () => {
+    expect(messageForCode({ code: Code.Event.GuestNotEligible, field: null })).toBe(
+      "they can't be added to this event",
     );
   });
 
@@ -193,6 +223,10 @@ describe('messageForCode', () => {
     expect(
       messageForCode({ code: Code.JoinRequest.OpenRequestExists, field: 'phone_number' }),
     ).toBe('this number already has an open request — review that one instead');
+  });
+
+  it.each(Object.values(Code.Planning))('gives planning code %s its own copy', (code) => {
+    expect(messageForCode({ code, field: null })).not.toMatch(/double-check/i);
   });
 
   it('returns a safe fallback for unknown codes', () => {

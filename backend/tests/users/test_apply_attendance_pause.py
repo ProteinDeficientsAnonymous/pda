@@ -3,6 +3,7 @@ from datetime import timedelta
 import pytest
 from audit.models import AuditLogEntry
 from community.models import (
+    CancelReason,
     CoHostInviteStatus,
     EventCoHostInvite,
     EventRSVP,
@@ -49,6 +50,7 @@ class TestApplyAttendancePause:
         rsvp = EventRSVP.objects.get(event=event, user=member)
         assert rsvp.status == RSVPStatus.CANT_GO
         assert rsvp.cancelled_at is not None
+        assert rsvp.cancel_reason == CancelReason.PAUSE
         waiting.refresh_from_db()
         assert waiting.status == RSVPStatus.ATTENDING
 

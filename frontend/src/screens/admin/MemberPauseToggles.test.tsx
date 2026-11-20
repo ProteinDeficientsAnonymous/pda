@@ -7,6 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchAttendancePausePreview,
   fetchGuidelinesPausePreview,
+  type PauseImpactEvent,
+  type PausePreview,
 } from '@/api/attendancePausePreview';
 
 import { MemberPauseToggles, type PauseState } from './MemberPauseToggles';
@@ -18,6 +20,12 @@ vi.mock('@/api/attendancePausePreview', () => ({
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const preview = vi.mocked(fetchAttendancePausePreview);
+const previewOf = (events: PauseImpactEvent[], extra: Partial<PausePreview> = {}) => ({
+  events,
+  strippedRoles: [],
+  clearsWhatsapp: false,
+  ...extra,
+});
 const guidelinesPreview = vi.mocked(fetchGuidelinesPausePreview);
 
 function Harness({ guidelinesPaused = false, attendancePaused = false }: Partial<PauseState>) {
@@ -36,7 +44,7 @@ describe('MemberPauseToggles event rqmt preview', () => {
   });
 
   it('turns on without a dialog when nothing is affected', async () => {
-    preview.mockResolvedValue([]);
+    preview.mockResolvedValue(previewOf([]));
     render(<Harness />);
     await userEvent.click(eventRqmtSwitch());
     expect(preview).toHaveBeenCalledWith('m1');
@@ -48,7 +56,7 @@ describe('MemberPauseToggles event rqmt preview', () => {
     preview.mockRejectedValue(new Error('network down'));
     render(<Harness />);
     await userEvent.click(eventRqmtSwitch());
-    expect(toast.error).toHaveBeenCalledWith("couldn't load their upcoming events — try again");
+    expect(toast.error).toHaveBeenCalledWith("couldn't load the pause preview — try again");
     expect(eventRqmtSwitch()).toHaveAttribute('aria-checked', 'false');
   });
 
@@ -60,10 +68,12 @@ describe('MemberPauseToggles event rqmt preview', () => {
   });
 
   it('lists affected events and turns on after confirming', async () => {
-    preview.mockResolvedValue([
-      { id: 'e1', title: 'Potluck', startDatetime: null, role: 'hosting', outcome: 'drafted' },
-      { id: 'e2', title: 'Club Hike', startDatetime: null, role: 'rsvp', outcome: 'kept' },
-    ]);
+    preview.mockResolvedValue(
+      previewOf([
+        { id: 'e1', title: 'Potluck', startDatetime: null, role: 'hosting', outcome: 'drafted' },
+        { id: 'e2', title: 'Club Hike', startDatetime: null, role: 'rsvp', outcome: 'kept' },
+      ]),
+    );
     render(<Harness />);
     await userEvent.click(eventRqmtSwitch());
 
@@ -79,10 +89,43 @@ describe('MemberPauseToggles event rqmt preview', () => {
     expect(eventRqmtSwitch()).toHaveAttribute('aria-checked', 'true');
   });
 
+  it('lists invites, roles and the whatsapp flag', async () => {
+    preview.mockResolvedValue(
+      previewOf(
+        [
+          {
+            id: 'e1',
+            title: 'Potluck',
+            startDatetime: null,
+            role: 'cohost_invite',
+            outcome: 'rescinded',
+          },
+        ],
+        { strippedRoles: ['Vetter', 'host'], clearsWhatsapp: true },
+      ),
+    );
+    render(<Harness />);
+    await userEvent.click(eventRqmtSwitch());
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('potluck (date tbd) — co-host invite · rescinded');
+    expect(dialog).toHaveTextContent('roles removed: vetter, host');
+    expect(dialog).toHaveTextContent('marked as not in the whatsapp');
+  });
+
+  it('confirms when only roles change', async () => {
+    preview.mockResolvedValue(previewOf([], { strippedRoles: ['host'] }));
+    render(<Harness />);
+    await userEvent.click(eventRqmtSwitch());
+    expect(await screen.findByRole('dialog')).toHaveTextContent('roles removed: host');
+  });
+
   it('stays off when the dialog is cancelled', async () => {
-    preview.mockResolvedValue([
-      { id: 'e1', title: 'Potluck', startDatetime: null, role: 'rsvp', outcome: 'removed' },
-    ]);
+    preview.mockResolvedValue(
+      previewOf([
+        { id: 'e1', title: 'Potluck', startDatetime: null, role: 'rsvp', outcome: 'removed' },
+      ]),
+    );
     render(<Harness />);
     await userEvent.click(eventRqmtSwitch());
     await userEvent.click(await screen.findByRole('button', { name: 'cancel' }));
@@ -96,9 +139,11 @@ describe('MemberPauseToggles guidelines preview', () => {
   });
 
   it('lists affected events and turns on after confirming', async () => {
-    guidelinesPreview.mockResolvedValue([
-      { id: 'e1', title: 'Club Hike', startDatetime: null, role: 'rsvp', outcome: 'removed' },
-    ]);
+    guidelinesPreview.mockResolvedValue(
+      previewOf([
+        { id: 'e1', title: 'Club Hike', startDatetime: null, role: 'rsvp', outcome: 'removed' },
+      ]),
+    );
     render(<Harness />);
     await userEvent.click(guidelinesSwitch());
 
@@ -113,9 +158,11 @@ describe('MemberPauseToggles guidelines preview', () => {
   });
 
   it('stays off when the dialog is cancelled', async () => {
-    guidelinesPreview.mockResolvedValue([
-      { id: 'e1', title: 'Potluck', startDatetime: null, role: 'hosting', outcome: 'drafted' },
-    ]);
+    guidelinesPreview.mockResolvedValue(
+      previewOf([
+        { id: 'e1', title: 'Potluck', startDatetime: null, role: 'hosting', outcome: 'drafted' },
+      ]),
+    );
     render(<Harness />);
     await userEvent.click(guidelinesSwitch());
     await userEvent.click(await screen.findByRole('button', { name: 'cancel' }));
@@ -132,8 +179,8 @@ describe('MemberPauseToggles guidelines preview', () => {
   });
 
   it('drops a pending event rqmt pause and locks that toggle', async () => {
-    preview.mockResolvedValue([]);
-    guidelinesPreview.mockResolvedValue([]);
+    preview.mockResolvedValue(previewOf([]));
+    guidelinesPreview.mockResolvedValue(previewOf([]));
     render(<Harness />);
     await userEvent.click(eventRqmtSwitch());
     expect(eventRqmtSwitch()).toHaveAttribute('aria-checked', 'true');

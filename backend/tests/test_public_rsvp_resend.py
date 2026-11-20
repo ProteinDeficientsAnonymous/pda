@@ -12,7 +12,7 @@ from django.utils import timezone
 from notifications.email_sender import SendResult
 from users.models import MembershipStatus, PublicRsvpToken
 
-from tests._public_rsvp_helpers import make_public_rsvper
+from tests._public_rsvp_helpers import LIMITED_USER_FACTORIES, make_public_rsvper
 
 URL = "/api/community/public/my-rsvps/resend/"
 
@@ -83,6 +83,16 @@ class TestResendManageLink:
         assert response.status_code == 200
         fake_email_sender.send.assert_not_called()
         assert not PublicRsvpToken.objects.filter(user=member).exists()
+
+    @LIMITED_USER_FACTORIES
+    def test_limited_user_gets_no_manage_link(self, api_client, fake_email_sender, make_limited):
+        limited = make_limited(PHONE, EMAIL)
+
+        response = post(api_client)
+
+        assert response.status_code == 200
+        fake_email_sender.send.assert_not_called()
+        assert not PublicRsvpToken.objects.filter(user=limited).exists()
 
     def test_matching_non_member_without_email_gets_nothing(self, api_client, fake_email_sender):
         # No email on file → nothing to send to, still neutral.

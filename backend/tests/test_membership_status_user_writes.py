@@ -2,10 +2,8 @@ import pytest
 from community.validation import Code
 from django.utils import timezone
 from users.models import MEMBER_STATUSES, MembershipStatus, User
-from users.permissions import PermissionKey
 
 from tests._asserts import assert_error_code
-from tests._auth import auth_headers_for
 from tests._users import make_attendance_paused, make_user
 
 pytestmark = pytest.mark.django_db
@@ -52,29 +50,6 @@ def test_archive_clears_is_member(api_client, manage_users_headers):
     assert response.status_code == 204
     assert _status(member) == MembershipStatus.ARCHIVED
     assert member.is_member is False
-
-
-@pytest.mark.parametrize(
-    ("path", "payload", "permission"),
-    [
-        (
-            "/api/auth/create-user/",
-            {"phone_number": "+12025550777", "first_name": "New", "email": "new@example.com"},
-            PermissionKey.CREATE_USER,
-        ),
-        (
-            "/api/auth/bulk-create-users/",
-            {"phone_numbers": ["+12025550777"]},
-            PermissionKey.MANAGE_USERS,
-        ),
-    ],
-    ids=["single", "bulk"],
-)
-def test_admin_created_user_is_member(api_client, path, payload, permission):
-    headers = auth_headers_for(make_user(permission))
-    response = api_client.post(path, payload, content_type="application/json", **headers)
-    assert response.status_code in (200, 201)
-    assert _status(User.objects.get(phone_number="+12025550777")) == MembershipStatus.ACTIVE_MEMBER
 
 
 def _patch_guidelines_pause(api_client, headers, user, paused):

@@ -39,7 +39,7 @@ interface WireComment extends WireReply {
 export interface WireCommentList {
   items: WireComment[];
   can_post: boolean;
-  cannot_post_reason?: ('login_required' | 'rsvp_required') | null;
+  cannot_post_reason?: ('login_required' | 'rsvp_required' | 'members_only') | null;
 }
 
 function mapReactor(wire: WireReactor): CommentReactor {

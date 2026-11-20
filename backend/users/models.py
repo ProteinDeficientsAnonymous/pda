@@ -1,6 +1,6 @@
 import secrets
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
@@ -11,7 +11,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from users.phone import normalize_phone_number
-from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
+from users.roles import Role
 
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
 STATUS_CHANGE_FIELDS = (
@@ -217,32 +217,53 @@ class User(AbstractUser):
             ),
         ]
 
-    def set_membership_status(self, status: MembershipStatus, *, by: "User | None") -> list[str]:
+    def set_membership_status(
+        self, new_status: MembershipStatus, *, by: "User | None"
+    ) -> list[str]:
         """param(by): who made the change, or None for the system.
         return(list[str]): the fields it changed, for update_fields."""
-        if self.archived_at is not None and status != MembershipStatus.ARCHIVED:
-            # Archived stays archived; the change waits here until reactivation restores it.
-            self.status_before_archive = status
+        if self.is_archived and new_status != MembershipStatus.ARCHIVED:
+            # They stay archived; unarchiving restores this status.
+            self.status_before_archive = new_status
             return ["status_before_archive"]
-        if status != self.membership_status:
-            self.membership_status = status
+        if new_status != self.membership_status:
+            self.membership_status = new_status
             self.membership_status_changed_at = timezone.now()
             self.membership_status_changed_by = by
         return list(STATUS_CHANGE_FIELDS)
 
     def apply_guidelines_pause(self, *, by: "User | None") -> list[str]:
         """A guidelines pause replaces any attendance pause."""
-        self.attendance_paused_at = None
-        self.unpaused_at = None
-        self.has_joined_whatsapp = False
-        status_fields = self.set_membership_status(MembershipStatus.GUIDELINES_PAUSED, by=by)
-        return ["attendance_paused_at", "unpaused_at", "has_joined_whatsapp", *status_fields]
+        return self._set_pause(MembershipStatus.GUIDELINES_PAUSED, by)
 
     def lift_guidelines_pause(self, *, by: "User | None") -> list[str]:
         # Lifting leaves them limited until a compliant in-person check-in.
-        self.attendance_paused_at = timezone.now()
-        status_fields = self.set_membership_status(MembershipStatus.ATTENDANCE_PAUSED, by=by)
-        return ["attendance_paused_at", *status_fields]
+        at = timezone.now()
+        return self._set_pause(MembershipStatus.ATTENDANCE_PAUSED, by, paused_at=at, unpaused_at=at)
+
+    def apply_attendance_pause(self, *, by: "User | None") -> list[str]:
+        return self._set_pause(MembershipStatus.ATTENDANCE_PAUSED, by, paused_at=timezone.now())
+
+    def _set_pause(
+        self,
+        status: MembershipStatus,
+        by: "User | None",
+        *,
+        paused_at: datetime | None = None,
+        unpaused_at: datetime | None = None,
+    ) -> list[str]:
+        if self.is_archived:
+            # Only status_before_archive records it; unarchiving sets the pause stamps.
+            return self.set_membership_status(status, by=by)
+        self.attendance_paused_at, self.unpaused_at = paused_at, unpaused_at
+        self.has_joined_whatsapp = False
+        fields = ["attendance_paused_at", "unpaused_at", "has_joined_whatsapp"]
+        return [*fields, *self.set_membership_status(status, by=by)]
+
+    @property
+    def is_archived(self) -> bool:
+        # Not membership_status: _unarchive clears archived_at first so the restore isn't parked.
+        return self.archived_at is not None
 
     @property
     def is_member(self) -> bool:
@@ -353,8 +374,7 @@ class PublicRsvpToken(models.Model):
     It grants scoped read/write to one non-member's RSVPs only. On a non-member's
     RSVP we EXTEND their existing valid token (see issue_or_extend) rather than
     minting a new one, so a link saved from a previous email keeps working; a
-    fresh token is only issued when there is no valid one. Revoked when the user
-    converts to a member.
+    fresh token is only issued when there is no valid one. Revoked once they can sign in.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -392,13 +412,8 @@ class PublicRsvpToken(models.Model):
 
     @classmethod
     def issue(cls, user: "User") -> "PublicRsvpToken":
-        """Create a fresh token for a non-member, valid for 90 days.
-
-        Rejects members — a converted/existing member must use the member flow,
-        not the scoped non-member RSVP link.
-        """
-        if user.membership_status in FULL_MEMBER_STATUSES:
-            raise ValidationError("Cannot issue a non-member RSVP token for a member.")
+        """Create a fresh token for a public rsvper, valid for 90 days."""
+        cls._require_public_rsvper(user)
         return cls.objects.create(
             user=user,
             token=secrets.token_urlsafe(32),
@@ -410,10 +425,9 @@ class PublicRsvpToken(models.Model):
         """Return a usable non-member RSVP token, reusing one when possible.
 
         Extends the newest valid token still within its absolute lifetime (so an
-        emailed link keeps resolving), else issues a fresh one. Rejects members.
+        emailed link keeps resolving), else issues a fresh one.
         """
-        if user.membership_status in FULL_MEMBER_STATUSES:
-            raise ValidationError("Cannot issue a non-member RSVP token for a member.")
+        cls._require_public_rsvper(user)
         existing = user.rsvp_tokens.first()
         max_age_cutoff = timezone.now() - timedelta(days=PUBLIC_RSVP_TOKEN_MAX_LIFETIME_DAYS)
         if existing is not None and existing.is_valid and existing.created_at > max_age_cutoff:
@@ -424,19 +438,23 @@ class PublicRsvpToken(models.Model):
 
     @classmethod
     def resolve_user(cls, token: str) -> "User | None":
-        """Resolve a token string to its User, or None if the token is unusable.
-
-        Returns None when the token is unknown, expired (expires_at < now),
-        revoked (revoked_at set), or its user is guidelines-paused. Endpoints in
-        stages 3/4 reuse this and map a None result to their own 404. Never logs
-        the user in.
-        """
+        """The token's user; None if the token is unusable or its user isn't a public rsvper."""
         if not token:
             return None
         row = cls.objects.select_related("user").filter(token=token).first()
-        if row is None or not row.is_valid or row.user.is_guidelines_paused:
+        if row is None or not row.is_valid or not cls.can_hold(row.user):
             return None
         return row.user
+
+    @staticmethod
+    def can_hold(user: "User") -> bool:
+        """Only public rsvpers; anyone who can sign in, or is archived, manages RSVPs elsewhere."""
+        return user.membership_status == MembershipStatus.NONE
+
+    @classmethod
+    def _require_public_rsvper(cls, user: "User") -> None:
+        if not cls.can_hold(user):
+            raise ValidationError("Only a public rsvper can hold an RSVP manage link.")
 
 
 @receiver(m2m_changed, sender=User.roles.through)

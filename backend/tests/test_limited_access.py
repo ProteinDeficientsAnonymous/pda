@@ -246,6 +246,62 @@ class TestTentativeEventAccess:
         assert titles == {"Official", "Private"}
 
 
+def _ics(api_client, event, user):
+    response = api_client.get(f"/api/community/events/{event.id}/ics/", **auth_headers_for(user))
+    return response.status_code, response.content.decode().replace("\r\n ", "")
+
+
+@pytest.mark.django_db
+class TestLimitedEventIcs:
+    @LIMITED_USER_FIXTURES
+    def test_members_only_community_event_is_hidden(self, api_client, request, fixture, host):
+        event = _event("Private", EventType.COMMUNITY, PageVisibility.MEMBERS_ONLY, host=host)
+        status, _ = _ics(api_client, event, request.getfixturevalue(fixture))
+        assert status == 404
+
+    @LIMITED_USER_FIXTURES
+    def test_public_community_event_hides_member_fields(self, api_client, request, fixture, host):
+        event = _event("Potluck", EventType.COMMUNITY, host=host)
+        status, body = _ics(api_client, event, request.getfixturevalue(fixture))
+        assert status == 200
+        assert "Potluck" in body
+        assert "123 Sprout Lane" not in body
+        assert "chat.whatsapp.com/abc" not in body
+
+    @pytest.mark.parametrize(
+        ("event_type", "visibility"),
+        [
+            (EventType.OFFICIAL, PageVisibility.PUBLIC),
+            (EventType.CLUB, PageVisibility.MEMBERS_ONLY),
+        ],
+    )
+    def test_official_and_club_keep_full_details(
+        self, api_client, tentative_user, host, event_type, visibility
+    ):
+        event = _event("Meetup", event_type, visibility, host=host)
+        status, body = _ics(api_client, event, tentative_user)
+        assert status == 200
+        assert "123 Sprout Lane" in body
+        assert "WhatsApp: https://chat.whatsapp.com/abc" in body
+
+    def test_draft_host_keeps_full_details(self, api_client, tentative_user):
+        event = _event(
+            "Draft", EventType.COMMUNITY, PageVisibility.MEMBERS_ONLY, host=tentative_user
+        )
+        event.status = EventStatus.DRAFT
+        event.save(update_fields=["status"])
+        status, body = _ics(api_client, event, tentative_user)
+        assert status == 200
+        assert "123 Sprout Lane" in body
+
+    def test_member_sees_members_only_community_details(self, api_client, test_user, host):
+        event = _event("Private", EventType.COMMUNITY, PageVisibility.MEMBERS_ONLY, host=host)
+        status, body = _ics(api_client, event, test_user)
+        assert status == 200
+        assert "123 Sprout Lane" in body
+        assert "WhatsApp: https://chat.whatsapp.com/abc" in body
+
+
 @pytest.mark.django_db
 class TestTentativeDirectoryAccess:
     def test_directory_is_blocked_for_non_members(self, api_client, tentative_user, test_user):
@@ -262,3 +318,19 @@ class TestTentativeDirectoryAccess:
     def test_directory_still_works_for_members(self, api_client, test_user):
         response = api_client.get("/api/auth/users/directory/", **auth_headers_for(test_user))
         assert response.status_code == 200
+
+
+@pytest.mark.django_db
+class TestLimitedMemberSearch:
+    @LIMITED_USER_FIXTURES
+    @pytest.mark.parametrize("q", ["", "Test"])
+    def test_search_is_blocked_for_limited_users(self, api_client, request, fixture, q, test_user):
+        user = request.getfixturevalue(fixture)
+        response = api_client.get(f"/api/auth/users/search/?q={q}", **auth_headers_for(user))
+        assert response.status_code == 403
+        assert_error_code(response, Code.Perm.DENIED)
+
+    def test_search_still_works_for_members(self, api_client, test_user, host):
+        response = api_client.get("/api/auth/users/search/?q=Host", **auth_headers_for(test_user))
+        assert response.status_code == 200
+        assert str(host.id) in {u["id"] for u in response.json()}
