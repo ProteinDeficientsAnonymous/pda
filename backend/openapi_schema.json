@@ -1490,6 +1490,18 @@
             "title": "Cohost Count",
             "type": "integer"
           },
+          "event_format": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
+          },
           "going_count": {
             "default": 5,
             "maximum": 50,
@@ -4946,7 +4958,8 @@
         "enum": [
           "text",
           "textarea",
-          "select"
+          "select",
+          "checkbox"
         ],
         "title": "JoinFormQuestionType",
         "type": "string"
@@ -4954,8 +4967,18 @@
       "JoinRequestAnswerOut": {
         "properties": {
           "answer": {
-            "title": "Answer",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Answer"
           },
           "label": {
             "title": "Label",
@@ -4978,7 +5001,17 @@
         "properties": {
           "answers": {
             "additionalProperties": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
             },
             "default": {},
             "title": "Answers",
@@ -9001,6 +9034,14 @@
             "title": "Cant Go",
             "type": "array"
           },
+          "co_hosts": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Co Hosts",
+            "type": "array"
+          },
           "invited": {
             "default": [],
             "items": {
@@ -11612,6 +11653,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
           }
         },
         "security": [
