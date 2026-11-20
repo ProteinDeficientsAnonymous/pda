@@ -1,3 +1,11 @@
+# [0.268.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.267.1...v0.268.0) (2026-11-20)
+
+
+### Features
+
+* 2122 - require event price to be a dollar amount ([#2204](https://github.com/ProteinDeficientsAnonymous/pda/issues/2204)) ([7b91fc6](https://github.com/ProteinDeficientsAnonymous/pda/commit/7b91fc6b6316b84c0f4e73d8ef55fca5012bff1f))
+* **notifications:** event-scoped sse streams for anonymous tickets (1043, 1/3) ([#1687](https://github.com/ProteinDeficientsAnonymous/pda/issues/1687)) ([785af64](https://github.com/ProteinDeficientsAnonymous/pda/commit/785af640e3492b913976f818a9a7793cde4d0099))
+
 ## [0.267.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.267.0...v0.267.1) (2026-11-20)
 
 
