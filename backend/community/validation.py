@@ -1,4 +1,6 @@
-from typing import Any, NoReturn
+from typing import Any, NamedTuple, NoReturn
+
+from audit.models import AuditTargetType
 
 
 class Code:
@@ -166,6 +168,7 @@ class Code:
         CANNOT_PAUSE_ADMIN = "user.cannot_pause_admin"
         GUIDELINES_PAUSED = "user.guidelines_paused"
         ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN = "user.attendance_pause_lifts_on_check_in"
+        INVALID_STATUS_TRANSITION = "user.invalid_status_transition"
         ROLE_IDS_NOT_FOUND = "user.role_ids_not_found"
         INVALID_BIRTHDAY = "user.invalid_birthday"
         INVALID_VEGANNIVERSARY = "user.invalid_veganniversary"
@@ -383,6 +386,44 @@ class ValidationException(Exception):
         self.params = params or {}
         self.status_code = status_code
         self.clear_refresh_cookie = clear_refresh_cookie
+
+
+class TransitionFailure(NamedTuple):
+    action: str
+    target_type: AuditTargetType
+    target_id: str
+    event: str
+    from_status: str
+    to_status: str | None = None
+    extra: dict[str, Any] | None = None
+
+    def details(self, code: str) -> dict[str, Any]:
+        out: dict[str, Any] = {
+            "event": self.event,
+            "from": self.from_status,
+            "to": self.to_status,
+            "code": code,
+        }
+        if self.extra:
+            out.update(self.extra)
+        return out
+
+
+class InvalidStateTransition(ValidationException):
+    """Domain state machine rejected an illegal event for the current state."""
+
+    def __init__(
+        self,
+        code: str,
+        failure: TransitionFailure,
+        *,
+        field: str | None = None,
+        status_code: int = 400,
+        **params: Any,
+    ) -> None:
+        super().__init__(code, field=field, params=params or None, status_code=status_code)
+        self.failure = failure
+        self.audited = False
 
 
 def raise_validation(

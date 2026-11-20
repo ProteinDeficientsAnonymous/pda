@@ -1,6 +1,6 @@
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
@@ -10,20 +10,42 @@ from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
+from users._transitions import transition_membership
+from users.membership import (
+    ALLOWED_MEMBERSHIP_TRANSITIONS,
+    FULL_MEMBER_STATUSES,
+    LIMITED_STATUSES,
+    MANAGED_STATUSES,
+    MEMBER_OR_ARCHIVED,
+    MEMBER_STATUSES,
+    PAUSED_STATUSES,
+    SIGN_IN_STATUSES,
+    STATUS_CHANGE_FIELDS,
+    MembershipEvent,
+    MembershipStatus,
+    status_change_stamp,
+)
 from users.phone import normalize_phone_number
 from users.roles import Role
 
+# Re-exports kept public on users.models for existing imports.
+__all__ = [
+    "ALLOWED_MEMBERSHIP_TRANSITIONS",
+    "FULL_MEMBER_STATUSES",
+    "LIMITED_STATUSES",
+    "MANAGED_STATUSES",
+    "MEMBER_OR_ARCHIVED",
+    "MEMBER_STATUSES",
+    "PAUSED_STATUSES",
+    "SIGN_IN_STATUSES",
+    "STATUS_CHANGE_FIELDS",
+    "MembershipEvent",
+    "MembershipStatus",
+    "Role",
+    "status_change_stamp",
+]
+
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
-STATUS_CHANGE_FIELDS = (
-    "membership_status",
-    "membership_status_changed_at",
-    "membership_status_changed_by",
-)
-
-
-def status_change_stamp(by: "User | None") -> dict:
-    """Create kwargs that record who set a new account's first status."""
-    return {"membership_status_changed_at": timezone.now(), "membership_status_changed_by": by}
 
 
 def can_sign_in_q() -> Q:
@@ -34,31 +56,6 @@ def can_sign_in_q() -> Q:
 def limited_q() -> Q:
     """Signed-in non-members: tentatively approved or attendance-paused; never guidelines-paused."""
     return Q(membership_status__in=LIMITED_STATUSES)
-
-
-class MembershipStatus(models.TextChoices):
-    NONE = "none", "none"
-    TENTATIVE = "tentative", "tentative"
-    ACTIVE_MEMBER = "active_member", "active member"
-    ATTENDANCE_PAUSED = "attendance_paused", "attendance paused"
-    ARCHIVED = "archived", "archived"
-    GUIDELINES_PAUSED = "guidelines_paused", "guidelines paused"
-
-
-# Paused members keep the member role; only active members get full access.
-MEMBER_STATUSES = (
-    MembershipStatus.ACTIVE_MEMBER,
-    MembershipStatus.GUIDELINES_PAUSED,
-    MembershipStatus.ATTENDANCE_PAUSED,
-)
-LIMITED_STATUSES = (MembershipStatus.TENTATIVE, MembershipStatus.ATTENDANCE_PAUSED)
-PAUSED_STATUSES = (MembershipStatus.GUIDELINES_PAUSED, MembershipStatus.ATTENDANCE_PAUSED)
-# Members not limited to official/club events; a guidelines pause blocks login outright.
-FULL_MEMBER_STATUSES = (MembershipStatus.ACTIVE_MEMBER, MembershipStatus.GUIDELINES_PAUSED)
-SIGN_IN_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
-MEMBER_OR_ARCHIVED = (*MEMBER_STATUSES, MembershipStatus.ARCHIVED)
-# The admin members screen lists tentative people too, so they can be archived.
-MANAGED_STATUSES = (*MEMBER_STATUSES, MembershipStatus.TENTATIVE)
 
 
 class WeekStart:
@@ -217,48 +214,34 @@ class User(AbstractUser):
             ),
         ]
 
-    def set_membership_status(
-        self, new_status: MembershipStatus, *, by: "User | None"
-    ) -> list[str]:
-        """param(by): who made the change, or None for the system.
-        return(list[str]): the fields it changed, for update_fields."""
-        if self.is_archived and new_status != MembershipStatus.ARCHIVED:
-            # They stay archived; unarchiving restores this status.
-            self.status_before_archive = new_status
-            return ["status_before_archive"]
-        if new_status != self.membership_status:
-            self.membership_status = new_status
-            self.membership_status_changed_at = timezone.now()
-            self.membership_status_changed_by = by
-        return list(STATUS_CHANGE_FIELDS)
+    def mark_tentative(self, *, by: "User | None") -> list[str]:
+        return transition_membership(self, MembershipEvent.MARK_TENTATIVE, by=by)
+
+    def approve_membership(self, *, by: "User | None") -> list[str]:
+        return transition_membership(self, MembershipEvent.APPROVE, by=by)
+
+    def promote_on_check_in(self, *, by: "User | None") -> list[str]:
+        return transition_membership(self, MembershipEvent.PROMOTE_ON_CHECK_IN, by=by)
 
     def apply_guidelines_pause(self, *, by: "User | None") -> list[str]:
         """A guidelines pause replaces any attendance pause."""
-        return self._set_pause(MembershipStatus.GUIDELINES_PAUSED, by)
+        return transition_membership(self, MembershipEvent.PAUSE_FOR_GUIDELINES, by=by)
 
     def lift_guidelines_pause(self, *, by: "User | None") -> list[str]:
         # Lifting leaves them limited until a compliant in-person check-in.
-        at = timezone.now()
-        return self._set_pause(MembershipStatus.ATTENDANCE_PAUSED, by, paused_at=at, unpaused_at=at)
+        return transition_membership(self, MembershipEvent.LIFT_GUIDELINES_PAUSE, by=by)
 
     def apply_attendance_pause(self, *, by: "User | None") -> list[str]:
-        return self._set_pause(MembershipStatus.ATTENDANCE_PAUSED, by, paused_at=timezone.now())
+        return transition_membership(self, MembershipEvent.PAUSE_FOR_ATTENDANCE, by=by)
 
-    def _set_pause(
-        self,
-        status: MembershipStatus,
-        by: "User | None",
-        *,
-        paused_at: datetime | None = None,
-        unpaused_at: datetime | None = None,
-    ) -> list[str]:
-        if self.is_archived:
-            # Only status_before_archive records it; unarchiving sets the pause stamps.
-            return self.set_membership_status(status, by=by)
-        self.attendance_paused_at, self.unpaused_at = paused_at, unpaused_at
-        self.has_joined_whatsapp = False
-        fields = ["attendance_paused_at", "unpaused_at", "has_joined_whatsapp"]
-        return [*fields, *self.set_membership_status(status, by=by)]
+    def lift_attendance_pause(self, *, by: "User | None") -> list[str]:
+        return transition_membership(self, MembershipEvent.LIFT_ATTENDANCE_PAUSE, by=by)
+
+    def restore_on_check_in(self, *, by: "User | None") -> list[str]:
+        return transition_membership(self, MembershipEvent.RESTORE_ON_CHECK_IN, by=by)
+
+    def archive(self, *, by: "User | None") -> list[str]:
+        return transition_membership(self, MembershipEvent.ARCHIVE, by=by)
 
     @property
     def is_archived(self) -> bool:
@@ -280,7 +263,7 @@ class User(AbstractUser):
         return self._pause_status() == MembershipStatus.ATTENDANCE_PAUSED
 
     def _pause_status(self) -> str | None:
-        if self.membership_status == MembershipStatus.ARCHIVED:
+        if self.is_archived:
             return self.status_before_archive
         return self.membership_status
 

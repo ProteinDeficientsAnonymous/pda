@@ -5408,7 +5408,14 @@
         "type": "object"
       },
       "JoinRequestStatusIn": {
+        "description": "Decision payload: fire an event, not a target status.",
         "properties": {
+          "event": {
+            "default": "",
+            "maxLength": 20,
+            "title": "Event",
+            "type": "string"
+          },
           "rejection_note": {
             "default": "",
             "title": "Rejection Note",
@@ -5420,14 +5427,13 @@
             "type": "string"
           },
           "status": {
+            "default": "",
+            "deprecated": true,
             "maxLength": 20,
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
         "title": "JoinRequestStatusIn",
         "type": "object"
       },

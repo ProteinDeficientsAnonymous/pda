@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
-import { extractApiErrorOr } from '@/api/apiErrors';
+import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
 import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
+import { Code } from '@/api/validationCodes.gen';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
@@ -77,18 +78,19 @@ export function MyRsvpSection({ event, token, locked = false, rsvpsClosed = fals
   const myGuest = event.guests.find((g) => g.userId === myUserId);
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
-  // An attending member already holds a seat — re-saving "going" keeps it.
-  const goingWouldWaitlist = atCapacity && myRsvp !== RsvpServerStatus.Attending;
   // Token holders are public rsvpers, and the public rsvp endpoints never save a +1 for them.
   const plusOneNote = plusOneUnavailableReason(event.allowPlusOnes, Boolean(token));
 
-  async function confirmRsvp(args: {
-    status: RsvpInputStatus;
-    comment?: string;
-    hasPlusOne: boolean;
-    paidConfirmed?: boolean;
-    questionnaireResponses: Record<string, RsvpAnswerValue>;
-  }) {
+  async function confirmRsvp(
+    args: {
+      status: RsvpInputStatus;
+      comment?: string;
+      hasPlusOne: boolean;
+      paidConfirmed?: boolean;
+      questionnaireResponses: Record<string, RsvpAnswerValue>;
+    },
+    openPaymentStep?: () => void,
+  ) {
     setError(null);
     try {
       if (token) {
@@ -117,6 +119,10 @@ export function MyRsvpSection({ event, token, locked = false, rsvpsClosed = fals
         setMaybeDeadline(event.rsvpDeadline);
       }
     } catch (err) {
+      if (openPaymentStep && hasErrorCode(err, Code.Event.PaymentConfirmationRequired)) {
+        openPaymentStep();
+        return;
+      }
       setError(extractError(err));
     }
   }
@@ -230,7 +236,6 @@ export function MyRsvpSection({ event, token, locked = false, rsvpsClosed = fals
           allowPlusOnes={plusOneNote === null}
           plusOneNote={plusOneNote}
           allowComment={Boolean(token) || box.mode === 'create'}
-          atCapacity={goingWouldWaitlist}
           onWaitlist={onWaitlist}
           busy={busy}
           error={error}
@@ -238,7 +243,7 @@ export function MyRsvpSection({ event, token, locked = false, rsvpsClosed = fals
           initialAnswers={Object.fromEntries(
             Object.entries(event.myQuestionnaireResponses).map(([id, snap]) => [id, snap.answer]),
           )}
-          onConfirm={(args) => void confirmRsvp(args)}
+          onConfirm={(args, openPaymentStep) => void confirmRsvp(args, openPaymentStep)}
           onRemove={box.mode === 'edit' ? () => void removeMyRsvp() : undefined}
           onClose={() => {
             setError(null);

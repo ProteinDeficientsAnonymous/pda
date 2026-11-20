@@ -1,3 +1,54 @@
+## [0.274.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.274.1...v0.274.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* **settings:** treat blank FRONTEND_BASE_URL as unset ([#2629](https://github.com/ProteinDeficientsAnonymous/pda/issues/2629)) ([026a18e](https://github.com/ProteinDeficientsAnonymous/pda/commit/026a18e1e4db36afad95102c5f9f745e69d71514))
+
+## [0.274.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.274.0...v0.274.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* 401 expired tokens on optional-auth reads so hosts keep seeing their drafts ([#2623](https://github.com/ProteinDeficientsAnonymous/pda/issues/2623)) ([515aaa5](https://github.com/ProteinDeficientsAnonymous/pda/commit/515aaa598468addac1db3c468edecf3d2b8a3640))
+* **deploy:** drop default restart policy from railway iac config ([#2622](https://github.com/ProteinDeficientsAnonymous/pda/issues/2622)) ([68ba397](https://github.com/ProteinDeficientsAnonymous/pda/commit/68ba3979f0f77a99bfd116d690bfa8720a9aad93))
+* **rsvp:** don't require payment to join a paid event's waitlist ([#1655](https://github.com/ProteinDeficientsAnonymous/pda/issues/1655)) ([d190aeb](https://github.com/ProteinDeficientsAnonymous/pda/commit/d190aeb58763f9355a049583f7517e27e7b78283))
+
+# [0.274.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.273.0...v0.274.0) (2026-11-20)
+
+
+### Features
+
+* **community:** encode JoinRequestStatus as an event-driven state machine ([#2578](https://github.com/ProteinDeficientsAnonymous/pda/issues/2578)) ([30cf9eb](https://github.com/ProteinDeficientsAnonymous/pda/commit/30cf9ebceebef6560c123e0e7cf96ffc706f06d4))
+
+# [0.273.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.272.0...v0.273.0) (2026-11-20)
+
+
+### Features
+
+* **users:** encode MembershipStatus as an event-driven state machine ([#2577](https://github.com/ProteinDeficientsAnonymous/pda/issues/2577)) ([0eb2b26](https://github.com/ProteinDeficientsAnonymous/pda/commit/0eb2b267bd593a6f46f1509b01a1ce80219918b2))
+
+# [0.272.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.5...v0.272.0) (2026-11-20)
+
+
+### Features
+
+* **audit:** persist rejected state transitions after rollback ([#2576](https://github.com/ProteinDeficientsAnonymous/pda/issues/2576)) ([b10b9aa](https://github.com/ProteinDeficientsAnonymous/pda/commit/b10b9aad2c73e1dc96536687a4c8718049357f62))
+
+## [0.271.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.4...v0.271.5) (2026-11-20)
+
+
+### Bug Fixes
+
+* 2117 - send option prices when creating an event ([#2620](https://github.com/ProteinDeficientsAnonymous/pda/issues/2620)) ([7e35b13](https://github.com/ProteinDeficientsAnonymous/pda/commit/7e35b13d2f79e5d52101f7bd202dcfcdcdbf196c))
+
+## [0.271.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.3...v0.271.4) (2026-11-20)
+
+
+### Bug Fixes
+
+* key questionnaire answers by question id ([#2601](https://github.com/ProteinDeficientsAnonymous/pda/issues/2601)) ([b1356db](https://github.com/ProteinDeficientsAnonymous/pda/commit/b1356db6c25f0461490f89d458fc53d9f2ba7397))
+
 ## [0.271.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.2...v0.271.3) (2026-11-20)
 
 

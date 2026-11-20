@@ -374,6 +374,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'lift the guidelines pause before pausing for attendance';
     case Code.User.AttendancePauseLiftsOnCheckIn:
       return 'an event rqmt pause lifts when they check in at an official or club event';
+    case Code.User.InvalidStatusTransition:
+      return "that status change isn't allowed";
     case Code.User.RoleIdsNotFound:
       return 'one or more role IDs not found';
     case Code.User.InvalidBirthday:

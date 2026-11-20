@@ -5,6 +5,7 @@ from community.models import (
     Event,
     EventRSVP,
     EventType,
+    JoinRequestEvent,
     JoinRequestStatus,
     RejectionReason,
     RSVPStatus,
@@ -25,7 +26,7 @@ class TestTentativeApprove:
     def test_pending_to_tentative_succeeds(self, api_client, vettor_headers, sample_join_request):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -39,7 +40,7 @@ class TestTentativeApprove:
     ):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -54,7 +55,7 @@ class TestTentativeApprove:
         """The magic login link replaced the scoped rsvp manage-link."""
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -66,7 +67,7 @@ class TestTentativeApprove:
     ):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -76,7 +77,7 @@ class TestTentativeApprove:
         """Tentative applicants log in like members — access, not the door, is what differs."""
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -85,7 +86,7 @@ class TestTentativeApprove:
     def test_tentative_requires_permission(self, api_client, auth_headers, sample_join_request):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **auth_headers,
         )
@@ -96,7 +97,7 @@ class TestTentativeApprove:
     ):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -204,7 +205,7 @@ class TestManualFullApproveFromTentative:
     def _to_tentative(self, api_client, jr, headers):
         api_client.patch(
             f"/api/community/join-requests/{jr.id}/",
-            {"status": JoinRequestStatus.TENTATIVE},
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
             content_type="application/json",
             **headers,
         )
@@ -218,7 +219,7 @@ class TestManualFullApproveFromTentative:
         self._to_tentative(api_client, sample_join_request, vettor_headers)
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -235,7 +236,7 @@ class TestManualFullApproveFromTentative:
         fake_email_sender.send.reset_mock()
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.REJECTED, "rejection_reason": RejectionReason.VEGETARIAN},
+            {"event": JoinRequestEvent.REJECT, "rejection_reason": RejectionReason.VEGETARIAN},
             content_type="application/json",
             **vettor_headers,
         )
@@ -250,13 +251,13 @@ class TestManualFullApproveFromTentative:
     def test_approved_cannot_be_redecided(self, api_client, vettor_headers, sample_join_request):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.REJECTED},
+            {"event": JoinRequestEvent.REJECT},
             content_type="application/json",
             **vettor_headers,
         )

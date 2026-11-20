@@ -159,6 +159,7 @@ export function useCreateEvent() {
         label: question.label,
         field_type: question.fieldType,
         options: question.options,
+        option_prices: question.optionPrices ?? [],
         required: question.required,
       }));
       const { data } = await apiClient.post<WireEvent>('/api/community/events/', body);

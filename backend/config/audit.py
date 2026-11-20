@@ -2,18 +2,24 @@
 
 import ipaddress
 import logging
-from typing import NamedTuple
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, NamedTuple
 
 from audit.models import AuditLogEntry, AuditTargetType
 from django.db import transaction
 
 from config.ratelimit import client_ip
 
+if TYPE_CHECKING:
+    from community.validation import InvalidStateTransition
+
 __all__ = [
     "AuditTarget",
     "AuditTargetType",
+    "actor_request",
     "audit_log",
     "audit_log_before_raise",
+    "audit_rejected_transition",
     "flush_rollback_safe_audits",
     "is_request_anonymized",
     "is_request_via_mcp",
@@ -69,13 +75,20 @@ def _persist(**fields) -> None:
         _audit_logger.exception("audit_persist_failed", extra={"action": fields.get("action")})
 
 
+def actor_request(request, actor=None):
+    """Return request when given, else a minimal auth carrier for non-HTTP callers."""
+    return request if request is not None or actor is None else SimpleNamespace(auth=actor)
+
+
 def _actor_and_ip(request):
-    # "anon" fails _valid_ip, so an anonymized entry persists no IP either.
-    if is_request_anonymized(request):
+    # "anon" fails _valid_ip, so an anonymized or request-less entry persists no IP.
+    if request is None or is_request_anonymized(request):
         return None, "anon"
     user = getattr(request, "auth", None)
+    actor = user if user and hasattr(user, "pk") else None
     # Spoof-resistant client IP (rightmost non-internal hop); see config/ratelimit.py.
-    return (user if user and hasattr(user, "pk") else None), client_ip(request)
+    ip = client_ip(request) if hasattr(request, "META") else "anon"
+    return actor, ip
 
 
 def _emit(level: int, action: str, request, target: AuditTarget | None) -> dict:
@@ -158,3 +171,20 @@ def flush_rollback_safe_audits(request) -> None:
     for fields in getattr(request, _HELD_AUDITS_ATTR, []):
         _persist(**fields)
     setattr(request, _HELD_AUDITS_ATTR, [])
+
+
+def audit_rejected_transition(request, exc: "InvalidStateTransition", *, actor=None) -> None:
+    """Persist a rejected state transition so it survives the enclosing atomic rollback."""
+    if exc.audited:
+        return
+    exc.audited = True
+    audit_log_before_raise(
+        logging.WARNING,
+        exc.failure.action,
+        actor_request(request, actor),
+        target=AuditTarget(
+            type=exc.failure.target_type,
+            id=exc.failure.target_id,
+            details=exc.failure.details(exc.code),
+        ),
+    )

@@ -1,5 +1,5 @@
 import pytest
-from community.models import JoinRequestStatus
+from community.models import JoinRequestEvent, JoinRequestStatus
 
 from tests._tentative_helpers import check_in, open_official_event, tentative_user_with_rsvp
 
@@ -35,7 +35,7 @@ def test_list_exposes_the_approving_event(api_client, vettor_headers, checked_in
 def test_manual_approval_records_no_event(api_client, vettor_headers, sample_join_request):
     api_client.patch(
         f"/api/community/join-requests/{sample_join_request.id}/",
-        {"status": JoinRequestStatus.APPROVED},
+        {"event": JoinRequestEvent.APPROVE},
         content_type="application/json",
         **vettor_headers,
     )
