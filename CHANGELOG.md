@@ -1,3 +1,10 @@
+## [0.267.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.267.0...v0.267.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* block host-removed rsvpers from event comments ([#2602](https://github.com/ProteinDeficientsAnonymous/pda/issues/2602)) ([0c98a47](https://github.com/ProteinDeficientsAnonymous/pda/commit/0c98a471f5cf727e1c11c839bf5f7934adb7eb53))
+
 # [0.267.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.266.1...v0.267.0) (2026-11-20)
 
 
