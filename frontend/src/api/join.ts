@@ -11,6 +11,7 @@ import { Code } from './validationCodes.gen';
 
 export type JoinQuestionType = components['schemas']['JoinFormQuestionType'];
 export const DEFAULT_JOIN_QUESTION_TYPE: JoinQuestionType = 'text';
+export type JoinAnswer = string | string[];
 
 export interface JoinQuestion {
   id: string;
@@ -53,7 +54,7 @@ export interface SubmitJoinRequestPayload {
   lastName: string;
   phoneNumber: string;
   email: string;
-  answers: Record<string, string>;
+  answers: Record<string, JoinAnswer>;
   smsConsent: boolean;
   guidelinesConsent: boolean;
   website: string;
@@ -132,7 +133,7 @@ export type JoinRequestStatus = (typeof JoinRequestStatus)[keyof typeof JoinRequ
 export interface JoinRequestAnswer {
   questionId: string;
   label: string;
-  answer: string;
+  answer: JoinAnswer;
 }
 
 export interface RsvpBreakdown {
@@ -212,7 +213,7 @@ function mapPreviousRejection(w: WirePreviousRejection): PreviousRejection {
 interface WireAnswer {
   question_id: string;
   label: string;
-  answer: string;
+  answer: JoinAnswer;
 }
 
 interface WireRsvpEvent {

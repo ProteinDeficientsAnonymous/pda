@@ -1,3 +1,15 @@
+# [0.260.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.259.1...v0.260.0) (2026-11-20)
+
+
+### Bug Fixes
+
+* **comments:** block limited users from commenting on community events ([#2252](https://github.com/ProteinDeficientsAnonymous/pda/issues/2252)) ([238b8b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/238b8b2a3e7d131e7c3250414d2bf68835703fa4))
+
+
+### Features
+
+* **join-requests:** allow checkbox questions on the join form ([#2388](https://github.com/ProteinDeficientsAnonymous/pda/issues/2388)) ([8a20c42](https://github.com/ProteinDeficientsAnonymous/pda/commit/8a20c42e8a6f3c0cf38cc0bc4e40c72a2c61627b))
+
 ## [0.259.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.259.0...v0.259.1) (2026-11-20)
 
 
