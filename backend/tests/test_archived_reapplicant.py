@@ -3,9 +3,11 @@ from datetime import datetime, timedelta
 import pytest
 from community.join_requests.approval import maybe_promote_tentative
 from community.models import JoinRequest, JoinRequestEvent, JoinRequestStatus
+from community.validation import Code
 from django.utils import timezone
-from users.models import MembershipStatus, Role
+from users.models import MembershipStatus, Role, User
 
+from tests._asserts import assert_error_code
 from tests._tentative_helpers import open_official_event
 from tests._users import make_user
 
@@ -32,13 +34,17 @@ def archived_member(vettor_user):
     return member
 
 
-def _decide(api_client, headers, join_request, status):
-    response = api_client.patch(
+def _patch_status(api_client, headers, join_request, status):
+    return api_client.patch(
         f"/api/community/join-requests/{join_request.id}/",
         {"event": _STATUS_TO_EVENT[status]},
         content_type="application/json",
         **headers,
     )
+
+
+def _decide(api_client, headers, join_request, status):
+    response = _patch_status(api_client, headers, join_request, status)
     assert response.status_code == 200
     return response.json()
 
@@ -84,24 +90,93 @@ def test_tentative_then_approved_is_a_member(
     assert archived_member.roles.filter(name="member").exists()
 
 
-@pytest.mark.parametrize(
-    ("pause", "status"),
-    [
-        ({}, MembershipStatus.GUIDELINES_PAUSED),
-        ({"attendance_paused_at": timezone.now()}, MembershipStatus.ATTENDANCE_PAUSED),
-    ],
-)
-def test_marking_tentative_keeps_an_archived_pause(
-    api_client, vettor_headers, sample_join_request, pause, status
+def test_marking_tentative_keeps_an_archived_attendance_pause(
+    api_client, vettor_headers, sample_join_request
 ):
     paused = make_user(
-        phone_number=PHONE, archived_at=timezone.now(), status_before_archive=status, **pause
+        phone_number=PHONE,
+        archived_at=timezone.now(),
+        attendance_paused_at=timezone.now(),
+        status_before_archive=MembershipStatus.ATTENDANCE_PAUSED,
     )
     _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
     paused.refresh_from_db()
-    assert paused.membership_status == status
+    assert paused.membership_status == MembershipStatus.ATTENDANCE_PAUSED
     assert paused.archived_at is None
     assert paused.status_before_archive is None
+
+
+@pytest.mark.parametrize("decision", [JoinRequestStatus.TENTATIVE, JoinRequestStatus.APPROVED])
+def test_vetting_refuses_an_applicant_archived_while_guidelines_paused(
+    api_client, vettor_headers, sample_join_request, decision
+):
+    paused = make_user(
+        phone_number=PHONE,
+        archived_at=timezone.now(),
+        status_before_archive=MembershipStatus.GUIDELINES_PAUSED,
+    )
+    response = _patch_status(api_client, vettor_headers, sample_join_request, decision)
+    assert response.status_code == 400
+    assert_error_code(response, Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED)
+    sample_join_request.refresh_from_db()
+    assert sample_join_request.status == JoinRequestStatus.PENDING
+    assert sample_join_request.status_changed_by is None
+    assert sample_join_request.user is None
+    paused.refresh_from_db()
+    assert paused.archived_at is not None
+    assert paused.status_before_archive == MembershipStatus.GUIDELINES_PAUSED
+
+
+@pytest.mark.parametrize("paused", ["linked", "phone_match"])
+def test_approval_checks_a_linked_archived_account_and_the_phone_match(
+    api_client, vettor_headers, sample_join_request, paused
+):
+    pause = {"archived_at": timezone.now(), "status_before_archive": "guidelines_paused"}
+    linked_pause = pause if paused == "linked" else {"archived_at": timezone.now()}
+    sample_join_request.user = make_user(phone_number="+16505559999", **linked_pause)
+    sample_join_request.save(update_fields=["user"])
+    if paused == "phone_match":
+        make_user(phone_number=PHONE, **pause)
+    response = _patch_status(
+        api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED
+    )
+    assert_error_code(response, Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED)
+    assert not User.objects.filter(phone_number=PHONE, archived_at__isnull=True).exists()
+
+
+def test_a_paused_phone_match_does_not_block_a_linked_rsvper(
+    api_client, vettor_headers, sample_join_request
+):
+    sample_join_request.user = make_user(
+        phone_number="+16505559999", membership_status=MembershipStatus.NONE
+    )
+    sample_join_request.save(update_fields=["user"])
+    make_user(phone_number=PHONE, membership_status=MembershipStatus.GUIDELINES_PAUSED)
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+
+
+def test_approving_a_tentative_who_is_guidelines_paused_is_refused(
+    api_client, vettor_headers, sample_join_request
+):
+    paused = make_user(phone_number=PHONE, membership_status=MembershipStatus.GUIDELINES_PAUSED)
+    sample_join_request.status = JoinRequestStatus.TENTATIVE
+    sample_join_request.user = paused
+    sample_join_request.save(update_fields=["status", "user"])
+    response = _patch_status(
+        api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED
+    )
+    assert_error_code(response, Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED)
+    sample_join_request.refresh_from_db()
+    assert sample_join_request.status == JoinRequestStatus.TENTATIVE
+
+
+def test_approving_an_archived_applicant_reactivates_them(
+    api_client, vettor_headers, sample_join_request, archived_member
+):
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+    archived_member.refresh_from_db()
+    assert archived_member.membership_status == MembershipStatus.ACTIVE_MEMBER
+    assert archived_member.archived_at is None
 
 
 def _listed(api_client, headers, join_request):
@@ -141,14 +216,11 @@ def test_card_has_no_archive_for_a_first_time_applicant(
 
 
 def test_check_in_does_not_promote_a_guidelines_paused_tentative(
-    api_client, vettor_headers, sample_join_request, vettor_user, open_official_event
+    sample_join_request, vettor_user, open_official_event
 ):
-    paused = make_user(
-        phone_number=PHONE,
-        archived_at=timezone.now(),
-        status_before_archive=MembershipStatus.GUIDELINES_PAUSED,
-    )
-    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
-    paused.refresh_from_db()
+    paused = make_user(phone_number=PHONE, membership_status=MembershipStatus.GUIDELINES_PAUSED)
+    sample_join_request.status = JoinRequestStatus.TENTATIVE
+    sample_join_request.user = paused
+    sample_join_request.save(update_fields=["status", "user"])
     assert not maybe_promote_tentative(paused, open_official_event, vettor_user)
     assert paused.membership_status == MembershipStatus.GUIDELINES_PAUSED

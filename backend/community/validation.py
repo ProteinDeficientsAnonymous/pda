@@ -209,6 +209,7 @@ class Code:
         NOT_FOUND = "join_request.not_found"
         ALREADY_DECIDED = "join_request.already_decided"
         TENTATIVE_CANNOT_BE_REJECTED = "join_request.tentative_cannot_be_rejected"
+        APPLICANT_GUIDELINES_PAUSED = "join_request.applicant_guidelines_paused"
         ONLY_REJECTED_CAN_BE_UN_REJECTED = "join_request.only_rejected_can_be_un_rejected"
         ALREADY_MEMBER = "join_request.already_member"
         PHONE_ALREADY_INVITED = "join_request.phone_already_invited"

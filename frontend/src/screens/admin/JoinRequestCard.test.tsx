@@ -104,6 +104,42 @@ describe('JoinRequestCard previous archive', () => {
 
     expect(screen.queryByText(/previously archived on/)).not.toBeInTheDocument();
   });
+
+  it('blocks approving someone archived while guidelines-paused', () => {
+    renderCard(
+      makeRequest({
+        previouslyArchived: true,
+        previousArchive: {
+          archivedAt: null,
+          archivedByName: null,
+          pausedStatus: MembershipStatus.GuidelinesPaused,
+        },
+      }),
+    );
+
+    expect(
+      screen.getByText('lift their guidelines pause before approving them'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'approve' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'tentatively approve' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'reject' })).toBeEnabled();
+  });
+
+  it.each([MembershipStatus.AttendancePaused, null])(
+    'lets the vetter approve when archived %s',
+    (pausedStatus) => {
+      renderCard(
+        makeRequest({
+          previouslyArchived: true,
+          previousArchive: { archivedAt: null, archivedByName: null, pausedStatus },
+        }),
+      );
+
+      expect(screen.queryByText(/lift their guidelines pause/)).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'approve' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'tentatively approve' })).toBeEnabled();
+    },
+  );
 });
 
 describe('JoinRequestCard previous rejection', () => {
