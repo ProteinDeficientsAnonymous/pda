@@ -292,6 +292,11 @@
         "name": "INVALID_EVENT_FORMAT",
         "value": "event.invalid_event_format",
         "params": []
+      },
+      {
+        "name": "PAYPAL_OFFICIAL_ONLY",
+        "value": "event.paypal_official_only",
+        "params": []
       }
     ],
     "Poll": [

@@ -229,8 +229,9 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
     auth=optional_jwt,
 )
 def get_event_poll(request, event_id: UUID):
-    viewer = resolve_event_viewer(request, event_id)
-    enforce_event_read_visibility(_get_visible_event(event_id), viewer)
+    event = _get_visible_event(event_id)
+    viewer = resolve_event_viewer(request, event)
+    enforce_event_read_visibility(event, viewer)
     try:
         poll = (
             EventPoll.objects.select_related("winning_option")
