@@ -20,6 +20,7 @@ SKIP_DIR_NAMES = frozenset(
         "playwright-report",
         "test-results",
         "migrations",
+        "mutants",
     }
 )
 

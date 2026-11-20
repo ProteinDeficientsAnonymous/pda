@@ -49,4 +49,5 @@ node_modules/
 .coverage
 .coverage.*
 coverage.xml
-.mutmut-cache
+backend/mutants/
+backend/setup.cfg
