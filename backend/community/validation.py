@@ -81,6 +81,9 @@ class Code:
         NAME_REQUIRED = "tag.name_required"
         NAME_ALREADY_EXISTS = "tag.name_already_exists"
 
+    class Reserve:
+        NOT_FOUND = "reserve.not_found"
+
     class Comment:
         NOT_FOUND = "comment.not_found"
         REPLY_DEPTH_EXCEEDED = "comment.reply_depth_exceeded"
@@ -323,6 +326,21 @@ class Code:
         REQUEST_EXPIRED = "connect.request_expired"
         REQUEST_ALREADY_USED = "connect.request_already_used"
         APP_NOT_FOUND = "connect.app_not_found"
+
+    class Planning:
+        YEAR_EXISTS = "planning.year_exists"
+        YEAR_NOT_FOUND = "planning.year_not_found"
+        SLOT_NOT_FOUND = "planning.slot_not_found"
+        SLOT_NOT_IN_YEAR = "planning.slot_not_in_year"
+        NOT_A_PLANNER = "planning.not_a_planner"
+        ALREADY_ASSIGNED = "planning.already_assigned"
+        ASSIGNMENT_NOT_FOUND = "planning.assignment_not_found"
+        NOT_PENDING = "planning.not_pending"
+        NOT_EVENT_HOST = "planning.not_event_host"
+        SLOT_HAS_EVENT = "planning.slot_has_event"
+        AVAILABILITY_ALREADY_OPEN = "planning.availability_already_open"
+        EVENT_ALREADY_LINKED = "planning.event_already_linked"
+        CHECKLIST_ITEM_NOT_FOUND = "planning.checklist_item_not_found"
 
 
 class ValidationException(Exception):

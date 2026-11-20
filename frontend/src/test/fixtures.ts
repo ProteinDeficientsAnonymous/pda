@@ -1,6 +1,7 @@
 import type { EventAttendanceRow } from '@/api/attendanceReport';
 import type { JoinRequestSummary } from '@/api/join';
 import { JoinRequestStatus } from '@/api/join';
+import type { Assignment, PlannerColumn, PlanningGrid, PlanningSlot } from '@/api/planning';
 import type { Member } from '@/api/users';
 import type { Event, EventGuest } from '@/models/event';
 import {
@@ -167,6 +168,48 @@ export function makeUserWithPermissions(
 
 export const creator = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
 export const nonHost = makeUser({ id: 'user-non-host', firstName: 'Casey', fullName: 'Casey' });
+
+export function makeSlot(overrides: Partial<PlanningSlot> = {}): PlanningSlot {
+  return {
+    id: 's1',
+    label: 'march',
+    month: 3,
+    kind: 'monthly',
+    order: 3,
+    eventId: null,
+    eventSlug: null,
+    eventStatus: null,
+    ...overrides,
+  };
+}
+
+export function makePlanner(overrides: Partial<PlannerColumn> = {}): PlannerColumn {
+  return {
+    userId: 'u1',
+    name: 'ada',
+    isPlanner: true,
+    hasEmail: true,
+    submitted: true,
+    biannualInterest: null,
+    monthlyCount: 1,
+    availableSlotIds: [],
+    ...overrides,
+  };
+}
+
+export function makeAssignment(overrides: Partial<Assignment> = {}): Assignment {
+  return { id: 'a1', slotId: 's1', userId: 'u1', status: 'draft', ...overrides };
+}
+
+export function makePlanningGrid(overrides: Partial<PlanningGrid> = {}): PlanningGrid {
+  return {
+    year: 2999,
+    slots: [makeSlot()],
+    planners: [makePlanner()],
+    assignments: [],
+    ...overrides,
+  };
+}
 
 export function makeMember(overrides: Partial<Member> = {}): Member {
   return {

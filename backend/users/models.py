@@ -11,7 +11,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from users.phone import normalize_phone_number
-from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
+from users.roles import Role
 
 HAS_EMAIL = Q(email__isnull=False) & ~Q(email="")
 STATUS_CHANGE_FIELDS = (

@@ -8,7 +8,7 @@ import resend
 from django.conf import settings
 from resend.exceptions import RateLimitError, ResendError
 
-from notifications.email_sender import SendResult, mask_recipient, validate_recipient
+from notifications.email_types import SendResult, mask_recipient, validate_recipient
 
 logger = logging.getLogger("notifications.resend_sender")
 
@@ -127,7 +127,7 @@ class ResendSender:
                     self._backoff(exc, masked, subject, attempt)
                     continue
                 break
-            except Exception as exc:  # noqa: BLE001 — never let a send 500 a public endpoint
+            except Exception as exc:
                 last_error = exc
                 break
 

@@ -65,6 +65,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says a reserve entry was not found', () => {
+    expect(messageForCode({ code: Code.Reserve.NotFound, field: null })).toBe(
+      'reserve entry not found',
+    );
+  });
+
   it('says only members can be co-hosts', () => {
     expect(messageForCode({ code: Code.CoHostInvite.NotMember, field: null })).toBe(
       'only members can be co-hosts',
@@ -217,6 +223,10 @@ describe('messageForCode', () => {
     expect(
       messageForCode({ code: Code.JoinRequest.OpenRequestExists, field: 'phone_number' }),
     ).toBe('this number already has an open request — review that one instead');
+  });
+
+  it.each(Object.values(Code.Planning))('gives planning code %s its own copy', (code) => {
+    expect(messageForCode({ code, field: null })).not.toMatch(/double-check/i);
   });
 
   it('returns a safe fallback for unknown codes', () => {

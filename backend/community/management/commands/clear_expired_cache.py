@@ -11,11 +11,11 @@ class Command(BaseCommand):
         cache = caches["ratelimit"]
         db = router.db_for_write(cache.cache_model_class)
         connection = connections[db]
-        table = connection.ops.quote_name(cache._table)  # noqa: SLF001
+        table = connection.ops.quote_name(cache._table)
 
         with connection.cursor() as cursor:
             cursor.execute(
-                f"DELETE FROM {table} WHERE {connection.ops.quote_name('expires')} < %s",  # noqa: S608
+                f"DELETE FROM {table} WHERE {connection.ops.quote_name('expires')} < %s",
                 [connection.ops.adapt_datetimefield_value(tz_now.now())],
             )
             deleted = cursor.rowcount

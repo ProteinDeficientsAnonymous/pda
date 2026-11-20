@@ -22,7 +22,9 @@ def run_tool(user, tool, **arguments):
     reset = signed_in(user)
     try:
         with TestCase.captureOnCommitCallbacks(execute=True):
-            return async_to_sync(pda_mcp.call_tool)(tool, arguments).structured_content  # type: ignore[union-attr]
+            result = async_to_sync(pda_mcp.call_tool)(tool, arguments)
+            assert result.structured_content is not None
+            return result.structured_content
     finally:
         auth_context_var.reset(reset)
 
