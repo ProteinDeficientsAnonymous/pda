@@ -1,3 +1,10 @@
+## [0.274.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.274.1...v0.274.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* **settings:** treat blank FRONTEND_BASE_URL as unset ([#2629](https://github.com/ProteinDeficientsAnonymous/pda/issues/2629)) ([026a18e](https://github.com/ProteinDeficientsAnonymous/pda/commit/026a18e1e4db36afad95102c5f9f745e69d71514))
+
 ## [0.274.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.274.0...v0.274.1) (2026-11-20)
 
 
