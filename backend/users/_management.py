@@ -4,6 +4,7 @@ import logging
 import re
 
 from community.attendance.analytics import AttendedEventOut
+from community.events.limited_access import is_limited
 from community.models import AttendanceStatus, EventRSVP
 from community.rsvps.counts import attendance_q, reportable_events_q
 from community.validation import Code, raise_validation
@@ -73,18 +74,24 @@ def _matches_for_non_admin(u: User, q: str, digits: str) -> bool:
     return bool(u.show_phone and (q in u.phone_number or (digits and digits in u.phone_number)))
 
 
-@router.get("/users/search/", response={200: list[UserSearchOut]}, auth=gated_jwt)
-def search_users(request, q: str = ""):
-    qs = User.objects.active_members().filter(needs_onboarding=False).exclude(pk=request.auth.pk)
-    q = q.strip()
-    digits = re.sub(r"\D", "", q)
+def _search_queryset(viewer: User, q: str, digits: str):
+    qs = User.objects.active_members().filter(needs_onboarding=False).exclude(pk=viewer.pk)
     if q:
         phone_q = dj_models.Q(phone_number__icontains=q)
         if digits and digits != q:
             phone_q = phone_q | dj_models.Q(phone_number__icontains=digits)
         name_q = dj_models.Q(first_name__icontains=q) | dj_models.Q(last_name__icontains=q)
         qs = qs.filter(name_q | phone_q)
-    qs = qs.order_by("first_name", "last_name")
+    return qs.order_by("first_name", "last_name")
+
+
+@router.get("/users/search/", response={200: list[UserSearchOut], 403: ErrorOut}, auth=gated_jwt)
+def search_users(request, q: str = ""):
+    if is_limited(request.auth):
+        raise_validation(Code.Perm.DENIED, status_code=403, action="search_users")
+    q = q.strip()
+    digits = re.sub(r"\D", "", q)
+    qs = _search_queryset(request.auth, q, digits)
     needs_non_admin_filter = bool(q) and not is_admin(request.auth)
     # Non-admins post-filter in Python (the DB can match a hidden last name),
     # so fetch some headroom before capping to 10. Admins take the top 10

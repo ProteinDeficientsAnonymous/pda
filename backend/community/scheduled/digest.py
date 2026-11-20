@@ -53,12 +53,12 @@ def send_digest_to_all(
     send: SendDigest,
     sender: EmailSender,
     recipients: QuerySet[User],
-    payload: dict,
+    make_mail: Callable[[str], object],
     on_sent: Callable[[User], None] | None = None,
 ) -> tuple[int, int]:
     sent = failed = 0
     for user in recipients:
-        result = send(sender=sender, to=user.email, display_name=user.first_name, **payload)
+        result = send(sender=sender, to=user.email, mail=make_mail(user.first_name or ""))
         if result.success:
             sent += 1
             if on_sent:

@@ -101,7 +101,7 @@ def send_proposals(request, year: int):
     for user_id in planner_ids:
         try:
             count = _send_planner_drafts(request, drafts, user_id)
-        except Exception:  # noqa: BLE001 — one planner's failure must not block the rest
+        except Exception:
             logger.exception("planning_send_failed", extra={"user": user_id})
             continue
         if count:

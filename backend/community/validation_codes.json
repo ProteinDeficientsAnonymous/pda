@@ -1415,6 +1415,11 @@
         "name": "EVENT_ALREADY_LINKED",
         "value": "planning.event_already_linked",
         "params": []
+      },
+      {
+        "name": "CHECKLIST_ITEM_NOT_FOUND",
+        "value": "planning.checklist_item_not_found",
+        "params": []
       }
     ]
   }

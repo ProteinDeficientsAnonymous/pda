@@ -16,7 +16,9 @@ BUCKETS = ("active", "still_onboarding", "paused", "archived")
 def member_totals(user, **arguments):
     token = signed_in(user)
     try:
-        return async_to_sync(pda_mcp.call_tool)("member_totals", arguments).structured_content  # type: ignore[union-attr]
+        result = async_to_sync(pda_mcp.call_tool)("member_totals", arguments)
+        assert result.structured_content is not None
+        return result.structured_content
     finally:
         auth_context_var.reset(token)
 
@@ -24,7 +26,9 @@ def member_totals(user, **arguments):
 def find_members(user, **arguments):
     token = signed_in(user)
     try:
-        return async_to_sync(pda_mcp.call_tool)("find_members", arguments).structured_content  # type: ignore[union-attr]
+        result = async_to_sync(pda_mcp.call_tool)("find_members", arguments)
+        assert result.structured_content is not None
+        return result.structured_content
     finally:
         auth_context_var.reset(token)
 

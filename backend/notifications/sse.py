@@ -116,10 +116,6 @@ async def notification_stream(request):
     Auth is a single-use ticket (from POST /sse-ticket/), not the JWT, so the
     access token never appears in the URL.
     """
-    db = settings.DATABASES.get("default", {})
-    if "postgresql" not in db.get("ENGINE", ""):
-        return JsonResponse({"detail": "SSE requires PostgreSQL"}, status=503)
-
     ticket = request.GET.get("ticket")
     if not ticket:
         return JsonResponse({"detail": "ticket required"}, status=401)
@@ -127,6 +123,10 @@ async def notification_stream(request):
     user = await _consume_ticket(ticket)
     if user is None:
         return JsonResponse({"detail": "invalid ticket"}, status=401)
+
+    db = settings.DATABASES.get("default", {})
+    if "postgresql" not in db.get("ENGINE", ""):
+        return JsonResponse({"detail": "SSE requires PostgreSQL"}, status=503)
 
     response = StreamingHttpResponse(
         _sse_generator(str(user.pk)),

@@ -1,3 +1,72 @@
+# [0.259.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.258.1...v0.259.0) (2026-11-20)
+
+
+### Features
+
+* **mcp:** let hosts read event questionnaire responses ([#2253](https://github.com/ProteinDeficientsAnonymous/pda/issues/2253)) ([cd31f1c](https://github.com/ProteinDeficientsAnonymous/pda/commit/cd31f1ce6b0371f7b2d7951c2179d4be33954ee9))
+
+## [0.258.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.258.0...v0.258.1) (2026-11-19)
+
+
+### Performance Improvements
+
+* 1923 - prefetch event relations for my-rsvps ([#1947](https://github.com/ProteinDeficientsAnonymous/pda/issues/1947)) ([3999b55](https://github.com/ProteinDeficientsAnonymous/pda/commit/3999b550029127e2752d4aa8c93c84d607885fbf))
+
+# [0.258.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.257.1...v0.258.0) (2026-11-19)
+
+
+### Features
+
+* **notifications:** log-only emails for seeded test domain ([#2581](https://github.com/ProteinDeficientsAnonymous/pda/issues/2581)) ([bbffdf0](https://github.com/ProteinDeficientsAnonymous/pda/commit/bbffdf0544855820013a861440985b5c32a21a1d))
+
+## [0.257.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.257.0...v0.257.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* **docker:** copy the pnpmfile before the frozen frontend install ([#2572](https://github.com/ProteinDeficientsAnonymous/pda/issues/2572)) ([7cefbd3](https://github.com/ProteinDeficientsAnonymous/pda/commit/7cefbd3f67b434421802bd07d51a1f89bfbf0c1d))
+
+# [0.257.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.256.0...v0.257.0) (2026-11-17)
+
+
+### Bug Fixes
+
+* **planning:** status pill and primary view event button ([#2567](https://github.com/ProteinDeficientsAnonymous/pda/issues/2567)) ([dff3404](https://github.com/ProteinDeficientsAnonymous/pda/commit/dff34047a53d3b3b11fdbc5e4beeb33a810e2320))
+
+
+### Features
+
+* 2121 - explain why a planner's grid tap does nothing ([#2565](https://github.com/ProteinDeficientsAnonymous/pda/issues/2565)) ([512ee11](https://github.com/ProteinDeficientsAnonymous/pda/commit/512ee11ce7508e00c43aa2f4985013fd52476870))
+
+# [0.256.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.255.2...v0.256.0) (2026-11-17)
+
+
+### Features
+
+* drag to reorder planning checklist items ([#2566](https://github.com/ProteinDeficientsAnonymous/pda/issues/2566)) ([6ea91ad](https://github.com/ProteinDeficientsAnonymous/pda/commit/6ea91ad5483cbaefe07fedbd1ed266405e758256))
+
+## [0.255.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.255.1...v0.255.2) (2026-11-17)
+
+
+### Bug Fixes
+
+* 2246 - filter the calendar feed for limited users ([#2534](https://github.com/ProteinDeficientsAnonymous/pda/issues/2534)) ([9b7b4d3](https://github.com/ProteinDeficientsAnonymous/pda/commit/9b7b4d30dd0942109e274ddb2deefa2307cf1388))
+
+## [0.255.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.255.0...v0.255.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* 2247 - gate single-event .ics fields for limited users ([#2535](https://github.com/ProteinDeficientsAnonymous/pda/issues/2535)) ([36e7b73](https://github.com/ProteinDeficientsAnonymous/pda/commit/36e7b7310f7fc9df4a75c896eaaf2320641bf031))
+* 2248 - block limited users from member search ([#2532](https://github.com/ProteinDeficientsAnonymous/pda/issues/2532)) ([b553e78](https://github.com/ProteinDeficientsAnonymous/pda/commit/b553e78a9c45c1629b60f889ad7a2250c2d95fc0))
+
+# [0.255.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.254.0...v0.255.0) (2026-11-17)
+
+
+### Features
+
+* 2121 - planner checklist and guidelines ([#2553](https://github.com/ProteinDeficientsAnonymous/pda/issues/2553)) ([5049092](https://github.com/ProteinDeficientsAnonymous/pda/commit/50490920f41574cf7514c5dd37f464dbf861dd80))
+
 # [0.254.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.253.0...v0.254.0) (2026-11-16)
 
 

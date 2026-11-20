@@ -1,7 +1,7 @@
 """Tests for event create/update/delete management endpoints."""
 
 import pytest
-from community.api import EventPatchIn
+from community.events.schemas import EventPatchIn
 from community.models import Event, EventStatus
 from community.validation import Code
 from django.core.cache import caches

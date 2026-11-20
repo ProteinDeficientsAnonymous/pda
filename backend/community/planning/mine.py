@@ -5,7 +5,7 @@ from ninja import Router
 from ninja.responses import Status
 from users.helpers import visible_display_name
 
-from community.models import SlotAssignment
+from community.models import SlotAssignment, SlotChecklistTick
 from community.planning._access import require_view
 from community.planning._shared import ACTIVE_STATUSES, slot_out
 from community.planning.schemas import MySlotOut, TeammateOut
@@ -31,6 +31,9 @@ def list_my_slots(request):
         .select_related("user")
         .order_by("proposed_at")
     )
+    done = defaultdict(list)
+    for tick in SlotChecklistTick.objects.filter(slot_id__in=[a.slot_id for a in mine]):
+        done[tick.slot_id].append(str(tick.item_id))
     for other in others:
         teammates[other.slot_id].append(
             TeammateOut(name=visible_display_name(other.user, request.auth), status=other.status)
@@ -44,6 +47,7 @@ def list_my_slots(request):
                 year=a.slot.planning_year.year,
                 slot=slot_out(a.slot),
                 teammates=teammates[a.slot_id],
+                checklist_done_ids=done[a.slot_id],
             )
             for a in mine
         ],

@@ -39,7 +39,7 @@ def promote_or_restore_on_check_in(request, user: User, event) -> CheckInOutcome
     try:
         with transaction.atomic():
             return _promote_or_restore(request, user, event)
-    except Exception as exc:  # noqa: BLE001 — the attendance mark must survive
+    except Exception as exc:
         logger.warning("check_in_promotion_failed", exc_info=True)
         audit_log(
             logging.WARNING,
@@ -125,7 +125,7 @@ def notify_member_restored(user: User) -> None:
     """Best-effort approver notification. A failure must not roll back the restore."""
     try:
         create_member_restored_notifications(user)
-    except Exception:  # noqa: BLE001 — the restore has committed
+    except Exception:
         logger.warning("member_restored_notifications_failed", exc_info=True)
 
 
@@ -138,7 +138,7 @@ def notify_vetters_promotion_failed(user: User, event) -> None:
     )
     try:
         create_check_in_promotion_failed_notifications(user, event, message[:255])
-    except Exception:  # noqa: BLE001 — the check-in has committed
+    except Exception:
         logger.warning("check_in_promotion_failed_notifications_failed", exc_info=True)
     send_vetting_email(
         f"check-in promotion failed: {name}",

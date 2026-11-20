@@ -25,19 +25,11 @@ from community.events.description_templates import (
 )
 from community.events.flags import router as event_flags_router
 from community.events.geocode import router as geocode_router
-
-# Re-export symbols imported directly in tests
-from community.events.helpers import (  # noqa: F401
-    build_guest_list,
-    find_my_rsvp,
-    is_cohost,
-)
 from community.events.host_actions import router as event_host_actions_router
 from community.events.invitations import router as event_invitations_router
 from community.events.official_defaults import router as official_event_defaults_router
 from community.events.photos import router as event_actions_router
 from community.events.report import router as event_report_router
-from community.events.schemas import EventPatchIn  # noqa: F401
 from community.events.tags import router as event_tags_router
 from community.join_requests.form import router as join_form_router
 from community.join_requests.manage import router as join_requests_router
@@ -58,6 +50,7 @@ from community.message_templates.tentative_approval import (
 from community.message_templates.welcome import router as welcome_template_router
 from community.message_templates.whatsapp_link import router as whatsapp_link_router
 from community.planning.availability import router as planning_availability_router
+from community.planning.checklist import router as planning_checklist_router
 from community.planning.event_link import router as planning_event_link_router
 from community.planning.grid import router as planning_grid_router
 from community.planning.mine import router as planning_mine_router
@@ -147,6 +140,7 @@ router.add_router("", planning_mine_router)
 router.add_router("", planning_proposals_router)
 router.add_router("", planning_responses_router)
 router.add_router("", planning_event_link_router)
+router.add_router("", planning_checklist_router)
 router.add_router("", geocode_router)
 router.add_router("", giphy_router)
 router.add_router("", version_router)

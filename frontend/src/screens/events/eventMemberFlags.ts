@@ -22,6 +22,7 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
   const hasRsvpd =
     user !== null && (event.myRsvp === RsvpStatus.Attending || event.myRsvp === RsvpStatus.Maybe);
   const canInvite =
+    !isLimited(user) &&
     isOpen &&
     event.rsvpEnabled &&
     (isHostOrEventManager || (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));

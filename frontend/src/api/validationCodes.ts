@@ -731,6 +731,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'planners were already asked for their availability';
     case Code.Planning.EventAlreadyLinked:
       return 'that event is already linked to another slot';
+    case Code.Planning.ChecklistItemNotFound:
+      return "that checklist item doesn't exist anymore";
 
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)
     case Code.Generic.FieldRequired:

@@ -79,7 +79,7 @@ class TestWaitlistPromotionEmailsNonMember:
 
     @LIMITED_USER_FACTORIES
     @pytest.mark.parametrize("event_type", [EventType.OFFICIAL, EventType.COMMUNITY])
-    def test_promoted_limited_user_never_gets_a_manage_link(  # noqa: PLR0913
+    def test_promoted_limited_user_never_gets_a_manage_link(
         self,
         api_client,
         test_user,

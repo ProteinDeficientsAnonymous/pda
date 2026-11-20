@@ -7,6 +7,7 @@ from notifications.email_sender import get_email_sender
 from users.api import create_user_with_role
 from users.helpers import (
     ConsentTimestamps,
+    NewMemberFields,
     create_magic_token,
     grant_membership,
     revoke_public_rsvp_tokens,
@@ -276,11 +277,12 @@ def provision_approved_user(
     if existing_user is None:
         first_name, last_name = _resolve_names(join_request)
         _, magic_token = create_user_with_role(
-            join_request.phone_number,
-            first_name,
-            last_name,
-            join_request.email,
-            None,
+            NewMemberFields(
+                phone=join_request.phone_number,
+                first_name=first_name,
+                last_name=last_name,
+                email=join_request.email,
+            ),
             requesting_user=requesting_user,
             consent=ConsentTimestamps(
                 guidelines_consent_at=join_request.guidelines_consent_at,

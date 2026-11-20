@@ -132,4 +132,4 @@ def magic_login(request, token: str, response: HttpResponse):
         request,
         target=AuditTarget(type=AuditTargetType.USER, id=str(magic.user.pk)),
     )
-    return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
+    return Status(200, TokenOut(access=str(getattr(refresh, "access_token"))))
