@@ -1,31 +1,14 @@
 import secrets
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from community.models import AttendanceStatus, CancelReason, Event, EventRSVP, EventType, RSVPStatus
 
-from ._e2e_common import member_user, non_member_user, random_event, random_phone
-
-_CONSENT_AT = datetime(2020, 1, 1, tzinfo=UTC)
-
-
-def _browser_user(permissions: list[str] | None = None) -> User:
-    user = member_user(random_phone())
-    user.guidelines_consent_at = _CONSENT_AT
-    user.sms_consent_at = _CONSENT_AT
-    user.contact_privacy_consent_at = _CONSENT_AT
-    user.save(
-        update_fields=["guidelines_consent_at", "sms_consent_at", "contact_privacy_consent_at"]
-    )
-    if permissions:
-        role = Role.objects.create(name=f"e2e-role-{secrets.token_hex(4)}", permissions=permissions)
-        user.roles.add(role)
-    return user
+from ._e2e_common import browser_user, member_user, non_member_user, random_event, random_phone
 
 
 def _named_member(first_name: str) -> User:
@@ -43,7 +26,7 @@ def _attended(event: Event, user: User) -> None:
 
 def seed_attendance_report() -> dict:
     # Creator with no role, so the report is reached via the host path, not MANAGE_EVENTS.
-    host = _browser_user()
+    host = browser_user()
     start = timezone.now() - timedelta(days=2)
     event = random_event(
         "attendance-report",
@@ -82,7 +65,7 @@ def seed_attendance_report() -> dict:
 
 
 def seed_attendance_analytics() -> dict:
-    admin = _browser_user([PermissionKey.MANAGE_EVENTS, PermissionKey.MANAGE_USERS])
+    admin = browser_user([PermissionKey.MANAGE_EVENTS, PermissionKey.MANAGE_USERS])
 
     recent = [
         random_event(
