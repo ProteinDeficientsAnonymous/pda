@@ -167,33 +167,34 @@ class TestCheckinNudgeSpeechReminder:
     def test_official_with_saved_speech_keeps_plain_reminder(
         self, test_user, fake_email_sender, db
     ):
-        _, sent = _send_for(
+        event, sent = _send_for(
             test_user, fake_email_sender, event_type=EventType.OFFICIAL, with_speech=True
         )
 
         assert sent["subject"] == "potluck just started — check people in"
-        assert "speech" not in sent["html"]
-        assert "speech" not in sent["text"]
+        assert f"/events/{event.pk}/speech" not in sent["html"]
+        assert f"/events/{event.pk}/speech" not in sent["text"]
 
     def test_club_event_has_no_speech_reminder(self, test_user, fake_email_sender, db):
-        _, sent = _send_for(test_user, fake_email_sender)
+        event, sent = _send_for(test_user, fake_email_sender)
 
         assert sent["subject"] == "potluck just started — check people in"
-        assert "speech" not in sent["html"]
-        assert "speech" not in sent["text"]
+        assert f"/events/{event.pk}/speech" not in sent["html"]
+        assert f"/events/{event.pk}/speech" not in sent["text"]
 
 
 @pytest.mark.django_db
 class TestSendDueCheckinNudges:
-    def test_skips_speech_reminder_when_speech_saved(self, test_user, fake_email_sender, db):
+    def test_adds_speech_reminder_when_speech_missing(self, test_user, fake_email_sender, db):
         test_user.email = "creator@example.com"
         test_user.save(update_fields=["email"])
         event = _make_event(created_by=test_user, event_type=EventType.OFFICIAL, title="Potluck")
-        EventSpeech.objects.create(event=event, values={}, updated_by=test_user)
 
         send_due_checkin_nudges()
 
-        assert "speech" not in fake_email_sender.send.call_args.kwargs["subject"]
+        sent = fake_email_sender.send.call_args.kwargs
+        assert sent["subject"].endswith("and fill in the speech")
+        assert f"/events/{event.pk}/speech" in sent["text"]
 
     def test_sends_and_stamps_when_flag_on(self, test_user, fake_email_sender, db):
         event = _make_event(created_by=test_user)

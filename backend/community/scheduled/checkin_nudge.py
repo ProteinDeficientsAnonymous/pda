@@ -52,7 +52,6 @@ def _claim_checkin_nudge(event: Event) -> bool:
 
 
 def _speech_url(event: Event) -> str:
-    """Speech page link when an official event's speech hasn't been saved yet, else ""."""
     if event.event_type != EventType.OFFICIAL or getattr(event, "speech", None) is not None:
         return ""
     return f"{settings.FRONTEND_BASE_URL}/events/{event.pk}/speech"
