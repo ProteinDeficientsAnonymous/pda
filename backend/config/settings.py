@@ -181,6 +181,13 @@ VETTING_EMAIL = os.environ.get("VETTING_EMAIL", "")
 GIPHY_API_KEY = os.environ.get("GIPHY_API_KEY", "")
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
 
+PAYPAL_CLIENT_ID = os.environ.get("PAYPAL_CLIENT_ID", "")
+PAYPAL_CLIENT_SECRET = os.environ.get("PAYPAL_CLIENT_SECRET", "")
+PAYPAL_WEBHOOK_ID = os.environ.get("PAYPAL_WEBHOOK_ID", "")
+PAYPAL_ENV = os.environ.get("PAYPAL_ENV", "sandbox")
+if PAYPAL_ENV not in ("sandbox", "live"):
+    raise ValueError("PAYPAL_ENV must be sandbox or live")
+
 # Logging
 LOGGING = {
     "version": 1,
