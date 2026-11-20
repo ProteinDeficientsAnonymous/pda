@@ -1,13 +1,21 @@
+from datetime import timedelta
+
 import pytest
 from audit.models import AuditLogEntry, AuditTargetType
 from community.models import (
+    AttendanceStatus,
+    EventType,
     JoinFormQuestion,
     JoinRequest,
     JoinRequestStatus,
     RejectionReason,
 )
 from django.test import TestCase
+from django.utils import timezone
 from users.models import MembershipStatus, User
+
+from tests._auth import auth_headers_for
+from tests._events import make_event, make_rsvp
 
 pytestmark = pytest.mark.django_db
 
@@ -112,3 +120,72 @@ def test_rejected_then_unrejected(api_client, vettor_headers, vettor_user, sampl
         assert entry.actor == vettor_user
         assert entry.target_id == str(sample_join_request.id)
         assert entry.details["user_id"] == str(rsvper.pk)
+
+
+def test_reapproval_reactivates_archived_user(
+    api_client, vettor_headers, vettor_user, sample_join_request
+):
+    archived = User.objects.create_user(
+        phone_number=sample_join_request.phone_number,
+        first_name="Prior",
+        membership_status=MembershipStatus.ARCHIVED,
+        archived_at=timezone.now(),
+    )
+
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+
+    entry = _entry("user_reactivated")
+    assert entry.actor == vettor_user
+    assert (entry.target_type, entry.target_id) == (AuditTargetType.USER, str(archived.pk))
+    assert entry.details["join_request_id"] == str(sample_join_request.id)
+    assert entry.details["membership_status"] == MembershipStatus.ACTIVE_MEMBER
+
+
+def test_reapproval_records_pause_restored_from_archive(
+    api_client, vettor_headers, sample_join_request
+):
+    User.objects.create_user(
+        phone_number=sample_join_request.phone_number,
+        first_name="Prior",
+        membership_status=MembershipStatus.ARCHIVED,
+        archived_at=timezone.now(),
+        status_before_archive=MembershipStatus.ATTENDANCE_PAUSED,
+    )
+
+    _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+
+    entry = _entry("user_reactivated")
+    assert entry.details["membership_status"] == MembershipStatus.ATTENDANCE_PAUSED
+
+
+def test_check_in_approves_tentative(api_client):
+    host = User.objects.create_user(phone_number="+12025557100", first_name="Host")
+    user = User.objects.create_user(
+        phone_number="+12025557101",
+        first_name="Tent",
+        membership_status=MembershipStatus.TENTATIVE,
+    )
+    join_request = JoinRequest.objects.create(
+        phone_number=user.phone_number, user=user, status=JoinRequestStatus.TENTATIVE
+    )
+    event = make_event(
+        event_type=EventType.OFFICIAL,
+        start_datetime=timezone.now() - timedelta(hours=1),
+        created_by=host,
+    )
+    make_rsvp(event, user)
+
+    response = _send(
+        api_client.post,
+        f"/api/community/events/{event.id}/rsvps/{user.pk}/attendance/",
+        {"attendance": AttendanceStatus.ATTENDED, "for_plus_one": False},
+        content_type="application/json",
+        **auth_headers_for(host),
+    )
+    assert response.status_code == 200
+
+    entry = _entry("join_request_approved_via_check_in")
+    assert entry.actor == host
+    assert entry.target_id == str(join_request.id)
+    assert entry.details["user_id"] == str(user.pk)
+    assert entry.details["event_id"] == str(event.pk)
