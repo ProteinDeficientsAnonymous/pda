@@ -6,7 +6,7 @@ from community.attendance.analytics import (
     QUALIFYING_WINDOW_DAYS,
     MemberAttendanceStats,
 )
-from community.models import EventRSVP, EventType
+from community.models import CancelReason, EventRSVP, EventType
 from community.rsvps.counts import NON_REPORTABLE_EVENT_STATUSES, is_attended, is_didnt_go
 from django.utils import timezone
 
@@ -36,5 +36,5 @@ def compute_member_stats(
             1 for r in reportable if is_attended(r) and r.event.event_type == EventType.COMMUNITY
         ),
         didnt_go_count=sum(1 for r in reportable if is_didnt_go(r)),
-        cancel_count=sum(1 for r in rsvps if r.cancelled_at is not None),
+        cancel_count=sum(1 for r in rsvps if r.cancel_reason == CancelReason.SELF),
     )

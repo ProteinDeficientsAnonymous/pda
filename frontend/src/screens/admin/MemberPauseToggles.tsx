@@ -1,26 +1,11 @@
 import { useState } from 'react';
-import { toast } from 'sonner';
 
-import { extractApiErrorOr } from '@/api/apiErrors';
-import {
-  fetchAttendancePausePreview,
-  type PauseImpactEvent,
-  type PauseOutcome,
-  type PauseRole,
-} from '@/api/attendancePausePreview';
 import { Toggle } from '@/components/ui/Toggle';
-import { useConfirm } from '@/components/ui/useConfirm';
-import { formatShortDateTime } from '@/utils/datetime';
 
-const ROLE_LABEL: Record<PauseRole, string> = { rsvp: "rsvp'd", hosting: 'hosting' };
-const OUTCOME_LABEL: Record<PauseOutcome, string> = {
-  kept: 'kept',
-  removed: 'removed',
-  drafted: 'moved to draft',
-};
+import { usePauseConfirm } from './usePauseConfirm';
 
 export interface PauseState {
-  isPaused: boolean;
+  guidelinesPaused: boolean;
   attendancePaused: boolean;
 }
 
@@ -32,35 +17,17 @@ interface Props {
 }
 
 export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }: Props) {
-  const [loading, setLoading] = useState(false);
-  const [wasAttendancePaused] = useState(value.attendancePaused);
-  const { confirm, element: confirmElement } = useConfirm();
+  const [initial] = useState(value);
+  const { confirmPause, loading, element: confirmElement } = usePauseConfirm();
 
-  function setAttendancePaused(attendancePaused: boolean) {
-    onChange({ ...value, attendancePaused });
-  }
-
-  async function onAttendanceToggle(next: boolean) {
-    if (!next || wasAttendancePaused) {
-      setAttendancePaused(next);
-      return;
-    }
-    setLoading(true);
-    try {
-      const events = await fetchAttendancePausePreview(memberId);
-      const ok =
-        events.length === 0 ||
-        (await confirm({
-          title: 'pause for event rqmt?',
-          message: `here's what happens to their upcoming events once you save:\n\n${events.map(describeImpact).join('\n')}`,
-          confirmLabel: 'pause',
-          destructive: true,
-        }));
-      if (ok) setAttendancePaused(true);
-    } catch (err) {
-      toast.error(extractApiErrorOr(err, "couldn't load their upcoming events — try again"));
-    } finally {
-      setLoading(false);
+  async function onToggle(field: keyof PauseState, next: boolean) {
+    // A guidelines pause replaces an event rqmt pause, so drop any pending event rqmt change.
+    const base =
+      field === 'guidelinesPaused'
+        ? { ...value, attendancePaused: initial.attendancePaused }
+        : value;
+    if (!next || initial[field] || (await confirmPause(memberId, field))) {
+      onChange({ ...base, [field]: next });
     }
   }
 
@@ -68,25 +35,28 @@ export function MemberPauseToggles({ memberId, value, onChange, targetIsAdmin }:
     <>
       <Toggle
         label="guidelines violation pause"
-        checked={value.isPaused}
-        onChange={(isPaused) => {
-          onChange({ ...value, isPaused });
-        }}
+        checked={value.guidelinesPaused}
+        onChange={(next) => void onToggle('guidelinesPaused', next)}
         disabled={targetIsAdmin || loading}
       />
       <Toggle
         label="event rqmt pause"
         checked={value.attendancePaused}
-        onChange={(next) => void onAttendanceToggle(next)}
-        disabled={targetIsAdmin || loading}
+        onChange={(next) => void onToggle('attendancePaused', next)}
+        disabled={targetIsAdmin || loading || value.guidelinesPaused || initial.attendancePaused}
       />
       {targetIsAdmin ? <p className="text-muted text-xs">admins can't be paused</p> : null}
+      {initial.attendancePaused ? (
+        <p className="text-muted text-xs">
+          lifts when they check in at an official or club event and meet the event rqmt
+        </p>
+      ) : null}
+      {initial.guidelinesPaused && !value.guidelinesPaused ? (
+        <p className="text-muted text-xs">
+          lifting this leaves an event rqmt pause until they check in and meet the event rqmt
+        </p>
+      ) : null}
       {confirmElement}
     </>
   );
-}
-
-function describeImpact(e: PauseImpactEvent): string {
-  const when = e.startDatetime ? formatShortDateTime(e.startDatetime) : 'date tbd';
-  return `• ${e.title.toLowerCase()} (${when}) — ${ROLE_LABEL[e.role]} · ${OUTCOME_LABEL[e.outcome]}`;
 }

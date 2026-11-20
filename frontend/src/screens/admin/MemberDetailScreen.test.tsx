@@ -14,6 +14,7 @@ import {
   useUsers,
 } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
+import { MembershipStatus } from '@/models/user';
 
 import MemberDetailScreen from './MemberDetailScreen';
 
@@ -37,7 +38,12 @@ vi.mock('@/api/roles', () => ({
 }));
 
 vi.mock('@/api/attendancePausePreview', () => ({
-  fetchAttendancePausePreview: vi.fn().mockResolvedValue([]),
+  fetchAttendancePausePreview: vi
+    .fn()
+    .mockResolvedValue({ events: [], strippedRoles: [], clearsWhatsapp: false }),
+  fetchGuidelinesPausePreview: vi
+    .fn()
+    .mockResolvedValue({ events: [], strippedRoles: [], clearsWhatsapp: false }),
 }));
 
 const member: Member = {
@@ -52,9 +58,8 @@ const member: Member = {
   showPhone: true,
   showEmail: true,
   isMember: true,
+  membershipStatus: MembershipStatus.ActiveMember,
   isSuperuser: false,
-  isPaused: false,
-  attendancePausedAt: null,
   hasJoinedWhatsapp: false,
   needsOnboarding: false,
   loginLinkRequested: false,
@@ -131,6 +136,21 @@ describe('MemberDetailScreen edit form', () => {
     expect(screen.getByTestId('member-connected-apps')).toHaveTextContent('member-1');
   });
 
+  it('lets a tentative person be archived but not edited', async () => {
+    vi.mocked(useUsers).mockReturnValue({
+      data: [{ ...member, isMember: false, membershipStatus: MembershipStatus.Tentative }],
+      isPending: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useUsers>);
+    renderScreen();
+
+    expect(screen.getByText('tentative')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: /joined whatsapp/i })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'archive' }));
+    expect(screen.getByText(/closes their tentative join request/)).toBeInTheDocument();
+  });
+
   it('shows separate first/last name fields prefilled from the member', async () => {
     renderScreen();
     await userEvent.click(screen.getByRole('button', { name: /^edit$/i }));
@@ -173,7 +193,7 @@ describe('MemberDetailScreen edit form', () => {
   });
 
   it.each([
-    ['guidelines violation pause', { isPaused: true }],
+    ['guidelines violation pause', { guidelinesPaused: true }],
     ['event rqmt pause', { attendancePaused: true }],
   ])('saves the %s toggle as its own field', async (label, patch) => {
     renderScreen();
@@ -183,20 +203,20 @@ describe('MemberDetailScreen edit form', () => {
     expect(updateMutateAsync).toHaveBeenCalledWith(patch);
   });
 
-  it('unpauses an event rqmt pause, shows its badge, and hides roles', async () => {
+  it('shows an event rqmt pause badge, hides roles, and locks the pause', async () => {
     vi.mocked(useUsers).mockReturnValue({
-      data: [{ ...member, attendancePausedAt: new Date('2026-03-01') }],
+      data: [{ ...member, membershipStatus: MembershipStatus.AttendancePaused }],
       isPending: false,
       isError: false,
     } as unknown as ReturnType<typeof useUsers>);
     renderScreen();
     expect(screen.getByText('paused · event rqmt')).toBeInTheDocument();
-    expect(screen.getByText('roles are cleared while event rqmt paused')).toBeInTheDocument();
+    expect(
+      screen.getByText('roles are locked to member while event rqmt paused'),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'save roles' })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /^edit$/i }));
-    await userEvent.click(screen.getByRole('switch', { name: 'event rqmt pause' }));
-    await userEvent.click(screen.getByRole('button', { name: /^save$/i }));
-    expect(updateMutateAsync).toHaveBeenCalledWith({ attendancePaused: false });
+    expect(screen.getByRole('switch', { name: 'event rqmt pause' })).toBeDisabled();
   });
 
   it('disables both pause toggles for an admin', async () => {

@@ -2,7 +2,7 @@ from datetime import timedelta
 from uuid import uuid4
 
 import pytest
-from community.models import AttendanceStatus, EventStatus, EventType, RSVPStatus
+from community.models import AttendanceStatus, CancelReason, EventStatus, EventType, RSVPStatus
 from django.utils import timezone
 from mcp_gateway.tools.members_rsvps import member_rsvps_page
 
@@ -40,7 +40,7 @@ def test_lists_every_rsvp_latest_first_with_qualifying_flag(manage_users_user):
     make_rsvp(official, member, attendance=AttendanceStatus.ATTENDED)
     make_rsvp(community, member, attendance=AttendanceStatus.ATTENDED)
     make_rsvp(cancelled, member, attendance=AttendanceStatus.ATTENDED)
-    make_rsvp(undated, member, status=RSVPStatus.CANT_GO)
+    make_rsvp(undated, member, status=RSVPStatus.CANT_GO, cancel_reason=CancelReason.PAUSE)
     make_rsvp(official, make_member())
 
     body = run_tool(manage_users_user, "member_rsvps", member=str(member.id))
@@ -58,6 +58,7 @@ def test_lists_every_rsvp_latest_first_with_qualifying_flag(manage_users_user):
     assert first["status"] == RSVPStatus.ATTENDING
     assert first["attendance"] == AttendanceStatus.ATTENDED
     assert body["rsvps"][3]["event_start_datetime"] is None
+    assert body["rsvps"][3]["cancel_reason"] == CancelReason.PAUSE
 
 
 def test_since_days_and_paging(manage_users_user):

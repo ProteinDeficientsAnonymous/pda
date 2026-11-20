@@ -73,7 +73,7 @@ def send_checkin_nudge(event: Event) -> bool:
                     event_url=event_url,
                 ),
             )
-        except Exception:  # noqa: BLE001 — one bad send must not abort the batch
+        except Exception:
             logger.warning("checkin_nudge_email_send_exception", exc_info=True)
             continue
         if not result.success:

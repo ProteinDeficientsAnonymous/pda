@@ -2,15 +2,16 @@ import logging
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
-from django.conf import settings
 from ninja import Router
 from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, Field
-from users.models import PUBLIC_FORM_PHONE_REGION, PublicRsvpToken, User, validate_phone
+from users.models import SIGN_IN_STATUSES, PublicRsvpToken, User
+from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community.field_limits import FieldLimit
+from community.rsvps.public_shared import manage_rsvp_url
 from community.shared import ErrorOut
 from community.validation import ValidationException
 
@@ -40,9 +41,9 @@ def _neutral() -> Status:
 
 
 def _find_public_rsvper(phone: str) -> User | None:
-    """Find the non-member User matching this phone. None if no match, a member, or paused."""
+    """Find the public rsvper matching this phone. None if no match, archived, or able to sign in."""
     match = User.objects.filter(phone_number=phone).first()
-    if match and (match.is_member or match.is_paused):
+    if match and (match.membership_status in SIGN_IN_STATUSES or match.archived_at is not None):
         return None
     return match
 
@@ -50,7 +51,7 @@ def _find_public_rsvper(phone: str) -> User | None:
 def _send_manage_link(request, user: User) -> None:
     """Best-effort resend of the non-member's manage link. Failures are logged."""
     token = PublicRsvpToken.issue_or_extend(user)
-    manage_url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
+    manage_url = manage_rsvp_url(token.token)
     try:
         result = send_rsvp_manage_link_email(
             sender=get_email_sender(),
