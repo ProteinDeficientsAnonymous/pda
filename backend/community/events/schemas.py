@@ -262,6 +262,7 @@ class TextRecipientsOut(BaseModel):
     cant_go: list[str] = []
     waitlisted: list[str] = []
     invited: list[str] = []
+    co_hosts: list[str] = []
 
 
 class CancellationOut(BaseModel):
