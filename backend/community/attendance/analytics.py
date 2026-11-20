@@ -86,7 +86,7 @@ def member_stats_by_user(
                 "pk",
                 filter=attendance_q(AttendanceStatus.DIDNT_GO, prefix="") & reportable_events_q(),
             ),
-            cancel_count=Count("pk", filter=Q(cancelled_at__isnull=False)),
+            cancel_count=Count("pk", filter=Q(cancel_reason=CancelReason.SELF)),
         )
     )
     return {row.pop("user_id"): MemberAttendanceStats(**row) for row in rows}

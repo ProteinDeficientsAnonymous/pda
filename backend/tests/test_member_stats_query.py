@@ -8,15 +8,24 @@ from community.attendance.analytics import (
     member_stats_by_user,
     user_rsvps_for_attendance,
 )
-from community.models import AttendanceStatus, Event, EventRSVP, EventStatus, EventType, RSVPStatus
+from community.models import (
+    AttendanceStatus,
+    CancelReason,
+    Event,
+    EventRSVP,
+    EventStatus,
+    EventType,
+    RSVPStatus,
+)
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
+from users.permissions import PermissionKey
 
 from tests._auth import auth_headers_for
 from tests._users import make_user
-from tests.test_member_attendance_analytics import MEMBERS_URL, events_admin  # noqa: F401
+from tests.test_member_attendance_analytics import MEMBERS_URL
 
 
 def _members(count: int) -> list[User]:
@@ -38,7 +47,7 @@ def _members(count: int) -> list[User]:
     attendances = [AttendanceStatus.ATTENDED, AttendanceStatus.DIDNT_GO, AttendanceStatus.UNKNOWN]
     members = []
     for n in range(1, count + 1):
-        user = make_user(is_member=True)
+        user = make_user(membership_status=MembershipStatus.ACTIVE_MEMBER)
         for i, event in enumerate(events[n % 4 :]):
             EventRSVP.objects.create(
                 event=event,
@@ -46,6 +55,7 @@ def _members(count: int) -> list[User]:
                 status=RSVPStatus.ATTENDING,
                 attendance=attendances[(i + n) % 3],
                 cancelled_at=timezone.now() if i % 5 == 0 else None,
+                cancel_reason=(CancelReason.SELF, CancelReason.HOST)[i % 2] if i % 5 == 0 else None,
             )
         members.append(user)
     return members
@@ -54,14 +64,32 @@ def _members(count: int) -> list[User]:
 @pytest.mark.django_db
 class TestMemberStatsQuery:
     def test_matches_python_stats(self):
-        members = [*_members(4), make_user(is_member=True)]
+        members = [*_members(4), make_user(membership_status=MembershipStatus.ACTIVE_MEMBER)]
         now = timezone.now()
-        stats = member_stats_by_user(User.objects.filter(is_member=True), now)
+        stats = member_stats_by_user(User.objects.members(), now)
         for user in members:
             expected = compute_member_stats(user_rsvps_for_attendance(user), now)
             assert stats.get(user.pk, EMPTY_MEMBER_STATS) == expected
 
-    def test_endpoint_is_constant(self, api_client, events_admin):  # noqa: F811
+    def test_counts_only_self_cancels(self):
+        user = make_user(membership_status=MembershipStatus.ACTIVE_MEMBER)
+        for reason in (CancelReason.SELF, CancelReason.HOST):
+            EventRSVP.objects.create(
+                event=Event.objects.create(
+                    title="e", start_datetime=timezone.now(), created_by=user
+                ),
+                user=user,
+                status=RSVPStatus.CANT_GO,
+                cancelled_at=timezone.now(),
+                cancel_reason=reason,
+            )
+        stats = member_stats_by_user(User.objects.filter(pk=user.pk))[user.pk]
+        assert stats.cancel_count == 1
+        assert stats == compute_member_stats(user_rsvps_for_attendance(user))
+
+    def test_endpoint_is_constant(self, api_client):
+        events_admin = make_user(PermissionKey.MANAGE_EVENTS)
+
         def count() -> int:
             with CaptureQueriesContext(connection) as ctx:
                 response = api_client.get(MEMBERS_URL, **auth_headers_for(events_admin))
