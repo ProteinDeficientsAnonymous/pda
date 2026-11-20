@@ -3445,6 +3445,8 @@ export interface components {
              * @default 5
              */
             cohost_count: number;
+            /** Event Format */
+            event_format?: string | null;
             /**
              * Going Count
              * @default 5
@@ -8125,6 +8127,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
