@@ -1,11 +1,19 @@
 hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
-{{ event_title|lower }} just started — remember to check people in!
+{{ event_title|lower }} starts soon — remember to check people in as they arrive!
 
 go to check-in:
 
 {{ event_url }}
+{% if speech_url %}
+the event speech hasn't been filled in yet — fill it in here:
 
+{{ speech_url }}
+{% endif %}{% if guide_url %}
+here's the day-of guide for what needs to happen at the event:
+
+{{ guide_url }}
+{% endif %}
 — pda
 
 {% include "emails/_no_reply_footer.txt" %}

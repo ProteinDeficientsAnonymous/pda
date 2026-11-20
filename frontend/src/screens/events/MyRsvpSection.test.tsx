@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type Event, RsvpServerStatus, RsvpStatus } from '@/models/event';
@@ -339,6 +339,42 @@ describe('MyRsvpSection — rsvp submit error', () => {
       /couldn't update your rsvp/i,
     );
     expect(screen.getAllByRole('alert')).toHaveLength(1);
+  });
+});
+
+describe('MyRsvpSection — server asks for payment', () => {
+  const paymentRequired = {
+    isAxiosError: true,
+    response: { status: 400, data: { detail: [{ code: 'event.payment_confirmation_required' }] } },
+  };
+
+  it('opens the payment step when a spot opened before submit', async () => {
+    setRsvpMutate.mockRejectedValueOnce(paymentRequired);
+    renderSection(
+      makeEvent({
+        myRsvp: null,
+        maxAttendees: 2,
+        attendingCount: 2,
+        price: '$10',
+        venmoLink: 'https://venmo.com/u/host',
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'join the waitlist' }));
+    const dialog = screen.getByRole('dialog', { name: /rsvp/i });
+    const confirmButton = within(dialog)
+      .getAllByRole('button', { name: 'join the waitlist' })
+      .at(-1);
+    if (!confirmButton) throw new Error('expected a join the waitlist confirm button');
+    fireEvent.click(confirmButton);
+
+    fireEvent.click(await within(dialog).findByRole('button', { name: /yes, i paid/i }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(setRsvpMutate).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: RsvpStatus.Attending, paidConfirmed: true }),
+      );
+    });
   });
 });
 

@@ -27,7 +27,8 @@ def submit_feedback(request, data: FeedbackIn):
 | Scenario | key_func |
 |----------|----------|
 | Authenticated user | `lambda r: str(r.auth.pk)` |
-| Unauthenticated (public form) | `lambda r: r.META.get("REMOTE_ADDR", "anon")` |
+| Unauthenticated (public form) | `client_ip` from `config.ratelimit` (never raw `REMOTE_ADDR`; behind nginx it's always 127.0.0.1) |
+| Optional auth | `auth_or_ip_key` from `config.ratelimit` |
 | Per-resource (e.g. per-event RSVP) | `lambda r: f"{r.auth.pk}:{resource_id}"` — capture `resource_id` in a closure |
 
 ### Suggested limits

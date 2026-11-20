@@ -3,6 +3,8 @@ import { Dialog } from '@/components/ui/Dialog';
 import { type Event, isRsvpDeadlinePassed, RsvpServerStatus } from '@/models/event';
 import { formatEventDateTime } from '@/utils/datetime';
 
+import { RSVP_PILL_CLASSES } from './rsvpPill';
+
 function formatDeadline(deadline: Date): string {
   return formatEventDateTime(deadline, null);
 }
@@ -14,7 +16,28 @@ function closedDetail(myRsvp: string | null): string {
   return "rsvps can't be changed anymore";
 }
 
+export function RsvpsClosedButton() {
+  return (
+    <button
+      type="button"
+      disabled
+      className={`${RSVP_PILL_CLASSES} disabled:bg-toggle-off disabled:cursor-not-allowed`}
+    >
+      rsvps are closed
+    </button>
+  );
+}
+
 export function RsvpDeadlineNote({ event, closed }: { event: Event; closed: boolean }) {
+  if (closed && event.rsvpsClosed) {
+    // with no rsvp, the closed button already says it all
+    if (event.myRsvp === null) return null;
+    return (
+      <p role="status" className="text-foreground-secondary text-center text-sm">
+        rsvps are closed — {closedDetail(event.myRsvp)}
+      </p>
+    );
+  }
   if (!event.rsvpDeadline) return null;
   const when = formatDeadline(event.rsvpDeadline);
   if (!closed) {

@@ -2,6 +2,7 @@ import type { DevEventVisibility, DevTestEventOptions } from '@/api/devTools';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
+import { EventFormat } from '@/models/event';
 
 interface Props {
   options: DevTestEventOptions;
@@ -72,6 +73,15 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
             onChange({ ...options, isOfficial: v, isClub: v ? false : options.isClub });
           }}
         />
+        {options.isOfficial && (
+          <Toggle
+            label="it's a walk"
+            checked={options.eventFormat === EventFormat.Walk}
+            onChange={(v) => {
+              set('eventFormat', v ? EventFormat.Walk : EventFormat.Restaurant);
+            }}
+          />
+        )}
         <Toggle
           label="club event"
           checked={options.isClub}

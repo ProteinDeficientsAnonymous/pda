@@ -25,6 +25,7 @@ interface WireQuestion {
   label: string;
   field_type: RsvpQuestionType;
   options?: string[];
+  option_prices?: number[];
   required: boolean;
   display_order?: number;
 }
@@ -35,6 +36,7 @@ export function mapRsvpQuestion(w: WireQuestion): EventRsvpQuestion {
     label: w.label,
     fieldType: w.field_type,
     options: w.options ?? [],
+    optionPrices: w.option_prices ?? [],
     required: w.required,
   };
 }
@@ -45,6 +47,7 @@ function questionPayload(question: EventRsvpQuestion, newIdsAsNull: boolean) {
     label: question.label,
     field_type: question.fieldType,
     options: question.options,
+    option_prices: question.optionPrices,
     required: question.required,
   };
 }

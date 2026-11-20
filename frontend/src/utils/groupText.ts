@@ -37,8 +37,9 @@ export function collectPhones(
 ): string[] {
   const phones: string[] = [];
   const seen = new Set<string>();
-  for (const group of groups) {
-    for (const phone of recipients[group]) {
+  const lists = [...Array.from(groups, (g) => recipients[g]), recipients.coHosts];
+  for (const list of lists) {
+    for (const phone of list) {
       if (seen.has(phone)) continue;
       seen.add(phone);
       phones.push(phone);
