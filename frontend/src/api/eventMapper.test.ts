@@ -93,6 +93,17 @@ describe('mapEvent', () => {
     });
   });
 
+  it('maps the price saved with an answer', () => {
+    const result = mapEvent(
+      wireEvent({
+        my_questionnaire_responses: { q1: { label: 'meal', answer: 'plate', price_cents: 1850 } },
+      }),
+    );
+    expect(result.myQuestionnaireResponses).toEqual({
+      q1: { label: 'meal', answer: 'plate', priceCents: 1850 },
+    });
+  });
+
   it('converts ISO start_datetime to Date', () => {
     const result = mapEvent(wireEvent({ start_datetime: '2026-01-05T09:05:03Z' }));
     expect(result.startDatetime!.getUTCFullYear()).toBe(2026);
