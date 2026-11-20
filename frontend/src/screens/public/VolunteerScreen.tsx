@@ -5,6 +5,7 @@ import { EditableHtmlBlock } from '@/components/EditableHtmlBlock';
 import { hasPermission, Permission } from '@/models/permissions';
 
 import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
+import { MembersOnlyPageNotice } from './MembersOnlyPageNotice';
 
 export default function VolunteerScreen() {
   const { data, isPending, error } = useEditablePage('volunteer');
@@ -15,7 +16,7 @@ export default function VolunteerScreen() {
   if (isPending) return <ContentLoading />;
   if (error) {
     if (getApiStatus(error) === 403) {
-      return <ContentError message="this page is for members only" />;
+      return <MembersOnlyPageNotice unlocks="see volunteer opportunities" />;
     }
     return <ContentError message="couldn't load the volunteer page — try refreshing" />;
   }
