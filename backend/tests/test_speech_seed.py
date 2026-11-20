@@ -4,7 +4,12 @@ import json
 import pytest
 from community.models import SpeechTemplate
 from community.speech._render import render_speech_html
-from community.speech.seed import DEFAULT_OPEN_ROLES, default_template_docs, seed_default_template
+from community.speech.seed import (
+    DEFAULT_OPEN_ROLES,
+    add_walk_mixup_note,
+    default_template_docs,
+    seed_default_template,
+)
 
 
 def _reset(**fields):
@@ -73,6 +78,8 @@ def test_speaker_notes_are_blockquotes():
     shared, walk, restaurant = default_template_docs()
     assert len(_blockquote_texts(shared)) == 2
     assert any("count off" in t for t in _blockquote_texts(walk))
+    assert "mix it up halfway through" in _blockquote_texts(walk)[-1]
+    assert walk["content"][-1]["type"] == "blockquote"
     notes = _blockquote_texts(restaurant)
     assert len(notes) == 3
     assert any("chaotic but the dust will settle" in t for t in notes)
@@ -163,3 +170,54 @@ def test_migration_seeds_via_historical_model():
     migration = importlib.import_module("community.migrations.0128_seed_speech_template")
     migration._seed(apps, None)
     assert SpeechTemplate.get().open_roles == DEFAULT_OPEN_ROLES
+
+
+def _walk_without_note() -> str:
+    _, walk, _ = default_template_docs()
+    walk["content"].pop()
+    return json.dumps(walk)
+
+
+@pytest.mark.django_db
+def test_mixup_note_appended_to_saved_walk_doc():
+    _reset(walk_pm=_walk_without_note())
+    add_walk_mixup_note(SpeechTemplate)
+    walk = json.loads(SpeechTemplate.get().walk_pm)
+    assert "mix it up halfway through" in _blockquote_texts(walk)[-1]
+    assert "social means SLOW" in json.dumps(walk)
+
+
+@pytest.mark.django_db
+def test_mixup_note_added_once():
+    _reset(walk_pm=_walk_without_note())
+    add_walk_mixup_note(SpeechTemplate)
+    add_walk_mixup_note(SpeechTemplate)
+    walk = json.loads(SpeechTemplate.get().walk_pm)
+    assert sum("halfway" in t for t in _blockquote_texts(walk)) == 1
+
+
+@pytest.mark.parametrize(
+    "walk_pm", ["", "not json", '{"type": "doc", "content": []}', "mix halfway"]
+)
+@pytest.mark.django_db
+def test_mixup_note_skips_empty_invalid_or_already_noted_docs(walk_pm):
+    _reset(walk_pm=walk_pm)
+    add_walk_mixup_note(SpeechTemplate)
+    assert SpeechTemplate.get().walk_pm == walk_pm
+
+
+@pytest.mark.django_db
+def test_mixup_note_skips_missing_template():
+    SpeechTemplate.objects.all().delete()
+    add_walk_mixup_note(SpeechTemplate)
+    assert not SpeechTemplate.objects.exists()
+
+
+@pytest.mark.django_db
+def test_mixup_migration_runs_via_historical_model():
+    from django.apps import apps
+
+    _reset(walk_pm=_walk_without_note())
+    migration = importlib.import_module("community.migrations.0153_add_walk_mixup_note")
+    migration._add_note(apps, None)
+    assert "halfway" in SpeechTemplate.get().walk_pm
