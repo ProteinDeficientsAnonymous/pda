@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0151_event_price_decimal"),
+        ("community", "0153_event_price_decimal"),
     ]
 
     operations = [
