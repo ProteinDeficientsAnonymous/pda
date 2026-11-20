@@ -65,21 +65,21 @@ def test_price_text(amount, expected):
 @pytest.mark.parametrize(
     ("raw", "expected"),
     [
-        ("14", "14"),
-        ("$21", "21"),
-        ("33.50", "33.50"),
-        ("$10 deposit", "10"),
-        ("~$35 - ~$60 sliding scale + cookbook", "35"),
-        ("", None),
-        ("pwyc", None),
-        ("$0", None),
-        ("venmo 9175551234", None),
-        ("$100000", None),
-        ("$.50", ".50"),
+        ("14", ("14", "")),
+        ("$21", ("21", "")),
+        ("33.50", ("33.50", "")),
+        ("$10 deposit", ("10", "deposit")),
+        ("$10 - cashapp", ("10", "cashapp")),
+        ("~$35 - ~$60 sliding scale + cookbook", (None, "~$35 - ~$60 sliding scale + cookbook")),
+        ("$6-$8 per rehearsal", (None, "$6-$8 per rehearsal")),
+        ("", (None, "")),
+        ("pwyc", (None, "pwyc")),
+        ("$0", (None, "$0")),
+        ("venmo 9175551234", (None, "venmo 9175551234")),
     ],
 )
-def test_migration_keeps_the_first_amount(raw, expected):
-    assert migration.numeric_text(raw) == expected
+def test_migration_splits_price_and_note(raw, expected):
+    assert migration.split_price(raw) == expected
 
 
 @pytest.mark.django_db

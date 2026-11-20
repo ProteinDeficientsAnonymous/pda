@@ -73,6 +73,7 @@ class Event(models.Model):
     partiful_link = models.URLField(blank=True)
     other_link = models.URLField(blank=True)
     price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    price_note = models.CharField(max_length=100, blank=True)
     venmo_link = models.URLField(blank=True)
     cashapp_link = models.URLField(blank=True)
     zelle_info = models.CharField(max_length=200, blank=True)
