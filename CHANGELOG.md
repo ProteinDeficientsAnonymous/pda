@@ -1,3 +1,12 @@
+# [0.262.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.261.0...v0.262.0) (2026-11-20)
+
+
+### Features
+
+* 2299 - let the mcp read survey responses for admins ([#2590](https://github.com/ProteinDeficientsAnonymous/pda/issues/2590)) ([fabfdfa](https://github.com/ProteinDeficientsAnonymous/pda/commit/fabfdfabec8ea9960818e92b6b4161bbcefe3c80))
+* 2569 - always include co-hosts in group texts ([#2589](https://github.com/ProteinDeficientsAnonymous/pda/issues/2589)) ([cf1a1a7](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf1a1a7d57d5fa59992a003c05cfc018b529de31))
+* **audit:** record user_id on join-request transition audits ([#2307](https://github.com/ProteinDeficientsAnonymous/pda/issues/2307)) ([c4ffcbe](https://github.com/ProteinDeficientsAnonymous/pda/commit/c4ffcbe08f9b240a39519af024a32babc4d73041))
+
 # [0.261.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.260.1...v0.261.0) (2026-11-20)
 
 
