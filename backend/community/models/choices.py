@@ -173,9 +173,6 @@ class CancelReason(models.TextChoices):
 # Guests a payment import can match and verify.
 MATCHABLE_RSVP_STATUSES = frozenset({RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED})
 
-# RSVPs that still hold a spot (not can't-go or host-removed).
-HELD_RSVP_STATUSES = (RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.WAITLISTED)
-
 
 class AttendanceStatus(models.TextChoices):
     UNKNOWN = "unknown", "Unknown"
