@@ -26,12 +26,24 @@ def _access_token() -> str:
     return resp.json()["access_token"]
 
 
+def _headers() -> dict[str, str]:
+    # Without it, a capture response can leave out purchase_units and their custom_id.
+    return {"Authorization": f"Bearer {_access_token()}", "Prefer": "return=representation"}
+
+
+def get(path: str) -> dict:
+    """GET from the PayPal REST API; raises httpx.HTTPError on any failure."""
+    resp = httpx.get(_url(path), headers=_headers(), timeout=_TIMEOUT)
+    resp.raise_for_status()
+    return resp.json()
+
+
 def post(path: str, payload: dict, *, request_id: str | None = None) -> dict:
     """POST to the PayPal REST API; raises httpx.HTTPError on any failure.
 
     param(request_id): PayPal-Request-Id, so a retried call returns the first result.
     """
-    headers = {"Authorization": f"Bearer {_access_token()}"}
+    headers = _headers()
     if request_id:
         headers["PayPal-Request-Id"] = request_id
     resp = httpx.post(_url(path), json=payload, headers=headers, timeout=_TIMEOUT)

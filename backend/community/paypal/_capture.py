@@ -24,9 +24,7 @@ def _locked_rsvp(custom_id: str | None) -> EventRSVP | None:
     return EventRSVP.objects.select_for_update().select_related("event").filter(pk=rsvp_id).first()
 
 
-def _covers_price(capture: dict, event: Event) -> bool:
-    # Buyers can create orders client-side with any custom_id, so the amount must be checked here.
-    amount = capture.get("amount") or {}
+def covers_price(amount: dict, event: Event) -> bool:
     if amount.get("currency_code") != "USD" or not event.price:
         return False
     try:
@@ -54,7 +52,8 @@ def record_capture(request, capture: dict) -> EventRSVP | None:
                     extra={"capture_id": capture.get("id"), "recorded": rsvp.paypal_capture_id},
                 )
             return rsvp
-        if not _covers_price(capture, rsvp.event):
+        # Buyers can create orders client-side with any custom_id, so the amount is checked here.
+        if not covers_price(capture.get("amount") or {}, rsvp.event):
             logger.warning("paypal_capture_short", extra={"capture_id": capture.get("id")})
             return None
         now = timezone.now()
