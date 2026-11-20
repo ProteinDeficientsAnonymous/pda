@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (membership). Join-request status and event-shaped HTTP/MCP payloads are follow-up.
+Accepted. Applies to membership (`User`) and join requests (`JoinRequest`); the join-request decision PATCH takes an `event`. Working rules: [state-machines.md](../../rules/state-machines.md).
 
 ## Context
 
@@ -25,14 +25,15 @@ Model the membership lifecycle as a small event-driven state machine on `User`:
 6. Creates set an initial status directly; they are not transitions.
 
 Admin PATCH still uses pause booleans (`guidelines_paused`, `attendance_paused`);
-those map to named transition methods at the boundary. A later change can teach
-HTTP/MCP decision endpoints to accept events directly, and can machine
-`JoinRequestStatus` the same way.
+those map to named transition methods at the boundary. `JoinRequestStatus`
+follows the same pattern (`JoinRequestEvent`, `ALLOWED_JOIN_REQUEST_TRANSITIONS`,
+`community/models/_join_request_transitions.py`).
 
 ## Consequences
 
-- Invalid membership transitions are impossible at the model boundary (for call
-  sites that use the named methods).
+- Invalid transitions are impossible at the model boundary for call sites that
+  use the named methods; `backend/tests/test_state_transition_guard.py` fails
+  on production code that writes state fields any other way.
 - Call sites read as business intent (`approve`) rather than assignment.
 - Orchestration files stay responsible for side effects; the machine stays pure
   of I/O.

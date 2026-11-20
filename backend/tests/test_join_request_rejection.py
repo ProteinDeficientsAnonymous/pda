@@ -1,5 +1,10 @@
 import pytest
-from community.models import JoinRequestStatus, RejectionEmailTemplate, RejectionReason
+from community.models import (
+    JoinRequestEvent,
+    JoinRequestStatus,
+    RejectionEmailTemplate,
+    RejectionReason,
+)
 from community.validation import Code
 
 from tests._asserts import assert_error_code
@@ -8,7 +13,7 @@ from tests._asserts import assert_error_code
 def _reject(api_client, headers, join_request, **extra):
     return api_client.patch(
         f"/api/community/join-requests/{join_request.id}/",
-        {"status": JoinRequestStatus.REJECTED, **extra},
+        {"event": JoinRequestEvent.REJECT, **extra},
         content_type="application/json",
         **headers,
     )
@@ -127,7 +132,7 @@ class TestRejectWithReason:
     ):
         response = api_client.patch(
             f"/api/community/join-requests/{applicant.id}/",
-            {"status": JoinRequestStatus.TENTATIVE, "rejection_reason": "rude"},
+            {"event": JoinRequestEvent.MARK_TENTATIVE, "rejection_reason": "rude"},
             content_type="application/json",
             **vettor_headers,
         )

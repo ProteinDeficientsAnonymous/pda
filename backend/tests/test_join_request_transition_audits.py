@@ -7,6 +7,7 @@ from community.models import (
     EventType,
     JoinFormQuestion,
     JoinRequest,
+    JoinRequestEvent,
     JoinRequestStatus,
     RejectionReason,
 )
@@ -25,11 +26,18 @@ def _send(method, *args, **kwargs):
         return method(*args, **kwargs)
 
 
+_STATUS_TO_EVENT = {
+    JoinRequestStatus.TENTATIVE: JoinRequestEvent.MARK_TENTATIVE,
+    JoinRequestStatus.APPROVED: JoinRequestEvent.APPROVE,
+    JoinRequestStatus.REJECTED: JoinRequestEvent.REJECT,
+}
+
+
 def _decide(api_client, headers, join_request, status, **extra):
     response = _send(
         api_client.patch,
         f"/api/community/join-requests/{join_request.id}/",
-        {"status": status, **extra},
+        {"event": _STATUS_TO_EVENT[status], **extra},
         content_type="application/json",
         **headers,
     )
@@ -217,8 +225,8 @@ def test_check_in_approves_tentative(api_client):
     )
     assert response.status_code == 200
 
-    entry = _entry("join_request_approved_via_check_in")
+    entry = _entry("join_request_approved")
     assert entry.actor == host
     assert entry.target_id == str(join_request.id)
-    assert entry.details["user_id"] == str(user.pk)
-    assert entry.details["event_id"] == str(event.pk)
+    assert entry.details["event"] == JoinRequestEvent.PROMOTE_ON_CHECK_IN
+    assert entry.details["approved_via_event_id"] == str(event.pk)

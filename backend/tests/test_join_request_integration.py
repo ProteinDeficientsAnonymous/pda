@@ -7,6 +7,7 @@ from community.models import (
     EventRSVP,
     EventType,
     JoinRequest,
+    JoinRequestEvent,
     JoinRequestStatus,
     RSVPStatus,
 )
@@ -161,7 +162,7 @@ class TestApprovalPromotesPublicRsvper:
 
         return api_client.patch(
             f"/api/community/join-requests/{jr_id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )

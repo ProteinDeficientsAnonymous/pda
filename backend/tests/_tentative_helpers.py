@@ -7,6 +7,7 @@ from community.models import (
     Event,
     EventRSVP,
     EventType,
+    JoinRequestEvent,
     JoinRequestStatus,
     RSVPStatus,
 )
@@ -14,6 +15,12 @@ from django.utils import timezone
 from users.models import User
 
 from tests._auth import auth_headers_for
+
+_STATUS_TO_EVENT = {
+    JoinRequestStatus.TENTATIVE: JoinRequestEvent.MARK_TENTATIVE,
+    JoinRequestStatus.APPROVED: JoinRequestEvent.APPROVE,
+    JoinRequestStatus.REJECTED: JoinRequestEvent.REJECT,
+}
 
 
 @pytest.fixture
@@ -42,7 +49,7 @@ def tentative_user_with_rsvp(join_request, event, vettor):
 def decide(api_client, headers, join_request, status):
     return api_client.patch(
         f"/api/community/join-requests/{join_request.id}/",
-        {"status": status},
+        {"event": _STATUS_TO_EVENT[status]},
         content_type="application/json",
         **headers,
     )

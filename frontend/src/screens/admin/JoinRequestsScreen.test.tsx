@@ -3,8 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as JoinApi from '@/api/join';
-import { JoinRequestStatus, type JoinRequestSummary } from '@/api/join';
-import { useDecideJoinRequest, useJoinRequests } from '@/api/join';
+import {
+  JoinRequestDecisionEvent,
+  JoinRequestStatus,
+  type JoinRequestSummary,
+  useDecideJoinRequest,
+  useJoinRequests,
+} from '@/api/join';
 import { RejectionReason } from '@/api/rejectionEmail';
 import { useUpdateUser } from '@/api/users';
 import { makeRequest } from '@/test/fixtures';
@@ -360,7 +365,7 @@ describe('JoinRequestsScreen pending actions', () => {
 
     expect(mutateAsync).toHaveBeenCalledWith({
       id: 'jr-pending',
-      status: JoinRequestStatus.TENTATIVE,
+      event: JoinRequestDecisionEvent.MARK_TENTATIVE,
     });
   });
 
@@ -481,7 +486,7 @@ describe('JoinRequestsScreen tentative section', () => {
     );
     expect(mutateAsync).toHaveBeenCalledWith({
       id: 'jr-pending',
-      status: JoinRequestStatus.APPROVED,
+      event: JoinRequestDecisionEvent.APPROVE,
     });
   });
 
@@ -500,7 +505,7 @@ describe('JoinRequestsScreen tentative section', () => {
 
     expect(mutateAsync).toHaveBeenCalledWith({
       id: 'jr-tentative',
-      status: JoinRequestStatus.APPROVED,
+      event: JoinRequestDecisionEvent.APPROVE,
     });
   });
 
@@ -525,7 +530,7 @@ describe('JoinRequestsScreen tentative section', () => {
 
     expect(mutateAsync).toHaveBeenCalledWith({
       id: 'jr-tentative',
-      status: JoinRequestStatus.APPROVED,
+      event: JoinRequestDecisionEvent.APPROVE,
     });
     expect(await screen.findByText(/welcome ada lovelace/i)).toBeInTheDocument();
   });

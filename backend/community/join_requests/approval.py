@@ -3,7 +3,6 @@ from typing import NamedTuple
 
 from config.audit import AuditTarget, AuditTargetType, actor_request, audit_log
 from django.conf import settings
-from django.utils import timezone
 from notifications.email_helpers import send_join_approval_email
 from notifications.email_sender import get_email_sender
 from users.api import create_user_with_role
@@ -24,6 +23,7 @@ from users.models import (
 
 from community.models import (
     JoinRequest,
+    JoinRequestEvent,
     JoinRequestStatus,
     MemberPromotionEmailTemplate,
     WhatsAppLinkConfig,
@@ -272,13 +272,7 @@ def maybe_promote_tentative(user, event, actor) -> JoinRequest | None:
     consents = _apply_tentative_consents(user, join_request)
     user.save(update_fields=[*user.promote_on_check_in(by=actor), *consents])
     grant_membership(user)
-    join_request.status = JoinRequestStatus.APPROVED
-    join_request.status_changed_at = timezone.now()
-    join_request.status_changed_by = actor
-    join_request.approved_via_event = event
-    join_request.save(
-        update_fields=["status", "status_changed_at", "status_changed_by", "approved_via_event"]
-    )
+    join_request.save(update_fields=join_request.promote_on_check_in(event=event, by=actor))
     _audit_user_membership(
         user,
         actor,
@@ -289,6 +283,22 @@ def maybe_promote_tentative(user, event, actor) -> JoinRequest | None:
             "event_id": str(event.pk),
             "join_request_id": str(join_request.id),
         },
+    )
+    audit_log(
+        logging.INFO,
+        "join_request_approved",
+        actor_request(None, actor),
+        target=AuditTarget(
+            type=AuditTargetType.JOIN_REQUEST,
+            id=str(join_request.id),
+            details={
+                "event": JoinRequestEvent.PROMOTE_ON_CHECK_IN,
+                "from": JoinRequestStatus.TENTATIVE,
+                "to": JoinRequestStatus.APPROVED,
+                "approved_via_event_id": str(event.pk),
+                "full_name": join_request.full_name,
+            },
+        ),
     )
     return join_request
 
