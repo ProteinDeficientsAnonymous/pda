@@ -183,6 +183,8 @@ export interface Event {
   allowPlusOnes: boolean;
   maxAttendees: number | null;
   rsvpDeadline: Date | null;
+  /** A host closed rsvps: nothing new gets in and cancellations don't free spots. */
+  rsvpsClosed: boolean;
   attendingCount: number;
   waitlistedCount: number;
   invitedCount: number;
@@ -266,6 +268,11 @@ export function isLimited(user: Pick<User, 'membershipStatus'> | null | undefine
 
 export function isRsvpDeadlinePassed(event: Event, now: number = Date.now()): boolean {
   return event.rsvpDeadline !== null && event.rsvpDeadline.getTime() < now;
+}
+
+// Mirrors backend enforce_rsvps_open: a host close or a passed deadline.
+export function areRsvpsClosed(event: Event, now: number = Date.now()): boolean {
+  return event.rsvpsClosed || isRsvpDeadlinePassed(event, now);
 }
 
 export function canPublicRsvp(event: Event): boolean {

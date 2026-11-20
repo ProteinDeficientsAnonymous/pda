@@ -8,6 +8,7 @@ import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import {
+  areRsvpsClosed,
   type Event,
   isRsvpDeadlinePassed,
   isRsvpInputStatus,
@@ -19,15 +20,16 @@ import {
 
 import { MyOrderTotal } from './MyOrderTotal';
 import { RsvpBox } from './RsvpBox';
-import { MaybeDeadlineDialog, RsvpDeadlineNote } from './RsvpDeadline';
+import { MaybeDeadlineDialog, RsvpDeadlineNote, RsvpsClosedButton } from './RsvpDeadline';
+import { RSVP_PILL_CLASSES } from './rsvpPill';
 import type { RsvpAnswerValue } from './rsvpQuestions';
 
 interface Props {
   event: Event;
   token?: string;
   locked?: boolean;
-  /** Past the rsvp deadline and not a host: only going → can't go is left. */
-  deadlineClosed?: boolean;
+  /** RSVPs closed (host or deadline) and not a host: only going → can't go is left. */
+  rsvpsClosed?: boolean;
 }
 
 const STATUS_LINES: Record<RsvpInputStatus, string> = {
@@ -53,7 +55,7 @@ interface BoxState {
   initialStatus: RsvpInputStatus;
 }
 
-export function MyRsvpSection({ event, token, locked = false, deadlineClosed = false }: Props) {
+export function MyRsvpSection({ event, token, locked = false, rsvpsClosed = false }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
   const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
@@ -174,7 +176,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
       {!locked && onWaitlist ? (
         <WaitlistView
           onEdit={
-            deadlineClosed
+            rsvpsClosed
               ? undefined
               : () => {
                   setError(null);
@@ -190,7 +192,8 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
           atCapacity={atCapacity}
           busy={busy}
           locked={locked}
-          closed={deadlineClosed}
+          closed={rsvpsClosed}
+          noNewRsvps={rsvpsClosed || event.rsvpsClosed}
           onOpenCreate={(status) => {
             setError(null);
             setBox({ mode: 'create', initialStatus: status });
@@ -203,7 +206,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
         />
       )}
 
-      {!locked && deadlineClosed && myRsvp === RsvpServerStatus.Attending ? (
+      {!locked && rsvpsClosed && myRsvp === RsvpServerStatus.Attending ? (
         <Button
           variant="ghost"
           className="self-center"
@@ -215,7 +218,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
       ) : null}
       <MyOrderTotal event={event} />
       <SpotsLeft event={event} />
-      {locked ? null : <RsvpDeadlineNote event={event} closed={deadlineClosed} />}
+      {locked ? null : <RsvpDeadlineNote event={event} closed={rsvpsClosed} />}
       {error && !box ? (
         <p role="alert" className="text-destructive text-sm">
           {error}
@@ -261,15 +264,13 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
   );
 }
 
-const RSVP_PILL_CLASSES =
-  'mx-auto inline-flex h-12 min-w-28 items-center justify-center rounded-full px-5 text-base font-medium bg-brand-600 text-brand-on';
-
 function RsvpControls({
   myInputStatus,
   atCapacity,
   busy,
   locked,
   closed,
+  noNewRsvps,
   onOpenCreate,
   onOpenEdit,
 }: {
@@ -278,9 +279,12 @@ function RsvpControls({
   busy: boolean;
   locked?: boolean;
   closed: boolean;
+  // Hosts skip `closed` but still shouldn't be offered a fresh rsvp on a host-closed event.
+  noNewRsvps: boolean;
   onOpenCreate: (status: RsvpInputStatus) => void;
   onOpenEdit: () => void;
 }) {
+  if (!myInputStatus && noNewRsvps && !locked) return <RsvpsClosedButton />;
   if (locked || closed) {
     if (!myInputStatus) return null;
     const labels = locked ? PAST_STATUS_LABELS : STATUS_BADGE_LABELS;
@@ -355,7 +359,7 @@ function WaitlistView({
 
 function SpotsLeft({ event }: { event: Event }) {
   const left = spotsLeft(event);
-  if (left === null || left === 0) return null;
+  if (left === null || left === 0 || areRsvpsClosed(event)) return null;
   return (
     <p className="text-warning text-center text-xs">
       {left === 1 ? '1 spot left' : `${String(left)} spots left`}

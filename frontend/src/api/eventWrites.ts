@@ -206,12 +206,15 @@ export function useUpdateEvent(eventId: string) {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
-    mutationFn: async (values: Partial<EventFormValues> & { force?: boolean }) => {
+    mutationFn: async (
+      values: Partial<EventFormValues> & { force?: boolean; rsvpsClosed?: boolean },
+    ) => {
       // PATCH is partial: build the wire body from only the provided keys.
       // Falsy values other than undefined still carry meaning (false/""/null).
-      const { force, ...formValues } = values;
+      const { force, rsvpsClosed, ...formValues } = values;
       const body = toPartialWireBody(formValues);
       if (force) body.force = true;
+      if (rsvpsClosed !== undefined) body.rsvps_closed = rsvpsClosed;
       const { data } = await apiClient.patch<WireEvent>(`/api/community/events/${eventId}/`, body);
       return mapEvent(data);
     },

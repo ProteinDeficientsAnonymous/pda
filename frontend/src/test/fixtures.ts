@@ -57,6 +57,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     allowPlusOnes: false,
     maxAttendees: null,
     rsvpDeadline: null,
+    rsvpsClosed: false,
     attendingCount: 1,
     waitlistedCount: 0,
     invitedCount: 0,

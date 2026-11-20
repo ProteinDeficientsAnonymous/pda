@@ -5,7 +5,7 @@ import { useMyEventFeedback } from '@/api/eventFeedbackHost';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
-import { eventHostCount, spotsLeft } from '@/models/event';
+import { areRsvpsClosed, eventHostCount, spotsLeft } from '@/models/event';
 import { formatPriceWithNote } from '@/utils/eventCost';
 import { buildEventLinks } from '@/utils/eventLinks';
 import { toCashAppPayUrl } from '@/utils/paymentHandle';
@@ -88,6 +88,9 @@ export function EventMemberSection({ event, token }: Props) {
 }
 
 function CapacityNote({ event }: { event: Event }) {
+  if (areRsvpsClosed(event)) {
+    return <p className="text-muted -mt-2 mb-3 text-xs">rsvps closed</p>;
+  }
   const { maxAttendees } = event;
   const left = spotsLeft(event);
   if (left === null || maxAttendees === null) return null;
