@@ -31,7 +31,7 @@ def _allows_anonymous_write(path: str) -> bool:
 
 
 class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
-    """Anonymous for a missing, invalid, or blocked token on reads.
+    """Anonymous for a missing or blocked token on reads; 401 for an expired or invalid one.
 
     Pause and archive 403 on writes. Pending accounts are anonymous on writes
     that already allow anonymous callers, and 403 on every other write.
@@ -55,9 +55,8 @@ class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
         try:
             return self.jwt_authenticate(request, token)
         except (AuthenticationFailed, TokenError):
-            # Genuinely-invalid / expired / unparseable token — treat the
-            # caller as anonymous (public endpoints stay reachable).
-            return AnonymousUser()
+            # 401 so the client refreshes and retries; anonymous would hide drafts from their host.
+            raise
         except Exception:
             # Anything else (DB error, misconfiguration) is unexpected: log it
             # so it stays observable, but still degrade to anonymous rather
