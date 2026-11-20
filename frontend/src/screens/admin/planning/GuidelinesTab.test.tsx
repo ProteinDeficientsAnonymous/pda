@@ -53,6 +53,10 @@ describe('GuidelinesTab', () => {
   it('shows the guidelines read-only to planners', () => {
     renderWithProviders(<GuidelinesTab />);
     expect(screen.getByText('arrive early!')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'event protocol' })).toHaveAttribute(
+      'href',
+      '/event-protocol',
+    );
   });
 
   it('lets coordinators edit and saves the new content', async () => {

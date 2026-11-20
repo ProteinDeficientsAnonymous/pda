@@ -43,6 +43,7 @@ const EventQuestionResponses = lazyWithRetry(
 const EventCheckInReport = lazyWithRetry(() => import('@/screens/events/EventCheckInReportScreen'));
 const EventFeedback = lazyWithRetry(() => import('@/screens/events/EventFeedbackScreen'));
 const EventSpeech = lazyWithRetry(() => import('@/screens/events/EventSpeechScreen'));
+const EventProtocol = lazyWithRetry(() => import('@/screens/events/EventProtocolScreen'));
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
 const PublicRsvps = lazyWithRetry(() => import('@/screens/events/PublicRsvpsScreen'));
 const Notifications = lazyWithRetry(() => import('@/screens/notifications/NotificationsScreen'));
@@ -134,6 +135,7 @@ export const router = createBrowserRouter([
                   { path: '/events/:id/manage-rsvps', element: el(<EventManageRsvps />) },
                   { path: '/events/:id/responses', element: el(<EventQuestionResponses />) },
                   { path: '/events/:id/speech', element: el(<EventSpeech />) },
+                  { path: '/event-protocol', element: el(<EventProtocol />) },
                 ],
               },
 

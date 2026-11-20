@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 import { useEditablePage, useUpdateEditablePage } from '@/api/content';
 import { PLANNING_GUIDELINES_SLUG } from '@/api/planningChecklist';
 import { useHasPermission } from '@/auth/useAuth';
@@ -12,13 +14,21 @@ export function GuidelinesTab() {
 
   if (page.data) {
     return (
-      <EditableHtmlBlock
-        canEdit={canEdit}
-        contentHtml={page.data.contentHtml}
-        initialPm={page.data.contentPm}
-        onSave={(contentPm) => update.mutateAsync({ contentPm }).then(() => undefined)}
-        placeholder="planning guidelines"
-      />
+      <>
+        <p className="text-foreground-secondary mb-4 text-sm">
+          day-of steps live in the{' '}
+          <Link to="/event-protocol" className="underline">
+            event protocol
+          </Link>
+        </p>
+        <EditableHtmlBlock
+          canEdit={canEdit}
+          contentHtml={page.data.contentHtml}
+          initialPm={page.data.contentPm}
+          onSave={(contentPm) => update.mutateAsync({ contentPm }).then(() => undefined)}
+          placeholder="planning guidelines"
+        />
+      </>
     );
   }
   if (page.isPending) return <ContentLoading />;

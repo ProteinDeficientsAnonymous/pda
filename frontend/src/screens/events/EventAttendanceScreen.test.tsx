@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
 import { Code } from '@/api/validationCodes';
+import { EventType } from '@/models/event';
 import { apiError } from '@/test/apiError';
 import { setAuthed } from '@/test/auth';
 import { creator, makeEvent, nonHost } from '@/test/fixtures';
@@ -69,6 +70,28 @@ describe('EventAttendanceScreen', () => {
 
     expect(screen.getByRole('heading', { name: /check-in/i })).toBeInTheDocument();
     expect(screen.getByText(BASE_EVENT.title)).toBeInTheDocument();
+  });
+
+  it('links official-event hosts to the event protocol', () => {
+    vi.mocked(useEvent).mockReturnValue({
+      data: { ...BASE_EVENT, eventType: EventType.Official },
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    setAuthed(creator);
+    renderScreen();
+
+    expect(screen.getByRole('link', { name: 'event protocol' })).toHaveAttribute(
+      'href',
+      '/event-protocol',
+    );
+  });
+
+  it('leaves the protocol link off other events', () => {
+    setAuthed(creator);
+    renderScreen();
+
+    expect(screen.queryByRole('link', { name: 'event protocol' })).not.toBeInTheDocument();
   });
 
   it('blocks non-host members with a forbidden notice', () => {

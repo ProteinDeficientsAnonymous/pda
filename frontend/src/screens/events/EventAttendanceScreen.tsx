@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { extractApiError, getApiStatus } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
-import { canManageEvent } from '@/models/event';
+import { canManageEvent, EventType } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { EventAttendancePanel } from './EventAttendancePanel';
@@ -44,7 +44,17 @@ export default function EventAttendanceScreen() {
     <ContentContainer>
       <BackLink eventId={event.id} />
       <h1 className="mb-1 text-2xl font-medium tracking-tight">check-in</h1>
-      <p className="text-foreground-secondary mb-6 text-sm">{event.title}</p>
+      <p className="text-foreground-secondary mb-6 text-sm">
+        {event.title}
+        {event.eventType === EventType.Official ? (
+          <>
+            {' · '}
+            <Link to="/event-protocol" className="underline">
+              event protocol
+            </Link>
+          </>
+        ) : null}
+      </p>
       <EventAttendancePanel event={event} />
     </ContentContainer>
   );
