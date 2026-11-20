@@ -89,4 +89,24 @@ describe('NotificationRow', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith('/events/e789');
   });
+
+  it('navigates to event for poll seated unpaid notification', async () => {
+    const pollSeatedNotification = {
+      id: 'n4',
+      notificationType: NotificationType.PollSeatedUnpaid,
+      eventId: 'e321',
+      surveyId: null,
+      relatedUserId: null,
+      message: "you're going, but your spot isn't confirmed until you pay",
+      isRead: false,
+      createdAt: '2026-10-21T00:00:00Z',
+    };
+
+    render(
+      <NotificationRow n={pollSeatedNotification} onMarkRead={vi.fn()} onActivate={vi.fn()} />,
+    );
+    await userEvent.click(screen.getByRole('button'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/events/e321');
+  });
 });

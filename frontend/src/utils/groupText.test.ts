@@ -11,6 +11,7 @@ function recipients(overrides: Partial<TextRecipients> = {}): TextRecipients {
     cantGo: [],
     waitlisted: [],
     invited: [],
+    coHosts: [],
     ...overrides,
   };
 }
@@ -67,6 +68,17 @@ describe('collectPhones', () => {
 
   it('returns an empty array when no groups are selected', () => {
     expect(collectPhones(FULL, [])).toEqual([]);
+  });
+
+  it('always includes co-hosts, whichever groups are selected', () => {
+    const r = recipients({ attending: ['+15551112222'], coHosts: ['+15550001111'] });
+    expect(collectPhones(r, [])).toEqual(['+15550001111']);
+    expect(collectPhones(r, [RecipientGroup.Going])).toEqual(['+15551112222', '+15550001111']);
+  });
+
+  it('dedupes a co-host who also rsvped', () => {
+    const r = recipients({ attending: ['+15551112222'], coHosts: ['+15551112222'] });
+    expect(collectPhones(r, [RecipientGroup.Going])).toEqual(['+15551112222']);
   });
 });
 

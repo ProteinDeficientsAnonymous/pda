@@ -294,6 +294,7 @@ export function EventForm({ existing, initial, onCreated }: Props) {
   const linkCount = countFilled(values, LINK_FIELDS);
   const moneyFilled =
     values.price.trim().length > 0 ||
+    values.priceNote.trim().length > 0 ||
     values.venmoLink.trim().length > 0 ||
     values.cashappLink.trim().length > 0 ||
     values.zelleInfo.trim().length > 0;

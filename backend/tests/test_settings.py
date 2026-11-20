@@ -96,3 +96,16 @@ class TestDatabaseConfig:
         db = reload_settings().DATABASES["default"]
 
         assert "pool" not in db.get("OPTIONS", {})
+
+
+@pytest.mark.unit
+class TestFrontendBaseUrl:
+    def test_blank_falls_back_to_localhost(self, monkeypatch, reload_settings):
+        monkeypatch.setenv("FRONTEND_BASE_URL", "")
+
+        assert reload_settings().FRONTEND_BASE_URL == "http://localhost:3000"
+
+    def test_reads_env(self, monkeypatch, reload_settings):
+        monkeypatch.setenv("FRONTEND_BASE_URL", "https://pda.example.com")
+
+        assert reload_settings().FRONTEND_BASE_URL == "https://pda.example.com"

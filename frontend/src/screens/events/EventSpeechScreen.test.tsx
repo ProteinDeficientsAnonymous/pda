@@ -61,7 +61,6 @@ function httpError(status: number, code?: string) {
 }
 
 beforeEach(() => {
-  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
   vi.mocked(apiClient.get).mockReset().mockResolvedValue({ data: UNSAVED_WALK });
   vi.mocked(apiClient.put).mockReset().mockResolvedValue({ data: SAVED_WALK });
 });

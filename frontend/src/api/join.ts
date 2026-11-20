@@ -11,6 +11,7 @@ import { Code } from './validationCodes.gen';
 
 export type JoinQuestionType = components['schemas']['JoinFormQuestionType'];
 export const DEFAULT_JOIN_QUESTION_TYPE: JoinQuestionType = 'text';
+export type JoinAnswer = string | string[];
 
 export interface JoinQuestion {
   id: string;
@@ -53,7 +54,7 @@ export interface SubmitJoinRequestPayload {
   lastName: string;
   phoneNumber: string;
   email: string;
-  answers: Record<string, string>;
+  answers: Record<string, JoinAnswer>;
   smsConsent: boolean;
   guidelinesConsent: boolean;
   website: string;
@@ -129,10 +130,19 @@ export const JoinRequestStatus = {
 } as const;
 export type JoinRequestStatus = (typeof JoinRequestStatus)[keyof typeof JoinRequestStatus];
 
+/** Vetter decision events for PATCH /join-requests/{id}/ */
+export const JoinRequestDecisionEvent = {
+  MARK_TENTATIVE: 'mark_tentative',
+  APPROVE: 'approve',
+  REJECT: 'reject',
+} as const;
+export type JoinRequestDecisionEvent =
+  (typeof JoinRequestDecisionEvent)[keyof typeof JoinRequestDecisionEvent];
+
 export interface JoinRequestAnswer {
   questionId: string;
   label: string;
-  answer: string;
+  answer: JoinAnswer;
 }
 
 export interface RsvpBreakdown {
@@ -212,7 +222,7 @@ function mapPreviousRejection(w: WirePreviousRejection): PreviousRejection {
 interface WireAnswer {
   question_id: string;
   label: string;
-  answer: string;
+  answer: JoinAnswer;
 }
 
 interface WireRsvpEvent {
@@ -421,17 +431,14 @@ export function useDecideJoinRequest() {
   return useMutation({
     mutationFn: async (args: {
       id: string;
-      status:
-        | typeof JoinRequestStatus.APPROVED
-        | typeof JoinRequestStatus.TENTATIVE
-        | typeof JoinRequestStatus.REJECTED;
+      event: JoinRequestDecisionEvent;
       rejectionReason?: RejectionReason | null;
       rejectionNote?: string;
     }) => {
       const { data } = await apiClient.patch<WireDecision>(
         `/api/community/join-requests/${args.id}/`,
         {
-          status: args.status,
+          event: args.event,
           rejection_reason: args.rejectionReason ?? '',
           rejection_note: args.rejectionNote ?? '',
         },

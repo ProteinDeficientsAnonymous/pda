@@ -66,10 +66,12 @@ describe('question type options', () => {
       { value: QuestionType.Text, label: 'short text', wantsOptions: false },
       { value: QuestionType.Textarea, label: 'long answer', wantsOptions: false },
       { value: QuestionType.Select, label: 'select', wantsOptions: true },
+      { value: QuestionType.Checkbox, label: 'checkbox', wantsOptions: true },
     ]);
     expect(JOIN_QUESTION_TYPE_OPTIONS.map(({ value }) => questionTypeWantsOptions(value))).toEqual([
       false,
       false,
+      true,
       true,
     ]);
   });

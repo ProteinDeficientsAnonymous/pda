@@ -54,7 +54,7 @@ endif
 
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
         createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity check-private-modules \
-        frontend-install frontend-run frontend-build frontend-lint \
+        frontend-deps-check frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
         dump-codes generate-codes check-codes cursor-rules dump-openapi frontend-types-check \
         parallel-frontend parallel-agent-frontend \
@@ -301,7 +301,7 @@ cursor-rules:
 # Verify frontend/src/api/types.gen.ts is in sync with backend/openapi_schema.json.
 # Wired into parallel-frontend / parallel-agent-frontend so it runs where
 # pnpm is installed.
-frontend-types-check:
+frontend-types-check: frontend-deps-check
 	cd frontend && pnpm types:api:check
 
 # CI (run before every commit)
@@ -351,26 +351,34 @@ agent-complexity:
 		echo "$$violations"; \
 		exit 1; \
 	fi
-agent-frontend-oxlint:
+# Worktrees symlink the main checkout's node_modules, which goes stale when pnpm-lock.yaml changes.
+frontend-deps-check:
+	@cmp -s frontend/pnpm-lock.yaml frontend/node_modules/.pnpm/lock.yaml || { \
+		dir=$$(cd frontend/node_modules 2>/dev/null && dirname "$$(pwd -P)" || echo frontend); \
+		echo "frontend/node_modules is missing or doesn't match pnpm-lock.yaml. run: cd $$dir && pnpm install --frozen-lockfile"; \
+		exit 1; \
+	}
+
+agent-frontend-oxlint: frontend-deps-check
 	cd frontend && pnpm exec oxlint
 
 # Cheap pre-push gate: oxlint + oxfmt in parallel.
 agent-frontend-lint:
 	$(MAKE) -j2 agent-frontend-oxlint agent-frontend-format-check
 
-agent-frontend-format:
+agent-frontend-format: frontend-deps-check
 	cd frontend && pnpm exec oxfmt
 
-agent-frontend-format-check:
+agent-frontend-format-check: frontend-deps-check
 	cd frontend && pnpm exec oxfmt --check
 
-agent-frontend-test:
+agent-frontend-test: frontend-deps-check
 	cd frontend && pnpm exec vitest run --reporter=dot --silent passed-only $(AGENT_VITEST_EXTRA)
 
 agent-frontend-e2e:
 	@cd frontend && pnpm test:e2e
 
-agent-frontend-typecheck:
+agent-frontend-typecheck: frontend-deps-check
 	cd frontend && pnpm exec tsc -b --noEmit --pretty false
 
 agent-ci: agent-backend-ci agent-frontend-ci

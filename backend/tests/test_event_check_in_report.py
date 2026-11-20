@@ -116,7 +116,8 @@ class TestCheckInReportEndpoint:
         assert data["attended_count"] == 2
         assert data["no_show_count"] == 1
         assert data["canceled_count"] == 1
-        assert data["unmarked_count"] == 1
+        assert data["unmarked_going_count"] == 1
+        assert data["unmarked_not_going_count"] == 0
 
     def test_guest_rsvp_tagged_not_member(self, api_client, stocked_event, host_user, guest_user):
         response = api_client.get(
@@ -188,7 +189,7 @@ class TestCheckInReportEndpoint:
         assert response.status_code == 400
         assert response.json()["detail"][0]["code"] == "event.check_in_report_not_yet_available"
 
-    def test_maybe_and_waitlisted_land_in_unmarked(
+    def test_maybe_and_waitlisted_land_in_unmarked_not_going(
         self, api_client, past_event, members, host_user
     ):
         EventRSVP.objects.create(event=past_event, user=members[0], status=RSVPStatus.MAYBE)
@@ -197,8 +198,9 @@ class TestCheckInReportEndpoint:
             f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         )
         data = response.json()
-        assert data["unmarked_count"] == 2
-        assert {r["user_id"] for r in data["unmarked"]} == {
+        assert data["unmarked_going_count"] == 0
+        assert data["unmarked_not_going_count"] == 2
+        assert {r["user_id"] for r in data["unmarked_not_going"]} == {
             str(members[0].pk),
             str(members[1].pk),
         }
@@ -212,9 +214,9 @@ class TestCheckInReportEndpoint:
         total = (
             data["attended_count"]
             + data["no_show_count"]
-            + data["didnt_go_count"]
             + data["canceled_count"]
-            + data["unmarked_count"]
+            + data["unmarked_going_count"]
+            + data["unmarked_not_going_count"]
         )
         assert total == 0
 
@@ -226,7 +228,7 @@ class TestCheckInReportEndpoint:
         response = api_client.get(
             f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host)
         )
-        row = next(r for r in response.json()["unmarked"] if r["user_id"] == str(host.pk))
+        row = next(r for r in response.json()["unmarked_going"] if r["user_id"] == str(host.pk))
         assert row["name"] == "Ada Lovelace"
 
     def test_marked_as_attended_shows_in_attended_list(
@@ -237,7 +239,7 @@ class TestCheckInReportEndpoint:
         report = api_client.get(
             f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         ).json()
-        assert report["unmarked_count"] == 1
+        assert report["unmarked_going_count"] == 1
         assert report["attended_count"] == 0
         rsvp.attendance = AttendanceStatus.ATTENDED
         rsvp.checked_in_at = timezone.now()
@@ -245,7 +247,7 @@ class TestCheckInReportEndpoint:
         report = api_client.get(
             f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         ).json()
-        assert report["unmarked_count"] == 0, "member should not be in unmarked after mark-in"
+        assert report["unmarked_going_count"] == 0, "member should not be unmarked after mark-in"
         assert report["attended_count"] == 1, "member should be in attended after mark-in"
         assert report["attended"][0]["user_id"] == str(member.pk)
 
@@ -260,7 +262,7 @@ class TestCheckInReportEndpoint:
         report = api_client.get(
             f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         ).json()
-        assert report["unmarked_count"] == 0, "maybe RSVP marked in should not stay unmarked"
+        assert report["unmarked_not_going_count"] == 0, "maybe marked in shouldn't stay unmarked"
         assert report["attended_count"] == 1
         assert report["attended"][0]["user_id"] == str(member.pk)
 
@@ -278,7 +280,7 @@ class TestCheckInReportEndpoint:
         assert report["canceled_count"] == 1
         assert report["canceled"][0]["user_id"] == str(member.pk)
 
-    def test_maybe_rsvp_marked_didnt_attend_is_in_didnt_go_not_unmarked(
+    def test_maybe_rsvp_marked_didnt_attend_is_unmarked_not_going(
         self, api_client, past_event, members, host_user
     ):
         member = members[0]
@@ -288,10 +290,9 @@ class TestCheckInReportEndpoint:
         report = api_client.get(
             f"/api/community/events/{past_event.id}/report/", **auth_headers_for(host_user)
         ).json()
-        assert report["didnt_go_count"] == 1, "a maybe marked didn't-attend isn't left unmarked"
-        assert report["didnt_go"][0]["user_id"] == str(member.pk)
+        assert report["unmarked_not_going_count"] == 1
+        assert report["unmarked_not_going"][0]["user_id"] == str(member.pk)
         assert report["no_show_count"] == 0
-        assert report["unmarked_count"] == 0
 
     def test_attending_rsvp_marked_didnt_attend_is_a_no_show(
         self, api_client, past_event, members, host_user
@@ -361,9 +362,9 @@ class TestCheckInReportCsvEndpoint:
         report_total = (
             report["attended_count"]
             + report["no_show_count"]
-            + report["didnt_go_count"]
             + report["canceled_count"]
-            + report["unmarked_count"]
+            + report["unmarked_going_count"]
+            + report["unmarked_not_going_count"]
         )
         assert len(data_rows) == report_total == 2
 

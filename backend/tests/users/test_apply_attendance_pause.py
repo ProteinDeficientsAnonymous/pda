@@ -31,6 +31,21 @@ class TestApplyAttendancePause:
         assert member.membership_status == MembershipStatus.ATTENDANCE_PAUSED
         assert member.has_joined_whatsapp is False
 
+    def test_locks_row_for_update(self, rf, member, monkeypatch):
+        from users.models import User
+
+        original = User.objects.select_for_update
+        called = False
+
+        def spy(*args, **kwargs):
+            nonlocal called
+            called = True
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(User.objects, "select_for_update", spy)
+        apply_attendance_pause(rf.get("/"), member)
+        assert called
+
     def test_keeps_member_role_and_strips_elevated(self, rf, member):
         member_role, _ = Role.objects.get_or_create(name="member", is_default=True)
         vettor = Role.objects.create(name="vettor")

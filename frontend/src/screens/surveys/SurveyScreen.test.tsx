@@ -139,6 +139,7 @@ describe('SurveyScreen', () => {
     expect(screen.queryByRole('button', { name: /submit/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('thoughts · required')).not.toBeInTheDocument();
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
   });
 
   it('renders a scheduled state for a survey that has not opened yet', async () => {

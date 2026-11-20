@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useCheckInReport } from '@/api/eventCheckInReport';
 import { useEvent } from '@/api/events';
 import { Code } from '@/api/validationCodes';
 import { apiError } from '@/test/apiError';
@@ -92,5 +93,39 @@ describe('EventCheckInReportScreen', () => {
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
     expect(screen.queryByText(BASE_EVENT.title)).not.toBeInTheDocument();
+  });
+
+  it('splits unmarked guests into were-going and maybe sections, with no didnt-go section', () => {
+    const person = (userId: string, name: string) => ({
+      userId,
+      name,
+      phone: null,
+      isMember: true,
+      isPlusOneGuest: false,
+    });
+    vi.mocked(useCheckInReport).mockReturnValue({
+      data: {
+        attendedCount: 0,
+        noShowCount: 0,
+        canceledCount: 0,
+        unmarkedGoingCount: 1,
+        unmarkedNotGoingCount: 1,
+        attended: [],
+        noShows: [],
+        canceled: [],
+        unmarkedGoing: [person('u1', 'Going Guest')],
+        unmarkedNotGoing: [person('u2', 'Maybe Guest')],
+      },
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useCheckInReport>);
+    setAuthed(creator);
+    renderScreen();
+
+    expect(screen.getByText('unmarked — were going')).toBeInTheDocument();
+    expect(screen.getByText('Going Guest')).toBeInTheDocument();
+    expect(screen.getByText('unmarked — maybe or waitlisted')).toBeInTheDocument();
+    expect(screen.getByText('Maybe Guest')).toBeInTheDocument();
+    expect(screen.queryByText("no one marked didn't go")).not.toBeInTheDocument();
   });
 });

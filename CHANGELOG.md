@@ -1,3 +1,290 @@
+## [0.277.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.277.1...v0.277.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* let manage_events holders add and manage co-hosts ([#2637](https://github.com/ProteinDeficientsAnonymous/pda/issues/2637)) ([41663fc](https://github.com/ProteinDeficientsAnonymous/pda/commit/41663fce4d9eb1002a7b9e1e0b5111df575549eb))
+
+## [0.277.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.277.0...v0.277.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **events:** drop didn't-go section, split unmarked on check-in report ([#2630](https://github.com/ProteinDeficientsAnonymous/pda/issues/2630)) ([a9ff187](https://github.com/ProteinDeficientsAnonymous/pda/commit/a9ff1871b4484b16ed320b1914d2f0554553aa2a))
+
+# [0.277.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.276.0...v0.277.0) (2026-11-20)
+
+
+### Features
+
+* 2116 - day-of guide page for official-event hosts ([#2621](https://github.com/ProteinDeficientsAnonymous/pda/issues/2621)) ([393d895](https://github.com/ProteinDeficientsAnonymous/pda/commit/393d8957fbf0113fd464b9142ac58dd6ec339aab))
+* 2116 - include day-of guide in check-in reminders ([#2616](https://github.com/ProteinDeficientsAnonymous/pda/issues/2616)) ([3e73517](https://github.com/ProteinDeficientsAnonymous/pda/commit/3e73517b4ab4a170efae24ef3c143953f17bdca8))
+* send check-in nudges 2 hours before the event ([#2628](https://github.com/ProteinDeficientsAnonymous/pda/issues/2628)) ([e08dff0](https://github.com/ProteinDeficientsAnonymous/pda/commit/e08dff0c8145e8d08f0654f3d513c3781e938315))
+
+# [0.276.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.275.0...v0.276.0) (2026-11-20)
+
+
+### Features
+
+* **events:** close and reopen rsvps from the event kebab ([#2627](https://github.com/ProteinDeficientsAnonymous/pda/issues/2627)) ([6a88f8b](https://github.com/ProteinDeficientsAnonymous/pda/commit/6a88f8b96fc10b190d32ce637cf6661e4ace3a7c))
+
+# [0.275.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.274.2...v0.275.0) (2026-11-20)
+
+
+### Features
+
+* **rsvps:** let hosts close rsvps on an event ([#2626](https://github.com/ProteinDeficientsAnonymous/pda/issues/2626)) ([e3e40ce](https://github.com/ProteinDeficientsAnonymous/pda/commit/e3e40ce7563e3db8f896d56540ea48678b4c3672))
+
+## [0.274.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.274.1...v0.274.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* **settings:** treat blank FRONTEND_BASE_URL as unset ([#2629](https://github.com/ProteinDeficientsAnonymous/pda/issues/2629)) ([026a18e](https://github.com/ProteinDeficientsAnonymous/pda/commit/026a18e1e4db36afad95102c5f9f745e69d71514))
+
+## [0.274.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.274.0...v0.274.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* 401 expired tokens on optional-auth reads so hosts keep seeing their drafts ([#2623](https://github.com/ProteinDeficientsAnonymous/pda/issues/2623)) ([515aaa5](https://github.com/ProteinDeficientsAnonymous/pda/commit/515aaa598468addac1db3c468edecf3d2b8a3640))
+* **deploy:** drop default restart policy from railway iac config ([#2622](https://github.com/ProteinDeficientsAnonymous/pda/issues/2622)) ([68ba397](https://github.com/ProteinDeficientsAnonymous/pda/commit/68ba3979f0f77a99bfd116d690bfa8720a9aad93))
+* **rsvp:** don't require payment to join a paid event's waitlist ([#1655](https://github.com/ProteinDeficientsAnonymous/pda/issues/1655)) ([d190aeb](https://github.com/ProteinDeficientsAnonymous/pda/commit/d190aeb58763f9355a049583f7517e27e7b78283))
+
+# [0.274.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.273.0...v0.274.0) (2026-11-20)
+
+
+### Features
+
+* **community:** encode JoinRequestStatus as an event-driven state machine ([#2578](https://github.com/ProteinDeficientsAnonymous/pda/issues/2578)) ([30cf9eb](https://github.com/ProteinDeficientsAnonymous/pda/commit/30cf9ebceebef6560c123e0e7cf96ffc706f06d4))
+
+# [0.273.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.272.0...v0.273.0) (2026-11-20)
+
+
+### Features
+
+* **users:** encode MembershipStatus as an event-driven state machine ([#2577](https://github.com/ProteinDeficientsAnonymous/pda/issues/2577)) ([0eb2b26](https://github.com/ProteinDeficientsAnonymous/pda/commit/0eb2b267bd593a6f46f1509b01a1ce80219918b2))
+
+# [0.272.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.5...v0.272.0) (2026-11-20)
+
+
+### Features
+
+* **audit:** persist rejected state transitions after rollback ([#2576](https://github.com/ProteinDeficientsAnonymous/pda/issues/2576)) ([b10b9aa](https://github.com/ProteinDeficientsAnonymous/pda/commit/b10b9aad2c73e1dc96536687a4c8718049357f62))
+
+## [0.271.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.4...v0.271.5) (2026-11-20)
+
+
+### Bug Fixes
+
+* 2117 - send option prices when creating an event ([#2620](https://github.com/ProteinDeficientsAnonymous/pda/issues/2620)) ([7e35b13](https://github.com/ProteinDeficientsAnonymous/pda/commit/7e35b13d2f79e5d52101f7bd202dcfcdcdbf196c))
+
+## [0.271.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.3...v0.271.4) (2026-11-20)
+
+
+### Bug Fixes
+
+* key questionnaire answers by question id ([#2601](https://github.com/ProteinDeficientsAnonymous/pda/issues/2601)) ([b1356db](https://github.com/ProteinDeficientsAnonymous/pda/commit/b1356db6c25f0461490f89d458fc53d9f2ba7397))
+
+## [0.271.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.2...v0.271.3) (2026-11-20)
+
+
+### Bug Fixes
+
+* **notifications:** live comment updates for non-member rsvp viewers (1043, 3/3) ([#1057](https://github.com/ProteinDeficientsAnonymous/pda/issues/1057)) ([a192847](https://github.com/ProteinDeficientsAnonymous/pda/commit/a192847f6614cc824615ba55d0583dc46d3f6e22))
+
+## [0.271.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.1...v0.271.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* **visual:** hide fixed chrome in fullPage screenshots ([#2614](https://github.com/ProteinDeficientsAnonymous/pda/issues/2614)) ([8f7bb4a](https://github.com/ProteinDeficientsAnonymous/pda/commit/8f7bb4aa0d115d9f73a754543b50cb7bbdae57f1))
+
+## [0.271.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.0...v0.271.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **docker:** copy pnpm-workspace.yaml before the frozen frontend install ([#2619](https://github.com/ProteinDeficientsAnonymous/pda/issues/2619)) ([5dd1b84](https://github.com/ProteinDeficientsAnonymous/pda/commit/5dd1b84d256ea029a11f4e341a0a84de3e2afe59))
+
+# [0.271.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.270.0...v0.271.0) (2026-11-20)
+
+
+### Features
+
+* 2117 - charge the order total on the rsvp pay step ([#2615](https://github.com/ProteinDeficientsAnonymous/pda/issues/2615)) ([d24f201](https://github.com/ProteinDeficientsAnonymous/pda/commit/d24f2013eb530bbd82ef8df01cf79ff526bf5b3e))
+* 2117 - let hosts price rsvp question options ([#2608](https://github.com/ProteinDeficientsAnonymous/pda/issues/2608)) ([b0d82cc](https://github.com/ProteinDeficientsAnonymous/pda/commit/b0d82cce7ed11d028b54c3a8cbf7d4ac4dfeef38))
+* 2117 - show guests their order total while they rsvp ([#2609](https://github.com/ProteinDeficientsAnonymous/pda/issues/2609)) ([a749cf8](https://github.com/ProteinDeficientsAnonymous/pda/commit/a749cf85f953fc441d7e81af7d157845690e984f))
+* 2117 - show rsvp order totals to guests and hosts ([#2610](https://github.com/ProteinDeficientsAnonymous/pda/issues/2610)) ([a8a3de7](https://github.com/ProteinDeficientsAnonymous/pda/commit/a8a3de72372cc48146172b04c2b05cf30c2cec46))
+* 2117 - snapshot the ordered price into rsvp answers ([#2607](https://github.com/ProteinDeficientsAnonymous/pda/issues/2607)) ([203e20b](https://github.com/ProteinDeficientsAnonymous/pda/commit/203e20b184d147911c2e5747cd0c336cf3c3254d))
+* 2117 - store per-option prices on rsvp questions ([#2606](https://github.com/ProteinDeficientsAnonymous/pda/issues/2606)) ([1fab3f5](https://github.com/ProteinDeficientsAnonymous/pda/commit/1fab3f5f44258304300c13e2c33cdbb1fdba27b7))
+
+# [0.270.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.269.0...v0.270.0) (2026-11-20)
+
+
+### Features
+
+* 2122 - add per-event paypal toggle with fee-inclusive price ([#2266](https://github.com/ProteinDeficientsAnonymous/pda/issues/2266)) ([3048554](https://github.com/ProteinDeficientsAnonymous/pda/commit/3048554bb8a44ef9ff955c5d1732027d050e0440))
+
+# [0.269.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.268.1...v0.269.0) (2026-11-20)
+
+
+### Features
+
+* **notifications:** mint event-scoped sse tickets for rsvp viewers (1043, 2/3) ([#1688](https://github.com/ProteinDeficientsAnonymous/pda/issues/1688)) ([cc2f8c3](https://github.com/ProteinDeficientsAnonymous/pda/commit/cc2f8c324f2ff8ddbbedb4873611610f3f9abbff))
+
+## [0.268.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.268.0...v0.268.1) (2026-11-20)
+
+
+### Performance Improvements
+
+* 1923 - expire stale co-host invites once per read ([#1950](https://github.com/ProteinDeficientsAnonymous/pda/issues/1950)) ([1f5accc](https://github.com/ProteinDeficientsAnonymous/pda/commit/1f5acccd47e68f0d02d10feebf510f7e5a40d667))
+
+# [0.268.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.267.1...v0.268.0) (2026-11-20)
+
+
+### Features
+
+* 2122 - require event price to be a dollar amount ([#2204](https://github.com/ProteinDeficientsAnonymous/pda/issues/2204)) ([7b91fc6](https://github.com/ProteinDeficientsAnonymous/pda/commit/7b91fc6b6316b84c0f4e73d8ef55fca5012bff1f))
+* **notifications:** event-scoped sse streams for anonymous tickets (1043, 1/3) ([#1687](https://github.com/ProteinDeficientsAnonymous/pda/issues/1687)) ([785af64](https://github.com/ProteinDeficientsAnonymous/pda/commit/785af640e3492b913976f818a9a7793cde4d0099))
+
+## [0.267.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.267.0...v0.267.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* block host-removed rsvpers from event comments ([#2602](https://github.com/ProteinDeficientsAnonymous/pda/issues/2602)) ([0c98a47](https://github.com/ProteinDeficientsAnonymous/pda/commit/0c98a471f5cf727e1c11c839bf5f7934adb7eb53))
+
+# [0.267.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.266.1...v0.267.0) (2026-11-20)
+
+
+### Features
+
+* **mcp:** add audit_history tool for reading the audit log ([#2298](https://github.com/ProteinDeficientsAnonymous/pda/issues/2298)) ([008f4f3](https://github.com/ProteinDeficientsAnonymous/pda/commit/008f4f35e2ba89a6e82371dd61c3cccba80a4f4d))
+
+## [0.266.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.266.0...v0.266.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **audit:** audit un-archive on tentative approval ([#2600](https://github.com/ProteinDeficientsAnonymous/pda/issues/2600)) ([c16fe29](https://github.com/ProteinDeficientsAnonymous/pda/commit/c16fe299fd4ae78f0f6bf29b2d0ffb994ee8ef6a))
+
+# [0.266.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.265.0...v0.266.0) (2026-11-20)
+
+
+### Features
+
+* **audit:** add view_audit_log permission and audit log endpoint ([#2296](https://github.com/ProteinDeficientsAnonymous/pda/issues/2296)) ([3e52716](https://github.com/ProteinDeficientsAnonymous/pda/commit/3e527167f455d97b2cab4ad53c109b393c9405b8))
+
+# [0.265.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.264.0...v0.265.0) (2026-11-20)
+
+
+### Bug Fixes
+
+* delete expired sse tickets in bounded batches ([#2599](https://github.com/ProteinDeficientsAnonymous/pda/issues/2599)) ([3060db9](https://github.com/ProteinDeficientsAnonymous/pda/commit/3060db9347de3c89c301eebfbb8ab45e64e73662))
+
+
+### Features
+
+* **audit:** name paused members and log edits made with a pause ([#2295](https://github.com/ProteinDeficientsAnonymous/pda/issues/2295)) ([2a0a99e](https://github.com/ProteinDeficientsAnonymous/pda/commit/2a0a99e5175d0d46c3cdccdfd67a70cf2687971c))
+
+# [0.264.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.263.1...v0.264.0) (2026-11-20)
+
+
+### Bug Fixes
+
+* 2180 - scroll to top when a thank-you replaces the form ([#2594](https://github.com/ProteinDeficientsAnonymous/pda/issues/2594)) ([ec7d243](https://github.com/ProteinDeficientsAnonymous/pda/commit/ec7d24300551c6ebd7cc2bd6d0ddcb420391c769))
+* 2208 - keep calendar links whole in ics feeds ([#2597](https://github.com/ProteinDeficientsAnonymous/pda/issues/2597)) ([2f3c86d](https://github.com/ProteinDeficientsAnonymous/pda/commit/2f3c86d67d22a2d562426b2a2848a7a4cf71872a))
+* **ratelimit:** key client_ip past Railway's internal proxy hops ([#2390](https://github.com/ProteinDeficientsAnonymous/pda/issues/2390)) ([2d1928a](https://github.com/ProteinDeficientsAnonymous/pda/commit/2d1928a25facb777b151f40b731cf0e19487f836))
+
+
+### Features
+
+* 2165 - add event speech reminder to check-in nudge ([#2596](https://github.com/ProteinDeficientsAnonymous/pda/issues/2596)) ([136aee4](https://github.com/ProteinDeficientsAnonymous/pda/commit/136aee481732824dc1dbfc661ff4202ef5618e1c))
+
+## [0.263.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.263.0...v0.263.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* 2251 - event speech page back link ([#2593](https://github.com/ProteinDeficientsAnonymous/pda/issues/2593)) ([d4716de](https://github.com/ProteinDeficientsAnonymous/pda/commit/d4716de77c09df284ae534f2003be6abdd61b483))
+
+# [0.263.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.262.1...v0.263.0) (2026-11-20)
+
+
+### Bug Fixes
+
+* **cashapp:** offer partial sender-name matches as candidates ([#2477](https://github.com/ProteinDeficientsAnonymous/pda/issues/2477)) ([50ddc0a](https://github.com/ProteinDeficientsAnonymous/pda/commit/50ddc0a3ac3f7774142cf9cb3e54aa00950dc7d9))
+
+
+### Features
+
+* 2587 - assign and remove member roles through the mcp ([#2592](https://github.com/ProteinDeficientsAnonymous/pda/issues/2592)) ([5a63cb9](https://github.com/ProteinDeficientsAnonymous/pda/commit/5a63cb9435453134469c8aed27389e5e153aa265))
+* **audit:** audit check-in approval and re-approval reactivation ([#2294](https://github.com/ProteinDeficientsAnonymous/pda/issues/2294)) ([b47b718](https://github.com/ProteinDeficientsAnonymous/pda/commit/b47b71875f89c19508a1a4d07b77ff63f7320a7a))
+
+## [0.262.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.262.0...v0.262.1) (2026-11-20)
+
+
+### Performance Improvements
+
+* 1922 - index join request, rsvp and event status lookups ([#1932](https://github.com/ProteinDeficientsAnonymous/pda/issues/1932)) ([2785a7f](https://github.com/ProteinDeficientsAnonymous/pda/commit/2785a7f9dd5e1a179e8cd246af29968d8e61fcaa))
+
+# [0.262.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.261.0...v0.262.0) (2026-11-20)
+
+
+### Features
+
+* 2299 - let the mcp read survey responses for admins ([#2590](https://github.com/ProteinDeficientsAnonymous/pda/issues/2590)) ([fabfdfa](https://github.com/ProteinDeficientsAnonymous/pda/commit/fabfdfabec8ea9960818e92b6b4161bbcefe3c80))
+* 2569 - always include co-hosts in group texts ([#2589](https://github.com/ProteinDeficientsAnonymous/pda/issues/2589)) ([cf1a1a7](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf1a1a7d57d5fa59992a003c05cfc018b529de31))
+* **audit:** record user_id on join-request transition audits ([#2307](https://github.com/ProteinDeficientsAnonymous/pda/issues/2307)) ([c4ffcbe](https://github.com/ProteinDeficientsAnonymous/pda/commit/c4ffcbe08f9b240a39519af024a32babc4d73041))
+
+# [0.261.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.260.1...v0.261.0) (2026-11-20)
+
+
+### Features
+
+* 2587 - list roles in the mcp ([#2591](https://github.com/ProteinDeficientsAnonymous/pda/issues/2591)) ([4694797](https://github.com/ProteinDeficientsAnonymous/pda/commit/4694797404e1485a8d70ef445858a577bbeb7ad8))
+
+## [0.260.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.260.0...v0.260.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **audit:** keep refused-request audits through rollbacks ([#2293](https://github.com/ProteinDeficientsAnonymous/pda/issues/2293)) ([eee58a4](https://github.com/ProteinDeficientsAnonymous/pda/commit/eee58a40230bb1ed22682bd7b157b67122cee692))
+
+# [0.260.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.259.1...v0.260.0) (2026-11-20)
+
+
+### Bug Fixes
+
+* **comments:** block limited users from commenting on community events ([#2252](https://github.com/ProteinDeficientsAnonymous/pda/issues/2252)) ([238b8b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/238b8b2a3e7d131e7c3250414d2bf68835703fa4))
+
+
+### Features
+
+* **join-requests:** allow checkbox questions on the join form ([#2388](https://github.com/ProteinDeficientsAnonymous/pda/issues/2388)) ([8a20c42](https://github.com/ProteinDeficientsAnonymous/pda/commit/8a20c42e8a6f3c0cf38cc0bc4e40c72a2c61627b))
+
+## [0.259.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.259.0...v0.259.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **tests:** use current public rsvper helpers in my-rsvps query count test ([#2588](https://github.com/ProteinDeficientsAnonymous/pda/issues/2588)) ([ece5b57](https://github.com/ProteinDeficientsAnonymous/pda/commit/ece5b575294584dbb81752c0a0df89da7ad73429))
+
+# [0.259.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.258.1...v0.259.0) (2026-11-20)
+
+
+### Features
+
+* **mcp:** let hosts read event questionnaire responses ([#2253](https://github.com/ProteinDeficientsAnonymous/pda/issues/2253)) ([cd31f1c](https://github.com/ProteinDeficientsAnonymous/pda/commit/cd31f1ce6b0371f7b2d7951c2179d4be33954ee9))
+
+## [0.258.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.258.0...v0.258.1) (2026-11-19)
+
+
+### Performance Improvements
+
+* 1923 - prefetch event relations for my-rsvps ([#1947](https://github.com/ProteinDeficientsAnonymous/pda/issues/1947)) ([3999b55](https://github.com/ProteinDeficientsAnonymous/pda/commit/3999b550029127e2752d4aa8c93c84d607885fbf))
+
 # [0.258.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.257.1...v0.258.0) (2026-11-19)
 
 

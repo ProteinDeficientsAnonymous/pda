@@ -116,7 +116,7 @@ class TestMemberRsvpPaymentGate:
         assert EventRSVP.objects.get(event=paid_event).paid_confirmed_at == stamped
 
     def test_free_event_needs_no_confirmation(self, api_client, paid_event, auth_headers):
-        paid_event.price = ""
+        paid_event.price = None
         paid_event.venmo_link = ""
         paid_event.save(update_fields=["price", "venmo_link"])
         response = api_client.post(
@@ -132,7 +132,7 @@ class TestMemberRsvpPaymentGate:
 def paid_public_event(db):
     return make_official_event(
         title="Paid Official Event",
-        price="$10",
+        price="10",
         venmo_link="https://venmo.com/u/host",
     )
 
@@ -158,6 +158,26 @@ class TestPublicSubmitPaymentGate:
         )
         assert response.status_code in (200, 201)
         assert EventRSVP.objects.get(event=paid_public_event).paid_confirmed_at is not None
+
+    def test_new_person_joins_full_waitlist_without_confirmation(
+        self, api_client, paid_public_event, test_user
+    ):
+        paid_public_event.max_attendees = 1
+        paid_public_event.save(update_fields=["max_attendees"])
+        EventRSVP.objects.create(
+            event=paid_public_event, user=test_user, status=RSVPStatus.ATTENDING
+        )
+
+        response = api_client.post(
+            public_url(paid_public_event),
+            public_payload(status=RSVPStatus.ATTENDING),
+            content_type="application/json",
+        )
+
+        assert response.status_code in (200, 201)
+        rsvp = EventRSVP.objects.exclude(user=test_user).get(event=paid_public_event)
+        assert rsvp.status == RSVPStatus.WAITLISTED
+        assert rsvp.paid_confirmed_at is None
 
     def test_new_person_maybe_needs_no_confirmation(self, api_client, paid_public_event):
         response = api_client.post(
