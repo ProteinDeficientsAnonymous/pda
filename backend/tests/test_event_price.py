@@ -9,7 +9,7 @@ from community.validation import Code, ValidationException
 
 from tests._time import future_iso
 
-migration = importlib.import_module("community.migrations.0151_event_price_decimal")
+migration = importlib.import_module("community.migrations.0153_event_price_decimal")
 
 
 @pytest.mark.parametrize(
