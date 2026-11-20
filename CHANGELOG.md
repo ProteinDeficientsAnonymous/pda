@@ -1,3 +1,10 @@
+# [0.276.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.275.0...v0.276.0) (2026-11-20)
+
+
+### Features
+
+* **events:** close and reopen rsvps from the event kebab ([#2627](https://github.com/ProteinDeficientsAnonymous/pda/issues/2627)) ([6a88f8b](https://github.com/ProteinDeficientsAnonymous/pda/commit/6a88f8b96fc10b190d32ce637cf6661e4ace3a7c))
+
 # [0.275.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.274.2...v0.275.0) (2026-11-20)
 
 
