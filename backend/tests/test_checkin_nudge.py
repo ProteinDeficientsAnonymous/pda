@@ -225,51 +225,32 @@ class TestSendDueCheckinNudges:
         )
 
 
-_GUIDE_HTML = (
-    "<h2>arrive early</h2><ul><li><p>set up tables</p></li></ul>"
-    "<p>bring snacks &amp; water</p><script>x()</script>"
-)
-
-
 @pytest.mark.django_db
 class TestCheckinNudgeDayOfGuide:
     @pytest.fixture(autouse=True)
     def _guide_page(self, db):
-        EditablePage.objects.create(slug=DAY_OF_GUIDE_SLUG, content_html=_GUIDE_HTML)
+        EditablePage.objects.create(slug=DAY_OF_GUIDE_SLUG, content_html="<p>arrive early</p>")
 
-    def test_official_event_includes_day_of_guide(self, test_user, fake_email_sender, db):
+    def test_official_event_links_day_of_guide(self, test_user, fake_email_sender, db):
         _, sent = _send_for(test_user, fake_email_sender, event_type=EventType.OFFICIAL)
 
-        assert "day-of guide" in sent["html"]
-        assert "<h2>arrive early</h2>" in sent["html"]
-        assert "<script>" not in sent["html"]
-        assert "day-of guide" in sent["text"]
-        assert "arrive early\n\n- set up tables\n\nbring snacks & water" in sent["text"]
+        assert '/day-of"' in sent["html"]
+        assert "/day-of\n" in sent["text"]
+        assert "arrive early" not in sent["html"]
 
     def test_club_event_has_no_day_of_guide(self, test_user, fake_email_sender, db):
         _, sent = _send_for(test_user, fake_email_sender)
 
         assert "day-of guide" not in sent["html"]
-        assert "arrive early" not in sent["text"]
+        assert "day-of guide" not in sent["text"]
 
-    def test_no_day_of_guide_block_when_page_empty(self, test_user, fake_email_sender, db):
+    def test_no_day_of_guide_link_when_page_empty(self, test_user, fake_email_sender, db):
         EditablePage.objects.filter(slug=DAY_OF_GUIDE_SLUG).update(content_html="")
 
         _, sent = _send_for(test_user, fake_email_sender, event_type=EventType.OFFICIAL)
 
         assert "day-of guide" not in sent["html"]
         assert "day-of guide" not in sent["text"]
-
-    def test_due_run_includes_day_of_guide_for_official_events(
-        self, test_user, fake_email_sender, db
-    ):
-        test_user.email = "creator@example.com"
-        test_user.save(update_fields=["email"])
-        _make_event(created_by=test_user, event_type=EventType.OFFICIAL)
-
-        send_due_checkin_nudges()
-
-        assert "<h2>arrive early</h2>" in fake_email_sender.send.call_args.kwargs["html"]
 
 
 @pytest.mark.django_db
