@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEditablePage } from '@/api/content';
+import { setStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { MembershipStatus } from '@/models/user';
 import { apiError } from '@/test/apiError';
 import { setAuthed, setUnauthed } from '@/test/auth';
@@ -45,6 +46,15 @@ describe.each([
       `/login?redirect=${encodeURIComponent(`/${name}`)}`,
     );
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('asks signed-out public rsvpers to join instead of log in on 403', () => {
+    setStoredRsvpToken('rsvp-tok');
+    failWith(403);
+    renderWithProviders(<Screen />, { route: `/${name}` });
+
+    expect(screen.getByText(/you can.t see this yet/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'request to join' })).toHaveAttribute('href', '/join');
   });
 
   it('shows the members-only notice to tentative members on 403', () => {

@@ -1,7 +1,9 @@
 import { useLocation } from 'react-router-dom';
 
+import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import { ForbiddenNotice } from '@/components/ForbiddenNotice';
+import { JoinToSeeNotice } from '@/components/JoinToSeeNotice';
 import { MembersOnlyNotice } from '@/components/MembersOnlyNotice';
 import { isLimited } from '@/models/event';
 import { isAttendancePaused } from '@/models/user';
@@ -12,6 +14,7 @@ export function MembersOnlyPageNotice({ unlocks }: { unlocks: string }) {
   const location = useLocation();
 
   if (!isAuthed) {
+    if (getStoredRsvpToken()) return <JoinToSeeNotice />;
     return (
       <ForbiddenNotice
         message="log in to see this page"
