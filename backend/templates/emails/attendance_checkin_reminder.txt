@@ -9,10 +9,10 @@ go to check-in:
 the event speech hasn't been filled in yet — fill it in here:
 
 {{ speech_url }}
-{% endif %}{% if guide_text %}
-day-of guide:
+{% endif %}{% if guide_url %}
+here's the day-of guide for what needs to happen at the event:
 
-{% autoescape off %}{{ guide_text }}{% endautoescape %}
+{{ guide_url }}
 {% endif %}
 — pda
 

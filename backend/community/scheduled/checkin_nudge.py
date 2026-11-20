@@ -1,20 +1,16 @@
 from __future__ import annotations
 
 import logging
-import re
 from datetime import timedelta
-from html import unescape
 from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from django.utils.html import strip_tags
 from notifications.email_helpers import CheckinReminderEmailDetails, send_checkin_reminder_email
 from notifications.email_sender import get_email_sender
 from notifications.service import notify_checkin_reminder
 
-from community.content.html_sanitize import sanitize_content_html
 from community.content.pages import DAY_OF_GUIDE_SLUG
 from community.models import EditablePage, Event, EventStatus, EventType
 
@@ -24,11 +20,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 NUDGE_WINDOW = timedelta(hours=1)
-
-_LINE_BREAK = re.compile(r"</(?:p|li)>|<br\s*/?>", re.IGNORECASE)
-_SECTION_BREAK = re.compile(r"</(?:h[1-6]|blockquote|ul|ol)>", re.IGNORECASE)
-_LIST_ITEM = re.compile(r"<li\b[^>]*>", re.IGNORECASE)
-_BLANK_RUNS = re.compile(r"\n{3,}")
 
 
 def due_checkin_nudge_events(now) -> Iterable[Event]:
@@ -67,23 +58,17 @@ def _speech_url(event: Event) -> str:
     return f"{settings.FRONTEND_BASE_URL}/events/{event.pk}/speech"
 
 
-def _day_of_guide_html() -> str:
-    page = EditablePage.objects.filter(slug=DAY_OF_GUIDE_SLUG).only("content_html").first()
-    # the django admin can write content_html directly, bypassing the save-time sanitizer
-    return sanitize_content_html(page.content_html) if page and page.content_html else ""
-
-
-def _plain_text(html: str) -> str:
-    html = _SECTION_BREAK.sub("\n\n", _LIST_ITEM.sub("- ", html))
-    text = unescape(strip_tags(_LINE_BREAK.sub("\n", html)))
-    lines = "\n".join(line.strip() for line in text.splitlines())
-    return _BLANK_RUNS.sub("\n\n", lines).strip()
+def _day_of_guide_url(event: Event) -> str:
+    if event.event_type != EventType.OFFICIAL:
+        return ""
+    if not EditablePage.objects.filter(slug=DAY_OF_GUIDE_SLUG).exclude(content_html="").exists():
+        return ""
+    return f"{settings.FRONTEND_BASE_URL}/day-of"
 
 
 def send_checkin_nudge(event: Event) -> bool:
     """Claim the event, then email + in-app notify the host team. Returns False if already claimed."""
-    guide_html = _day_of_guide_html() if event.event_type == EventType.OFFICIAL else ""
-    guide_text = _plain_text(guide_html)
+    guide_url = _day_of_guide_url(event)
     if not _claim_checkin_nudge(event):
         return False
 
@@ -104,8 +89,7 @@ def send_checkin_nudge(event: Event) -> bool:
                     event_title=event.title,
                     event_url=event_url,
                     speech_url=speech_url,
-                    guide_html=guide_html,
-                    guide_text=guide_text,
+                    guide_url=guide_url,
                 ),
             )
         except Exception:
