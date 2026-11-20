@@ -7,7 +7,7 @@ from django.utils import timezone
 from notifications.email_helpers import send_tentative_attendance_nudge_email
 from notifications.email_sender import EmailSender
 from users.member_status import NOT_SET_UP
-from users.models import HAS_EMAIL, User
+from users.models import HAS_EMAIL, MembershipStatus, User
 
 from community.models import (
     EventRSVP,
@@ -40,14 +40,15 @@ def _candidates(now: datetime) -> QuerySet:
     ).exclude(is_past_q(now, "event__"))
     return (
         User.objects.active_limited_users()
-        .filter(HAS_EMAIL, attendance_nudge_opt_out=False, attendance_paused_at__isnull=True)
+        .filter(HAS_EMAIL, attendance_nudge_opt_out=False)
+        .filter(membership_status=MembershipStatus.TENTATIVE)
         .exclude(NOT_SET_UP)
         .exclude(Exists(upcoming_rsvp))
         .annotate(
             nudge_count=Count("attendance_nudges", distinct=True),
             last_nudged_at=Max("attendance_nudges__sent_at"),
             tentative_at=Max(
-                "join_requests__tentative_at",
+                "join_requests__status_changed_at",
                 filter=Q(join_requests__status=JoinRequestStatus.TENTATIVE),
             ),
         )

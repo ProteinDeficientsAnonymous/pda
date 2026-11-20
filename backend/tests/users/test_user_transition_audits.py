@@ -21,49 +21,24 @@ def _assert_entry(action: str, actor: User, target: User) -> AuditLogEntry:
     return entry
 
 
-def test_admin_created(api_client, manage_users_user, manage_users_headers):
-    body = {"phone_number": "+12025551234", "first_name": "New", "email": "new@example.com"}
-    _send(api_client.post, "/api/auth/create-user/", body, **manage_users_headers)
-
-    created = User.objects.get(phone_number="+12025551234")
-    entry = _assert_entry("user_created", manage_users_user, created)
-    assert entry.details["full_name"] == created.full_name
-
-
-def test_bulk_created_audits_each_user(api_client, manage_users_user, manage_users_headers):
-    phones = ["+12025551301", "+12025551302"]
-    body = {"phone_numbers": phones}
-    _send(api_client.post, "/api/auth/bulk-create-users/", body, **manage_users_headers)
-
-    entries = AuditLogEntry.objects.filter(action="user_created")
-    created_ids = {str(u.pk) for u in User.objects.filter(phone_number__in=phones)}
-    assert {e.target_id for e in entries} == created_ids
-    assert all(e.actor == manage_users_user and e.details == {"bulk": True} for e in entries)
-
-
-@pytest.mark.parametrize(
-    ("field", "paused_action", "unpaused_action"),
-    [
-        ("is_paused", "user_paused", "user_unpaused"),
-        ("attendance_paused", "user_attendance_paused", "user_attendance_unpaused"),
-    ],
-)
-def test_pause_and_unpause(  # noqa: PLR0913
-    api_client,
-    manage_users_user,
-    manage_users_headers,
-    member,
-    field,
-    paused_action,
-    unpaused_action,
-):
+def test_guidelines_pause_and_unpause(api_client, manage_users_user, manage_users_headers, member):
     url = f"/api/auth/users/{member.pk}/"
-    _send(api_client.patch, url, {field: True}, **manage_users_headers)
-    _send(api_client.patch, url, {field: False}, **manage_users_headers)
+    _send(api_client.patch, url, {"guidelines_paused": True}, **manage_users_headers)
+    _send(api_client.patch, url, {"guidelines_paused": False}, **manage_users_headers)
 
-    for action in (paused_action, unpaused_action):
+    for action in ("user_paused", "user_unpaused"):
         entry = _assert_entry(action, manage_users_user, member)
         assert entry.details["full_name"] == member.full_name
+    assert "removed_role_ids" in AuditLogEntry.objects.get(action="user_paused").details
+
+
+def test_attendance_pause(api_client, manage_users_user, manage_users_headers, member):
+    url = f"/api/auth/users/{member.pk}/"
+    _send(api_client.patch, url, {"attendance_paused": True}, **manage_users_headers)
+
+    entry = _assert_entry("user_attendance_paused", manage_users_user, member)
+    assert entry.details["full_name"] == member.full_name
+    assert "removed_role_ids" in entry.details
 
 
 def test_archived(api_client, manage_users_user, manage_users_headers, member):
@@ -82,7 +57,7 @@ def test_self_deleted(api_client, member):
 
 
 def test_pause_with_rename_logs_both(api_client, manage_users_user, manage_users_headers, member):
-    body = {"is_paused": True, "first_name": "Renamed"}
+    body = {"guidelines_paused": True, "first_name": "Renamed"}
     _send(api_client.patch, f"/api/auth/users/{member.pk}/", body, **manage_users_headers)
 
     _assert_entry("user_paused", manage_users_user, member)

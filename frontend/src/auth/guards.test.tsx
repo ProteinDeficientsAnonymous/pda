@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Permission } from '@/models/permissions';
+import { canViewPlanning, Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 import { setAuthed, setUnauthed } from '@/test/auth';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
@@ -132,6 +132,42 @@ describe('RequirePermission', () => {
 
     expect(screen.getByText('calendar page')).toBeInTheDocument();
     expect(screen.queryByText('admin content')).not.toBeInTheDocument();
+  });
+
+  it('accepts either planning permission through an allow predicate', () => {
+    for (const perm of [Permission.ViewEventPlanning, Permission.ManageEventPlanning]) {
+      setAuthed(
+        makeUser({ roles: [{ id: 'r1', name: 'mod', isDefault: true, permissions: [perm] }] }),
+        'tok-abc',
+      );
+      const { unmount } = render(
+        <MemoryRouter initialEntries={['/admin']}>
+          <Routes>
+            <Route element={<RequirePermission allow={canViewPlanning} />}>
+              <Route path="/admin" element={<div>admin content</div>} />
+            </Route>
+            <Route path="/calendar" element={<div>calendar page</div>} />
+          </Routes>
+        </MemoryRouter>,
+      );
+      expect(screen.getByText('admin content')).toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it('redirects to /calendar when the allow predicate fails', () => {
+    setAuthed(makeUser(), 'tok-abc');
+    render(
+      <MemoryRouter initialEntries={['/admin']}>
+        <Routes>
+          <Route element={<RequirePermission allow={canViewPlanning} />}>
+            <Route path="/admin" element={<div>admin content</div>} />
+          </Route>
+          <Route path="/calendar" element={<div>calendar page</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('calendar page')).toBeInTheDocument();
   });
 
   it('renders the outlet for an authed user with the required permission', () => {

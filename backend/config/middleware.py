@@ -53,8 +53,8 @@ class RequestLoggingMiddleware:
 
         start = time.monotonic()
         response = self.get_response(request)
-        flush_rollback_safe_audits(request)
         duration_ms = (time.monotonic() - start) * 1000
+        flush_rollback_safe_audits(request)
 
         user = getattr(request, "user", None)
         user_id = str(user.pk) if user and getattr(user, "is_authenticated", False) else None

@@ -14,7 +14,6 @@ interface Props {
 }
 
 const PERMISSION_LABELS: Record<string, string> = {
-  [Permission.CreateUser]: 'create users',
   [Permission.ManageUsers]: 'manage users',
   [Permission.ManageRoles]: 'manage roles',
   [Permission.ViewAuditLog]: 'view audit log',
@@ -26,6 +25,8 @@ const PERMISSION_LABELS: Record<string, string> = {
   [Permission.EditJoinQuestions]: 'edit join questions',
   [Permission.EditSpeechTemplate]: 'edit event speech template',
   [Permission.ManageSurveys]: 'manage surveys',
+  [Permission.ManageEventPlanning]: 'manage event planning',
+  [Permission.ViewEventPlanning]: 'view event planning',
   [Permission.TagOfficialEvent]: 'tag official events',
   [Permission.TagClubEvent]: 'tag club events',
   [Permission.ManageDocuments]: 'manage documents',
