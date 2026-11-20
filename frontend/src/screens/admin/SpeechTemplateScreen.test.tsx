@@ -42,6 +42,15 @@ describe('SpeechTemplateScreen', () => {
     expect(screen.getByLabelText('open roles')).toHaveValue('host');
   });
 
+  it('links back to the admin page', async () => {
+    renderScreen();
+
+    expect(await screen.findByRole('link', { name: '← back to admin' })).toHaveAttribute(
+      'href',
+      '/admin',
+    );
+  });
+
   it('explains blockquote is for speaker notes', async () => {
     renderScreen();
     await screen.findByRole('heading', { name: 'walks only' });
