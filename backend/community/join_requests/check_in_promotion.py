@@ -71,23 +71,8 @@ def _promote_or_restore(request, user: User, event) -> CheckInOutcome | None:
         return None
     if user.membership_status == MembershipStatus.ATTENDANCE_PAUSED:
         return CheckInOutcome.RESTORED if _restore_attendance_paused(request, user, event) else None
-    join_request = maybe_promote_tentative(user, event, request.auth)
-    if join_request is None:
+    if maybe_promote_tentative(user, event, request.auth) is None:
         return None
-    audit_log(
-        logging.INFO,
-        "join_request_approved_via_check_in",
-        request,
-        target=AuditTarget(
-            type=AuditTargetType.JOIN_REQUEST,
-            id=str(join_request.id),
-            details={
-                "full_name": user.full_name,
-                "user_id": str(user.pk),
-                "event_id": str(event.pk),
-            },
-        ),
-    )
     return CheckInOutcome.PROMOTED
 
 
