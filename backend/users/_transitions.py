@@ -85,7 +85,8 @@ def _unarchive_to(user: "User", fallback: MembershipStatus, by: "User | None") -
 
 
 def _park_archived_pause(user: "User", event: MembershipEvent) -> list[str]:
-    if user.status_before_archive == MembershipStatus.NONE:
+    # Unarchiving restores a parked pause, so a non-member must not get one.
+    if user.status_before_archive in (MembershipStatus.NONE, MembershipStatus.TENTATIVE):
         _reject(user, event, Code.User.INVALID_STATUS_TRANSITION)
     if event == MembershipEvent.LIFT_GUIDELINES_PAUSE and not user.is_guidelines_paused:
         _reject(user, event, Code.User.INVALID_STATUS_TRANSITION)

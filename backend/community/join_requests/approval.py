@@ -267,7 +267,7 @@ def maybe_promote_tentative(user, event, actor) -> JoinRequest | None:
     # Row lock: concurrent check-ins then re-check tentative before promoting.
     locked = User.objects.select_for_update().get(pk=user.pk)
     if locked.membership_status != MembershipStatus.TENTATIVE:
-        return False
+        return None
     user.refresh_from_db()
     consents = _apply_tentative_consents(user, join_request)
     user.save(update_fields=[*user.promote_on_check_in(by=actor), *consents])
@@ -330,9 +330,7 @@ def provision_approved_user(join_request, requesting_user, *, was_tentative: boo
                 {"from": before, "join_request_id": str(join_request.id)},
             )
             return Provisioned(None, False)
-        return Provisioned(
-            _promote_public_rsvper(linked, join_request, requesting_user), False
-        )
+        return Provisioned(_promote_public_rsvper(linked, join_request, requesting_user), False)
 
     existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
     if existing_user is None:

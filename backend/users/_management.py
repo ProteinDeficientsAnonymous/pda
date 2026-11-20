@@ -231,11 +231,7 @@ def _pause_transition_details(
 def _audit_user_update(
     request, user_id: str, payload: UserPatchIn, pause_details: dict | None
 ) -> None:
-    """Emit the audit entry for an update_user PATCH.
-
-    A pause transition takes priority, recording what the pause released. Otherwise a
-    plain field change logs user_updated.
-    """
+    """Log user_paused/user_unpaused for a guidelines-pause change and user_updated for edits."""
     if pause_details is not None:
         action = "user_paused" if payload.guidelines_paused else "user_unpaused"
         audit_log(
@@ -244,7 +240,6 @@ def _audit_user_update(
             request,
             target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=pause_details),
         )
-        return
 
     changed = [
         f
