@@ -16,6 +16,7 @@ import {
   spotsLeft,
 } from '@/models/event';
 
+import { MyOrderTotal } from './MyOrderTotal';
 import { RsvpBox } from './RsvpBox';
 import { MaybeDeadlineDialog, RsvpDeadlineNote } from './RsvpDeadline';
 import type { RsvpAnswerValue } from './rsvpQuestions';
@@ -206,6 +207,7 @@ export function MyRsvpSection({ event, token, locked = false, deadlineClosed = f
           i can't go anymore
         </Button>
       ) : null}
+      <MyOrderTotal event={event} />
       <SpotsLeft event={event} />
       {locked ? null : <RsvpDeadlineNote event={event} closed={deadlineClosed} />}
       {error && !box ? (
