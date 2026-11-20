@@ -88,7 +88,7 @@ function SurveyRow({
 }) {
   return (
     <article className="border-border bg-surface flex flex-col gap-2 rounded-lg border p-3 md:flex-row md:items-center md:justify-between md:gap-3">
-      <div className="min-w-0 [overflow-wrap:anywhere] break-words">
+      <div className="min-w-0 wrap-anywhere">
         <Link
           to={`/admin/surveys/${survey.id}`}
           className="text-foreground text-sm font-medium underline"
