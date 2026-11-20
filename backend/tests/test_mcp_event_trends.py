@@ -37,6 +37,8 @@ def test_counts_per_type_with_unmarked_events_and_public_rsvps(manage_events_use
     community = _event(11, EventType.COMMUNITY)
     for user in (a, b, public):
         make_rsvp(official, user, attendance=ATTENDED)
+    make_rsvp(_event(12), make_member(), has_plus_one=True, plus_one_attendance=ATTENDED)
+    make_rsvp(_event(0.01), a, attendance=ATTENDED)
     make_rsvp(unmarked_club, a)
     make_rsvp(community, a, attendance=ATTENDED)
     make_rsvp(_event(5, status=EventStatus.CANCELLED), a, attendance=ATTENDED)
@@ -46,17 +48,17 @@ def test_counts_per_type_with_unmarked_events_and_public_rsvps(manage_events_use
     total = run_tool(manage_events_user, "event_trends", days=60, bucket="month")["total"]
 
     assert total["official"] == {
-        "events": 1,
+        "events": 2,
         "events_without_attendance_marked": 0,
-        "attended": 3,
+        "attended": 4,
         "unique_attended_members": 2,
-        "avg_attended_per_marked_event": 3.0,
-        "attending_rsvps": 3,
+        "avg_attended_per_marked_event": 2.0,
+        "going_headcount": 5,
     }
     assert total["club"]["events"] == 1
     assert total["club"]["events_without_attendance_marked"] == 1
     assert total["club"]["attended"] == 0
-    assert total["club"]["attending_rsvps"] == 1
+    assert total["club"]["going_headcount"] == 1
     assert total["club"]["avg_attended_per_marked_event"] is None
     assert (total["community"]["events"], total["community"]["attended"]) == (1, 1)
 
@@ -71,7 +73,7 @@ def test_buckets_events_by_month_and_week(manage_users_user):
 
     assert sum(b["official"]["events"] for b in months) == 2
     assert [b["official"]["events"] for b in weeks] == [1, 1]
-    assert [b["official"]["attending_rsvps"] for b in weeks] == [1, 0]
+    assert [b["official"]["going_headcount"] for b in weeks] == [1, 0]
     assert [b["official"]["attended"] for b in weeks] == [1, 0]
     assert weeks[0]["bucket"] < weeks[1]["bucket"]
 

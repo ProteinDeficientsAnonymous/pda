@@ -18,9 +18,10 @@ from mcp_gateway.server import pda_tool
         "by local start date) and event type: events, events_without_attendance_marked (a host "
         "never marked anyone, so attended undercounts them), attended (host-marked attended "
         "rsvps, the primary number), unique_attended_members, avg_attended_per_marked_event, "
-        "attending_rsvps (going rsvps, a fallback when attendance wasn't marked). attended and "
-        "attending_rsvps include public (non-member) rsvps; unique_attended_members is members "
-        "only. cancelled, draft, deleted and upcoming events are left out."
+        "going_headcount (going rsvps, a fallback when attendance wasn't marked). attended and "
+        "going_headcount include plus-ones and public (non-member) rsvps; "
+        "unique_attended_members is members only. cancelled, draft, deleted, tbd and "
+        "not-yet-ended events are left out."
     ),
 )
 async def event_trends_tool(
