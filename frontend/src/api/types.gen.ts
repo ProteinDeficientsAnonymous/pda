@@ -4655,6 +4655,11 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
+            /**
              * Options
              * @default []
              */
@@ -4674,6 +4679,11 @@ export interface components {
             field_type: "textarea" | "select" | "checkbox";
             /** Label */
             label: string;
+            /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
             /**
              * Options
              * @default []
@@ -4699,6 +4709,11 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Option Prices
+             * @default []
+             */
+            option_prices: number[];
+            /**
              * Options
              * @default []
              */
@@ -4717,6 +4732,11 @@ export interface components {
             id?: string | null;
             /** Label */
             label: string;
+            /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
             /**
              * Options
              * @default []
