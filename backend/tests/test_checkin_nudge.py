@@ -25,7 +25,7 @@ def _make_event(**kwargs):
 
 @pytest.mark.django_db
 class TestDueCheckinNudgeEvents:
-    def test_includes_club_and_official_started_events(self, test_user, db):
+    def test_includes_club_and_official_upcoming_events(self, test_user, db):
         club = _make_event(created_by=test_user, event_type=EventType.CLUB)
         official = _make_event(
             created_by=test_user, event_type=EventType.OFFICIAL, title="Official"
@@ -46,9 +46,17 @@ class TestDueCheckinNudgeEvents:
         _make_event(created_by=test_user, rsvp_enabled=False)
         assert list(due_checkin_nudge_events(timezone.now())) == []
 
-    def test_excludes_not_yet_started(self, test_user, db):
+    def test_includes_event_starting_within_two_hours(self, test_user, db):
+        event = _make_event(
+            created_by=test_user,
+            start_datetime=timezone.now() + timezone.timedelta(hours=1, minutes=59),
+        )
+        assert list(due_checkin_nudge_events(timezone.now())) == [event]
+
+    def test_excludes_event_more_than_two_hours_out(self, test_user, db):
         _make_event(
-            created_by=test_user, start_datetime=timezone.now() + timezone.timedelta(minutes=5)
+            created_by=test_user,
+            start_datetime=timezone.now() + timezone.timedelta(hours=2, minutes=1),
         )
         assert list(due_checkin_nudge_events(timezone.now())) == []
 
@@ -161,7 +169,7 @@ class TestCheckinNudgeSpeechReminder:
     def test_official_without_speech_adds_speech_reminder(self, test_user, fake_email_sender, db):
         event, sent = _send_for(test_user, fake_email_sender, event_type=EventType.OFFICIAL)
 
-        assert sent["subject"] == "potluck just started — check people in and fill in the speech"
+        assert sent["subject"] == "potluck starts soon — check people in and fill in the speech"
         assert f"/events/{event.pk}/speech" in sent["html"]
         assert f"/events/{event.pk}/speech" in sent["text"]
 
@@ -172,14 +180,14 @@ class TestCheckinNudgeSpeechReminder:
             test_user, fake_email_sender, event_type=EventType.OFFICIAL, with_speech=True
         )
 
-        assert sent["subject"] == "potluck just started — check people in"
+        assert sent["subject"] == "potluck starts soon — check people in"
         assert f"/events/{event.pk}/speech" not in sent["html"]
         assert f"/events/{event.pk}/speech" not in sent["text"]
 
     def test_club_event_has_no_speech_reminder(self, test_user, fake_email_sender, db):
         event, sent = _send_for(test_user, fake_email_sender)
 
-        assert sent["subject"] == "potluck just started — check people in"
+        assert sent["subject"] == "potluck starts soon — check people in"
         assert f"/events/{event.pk}/speech" not in sent["html"]
         assert f"/events/{event.pk}/speech" not in sent["text"]
 

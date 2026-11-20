@@ -418,11 +418,11 @@ def notify_rsvp_declined_note(event, author, note: str) -> None:
 
 
 def notify_checkin_reminder(event: Event) -> None:
-    """Notify creator + co-hosts that a club/official event just started — go check people in."""
+    """Notify creator + co-hosts that a club/official event starts soon — go check people in."""
     recipient_id_list = event_recipient_ids(event, exclude="")
     if not recipient_id_list:
         return
-    message = f"{event.title} just started — head to check-in to check people in."
+    message = f"{event.title} starts soon — head to check-in to check people in as they arrive."
     Notification.objects.bulk_create(
         [
             Notification(

@@ -370,7 +370,7 @@ def send_checkin_reminder_email(
     sender: EmailSender,
     details: CheckinReminderEmailDetails,
 ) -> SendResult:
-    """Render and send the "event just started, go check people in" host nudge email."""
+    """Render and send the "event starts soon, check people in" host nudge email."""
     context = {
         "display_name": details.display_name or "",
         "event_title": details.event_title,
@@ -380,7 +380,7 @@ def send_checkin_reminder_email(
     }
     html = render_to_string("emails/attendance_checkin_reminder.html", context)
     text = render_to_string("emails/attendance_checkin_reminder.txt", context)
-    subject = f"{details.event_title.lower()} just started — check people in"
+    subject = f"{details.event_title.lower()} starts soon — check people in"
     if details.speech_url:
         subject += " and fill in the speech"
     return sender.send(
