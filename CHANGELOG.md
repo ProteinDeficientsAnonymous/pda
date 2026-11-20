@@ -1,3 +1,10 @@
+# [0.267.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.266.1...v0.267.0) (2026-11-20)
+
+
+### Features
+
+* **mcp:** add audit_history tool for reading the audit log ([#2298](https://github.com/ProteinDeficientsAnonymous/pda/issues/2298)) ([008f4f3](https://github.com/ProteinDeficientsAnonymous/pda/commit/008f4f35e2ba89a6e82371dd61c3cccba80a4f4d))
+
 ## [0.266.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.266.0...v0.266.1) (2026-11-20)
 
 
