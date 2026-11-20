@@ -1,3 +1,10 @@
+# [0.275.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.274.2...v0.275.0) (2026-11-20)
+
+
+### Features
+
+* **rsvps:** let hosts close rsvps on an event ([#2626](https://github.com/ProteinDeficientsAnonymous/pda/issues/2626)) ([e3e40ce](https://github.com/ProteinDeficientsAnonymous/pda/commit/e3e40ce7563e3db8f896d56540ea48678b4c3672))
+
 ## [0.274.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.274.1...v0.274.2) (2026-11-20)
 
 
