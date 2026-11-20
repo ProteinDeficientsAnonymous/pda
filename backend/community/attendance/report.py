@@ -7,16 +7,16 @@ from django.db.models import Count, Q
 from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
 from community.attendance.analytics import (
-    compute_member_stats,
+    EMPTY_MEMBER_STATS,
+    MemberAttendanceStats,
     is_compliant,
     is_pause_candidate,
-    member_rsvps_prefetch,
+    member_stats_by_user,
     months_since,
-    user_rsvps_for_attendance,
 )
 from community.events.schemas import AttendanceReportOut, EventAttendanceRowOut
 from community.models import AttendanceStatus, Event, EventType
@@ -100,7 +100,8 @@ class MemberAttendanceRowOut(BaseModel):
     user_id: str
     full_name: str
     phone_number: str
-    is_paused: bool
+    is_guidelines_paused: bool
+    is_attendance_paused: bool
     last_qualifying_at: datetime | None = None
     qualifying_count_12mo: int = 0
     compliant: bool = False
@@ -115,14 +116,13 @@ class MemberAttendanceAnalyticsOut(BaseModel):
     members: list[MemberAttendanceRowOut] = []
 
 
-def _member_attendance_row(user: User) -> MemberAttendanceRowOut:
-    rsvps = user_rsvps_for_attendance(user)
-    stats = compute_member_stats(rsvps)
+def _member_attendance_row(user: User, stats: MemberAttendanceStats) -> MemberAttendanceRowOut:
     return MemberAttendanceRowOut(
         user_id=str(user.id),
         full_name=user.full_name,
         phone_number=user.phone_number,
-        is_paused=user.is_paused,
+        is_guidelines_paused=user.membership_status == MembershipStatus.GUIDELINES_PAUSED,
+        is_attendance_paused=user.membership_status == MembershipStatus.ATTENDANCE_PAUSED,
         last_qualifying_at=stats.last_qualifying_at,
         qualifying_count_12mo=stats.qualifying_count_12mo,
         compliant=is_compliant(stats),
@@ -130,7 +130,8 @@ def _member_attendance_row(user: User) -> MemberAttendanceRowOut:
         didnt_go_count=stats.didnt_go_count,
         cancel_count=stats.cancel_count,
         months_since_last_qualifying=months_since(stats.last_qualifying_at),
-        is_pause_candidate=not user.is_paused and is_pause_candidate(stats),
+        is_pause_candidate=user.membership_status == MembershipStatus.ACTIVE_MEMBER
+        and is_pause_candidate(stats),
     )
 
 
@@ -148,12 +149,11 @@ def member_attendance_analytics(request):
     if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
         raise_validation(Code.Perm.DENIED, status_code=403, action="member_attendance_analytics")
 
-    users = (
-        User.objects.members()
-        .filter(archived_at__isnull=True)
-        .prefetch_related(member_rsvps_prefetch())
-        .order_by("first_name", "last_name")
-    )
-    rows = [_member_attendance_row(u) for u in users]
+    users = User.objects.members().filter(archived_at__isnull=True)
+    stats = member_stats_by_user(users)
+    rows = [
+        _member_attendance_row(u, stats.get(u.pk, EMPTY_MEMBER_STATS))
+        for u in users.order_by("first_name", "last_name")
+    ]
     rows.sort(key=lambda r: not r.is_pause_candidate)
     return Status(200, MemberAttendanceAnalyticsOut(members=rows))

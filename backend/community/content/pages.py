@@ -14,10 +14,19 @@ from users.permissions import PermissionKey
 from community.content._render import render_content_payload
 from community.field_limits import FieldLimit
 from community.models import EditablePage, PageVisibility
+from community.planning.guidelines import (
+    GUIDELINES_SLUG,
+    require_guidelines_edit,
+    require_guidelines_view,
+    seed_doc,
+)
 from community.shared import ErrorOut, optional_jwt
 from community.validation import Code, raise_validation
 
 router = Router()
+
+DAY_OF_GUIDE_SLUG = "day-of-guide"
+_MEMBERS_ONLY_SLUGS = frozenset({"volunteer", DAY_OF_GUIDE_SLUG})
 
 
 class EditablePageOut(BaseModel):
@@ -45,10 +54,33 @@ def _page_out(page: EditablePage) -> EditablePageOut:
     )
 
 
+def _default_visibility(slug: str) -> str:
+    return PageVisibility.MEMBERS_ONLY if slug in _MEMBERS_ONLY_SLUGS else PageVisibility.PUBLIC
+
+
+def _planning_guidelines_page() -> EditablePage:
+    try:
+        return EditablePage.objects.get(slug=GUIDELINES_SLUG)
+    except EditablePage.DoesNotExist:
+        rendered = render_content_payload(prosemirror=seed_doc())
+        page, _ = EditablePage.objects.get_or_create(
+            slug=GUIDELINES_SLUG,
+            defaults={
+                "content_pm": rendered.content_pm,
+                "content_html": rendered.content_html,
+                "visibility": PageVisibility.MEMBERS_ONLY,
+            },
+        )
+        return page
+
+
 @router.get("/pages/{slug}/", response={200: EditablePageOut, 403: ErrorOut}, auth=optional_jwt)
 def get_page(request, slug: str):
-    default_vis = PageVisibility.MEMBERS_ONLY if slug == "volunteer" else PageVisibility.PUBLIC
-    page = EditablePage.get_or_create_page(slug, default_visibility=default_vis)
+    if slug == GUIDELINES_SLUG:
+        require_guidelines_view(request)
+        return Status(200, _page_out(_planning_guidelines_page()))
+
+    page = EditablePage.get_or_create_page(slug, default_visibility=_default_visibility(slug))
 
     # Any non-public page (members-only OR invite-only) requires authentication.
     # Previously only MEMBERS_ONLY was gated, so an INVITE_ONLY page leaked to
@@ -63,7 +95,11 @@ def get_page(request, slug: str):
     "/pages/{slug}/", response={200: EditablePageOut, 400: ErrorOut, 403: ErrorOut}, auth=gated_jwt
 )
 def update_page(request, slug: str, payload: EditablePagePatchIn):
-    if not request.auth.has_permission(PermissionKey.EDIT_GUIDELINES):
+    if slug == GUIDELINES_SLUG:
+        require_guidelines_edit(request)
+    elif slug == DAY_OF_GUIDE_SLUG:
+        require_guidelines_edit(request, "update_day_of_guide")
+    elif not request.auth.has_permission(PermissionKey.EDIT_GUIDELINES):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -80,8 +116,10 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_page")
 
-    default_vis = PageVisibility.MEMBERS_ONLY if slug == "volunteer" else PageVisibility.PUBLIC
-    page = EditablePage.get_or_create_page(slug, default_visibility=default_vis)
+    if slug == GUIDELINES_SLUG:
+        page = _planning_guidelines_page()
+    else:
+        page = EditablePage.get_or_create_page(slug, default_visibility=_default_visibility(slug))
 
     changed = []
     if payload.content_pm is not None:

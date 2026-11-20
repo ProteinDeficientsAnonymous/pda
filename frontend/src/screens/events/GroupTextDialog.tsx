@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 
 import { type TextRecipients, useTextRecipients } from '@/api/textRecipients';
 import { Button } from '@/components/ui/Button';
+import { buttonClass } from '@/components/ui/buttonClass';
 import { Dialog } from '@/components/ui/Dialog';
 import {
   availableGroups,
@@ -74,7 +75,7 @@ function RecipientPicker({
       });
   }
 
-  if (options.length === 0) {
+  if (options.length === 0 && recipients.coHosts.length === 0) {
     return <p className="text-muted text-sm">no one has a number to text yet</p>;
   }
 
@@ -98,6 +99,7 @@ function RecipientPicker({
         {disabled
           ? 'no one selected'
           : `${String(phones.length)} ${phones.length === 1 ? 'number' : 'numbers'} selected`}
+        {recipients.coHosts.length > 0 && ' · co-hosts are always included'}
       </p>
       <div className="mt-4 flex items-center justify-between gap-2">
         <button
@@ -120,12 +122,7 @@ function RecipientPicker({
               text
             </span>
           ) : (
-            <a
-              href={smsUri}
-              onClick={onClose}
-              aria-label="text them"
-              className="bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors"
-            >
+            <a href={smsUri} onClick={onClose} aria-label="text them" className={buttonClass()}>
               text {String(phones.length)}
             </a>
           )}

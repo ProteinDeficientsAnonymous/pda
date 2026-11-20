@@ -3,7 +3,7 @@ from community.join_requests.approval import provision_approved_user
 from community.models.join_form import JoinRequest
 from community.validation import ValidationException
 from django.utils import timezone
-from users.models import User
+from users.models import MembershipStatus, User
 from users.name_parsing import parse_display_name
 from users.schemas import UserOut
 
@@ -156,8 +156,8 @@ class TestApprovalCopiesNames:
         jr = JoinRequest.objects.create(
             first_name="Grace", last_name="Hopper", phone_number="+12025551212"
         )
-        token, created = provision_approved_user(jr, manage_users_user, was_tentative=False)
-        assert created is True
+        provisioned = provision_approved_user(jr, manage_users_user, was_tentative=False)
+        assert provisioned.user_created is True
         u = User.objects.get(phone_number="+12025551212")
         assert (u.first_name, u.last_name) == ("Grace", "Hopper")
         assert u.full_name == "Grace Hopper"
@@ -171,7 +171,9 @@ class TestApprovalCopiesNames:
     def test_nameless_request_rejected_on_promote(self, manage_users_user):
 
         non_member = User.objects.create_user(
-            phone_number="+12025551215", first_name="Prior", is_member=False
+            phone_number="+12025551215",
+            first_name="Prior",
+            membership_status=MembershipStatus.NONE,
         )
         non_member.first_name = ""
         non_member.save(update_fields=["first_name"])

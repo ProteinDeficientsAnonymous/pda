@@ -7,7 +7,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 PDA (Protein Deficients Anonymous) is a vegan collective liberation community platform. The Django backend is API-only (Django Ninja). The Vite + React + TypeScript frontend (Zustand + React Router + Axios + TanStack Query) handles all UI.
 
 **Key design decisions:**
-- No user self-signup — accounts are created by admins via the members screen
+- No user self-signup — accounts are created when a vetter approves a join request
 - Join requests are submitted publicly and routed to a vetting group via email
 - The community calendar is publicly accessible; member-only details (location, links, RSVP) are gated behind login
 - New users are redirected to `/onboarding` to set display name + password on first login
@@ -52,7 +52,7 @@ Use `make test`, `make lint`, `make ci`, etc. for verbose output when debugging.
 
 ## Architecture
 
-- **User** (`users/models.py`): `AbstractUser` with phone number as `USERNAME_FIELD`, UUID PK. Created by admins only via members screen.
+- **User** (`users/models.py`): `AbstractUser` with phone number as `USERNAME_FIELD`, UUID PK. Created only by join-request approval.
 
 ### API & Routes
 
@@ -62,11 +62,13 @@ Routes: see `.claude/docs/routes.md`
 
 User states and transitions (public rsvper → member → paused/archived): see `.claude/docs/user-states.md`; what each type can do: `.claude/docs/user-capabilities.md`
 
+**State machines:** `User.membership_status` and `JoinRequest.status` change only through their model event methods (`user.archive(by=…)`, `join_request.approve(by=…)`, …), never by direct assignment or `.update()`. Rules: `.claude/rules/state-machines.md`; enforced by `backend/tests/test_state_transition_guard.py`.
+
 ## Environment
 
 - **Dev database**: Prefer Docker-free per-worktree SQLite via `make dev-sqlite` / `make run-sqlite` (gitignored `dev.db` at the worktree root). Use per-worktree Postgres via `make dev-pg` / `make run-pg` **only when local verification depends on actual Postgres features** that SQLite cannot exercise — e.g. SSE live notifications (`/api/notifications/stream/` uses `pg_notify`; returns 503 on SQLite). One shared Docker Postgres container; each worktree gets its own database (name in gitignored `.dev-pg-db-name`). `make dev` / `make run` still use the shared `DATABASE_URL` from `.env` (typically `pda` on localhost:5432).
 - **Prod database**: PostgreSQL via `DATABASE_URL`
-- **Deployed on**: Railway (`railway.json`)
+- **Deployed on**: Railway. Web service settings (`pda` in production, `staging` in staging) live in `.railway/railway.ts` (Infrastructure as Code, partial `pda`). Until the cutover deletes `railway.json`, Railway still applies `railway.json` on every deploy, so change both together. Railway does **not** read `.railway/` on deploy — preview with `railway config plan`, push with `railway config apply` against the linked environment. Every `pda` env var must be listed in `PRESERVED_VARIABLES` there (add new ones too) or apply deletes it.
 - **Deploy flow:** `main` is the default branch. Pushes to `main` auto-deploy to Railway **staging** (Railway's GitHub integration watches `main` on the staging environment). Production deploys are **manual only** via GitHub Actions `workflow_dispatch` — Railway auto-deploy is disconnected on the production environment.
 - **Manual Railway deploy (GitHub Actions):** `.github/workflows/deploy-railway.yml` — `workflow_dispatch` with choice `staging` | `production`; only `refs/heads/main`. Uses dockerized CLI image (digest pinned in the workflow; bump when upgrading CLI). The workflow runs `railway --version`, `railway whoami --json`, and `railway up --ci --verbose` so logs show token identity and CLI detail; **404 on upload** usually means `RAILWAY_PROJECT_ID`, `RAILWAY_SERVICE_NAME`, or `RAILWAY_ENVIRONMENT_*` does not match the Railway **project token's** project/environment (or the service slug is wrong). **Repository secrets:** `RAILWAY_TOKEN_STAGING`, `RAILWAY_TOKEN_PRODUCTION` (Railway **project tokens**, one per environment). **Repository variables:** `RAILWAY_PROJECT_ID`, `RAILWAY_SERVICE_NAME`, `RAILWAY_ENVIRONMENT_STAGING`, `RAILWAY_ENVIRONMENT_PRODUCTION`. **GitHub Environments:** `railway-staging`, `railway-production` — add required reviewers on production. **Governance:** `workflow_dispatch` visibility follows GitHub repo permissions (often write+); protect workflow edits with branch protection **require code owner review** on `.github/workflows/**` plus CODEOWNERS (example: `.github/workflows/ @your-org/your-team`).
 - **Static files**: WhiteNoise

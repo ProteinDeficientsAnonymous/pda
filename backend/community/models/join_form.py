@@ -5,7 +5,20 @@ import uuid
 from django.conf import settings
 from django.db import models
 
-from community.models.choices import JoinFormQuestionType, JoinRequestStatus, RejectionReason
+from community.models._join_request_transitions import (
+    normalize_rejection,
+    reject_join_request_transition,
+    stamp_join_request_status,
+    validate_join_request_edge,
+)
+from community.models.choices import (
+    OPEN_JOIN_REQUEST_STATUSES,
+    JoinFormQuestionType,
+    JoinRequestEvent,
+    JoinRequestStatus,
+    RejectionReason,
+)
+from community.validation import Code
 
 
 class JoinFormQuestion(models.Model):
@@ -32,7 +45,7 @@ class JoinRequest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     first_name = models.CharField(max_length=64, blank=True, default="")
     last_name = models.CharField(max_length=64, blank=True, default="")
-    phone_number = models.CharField(max_length=20, db_index=True)
+    phone_number = models.CharField(max_length=20)
     email = models.EmailField()
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -48,21 +61,14 @@ class JoinRequest(models.Model):
         choices=JoinRequestStatus.choices,
         default=JoinRequestStatus.PENDING,
     )
-    tentative_at = models.DateTimeField(null=True, blank=True)
-    tentative_by = models.ForeignKey(
+    # Last move between statuses; the audit log keeps the history.
+    status_changed_at = models.DateTimeField(null=True, blank=True)
+    status_changed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name="tentative_join_requests",
-    )
-    approved_at = models.DateTimeField(null=True, blank=True)
-    approved_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="approved_join_requests",
+        related_name="status_changed_join_requests",
     )
     # Set when a tentative applicant is auto-approved by checking in at this event.
     approved_via_event = models.ForeignKey(
@@ -71,14 +77,6 @@ class JoinRequest(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="+",
-    )
-    rejected_at = models.DateTimeField(null=True, blank=True)
-    rejected_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="rejected_join_requests",
     )
     rejection_reason = models.CharField(
         max_length=30, choices=RejectionReason.choices, blank=True, default=""
@@ -100,12 +98,13 @@ class JoinRequest(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["-submitted_at"]
+        indexes = [
+            models.Index(fields=["phone_number", "status"], name="joinrequest_phone_status_idx"),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["phone_number"],
-                condition=models.Q(
-                    status__in=[JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE]
-                ),
+                condition=models.Q(status__in=OPEN_JOIN_REQUEST_STATUSES),
                 name="unique_open_join_request_per_phone",
             ),
         ]
@@ -113,6 +112,48 @@ class JoinRequest(models.Model):
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
+
+    @staticmethod
+    def normalize_rejection(reason: str, note: str) -> tuple[str, str]:
+        return normalize_rejection(reason, note)
+
+    def mark_tentative(self, *, by=None) -> list[str]:
+        target = validate_join_request_edge(self, JoinRequestEvent.MARK_TENTATIVE)
+        return stamp_join_request_status(self, target, by)
+
+    def approve(self, *, by=None) -> list[str]:
+        target = validate_join_request_edge(self, JoinRequestEvent.APPROVE)
+        return stamp_join_request_status(self, target, by)
+
+    def promote_on_check_in(self, *, event, by=None) -> list[str]:
+        target = validate_join_request_edge(self, JoinRequestEvent.PROMOTE_ON_CHECK_IN)
+        if event is None:
+            reject_join_request_transition(
+                self, JoinRequestEvent.PROMOTE_ON_CHECK_IN, Code.JoinRequest.INVALID_STATUS
+            )
+        self.approved_via_event = event
+        return [*stamp_join_request_status(self, target, by), "approved_via_event"]
+
+    def reject(self, *, by=None, reason: str = "", note: str = "") -> list[str]:
+        target = validate_join_request_edge(self, JoinRequestEvent.REJECT)
+        self.rejection_reason, self.rejection_note = normalize_rejection(reason, note)
+        return [*stamp_join_request_status(self, target, by), "rejection_reason", "rejection_note"]
+
+    def unreject(self, *, by=None) -> list[str]:
+        target = validate_join_request_edge(self, JoinRequestEvent.UNREJECT)
+        self.rejection_reason = ""
+        self.rejection_note = ""
+        return [*stamp_join_request_status(self, target, by), "rejection_reason", "rejection_note"]
+
+    def close(self, *, by=None) -> list[str]:
+        target = validate_join_request_edge(self, JoinRequestEvent.CLOSE)
+        return stamp_join_request_status(self, target, by)
+
+    @classmethod
+    def latest_is_rejected(cls, phone_number: str) -> bool:
+        """Whether this phone's newest join request was rejected; they must re-apply."""
+        latest = cls.objects.filter(phone_number=phone_number).order_by("-submitted_at")
+        return latest.values_list("status", flat=True).first() == JoinRequestStatus.REJECTED
 
     def __str__(self):
         return f"{self.full_name} ({self.phone_number}) — {self.submitted_at:%Y-%m-%d}"

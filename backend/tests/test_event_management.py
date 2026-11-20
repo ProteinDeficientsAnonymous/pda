@@ -1,7 +1,7 @@
 """Tests for event create/update/delete management endpoints."""
 
 import pytest
-from community.api import EventPatchIn
+from community.events.schemas import EventPatchIn
 from community.models import Event, EventStatus
 from community.validation import Code
 from django.core.cache import caches
@@ -253,7 +253,14 @@ class TestEventManagement:
 
     def test_event_patch_fields_match_model(self):
         """All EventPatchIn fields (except M2M and transient fields) must exist on Event model."""
-        non_model_fields = {"co_host_ids", "tag_ids", "status", "notify_attendees", "force"}
+        non_model_fields = {
+            "co_host_ids",
+            "tag_ids",
+            "status",
+            "notify_attendees",
+            "force",
+            "rsvps_closed",
+        }
         schema_fields = set(EventPatchIn.model_fields.keys()) - non_model_fields
         model_fields = {f.name for f in Event._meta.get_fields()}
         missing = schema_fields - model_fields

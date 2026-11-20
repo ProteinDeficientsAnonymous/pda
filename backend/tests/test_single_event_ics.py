@@ -1,6 +1,7 @@
 import re
 import uuid
 
+import icalendar
 import pytest
 from community.models import Event, EventStatus, EventType, PageVisibility
 from django.conf import settings
@@ -40,6 +41,36 @@ class TestSingleEventIcs:
 
     def test_returns_404_for_nonexistent_event(self, api_client):
         resp = api_client.get(f"/api/community/events/{uuid.uuid4()}/ics/")
+        assert resp.status_code == 404
+
+    def test_resolves_event_by_slug(self, api_client, test_user):
+        event = Event.objects.create(
+            title="Slug Picnic", start_datetime=timezone.now(), created_by=test_user
+        )
+
+        resp = api_client.get(f"/api/community/events/{event.slug}/ics/")
+        assert resp.status_code == 200
+        assert "Slug Picnic" in resp.content.decode()
+
+    def test_view_on_pda_url_is_not_split_by_line_folding(self, api_client, test_user):
+        event = Event.objects.create(
+            title="Walk in Central Park Arts and Crafts",
+            description="Bring hummus 🌱",
+            start_datetime=timezone.now(),
+            created_by=test_user,
+        )
+
+        raw = api_client.get(f"/api/community/events/{event.slug}/ics/").content
+        content = raw.decode()
+        assert f"View on PDA: http://testserver/events/{event.slug}\r\n" in content
+        assert "\r\n " not in content
+        vevent = icalendar.Calendar.from_ical(raw).walk("VEVENT")[0]
+        assert vevent["description"] == (
+            f"Bring hummus 🌱\nView on PDA: http://testserver/events/{event.slug}"
+        )
+
+    def test_returns_404_for_unknown_slug(self, api_client):
+        resp = api_client.get("/api/community/events/no-such-event/ics/")
         assert resp.status_code == 404
 
     def test_anon_ics_omits_member_only_links(self, api_client, test_user):

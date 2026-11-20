@@ -24,6 +24,36 @@ describe('messageForCode', () => {
     );
   });
 
+  it('asks for a dollar amount when the event price is invalid', () => {
+    expect(messageForCode({ code: Code.Event.PriceInvalid, field: 'price' })).toBe(
+      'price must be a dollar amount, like 10 or 12.50 — leave blank if free',
+    );
+  });
+
+  it('says only official events can take paypal', () => {
+    expect(messageForCode({ code: Code.Event.PaypalOfficialOnly, field: 'accept_paypal' })).toBe(
+      'only official events can take paypal',
+    );
+  });
+
+  it('says the rsvp deadline must come before the start', () => {
+    expect(
+      messageForCode({ code: Code.Event.RsvpDeadlineAfterStart, field: 'rsvp_deadline' }),
+    ).toBe('the rsvp deadline must be before the event starts');
+  });
+
+  it('says going guests can only step down after the rsvp deadline', () => {
+    expect(messageForCode({ code: Code.Event.RsvpsClosedDeadline, field: null })).toBe(
+      "the rsvp deadline has passed — going guests can only switch to can't go or drop their +1",
+    );
+  });
+
+  it('says going guests can only step down once a host closes rsvps', () => {
+    expect(messageForCode({ code: Code.Event.RsvpsClosedByHost, field: null })).toBe(
+      "rsvps are closed — going guests can only switch to can't go or drop their +1",
+    );
+  });
+
   it('uses the field name for generic fallback codes', () => {
     expect(messageForCode({ code: Code.Generic.FieldRequired, field: 'title' })).toContain('title');
     expect(messageForCode({ code: Code.Generic.FieldInvalid, field: 'max_attendees' })).toContain(
@@ -47,10 +77,40 @@ describe('messageForCode', () => {
     );
   });
 
+  it("says only going guests can be marked didn't attend", () => {
+    expect(messageForCode({ code: Code.Event.DidntGoRequiresGoing, field: null })).toBe(
+      "only guests who rsvp'd going can be marked didn't attend",
+    );
+  });
+
+  it('says a reserve entry was not found', () => {
+    expect(messageForCode({ code: Code.Reserve.NotFound, field: null })).toBe(
+      'reserve entry not found',
+    );
+  });
+
   it('says only members can be co-hosts', () => {
     expect(messageForCode({ code: Code.CoHostInvite.NotMember, field: null })).toBe(
       'only members can be co-hosts',
     );
+  });
+
+  it('says a host-set guest who cannot sign in cannot be added', () => {
+    expect(messageForCode({ code: Code.Event.GuestNotEligible, field: null })).toBe(
+      "they can't be added to this event",
+    );
+  });
+
+  it('says to lift a guidelines pause before an attendance pause', () => {
+    expect(messageForCode({ code: Code.User.GuidelinesPaused, field: 'attendance_paused' })).toBe(
+      'lift the guidelines pause before pausing for attendance',
+    );
+  });
+
+  it('says an attendance pause lifts on check-in', () => {
+    expect(
+      messageForCode({ code: Code.User.AttendancePauseLiftsOnCheckIn, field: 'attendance_paused' }),
+    ).toBe('an event rqmt pause lifts when they check in at an official or club event');
   });
 
   it('explains an empty cash app csv', () => {
@@ -102,6 +162,19 @@ describe('messageForCode', () => {
       params: { max_mb: 5 },
     });
     expect(out).toContain('5 mb');
+  });
+
+  it('names the question for an invalid join answer format', () => {
+    expect(
+      messageForCode({
+        code: Code.JoinRequest.AnswerInvalidFormat,
+        field: 'answers',
+        params: { label: 'how did you hear' },
+      }),
+    ).toBe('invalid answer format for "how did you hear"');
+    expect(messageForCode({ code: Code.JoinRequest.AnswerInvalidFormat, field: 'answers' })).toBe(
+      'invalid answer format',
+    );
   });
 
   it('names the question for an invalid rsvp answer format', () => {
@@ -171,10 +244,26 @@ describe('messageForCode', () => {
     );
   });
 
+  it('says a tentative request is archived, not rejected', () => {
+    expect(
+      messageForCode({ code: Code.JoinRequest.TentativeCannotBeRejected, field: null }),
+    ).toMatch(/archive them from the members screen/);
+  });
+
   it('points to the existing open join request', () => {
     expect(
       messageForCode({ code: Code.JoinRequest.OpenRequestExists, field: 'phone_number' }),
     ).toBe('this number already has an open request — review that one instead');
+  });
+
+  it.each(Object.values(Code.Planning))('gives planning code %s its own copy', (code) => {
+    expect(messageForCode({ code, field: null })).not.toMatch(/double-check/i);
+  });
+
+  it('should return lowercase copy when user status transition is invalid', () => {
+    expect(messageForCode({ code: Code.User.InvalidStatusTransition, field: null })).toBe(
+      "that status change isn't allowed",
+    );
   });
 
   it('returns a safe fallback for unknown codes', () => {

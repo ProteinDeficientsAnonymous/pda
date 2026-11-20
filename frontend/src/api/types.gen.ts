@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/audit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Audit Log */
+        get: operations["audit_api_list_audit_log"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/accept-consents/": {
         parameters: {
             query?: never;
@@ -18,23 +35,6 @@ export interface paths {
          * @description Record the consents the caller is accepting, clearing the relevant gates.
          */
         post: operations["users__auth_accept_consents"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/bulk-create-users/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Bulk Create Users */
-        post: operations["users__management_bulk_create_users"];
         delete?: never;
         options?: never;
         head?: never;
@@ -69,23 +69,6 @@ export interface paths {
         put?: never;
         /** Complete Onboarding */
         post: operations["users__auth_complete_onboarding"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/create-user/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create User */
-        post: operations["users__management_create_user"];
         delete?: never;
         options?: never;
         head?: never;
@@ -367,6 +350,23 @@ export interface paths {
         };
         /** List Member Attended Events */
         get: operations["users__management_list_member_attended_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/users/{user_id}/guidelines-pause-preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Guidelines Pause Preview */
+        get: operations["users__attendance_pause_api_guidelines_pause_preview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1900,6 +1900,318 @@ export interface paths {
         patch: operations["community_content_pages_update_page"];
         trace?: never;
     };
+    "/api/community/planning/assignments/{assignment_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Withdraw Assignment */
+        delete: operations["community_planning_proposals_withdraw_assignment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/assignments/{assignment_id}/commit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Commit Assignment */
+        post: operations["community_planning_responses_commit_assignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/assignments/{assignment_id}/decline/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline Assignment */
+        post: operations["community_planning_responses_decline_assignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/checklist/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Checklist */
+        get: operations["community_planning_checklist_list_checklist"];
+        put?: never;
+        /** Create Checklist Item */
+        post: operations["community_planning_checklist_create_checklist_item"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/checklist/order/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reorder Checklist */
+        put: operations["community_planning_checklist_reorder_checklist"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/checklist/{item_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Checklist Item */
+        delete: operations["community_planning_checklist_delete_checklist_item"];
+        options?: never;
+        head?: never;
+        /** Update Checklist Item */
+        patch: operations["community_planning_checklist_update_checklist_item"];
+        trace?: never;
+    };
+    "/api/community/planning/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Slots */
+        get: operations["community_planning_mine_list_my_slots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/slots/{slot_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Slot */
+        delete: operations["community_planning_years_delete_slot"];
+        options?: never;
+        head?: never;
+        /** Update Slot */
+        patch: operations["community_planning_years_update_slot"];
+        trace?: never;
+    };
+    "/api/community/planning/slots/{slot_id}/assignments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Propose Assignment */
+        post: operations["community_planning_proposals_propose_assignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/slots/{slot_id}/assignments/confirm/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Assignment */
+        post: operations["community_planning_proposals_confirm_assignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/slots/{slot_id}/checklist/{item_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Tick Checklist Item */
+        put: operations["community_planning_checklist_tick_checklist_item"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/slots/{slot_id}/event/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Link Slot Event */
+        post: operations["community_planning_event_link_link_slot_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/years/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Years */
+        get: operations["community_planning_years_list_years"];
+        put?: never;
+        /** Create Year */
+        post: operations["community_planning_years_create_year"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/years/{year}/availability/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get My Availability */
+        get: operations["community_planning_availability_get_my_availability"];
+        /** Put My Availability */
+        put: operations["community_planning_availability_put_my_availability"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/years/{year}/availability/open/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Open Availability */
+        post: operations["community_planning_availability_open_availability"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/years/{year}/grid/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Grid */
+        get: operations["community_planning_grid_get_grid"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/years/{year}/proposals/send/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send Proposals */
+        post: operations["community_planning_proposals_send_proposals"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/planning/years/{year}/slots/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Slots */
+        get: operations["community_planning_years_list_slots"];
+        put?: never;
+        /** Create Slot */
+        post: operations["community_planning_years_create_slot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/public/events/{event_id}/rsvp-phone-check/": {
         parameters: {
             query?: never;
@@ -2038,6 +2350,58 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/community/reserve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Reserve */
+        get: operations["community_reserve_read_get_reserve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/reserve/entries/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Reserve Entry */
+        post: operations["community_reserve_manage_create_reserve_entry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/reserve/entries/{entry_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Reserve Entry */
+        delete: operations["community_reserve_manage_delete_reserve_entry"];
+        options?: never;
+        head?: never;
+        /** Update Reserve Entry */
+        patch: operations["community_reserve_manage_update_reserve_entry"];
         trace?: never;
     };
     "/api/community/speech-template/": {
@@ -2533,10 +2897,7 @@ export interface paths {
         put?: never;
         /**
          * Create Sse Ticket
-         * @description Mint a short-lived single-use ticket for opening the SSE stream.
-         *
-         *     Lets the client open the stream with ?ticket= instead of the JWT (EventSource
-         *     can't send an auth header).
+         * @description Mint a single-use stream ticket; without a JWT, ?event_id= and ?token= scope it to one event.
          */
         post: operations["notifications_api_create_sse_ticket"];
         delete?: never;
@@ -2621,6 +2982,28 @@ export interface components {
             /** User Id */
             user_id?: string | null;
         };
+        /** AssignmentOut */
+        AssignmentOut: {
+            /** Id */
+            id: string;
+            /**
+             * Proposed At
+             * Format: date-time
+             */
+            proposed_at: string;
+            /** Responded At */
+            responded_at: string | null;
+            /** Slot Id */
+            slot_id: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /** User Id */
+            user_id: string;
+        };
+        /**
+         * AssignmentStatus
+         * @enum {string}
+         */
+        AssignmentStatus: "draft" | "proposed" | "committed" | "declined" | "withdrawn";
         /** AttendanceImportCommitIn */
         AttendanceImportCommitIn: {
             /** Event Date */
@@ -2698,11 +3081,6 @@ export interface components {
             /** Updated Count */
             updated_count: number;
         };
-        /** AttendancePausePreviewOut */
-        AttendancePausePreviewOut: {
-            /** Events */
-            events: components["schemas"]["PauseImpactEventOut"][];
-        };
         /** AttendanceReportOut */
         AttendanceReportOut: {
             /**
@@ -2758,6 +3136,113 @@ export interface components {
             /** User Id */
             user_id: string;
         };
+        /** AuditLogEntryOut */
+        AuditLogEntryOut: {
+            /** Action */
+            action: string;
+            /** Actor Id */
+            actor_id: string | null;
+            /** Actor Label */
+            actor_label: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Target Id */
+            target_id: string;
+            /** Target Type */
+            target_type: string;
+        };
+        /** AuditLogPageOut */
+        AuditLogPageOut: {
+            /** Entries */
+            entries: components["schemas"]["AuditLogEntryOut"][];
+            /** Next Offset */
+            next_offset: number | null;
+            /** Total */
+            total: number;
+        };
+        /** AuditLogQuery */
+        AuditLogQuery: {
+            /**
+             * Action
+             * @description exact action, e.g. user_paused
+             */
+            action?: string | null;
+            /**
+             * Actor Id
+             * @description only actions this person took
+             */
+            actor_id?: string | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
+            /**
+             * Member Id
+             * @description entries targeting this user, plus any entry whose details.user_id names them
+             */
+            member_id?: string | null;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
+            /**
+             * Since
+             * @description on or after this time; utc unless an offset is given
+             */
+            since?: string | null;
+            /** Target Id */
+            target_id?: string | null;
+            target_type?: components["schemas"]["AuditTargetType"] | null;
+            /**
+             * Until
+             * @description before this time; utc unless an offset is given
+             */
+            until?: string | null;
+        };
+        /**
+         * AuditTargetType
+         * @enum {string}
+         */
+        AuditTargetType: "doc_folder" | "document" | "editable_page" | "event" | "event_poll" | "event_tag" | "faq" | "feature_flag" | "guidelines" | "homepage" | "join_form_question" | "join_request" | "mcp_connection" | "member_promotion_email" | "member_promotion_message" | "member_restored_email" | "rejection_email" | "reserve_entry" | "role" | "slot_assignment" | "speech_template" | "survey" | "survey_question" | "tentative_approval_message" | "user" | "welcome_template" | "whatsapp_link";
+        /** AvailabilityIn */
+        AvailabilityIn: {
+            biannual_interest: components["schemas"]["BiannualInterest"];
+            /** Monthly Count */
+            monthly_count: number;
+            /** Slot Ids */
+            slot_ids: string[];
+        };
+        /** AvailabilityOut */
+        AvailabilityOut: {
+            biannual_interest: components["schemas"]["BiannualInterest"] | null;
+            /** Monthly Count */
+            monthly_count: number;
+            /** Slot Ids */
+            slot_ids: string[];
+            /** Submitted */
+            submitted: boolean;
+            /** Updated At */
+            updated_at: string | null;
+        };
+        /**
+         * BiannualInterest
+         * @enum {string}
+         */
+        BiannualInterest: "yes" | "maybe" | "no";
         /** BirthdayIn */
         BirthdayIn: {
             /** Day */
@@ -2792,33 +3277,6 @@ export interface components {
             event_verified_total: number;
             /** Verified User Ids */
             verified_user_ids: string[];
-        };
-        /** BulkUserCreateIn */
-        BulkUserCreateIn: {
-            /** Phone Numbers */
-            phone_numbers: string[];
-        };
-        /** BulkUserCreateOut */
-        BulkUserCreateOut: {
-            /** Created */
-            created: number;
-            /** Failed */
-            failed: number;
-            /** Results */
-            results: components["schemas"]["BulkUserResult"][];
-        };
-        /** BulkUserResult */
-        BulkUserResult: {
-            /** Error */
-            error?: string | null;
-            /** Magic Link Token */
-            magic_link_token?: string | null;
-            /** Phone Number */
-            phone_number: string;
-            /** Row */
-            row: number;
-            /** Success */
-            success: boolean;
         };
         /** CalendarTokenOut */
         CalendarTokenOut: {
@@ -2902,16 +3360,6 @@ export interface components {
              */
             canceled_count: number;
             /**
-             * Didnt Go
-             * @default []
-             */
-            didnt_go: components["schemas"]["CheckInReportPersonOut"][];
-            /**
-             * Didnt Go Count
-             * @default 0
-             */
-            didnt_go_count: number;
-            /**
              * No Show Count
              * @default 0
              */
@@ -2922,15 +3370,25 @@ export interface components {
              */
             no_shows: components["schemas"]["CheckInReportPersonOut"][];
             /**
-             * Unmarked
+             * Unmarked Going
              * @default []
              */
-            unmarked: components["schemas"]["CheckInReportPersonOut"][];
+            unmarked_going: components["schemas"]["CheckInReportPersonOut"][];
             /**
-             * Unmarked Count
+             * Unmarked Going Count
              * @default 0
              */
-            unmarked_count: number;
+            unmarked_going_count: number;
+            /**
+             * Unmarked Not Going
+             * @default []
+             */
+            unmarked_not_going: components["schemas"]["CheckInReportPersonOut"][];
+            /**
+             * Unmarked Not Going Count
+             * @default 0
+             */
+            unmarked_not_going_count: number;
         };
         /** CheckInReportPersonOut */
         CheckInReportPersonOut: {
@@ -2965,6 +3423,42 @@ export interface components {
          * @enum {string}
          */
         CheckPhoneStatus: "member" | "pending" | "unknown";
+        /** ChecklistItemIn */
+        ChecklistItemIn: {
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            /** Text */
+            text: string;
+        };
+        /** ChecklistItemOut */
+        ChecklistItemOut: {
+            /** Detail */
+            detail: string;
+            /** Id */
+            id: string;
+            /** Text */
+            text: string;
+        };
+        /** ChecklistItemPatchIn */
+        ChecklistItemPatchIn: {
+            /** Detail */
+            detail?: string | null;
+            /** Text */
+            text?: string | null;
+        };
+        /** ChecklistOrderIn */
+        ChecklistOrderIn: {
+            /** Ids */
+            ids: string[];
+        };
+        /** ChecklistTickIn */
+        ChecklistTickIn: {
+            /** Done */
+            done: boolean;
+        };
         /** CommentBodyIn */
         CommentBodyIn: {
             /** Body */
@@ -3047,6 +3541,8 @@ export interface components {
              * @default 5
              */
             cohost_count: number;
+            /** Event Format */
+            event_format?: string | null;
             /**
              * Going Count
              * @default 5
@@ -3346,7 +3842,7 @@ export interface components {
             /** Can Post */
             can_post: boolean;
             /** Cannot Post Reason */
-            cannot_post_reason?: ("login_required" | "rsvp_required") | null;
+            cannot_post_reason?: ("login_required" | "rsvp_required" | "members_only") | null;
             /** Items */
             items: components["schemas"]["EventCommentOut"][];
         };
@@ -3402,6 +3898,8 @@ export interface components {
         };
         /** EventDescriptionTemplatesOut */
         EventDescriptionTemplatesOut: {
+            /** Club */
+            club: string;
             /** Official Non Walk */
             official_non_walk: string;
             /** Official Walk */
@@ -3493,6 +3991,11 @@ export interface components {
         /** EventIn */
         EventIn: {
             /**
+             * Accept Paypal
+             * @default false
+             */
+            accept_paypal: boolean;
+            /**
              * Allow Plus Ones
              * @default false
              */
@@ -3557,6 +4060,13 @@ export interface components {
              * @default
              */
             price: string;
+            /**
+             * Price Note
+             * @default
+             */
+            price_note: string;
+            /** Rsvp Deadline */
+            rsvp_deadline?: string | null;
             /**
              * Rsvp Enabled
              * @default false
@@ -3672,6 +4182,11 @@ export interface components {
              */
             price: string;
             /**
+             * Price Note
+             * @default
+             */
+            price_note: string;
+            /**
              * Slug
              * @default
              */
@@ -3741,6 +4256,11 @@ export interface components {
         };
         /** EventOut */
         EventOut: {
+            /**
+             * Accept Paypal
+             * @default false
+             */
+            accept_paypal: boolean;
             /**
              * Allow Plus Ones
              * @default false
@@ -3888,6 +4408,11 @@ export interface components {
              */
             partiful_link: string;
             /**
+             * Paypal Price
+             * @default
+             */
+            paypal_price: string;
+            /**
              * Pending Cohost Invites
              * @default []
              */
@@ -3905,6 +4430,13 @@ export interface components {
              */
             price: string;
             /**
+             * Price Note
+             * @default
+             */
+            price_note: string;
+            /** Rsvp Deadline */
+            rsvp_deadline?: string | null;
+            /**
              * Rsvp Enabled
              * @default false
              */
@@ -3914,6 +4446,11 @@ export interface components {
              * @default []
              */
             rsvp_questions: components["schemas"]["EventRsvpQuestionOut"][];
+            /**
+             * Rsvps Closed
+             * @default false
+             */
+            rsvps_closed: boolean;
             /**
              * Slug
              * @default
@@ -3963,6 +4500,8 @@ export interface components {
         };
         /** EventPatchIn */
         EventPatchIn: {
+            /** Accept Paypal */
+            accept_paypal?: boolean | null;
             /** Allow Plus Ones */
             allow_plus_ones?: boolean | null;
             /** Cashapp Link */
@@ -3999,8 +4538,14 @@ export interface components {
             partiful_link?: string | null;
             /** Price */
             price?: string | null;
+            /** Price Note */
+            price_note?: string | null;
+            /** Rsvp Deadline */
+            rsvp_deadline?: string | null;
             /** Rsvp Enabled */
             rsvp_enabled?: boolean | null;
+            /** Rsvps Closed */
+            rsvps_closed?: boolean | null;
             /** Slug */
             slug?: string | null;
             /** Start Datetime */
@@ -4117,6 +4662,11 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
+            /**
              * Options
              * @default []
              */
@@ -4136,6 +4686,11 @@ export interface components {
             field_type: "textarea" | "select" | "checkbox";
             /** Label */
             label: string;
+            /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
             /**
              * Options
              * @default []
@@ -4161,6 +4716,11 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Option Prices
+             * @default []
+             */
+            option_prices: number[];
+            /**
              * Options
              * @default []
              */
@@ -4179,6 +4739,11 @@ export interface components {
             id?: string | null;
             /** Label */
             label: string;
+            /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
             /**
              * Options
              * @default []
@@ -4273,6 +4838,11 @@ export interface components {
              */
             waitlisted_count: number;
         };
+        /**
+         * EventStatus
+         * @enum {string}
+         */
+        EventStatus: "draft" | "active" | "cancelled" | "deleted";
         /** FeedbackIn */
         FeedbackIn: {
             /** Description */
@@ -4384,6 +4954,15 @@ export interface components {
         GiphySearchOut: {
             /** Results */
             results: components["schemas"]["GiphyResult"][];
+        };
+        /** GridOut */
+        GridOut: {
+            /** Assignments */
+            assignments: components["schemas"]["AssignmentOut"][];
+            /** Planners */
+            planners: components["schemas"]["PlannerColumnOut"][];
+            /** Slots */
+            slots: components["schemas"]["PlanningSlotOut"][];
         };
         /** GuidelinesOut */
         GuidelinesOut: {
@@ -4557,11 +5136,11 @@ export interface components {
          * @description Question types supported by join forms.
          * @enum {string}
          */
-        JoinFormQuestionType: "text" | "textarea" | "select";
+        JoinFormQuestionType: "text" | "textarea" | "select" | "checkbox";
         /** JoinRequestAnswerOut */
         JoinRequestAnswerOut: {
             /** Answer */
-            answer: string;
+            answer: string | string[];
             /** Label */
             label: string;
             /** Question Id */
@@ -4574,7 +5153,7 @@ export interface components {
              * @default {}
              */
             answers: {
-                [key: string]: string;
+                [key: string]: string | string[];
             };
             /**
              * Email
@@ -4616,10 +5195,6 @@ export interface components {
              * @default []
              */
             answers: components["schemas"]["JoinRequestAnswerOut"][];
-            /** Approved At */
-            approved_at?: string | null;
-            /** Approved By Name */
-            approved_by_name?: string | null;
             /** Approved Via Event Id */
             approved_via_event_id?: string | null;
             /** Approved Via Event Title */
@@ -4665,6 +5240,8 @@ export interface components {
             onboarded_at?: string | null;
             /** Phone Number */
             phone_number: string;
+            previous_archive?: components["schemas"]["PreviousArchiveOut"] | null;
+            previous_rejection?: components["schemas"]["PreviousRejectionOut"] | null;
             /**
              * Previously Archived
              * @default false
@@ -4675,10 +5252,6 @@ export interface components {
              * @default false
              */
             previously_rejected: boolean;
-            /** Rejected At */
-            rejected_at?: string | null;
-            /** Rejected By Name */
-            rejected_by_name?: string | null;
             /**
              * Rejection Note
              * @default
@@ -4696,15 +5269,15 @@ export interface components {
             rsvp_events: components["schemas"]["JoinRequestRsvpOut"][];
             /** Status */
             status: string;
+            /** Status Changed At */
+            status_changed_at?: string | null;
+            /** Status Changed By Name */
+            status_changed_by_name?: string | null;
             /**
              * Submitted At
              * Format: date-time
              */
             submitted_at: string;
-            /** Tentative At */
-            tentative_at?: string | null;
-            /** Tentative By Name */
-            tentative_by_name?: string | null;
             /**
              * Upcoming Club Count
              * @default 0
@@ -4732,8 +5305,16 @@ export interface components {
             /** Title */
             title: string;
         };
-        /** JoinRequestStatusIn */
+        /**
+         * JoinRequestStatusIn
+         * @description Decision payload: fire an event, not a target status.
+         */
         JoinRequestStatusIn: {
+            /**
+             * Event
+             * @default
+             */
+            event: string;
             /**
              * Rejection Note
              * @default
@@ -4744,7 +5325,11 @@ export interface components {
              * @default
              */
             rejection_reason: string;
-            /** Status */
+            /**
+             * Status
+             * @deprecated
+             * @default
+             */
             status: string;
         };
         /** JoinRequestSubmittedOut */
@@ -4762,6 +5347,14 @@ export interface components {
              * Format: date-time
              */
             submitted_at: string;
+        };
+        /** LinkEventIn */
+        LinkEventIn: {
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
         };
         /** LoginIn */
         LoginIn: {
@@ -4859,13 +5452,15 @@ export interface components {
             didnt_go_count: number;
             /** Full Name */
             full_name: string;
+            /** Is Attendance Paused */
+            is_attendance_paused: boolean;
+            /** Is Guidelines Paused */
+            is_guidelines_paused: boolean;
             /**
              * Is Pause Candidate
              * @default false
              */
             is_pause_candidate: boolean;
-            /** Is Paused */
-            is_paused: boolean;
             /** Last Qualifying At */
             last_qualifying_at?: string | null;
             /** Months Since Last Qualifying */
@@ -5014,10 +5609,28 @@ export interface components {
             /** Body */
             body?: string | null;
         };
+        /**
+         * MembershipStatus
+         * @enum {string}
+         */
+        MembershipStatus: "none" | "tentative" | "active_member" | "attendance_paused" | "archived" | "guidelines_paused";
         /** MyEventFeedbackOut */
         MyEventFeedbackOut: {
             /** Token */
             token: string | null;
+        };
+        /** MySlotOut */
+        MySlotOut: {
+            /** Assignment Id */
+            assignment_id: string;
+            /** Checklist Done Ids */
+            checklist_done_ids: string[];
+            slot: components["schemas"]["PlanningSlotOut"];
+            status: components["schemas"]["AssignmentStatus"];
+            /** Teammates */
+            teammates: components["schemas"]["TeammateOut"][];
+            /** Year */
+            year: number;
         };
         /** NotificationOut */
         NotificationOut: {
@@ -5078,12 +5691,21 @@ export interface components {
          * PauseOutcome
          * @enum {string}
          */
-        PauseOutcome: "kept" | "removed" | "drafted";
+        PauseOutcome: "kept" | "removed" | "drafted" | "rescinded";
+        /** PausePreviewOut */
+        PausePreviewOut: {
+            /** Clears Whatsapp */
+            clears_whatsapp: boolean;
+            /** Events */
+            events: components["schemas"]["PauseImpactEventOut"][];
+            /** Stripped Roles */
+            stripped_roles: string[];
+        };
         /**
          * PauseRole
          * @enum {string}
          */
-        PauseRole: "rsvp" | "hosting";
+        PauseRole: "rsvp" | "hosting" | "cohost_invite";
         /** PendingCoHostInviteOut */
         PendingCoHostInviteOut: {
             /** Id */
@@ -5102,6 +5724,76 @@ export interface components {
              * @default
              */
             user_photo_url: string;
+        };
+        /** PlannerColumnOut */
+        PlannerColumnOut: {
+            /** Available Slot Ids */
+            available_slot_ids: string[];
+            biannual_interest: components["schemas"]["BiannualInterest"] | null;
+            /** Has Email */
+            has_email: boolean;
+            /** Is Planner */
+            is_planner: boolean;
+            /** Monthly Count */
+            monthly_count: number;
+            /** Name */
+            name: string;
+            /** Submitted */
+            submitted: boolean;
+            /** User Id */
+            user_id: string;
+        };
+        /** PlanningSlotIn */
+        PlanningSlotIn: {
+            kind: components["schemas"]["PlanningSlotKind"];
+            /** Label */
+            label: string;
+            /** Month */
+            month: number;
+        };
+        /**
+         * PlanningSlotKind
+         * @enum {string}
+         */
+        PlanningSlotKind: "monthly" | "biannual";
+        /** PlanningSlotOut */
+        PlanningSlotOut: {
+            /** Event Id */
+            event_id: string | null;
+            /** Event Slug */
+            event_slug: string | null;
+            event_status: components["schemas"]["EventStatus"] | null;
+            /** Id */
+            id: string;
+            kind: components["schemas"]["PlanningSlotKind"];
+            /** Label */
+            label: string;
+            /** Month */
+            month: number;
+            /** Order */
+            order: number;
+        };
+        /** PlanningSlotPatchIn */
+        PlanningSlotPatchIn: {
+            kind?: components["schemas"]["PlanningSlotKind"] | null;
+            /** Label */
+            label?: string | null;
+            /** Month */
+            month?: number | null;
+        };
+        /** PlanningYearIn */
+        PlanningYearIn: {
+            /** Year */
+            year: number;
+        };
+        /** PlanningYearOut */
+        PlanningYearOut: {
+            /** Availability Opened At */
+            availability_opened_at: string | null;
+            /** Id */
+            id: string;
+            /** Year */
+            year: number;
         };
         /** PollOptionIn */
         PollOptionIn: {
@@ -5130,6 +5822,46 @@ export interface components {
             voters: {
                 [key: string]: components["schemas"]["VoterOut"][];
             };
+        };
+        /** PreviousArchiveOut */
+        PreviousArchiveOut: {
+            /** Archived At */
+            archived_at?: string | null;
+            /** Archived By Name */
+            archived_by_name?: string | null;
+            paused_status?: components["schemas"]["MembershipStatus"] | null;
+        };
+        /** PreviousRejectionOut */
+        PreviousRejectionOut: {
+            /**
+             * Rejection Note
+             * @default
+             */
+            rejection_note: string;
+            /**
+             * Rejection Reason
+             * @default
+             */
+            rejection_reason: string;
+            /** Status Changed At */
+            status_changed_at?: string | null;
+            /** Status Changed By Name */
+            status_changed_by_name?: string | null;
+        };
+        /** ProposalsSentOut */
+        ProposalsSentOut: {
+            /** Planners Notified */
+            planners_notified: number;
+            /** Proposals Sent */
+            proposals_sent: number;
+        };
+        /** ProposeIn */
+        ProposeIn: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /** PublicRsvpIn */
         PublicRsvpIn: {
@@ -5421,6 +6153,80 @@ export interface components {
             /** Detail */
             detail: string;
         };
+        /** ReserveEntryIn */
+        ReserveEntryIn: {
+            /**
+             * Collected
+             * @default 0
+             */
+            collected: number | string;
+            /**
+             * Facilitator Drinks
+             * @default 0
+             */
+            facilitator_drinks: number | string;
+            /** @default event */
+            kind: components["schemas"]["ReserveEntryKind"];
+            /** Label */
+            label: string;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /**
+             * Paid Out
+             * @default 0
+             */
+            paid_out: number | string;
+        };
+        /**
+         * ReserveEntryKind
+         * @enum {string}
+         */
+        ReserveEntryKind: "event" | "cost" | "donation";
+        /** ReserveEntryOut */
+        ReserveEntryOut: {
+            /** Collected */
+            collected: string;
+            /** Facilitator Drinks */
+            facilitator_drinks: string;
+            /** Id */
+            id: string;
+            kind: components["schemas"]["ReserveEntryKind"];
+            /** Label */
+            label: string;
+            /** Left Over */
+            left_over: string;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Paid Out */
+            paid_out: string;
+        };
+        /** ReserveEntryPatchIn */
+        ReserveEntryPatchIn: {
+            /** Collected */
+            collected?: number | string | null;
+            /** Facilitator Drinks */
+            facilitator_drinks?: number | string | null;
+            kind?: components["schemas"]["ReserveEntryKind"] | null;
+            /** Label */
+            label?: string | null;
+            /** Occurred On */
+            occurred_on?: string | null;
+            /** Paid Out */
+            paid_out?: number | string | null;
+        };
+        /** ReserveOut */
+        ReserveOut: {
+            /** Entries */
+            entries: components["schemas"]["ReserveEntryOut"][];
+            /** Updated At */
+            updated_at: string | null;
+        };
         /** ResetPasswordOut */
         ResetPasswordOut: {
             /** Detail */
@@ -5511,6 +6317,11 @@ export interface components {
             question_id: string;
             /** Value */
             value: string;
+        };
+        /** SlotChecklistOut */
+        SlotChecklistOut: {
+            /** Done Ids */
+            done_ids: string[];
         };
         /** SpeechTemplateOut */
         SpeechTemplateOut: {
@@ -5837,6 +6648,12 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /** TeammateOut */
+        TeammateOut: {
+            /** Name */
+            name: string;
+            status: components["schemas"]["AssignmentStatus"];
+        };
         /** TentativeApprovalMessageOut */
         TentativeApprovalMessageOut: {
             /** Body */
@@ -5865,6 +6682,11 @@ export interface components {
              */
             cant_go: string[];
             /**
+             * Co Hosts
+             * @default []
+             */
+            co_hosts: string[];
+            /**
              * Invited
              * @default []
              */
@@ -5889,52 +6711,6 @@ export interface components {
         UnreadCountOut: {
             /** Count */
             count: number;
-        };
-        /** UserCreateIn */
-        UserCreateIn: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /**
-             * First Name
-             * @default
-             */
-            first_name: string;
-            /**
-             * Last Name
-             * @default
-             */
-            last_name: string;
-            /** Phone Number */
-            phone_number: string;
-            /** Role Id */
-            role_id?: string | null;
-        };
-        /** UserCreateOut */
-        UserCreateOut: {
-            /**
-             * First Name
-             * @default
-             */
-            first_name: string;
-            /**
-             * Full Name
-             * @default
-             */
-            full_name: string;
-            /** Id */
-            id: string;
-            /**
-             * Last Name
-             * @default
-             */
-            last_name: string;
-            /** Magic Link Token */
-            magic_link_token: string;
-            /** Phone Number */
-            phone_number: string;
         };
         /** UserOut */
         UserOut: {
@@ -6019,11 +6795,6 @@ export interface components {
              */
             is_member: boolean;
             /**
-             * Is Paused
-             * @default false
-             */
-            is_paused: boolean;
-            /**
              * Is Superuser
              * @default false
              */
@@ -6040,6 +6811,8 @@ export interface components {
              * @default false
              */
             login_link_requested: boolean;
+            /** @default active_member */
+            membership_status: components["schemas"]["MembershipStatus"];
             /**
              * Monthly Digest Opt Out
              * @default false
@@ -6145,10 +6918,10 @@ export interface components {
             email?: string | null;
             /** First Name */
             first_name?: string | null;
+            /** Guidelines Paused */
+            guidelines_paused?: boolean | null;
             /** Has Joined Whatsapp */
             has_joined_whatsapp?: boolean | null;
-            /** Is Paused */
-            is_paused?: boolean | null;
             /** Last Name */
             last_name?: string | null;
             /** Phone Number */
@@ -6261,6 +7034,50 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    audit_api_list_audit_log: {
+        parameters: {
+            query?: {
+                /** @description entries targeting this user, plus any entry whose details.user_id names them */
+                member_id?: string | null;
+                /** @description only actions this person took */
+                actor_id?: string | null;
+                /** @description exact action, e.g. user_paused */
+                action?: string | null;
+                target_type?: components["schemas"]["AuditTargetType"] | null;
+                target_id?: string | null;
+                /** @description on or after this time; utc unless an offset is given */
+                since?: string | null;
+                /** @description before this time; utc unless an offset is given */
+                until?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogPageOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     users__auth_accept_consents: {
         parameters: {
             query?: never;
@@ -6281,39 +7098,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserOut"];
-                };
-            };
-        };
-    };
-    users__management_bulk_create_users: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkUserCreateIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkUserCreateOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };
@@ -6393,57 +7177,6 @@ export interface operations {
             };
             /** @description Unprocessable Content */
             422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    users__management_create_user: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserCreateIn"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserCreateOut"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Conflict */
-            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7070,6 +7803,15 @@ export interface operations {
                     "application/json": components["schemas"]["UserSearchOut"][];
                 };
             };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     users__user_deletion_delete_user: {
@@ -7198,7 +7940,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AttendancePausePreviewOut"];
+                    "application/json": components["schemas"]["PausePreviewOut"];
                 };
             };
             /** @description Forbidden */
@@ -7239,6 +7981,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AttendedEventOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    users__attendance_pause_api_guidelines_pause_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PausePreviewOut"];
                 };
             };
             /** @description Forbidden */
@@ -7558,6 +8340,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11908,6 +12699,1029 @@ export interface operations {
             };
         };
     };
+    community_planning_proposals_withdraw_assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_responses_commit_assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignmentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_responses_decline_assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignmentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_checklist_list_checklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistItemOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_checklist_create_checklist_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChecklistItemIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistItemOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_checklist_reorder_checklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChecklistOrderIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistItemOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_checklist_delete_checklist_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_checklist_update_checklist_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChecklistItemPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistItemOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_mine_list_my_slots: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MySlotOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_years_delete_slot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_years_update_slot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningSlotPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningSlotOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_proposals_propose_assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposeIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignmentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_proposals_confirm_assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposeIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignmentOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_checklist_tick_checklist_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChecklistTickIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlotChecklistOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_event_link_link_slot_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkEventIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningSlotOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_years_list_years: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningYearOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_years_create_year: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningYearIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningYearOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_availability_get_my_availability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_availability_put_my_availability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_availability_open_availability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningYearOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_grid_get_grid: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GridOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_proposals_send_proposals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalsSentOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_years_list_slots: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningSlotOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_planning_years_create_slot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanningSlotIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanningSlotOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community_rsvps_public_submit_check_public_rsvp_phone: {
         parameters: {
             query?: never;
@@ -12140,6 +13954,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Unprocessable Content */
             422: {
                 headers: {
@@ -12295,6 +14118,141 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_reserve_read_get_reserve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReserveOut"];
+                };
+            };
+        };
+    };
+    community_reserve_manage_create_reserve_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReserveEntryIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReserveEntryOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_reserve_manage_delete_reserve_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_reserve_manage_update_reserve_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReserveEntryPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReserveEntryOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13452,7 +15410,9 @@ export interface operations {
     };
     notifications_api_create_sse_ticket: {
         parameters: {
-            query?: never;
+            query?: {
+                event_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -13466,6 +15426,24 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SseTicketOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Too Many Requests */

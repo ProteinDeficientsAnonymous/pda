@@ -12,6 +12,7 @@ import { useAuthStore } from '@/auth/store';
 import { QuestionField } from '@/components/questions/QuestionField';
 import { visibleQuestionIds } from '@/components/questions/questionVisibility';
 import { Button } from '@/components/ui/Button';
+import { useScrollToTopOnMount } from '@/hooks/useScrollToTopOnMount';
 import { type SurveyStatus, surveyStatus } from '@/models/survey';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
@@ -58,6 +59,7 @@ function SurveyUnavailable({
   survey: Survey;
   status: Exclude<SurveyStatus, 'active'>;
 }) {
+  useScrollToTopOnMount();
   return (
     <ContentContainer>
       <h1 className="mb-2 text-2xl font-medium tracking-tight">{survey.title}</h1>

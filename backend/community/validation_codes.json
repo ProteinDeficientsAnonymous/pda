@@ -17,6 +17,11 @@
         "params": []
       },
       {
+        "name": "PRICE_INVALID",
+        "value": "event.price_invalid",
+        "params": []
+      },
+      {
         "name": "START_DATETIME_MUST_BE_FUTURE",
         "value": "event.start_datetime_must_be_future",
         "params": []
@@ -117,6 +122,21 @@
         "params": []
       },
       {
+        "name": "RSVPS_CLOSED_DEADLINE",
+        "value": "event.rsvps_closed_deadline",
+        "params": []
+      },
+      {
+        "name": "RSVPS_CLOSED_BY_HOST",
+        "value": "event.rsvps_closed_by_host",
+        "params": []
+      },
+      {
+        "name": "RSVP_DEADLINE_AFTER_START",
+        "value": "event.rsvp_deadline_after_start",
+        "params": []
+      },
+      {
         "name": "RSVP_INVALID_STATUS",
         "value": "event.rsvp_invalid_status",
         "params": []
@@ -164,11 +184,21 @@
         "params": []
       },
       {
+        "name": "DIDNT_GO_REQUIRES_GOING",
+        "value": "event.didnt_go_requires_going",
+        "params": []
+      },
+      {
         "name": "PERM_DENIED",
         "value": "event.perm_denied",
         "params": [
           "action?"
         ]
+      },
+      {
+        "name": "GUEST_NOT_ELIGIBLE",
+        "value": "event.guest_not_eligible",
+        "params": []
       },
       {
         "name": "BLAST_INVALID_AUDIENCE",
@@ -267,6 +297,11 @@
         "name": "INVALID_EVENT_FORMAT",
         "value": "event.invalid_event_format",
         "params": []
+      },
+      {
+        "name": "PAYPAL_OFFICIAL_ONLY",
+        "value": "event.paypal_official_only",
+        "params": []
       }
     ],
     "Poll": [
@@ -347,6 +382,13 @@
       {
         "name": "NAME_ALREADY_EXISTS",
         "value": "tag.name_already_exists",
+        "params": []
+      }
+    ],
+    "Reserve": [
+      {
+        "name": "NOT_FOUND",
+        "value": "reserve.not_found",
         "params": []
       }
     ],
@@ -488,8 +530,18 @@
         "params": []
       },
       {
-        "name": "ACCOUNT_PAUSED",
-        "value": "auth.account_paused",
+        "name": "ACCOUNT_GUIDELINES_PAUSED",
+        "value": "auth.account_guidelines_paused",
+        "params": []
+      },
+      {
+        "name": "ACCOUNT_REJECTED",
+        "value": "auth.account_rejected",
+        "params": []
+      },
+      {
+        "name": "NOT_A_MEMBER",
+        "value": "auth.not_a_member",
         "params": []
       },
       {
@@ -647,6 +699,21 @@
       {
         "name": "CANNOT_PAUSE_ADMIN",
         "value": "user.cannot_pause_admin",
+        "params": []
+      },
+      {
+        "name": "GUIDELINES_PAUSED",
+        "value": "user.guidelines_paused",
+        "params": []
+      },
+      {
+        "name": "ATTENDANCE_PAUSE_LIFTS_ON_CHECK_IN",
+        "value": "user.attendance_pause_lifts_on_check_in",
+        "params": []
+      },
+      {
+        "name": "INVALID_STATUS_TRANSITION",
+        "value": "user.invalid_status_transition",
         "params": []
       },
       {
@@ -831,6 +898,11 @@
         "params": []
       },
       {
+        "name": "TENTATIVE_CANNOT_BE_REJECTED",
+        "value": "join_request.tentative_cannot_be_rejected",
+        "params": []
+      },
+      {
         "name": "ONLY_REJECTED_CAN_BE_UN_REJECTED",
         "value": "join_request.only_rejected_can_be_un_rejected",
         "params": []
@@ -878,6 +950,13 @@
       {
         "name": "ANSWER_INVALID_OPTION",
         "value": "join_request.answer_invalid_option",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "ANSWER_INVALID_FORMAT",
+        "value": "join_request.answer_invalid_format",
         "params": [
           "label"
         ]
@@ -1295,6 +1374,73 @@
       {
         "name": "APP_NOT_FOUND",
         "value": "connect.app_not_found",
+        "params": []
+      }
+    ],
+    "Planning": [
+      {
+        "name": "YEAR_EXISTS",
+        "value": "planning.year_exists",
+        "params": []
+      },
+      {
+        "name": "YEAR_NOT_FOUND",
+        "value": "planning.year_not_found",
+        "params": []
+      },
+      {
+        "name": "SLOT_NOT_FOUND",
+        "value": "planning.slot_not_found",
+        "params": []
+      },
+      {
+        "name": "SLOT_NOT_IN_YEAR",
+        "value": "planning.slot_not_in_year",
+        "params": []
+      },
+      {
+        "name": "NOT_A_PLANNER",
+        "value": "planning.not_a_planner",
+        "params": []
+      },
+      {
+        "name": "ALREADY_ASSIGNED",
+        "value": "planning.already_assigned",
+        "params": []
+      },
+      {
+        "name": "ASSIGNMENT_NOT_FOUND",
+        "value": "planning.assignment_not_found",
+        "params": []
+      },
+      {
+        "name": "NOT_PENDING",
+        "value": "planning.not_pending",
+        "params": []
+      },
+      {
+        "name": "NOT_EVENT_HOST",
+        "value": "planning.not_event_host",
+        "params": []
+      },
+      {
+        "name": "SLOT_HAS_EVENT",
+        "value": "planning.slot_has_event",
+        "params": []
+      },
+      {
+        "name": "AVAILABILITY_ALREADY_OPEN",
+        "value": "planning.availability_already_open",
+        "params": []
+      },
+      {
+        "name": "EVENT_ALREADY_LINKED",
+        "value": "planning.event_already_linked",
+        "params": []
+      },
+      {
+        "name": "CHECKLIST_ITEM_NOT_FOUND",
+        "value": "planning.checklist_item_not_found",
         "params": []
       }
     ]

@@ -54,14 +54,15 @@ endif
 
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
         createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity check-private-modules \
-        frontend-install frontend-run frontend-build frontend-lint \
+        frontend-deps-check frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
         dump-codes generate-codes check-codes cursor-rules dump-openapi frontend-types-check \
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes agent-check-private-modules \
         agent-frontend-oxlint agent-frontend-lint agent-frontend-format agent-frontend-format-check \
         agent-frontend-test agent-frontend-e2e agent-frontend-typecheck \
-        diff-coverage agent-diff-coverage-backend agent-diff-coverage-frontend
+        diff-coverage agent-diff-coverage-backend agent-diff-coverage-frontend \
+        check-anti-tampering sast mutation
 
 help:
 	@echo "Backend commands:"
@@ -96,6 +97,8 @@ help:
 	@echo "  make frontend-format      Auto-format files (oxfmt)"
 	@echo "  make frontend-format-check  oxfmt check (no write)"
 	@echo "  make frontend-test        Run Vitest suite"
+	@echo "  make staging-smoke       Playwright walk of BASE_URL (default staging)"
+	@echo "  make staging-e2e         Existing Playwright specs against staging"
 	@echo "  make frontend-typecheck   Run TypeScript check"
 	@echo "  make frontend-types       Generate API types from OpenAPI + regen validation codes"
 	@echo "  make dump-codes           Dump backend Code catalog to validation_codes.json"
@@ -114,6 +117,9 @@ help:
 	@echo "  make agent-frontend-ci  agent-ci frontend portion only"
 	@echo "  make agent-test-since Quiet test-since (same selection rules)"
 	@echo "  make diff-coverage    Run tests with coverage; fail if changed lines vs DIFF_COVER_BASE (origin/main) are <80% covered"
+	@echo "  make check-anti-tampering  Fail if the tree has lint/type suppressions or skipped tests"
+	@echo "  make sast             Run bandit high-severity SAST scan on backend"
+	@echo "  make mutation         Run diff-scoped mutation testing on changed backend files"
 
 # Backend + Frontend
 install:
@@ -247,6 +253,20 @@ frontend-format-check:
 frontend-test:
 	cd frontend && pnpm test
 
+staging-smoke:
+	cd frontend && BASE_URL="$(or $(BASE_URL),https://staging-pda.up.railway.app)" pnpm test:staging
+
+# Seeds each spec into the staging database, then drives https://staging-pda.up.railway.app.
+# Login tokens have to be signed with staging's SECRET_KEY. The public Postgres URL is
+# on the Postgres service; the web service only has the private railway.internal host.
+staging-e2e:
+	@set -e; \
+	db=$$(railway variable list -p 3e109b65-524b-4af0-a9e4-cc96aae5faee -e staging -s Postgres-TnjF --kv | sed -n 's/^DATABASE_PUBLIC_URL=//p'); \
+	key=$$(railway variable list -p 3e109b65-524b-4af0-a9e4-cc96aae5faee -e staging -s staging --kv | sed -n 's/^SECRET_KEY=//p'); \
+	test -n "$$db"; test -n "$$key"; \
+	case "$$db" in *\?*) ;; *) db="$$db?sslmode=require" ;; esac; \
+	cd frontend && DATABASE_URL="$$db" SECRET_KEY="$$key" BASE_URL="$(or $(BASE_URL),https://staging-pda.up.railway.app)" pnpm exec playwright test
+
 frontend-typecheck:
 	cd frontend && pnpm typecheck
 
@@ -281,7 +301,7 @@ cursor-rules:
 # Verify frontend/src/api/types.gen.ts is in sync with backend/openapi_schema.json.
 # Wired into parallel-frontend / parallel-agent-frontend so it runs where
 # pnpm is installed.
-frontend-types-check:
+frontend-types-check: frontend-deps-check
 	cd frontend && pnpm types:api:check
 
 # CI (run before every commit)
@@ -331,26 +351,34 @@ agent-complexity:
 		echo "$$violations"; \
 		exit 1; \
 	fi
-agent-frontend-oxlint:
+# Worktrees symlink the main checkout's node_modules, which goes stale when pnpm-lock.yaml changes.
+frontend-deps-check:
+	@cmp -s frontend/pnpm-lock.yaml frontend/node_modules/.pnpm/lock.yaml || { \
+		dir=$$(cd frontend/node_modules 2>/dev/null && dirname "$$(pwd -P)" || echo frontend); \
+		echo "frontend/node_modules is missing or doesn't match pnpm-lock.yaml. run: cd $$dir && pnpm install --frozen-lockfile"; \
+		exit 1; \
+	}
+
+agent-frontend-oxlint: frontend-deps-check
 	cd frontend && pnpm exec oxlint
 
 # Cheap pre-push gate: oxlint + oxfmt in parallel.
 agent-frontend-lint:
 	$(MAKE) -j2 agent-frontend-oxlint agent-frontend-format-check
 
-agent-frontend-format:
+agent-frontend-format: frontend-deps-check
 	cd frontend && pnpm exec oxfmt
 
-agent-frontend-format-check:
+agent-frontend-format-check: frontend-deps-check
 	cd frontend && pnpm exec oxfmt --check
 
-agent-frontend-test:
+agent-frontend-test: frontend-deps-check
 	cd frontend && pnpm exec vitest run --reporter=dot --silent passed-only $(AGENT_VITEST_EXTRA)
 
 agent-frontend-e2e:
 	@cd frontend && pnpm test:e2e
 
-agent-frontend-typecheck:
+agent-frontend-typecheck: frontend-deps-check
 	cd frontend && pnpm exec tsc -b --noEmit --pretty false
 
 agent-ci: agent-backend-ci agent-frontend-ci
@@ -380,6 +408,15 @@ diff-coverage:
 	-$(MAKE) agent-test AGENT_PYTEST_EXTRA="$(PYTEST_COV_ARGS)"
 	-$(MAKE) agent-frontend-test AGENT_VITEST_EXTRA=--coverage
 	$(MAKE) --keep-going agent-diff-coverage-backend agent-diff-coverage-frontend
+
+check-anti-tampering:
+	python3 scripts/check_anti_tampering.py
+
+sast:
+	UV_NO_PROGRESS=1 uvx -q bandit -q -lll -r backend -x backend/tests,backend/community/migrations,backend/users/migrations
+
+mutation:
+	python3 scripts/run_mutation.py
 
 # Same coverage as agent-frontend-lint + test/typecheck/types, all in parallel.
 parallel-agent-frontend:

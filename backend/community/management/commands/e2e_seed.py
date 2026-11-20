@@ -2,6 +2,7 @@ import calendar
 import json
 import secrets
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 from django.core.cache import caches
 from django.core.management.base import BaseCommand
@@ -9,7 +10,7 @@ from django.db import connection
 from django.template.loader import render_to_string
 from django.utils import timezone
 from notifications.email_helpers import format_eastern_datetime
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 from users.roles import Role
 
 from community.event_feedback.send import feedback_url
@@ -33,7 +34,11 @@ from community.models import (
     SurveyQuestionType,
 )
 
-from ._e2e_attendance import seed_attendance_analytics, seed_attendance_report
+from ._e2e_attendance import (
+    seed_attendance_analytics,
+    seed_attendance_report,
+    seed_report_sections,
+)
 from ._e2e_common import (
     E2E_PASSWORD,
     issue_access_token,
@@ -42,6 +47,7 @@ from ._e2e_common import (
     random_event,
     random_phone,
 )
+from ._e2e_planning import seed_view_planner
 
 
 def _seed_member() -> dict:
@@ -162,7 +168,9 @@ def month_end(now: datetime, *, months_ago: int = 0) -> datetime:
 
 
 def _screen_user(**fields) -> User:
-    user = User.objects.create_user(password=E2E_PASSWORD, is_member=True, **fields)
+    user = User.objects.create_user(
+        password=E2E_PASSWORD, membership_status=MembershipStatus.ACTIVE_MEMBER, **fields
+    )
     user.guidelines_consent_at = _CONSENT_AT
     user.sms_consent_at = _CONSENT_AT
     user.contact_privacy_consent_at = _CONSENT_AT
@@ -228,7 +236,7 @@ def _seed_member_screens() -> dict:
         first_name="River",
         last_name="Guest",
         email="river@example.com",
-        is_member=False,
+        membership_status=MembershipStatus.NONE,
         password=E2E_PASSWORD,
     )
     event = Event.objects.create(
@@ -242,6 +250,8 @@ def _seed_member_screens() -> dict:
         status=EventStatus.ACTIVE,
         rsvp_enabled=True,
         created_by=seed,
+        price=Decimal("10.00"),
+        price_note="deposit",
     )
     EventRsvpQuestion.objects.create(
         event=event,
@@ -284,7 +294,7 @@ def _seed_member_screens() -> dict:
         has_seen_veganniversary=True,
     )
     ada.roles.add(Role.objects.get(name="admin", is_default=True))
-    _screen_user(
+    remy = _screen_user(
         phone_number="+17025550008",
         first_name="Remy",
         last_name="Reset",
@@ -292,16 +302,17 @@ def _seed_member_screens() -> dict:
         needs_password_reset=True,
         has_seen_veganniversary=True,
     )
-    User.objects.create_user(
+    casey = User.objects.create_user(
         phone_number="+17025550009",
         first_name="Casey",
         last_name="Consent",
         email="casey@example.com",
-        is_member=True,
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
         has_seen_veganniversary=True,
         guidelines_consent_at=None,
         password=E2E_PASSWORD,
     )
+    seed_report_sections(hike, (jamie, ada, remy, casey, guest))
     survey = Survey.objects.create(
         title="potluck feedback",
         slug="potluck-feedback",
@@ -384,7 +395,7 @@ def _seed_waitlist_screens() -> dict:
         first_name="Pat",
         last_name="Guest",
         email=None,
-        is_member=False,
+        membership_status=MembershipStatus.NONE,
     )
     event = Event.objects.create(
         title="supper club",
@@ -466,6 +477,7 @@ SCENARIOS = {
     "attendance-analytics": seed_attendance_analytics,
     "waitlist-screens": _seed_waitlist_screens,
     "event-feedback": _seed_event_feedback,
+    "view-planner": seed_view_planner,
 }
 
 

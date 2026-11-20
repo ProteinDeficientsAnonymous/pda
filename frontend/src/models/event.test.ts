@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { MembershipStatus } from '@/models/user';
 import { makeEvent, makeUser } from '@/test/fixtures';
 
 import {
@@ -7,6 +8,7 @@ import {
   EventStatus,
   EventType,
   EventVisibility,
+  goingWouldWaitlist,
   isLimited,
   myRsvpLabel,
   RsvpServerStatus,
@@ -93,6 +95,27 @@ describe('spotsLeft', () => {
   });
 });
 
+describe('goingWouldWaitlist', () => {
+  it('keeps a waitlisted rsvp in line even with spots open', () => {
+    const event = makeEvent({
+      maxAttendees: 10,
+      attendingCount: 3,
+      myRsvp: RsvpServerStatus.Waitlisted,
+    });
+    expect(goingWouldWaitlist(event, false)).toBe(true);
+  });
+
+  it('ignores a +1 the event no longer allows', () => {
+    const event = makeEvent({ maxAttendees: 2, attendingCount: 1, allowPlusOnes: false });
+    expect(goingWouldWaitlist(event, true)).toBe(false);
+  });
+
+  it('never waitlists on an uncapped event', () => {
+    const event = makeEvent({ maxAttendees: null, myRsvp: RsvpServerStatus.Waitlisted });
+    expect(goingWouldWaitlist(event, true)).toBe(false);
+  });
+});
+
 describe('myRsvpLabel', () => {
   it('returns null when the viewer has not responded', () => {
     expect(myRsvpLabel(makeEvent({ myRsvp: null }))).toBeNull();
@@ -111,9 +134,12 @@ describe('myRsvpLabel', () => {
 });
 
 describe('isLimited', () => {
-  it('is true for a limited user', () => {
-    expect(isLimited(makeUser({ isMember: false }))).toBe(true);
-  });
+  it.each([MembershipStatus.Tentative, MembershipStatus.AttendancePaused])(
+    'is true for a signed-in %s user',
+    (membershipStatus) => {
+      expect(isLimited(makeUser({ isMember: false, membershipStatus }))).toBe(true);
+    },
+  );
 
   it('is false for a member', () => {
     expect(isLimited(makeUser())).toBe(false);

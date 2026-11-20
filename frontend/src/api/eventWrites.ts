@@ -39,10 +39,12 @@ export interface EventFormValues {
   rsvpEnabled: boolean;
   allowPlusOnes: boolean;
   maxAttendees: number | null;
+  rsvpDeadline: string | null;
   whatsappLink: string;
   partifulLink: string;
   otherLink: string;
   price: string;
+  priceNote: string;
   venmoLink: string;
   cashappLink: string;
   zelleInfo: string;
@@ -86,10 +88,12 @@ const FIELD_TO_WIRE: WireFieldMap = {
   rsvpEnabled: ['rsvp_enabled', (v) => v],
   allowPlusOnes: ['allow_plus_ones', (v) => v],
   maxAttendees: ['max_attendees', (v) => v],
+  rsvpDeadline: ['rsvp_deadline', (v) => v],
   whatsappLink: ['whatsapp_link', (v) => v],
   partifulLink: ['partiful_link', (v) => v],
   otherLink: ['other_link', (v) => v],
   price: ['price', (v) => v],
+  priceNote: ['price_note', (v) => v],
   venmoLink: ['venmo_link', (v) => toVenmoUrl(v)],
   cashappLink: ['cashapp_link', (v) => toCashAppUrl(v)],
   zelleInfo: ['zelle_info', (v) => v],
@@ -155,6 +159,7 @@ export function useCreateEvent() {
         label: question.label,
         field_type: question.fieldType,
         options: question.options,
+        option_prices: question.optionPrices ?? [],
         required: question.required,
       }));
       const { data } = await apiClient.post<WireEvent>('/api/community/events/', body);
@@ -201,12 +206,15 @@ export function useUpdateEvent(eventId: string) {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
-    mutationFn: async (values: Partial<EventFormValues> & { force?: boolean }) => {
+    mutationFn: async (
+      values: Partial<EventFormValues> & { force?: boolean; rsvpsClosed?: boolean },
+    ) => {
       // PATCH is partial: build the wire body from only the provided keys.
       // Falsy values other than undefined still carry meaning (false/""/null).
-      const { force, ...formValues } = values;
+      const { force, rsvpsClosed, ...formValues } = values;
       const body = toPartialWireBody(formValues);
       if (force) body.force = true;
+      if (rsvpsClosed !== undefined) body.rsvps_closed = rsvpsClosed;
       const { data } = await apiClient.patch<WireEvent>(`/api/community/events/${eventId}/`, body);
       return mapEvent(data);
     },
@@ -323,10 +331,12 @@ export function emptyEventFormValues(): EventFormValues {
     rsvpEnabled: true,
     allowPlusOnes: true,
     maxAttendees: null,
+    rsvpDeadline: null,
     whatsappLink: '',
     partifulLink: '',
     otherLink: '',
     price: '',
+    priceNote: '',
     venmoLink: '',
     cashappLink: '',
     zelleInfo: '',
@@ -388,10 +398,12 @@ export function eventToFormValues(e: Event): EventFormValues {
     rsvpEnabled: e.rsvpEnabled,
     allowPlusOnes: e.allowPlusOnes,
     maxAttendees: e.maxAttendees,
+    rsvpDeadline: e.rsvpDeadline ? e.rsvpDeadline.toISOString() : null,
     whatsappLink: e.whatsappLink,
     partifulLink: e.partifulLink,
     otherLink: e.otherLink,
     price: e.price,
+    priceNote: e.priceNote,
     venmoLink: fromVenmoUrl(e.venmoLink),
     cashappLink: fromCashAppUrl(e.cashappLink),
     zelleInfo: e.zelleInfo,

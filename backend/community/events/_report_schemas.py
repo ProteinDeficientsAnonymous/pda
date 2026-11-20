@@ -14,9 +14,9 @@ class ReportBucket:
 
     ATTENDED = "attended"
     NO_SHOWS = "no_shows"
-    DIDNT_GO = "didnt_go"
     CANCELED = "canceled"
-    UNMARKED = "unmarked"
+    UNMARKED_GOING = "unmarked_going"
+    UNMARKED_NOT_GOING = "unmarked_not_going"
 
 
 class CheckInReportPersonOut(BaseModel):
@@ -38,14 +38,14 @@ class CanceledPersonOut(CheckInReportPersonOut):
 class CheckInReportOut(BaseModel):
     attended_count: int = 0
     no_show_count: int = 0
-    didnt_go_count: int = 0
     canceled_count: int = 0
-    unmarked_count: int = 0
+    unmarked_going_count: int = 0
+    unmarked_not_going_count: int = 0
     attended: list[AttendedPersonOut] = []
     no_shows: list[CheckInReportPersonOut] = []
-    didnt_go: list[CheckInReportPersonOut] = []
     canceled: list[CanceledPersonOut] = []
-    unmarked: list[CheckInReportPersonOut] = []
+    unmarked_going: list[CheckInReportPersonOut] = []
+    unmarked_not_going: list[CheckInReportPersonOut] = []
 
 
 REPORT_CSV_COLUMNS = (

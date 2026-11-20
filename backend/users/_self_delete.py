@@ -1,6 +1,6 @@
 import logging
 
-from community.validation import Code, raise_validation
+from community.validation import Code, InvalidStateTransition, TransitionFailure, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
@@ -10,8 +10,9 @@ from ninja import Router
 from ninja.responses import Status
 from notifications.service import create_account_deleted_notifications
 
-from users._archive import archive_user
+from users._archive_user import archive_user
 from users.helpers import is_last_admin
+from users.models import MembershipEvent, MembershipStatus
 from users.refresh_cookie import clear_refresh_cookie
 from users.schemas import DeleteAccountIn, ErrorOut
 
@@ -25,9 +26,33 @@ def delete_me(request, payload: DeleteAccountIn, response: HttpResponse):
     if not user.check_password(payload.password):
         raise_validation(Code.Auth.CURRENT_PASSWORD_INCORRECT, field="password", status_code=400)
     if is_last_admin(user):
-        raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
+        raise InvalidStateTransition(
+            Code.User.CANNOT_DELETE_LAST_ADMIN,
+            TransitionFailure(
+                action="user_transition_rejected",
+                target_type=AuditTargetType.USER,
+                target_id=str(user.pk),
+                event=MembershipEvent.ARCHIVE,
+                from_status=str(user.membership_status),
+                to_status=MembershipStatus.ARCHIVED,
+            ),
+        )
+    previous_status = str(user.membership_status)
     with transaction.atomic():
-        removed_role_ids = archive_user(request, user)
+        released = archive_user(request, user)
+        # Concurrent archive wins the row lock and returns {}; do not audit a no-op.
+        if not released:
+            raise InvalidStateTransition(
+                Code.User.ALREADY_ARCHIVED,
+                TransitionFailure(
+                    action="user_transition_rejected",
+                    target_type=AuditTargetType.USER,
+                    target_id=str(user.pk),
+                    event=MembershipEvent.ARCHIVE,
+                    from_status=previous_status,
+                    to_status=MembershipStatus.ARCHIVED,
+                ),
+            )
         create_account_deleted_notifications(user)
     audit_log(
         logging.WARNING,
@@ -36,7 +61,13 @@ def delete_me(request, payload: DeleteAccountIn, response: HttpResponse):
         target=AuditTarget(
             type=AuditTargetType.USER,
             id=str(user.pk),
-            details={"full_name": user.full_name, "removed_role_ids": removed_role_ids},
+            details={
+                "event": MembershipEvent.ARCHIVE,
+                "from": previous_status,
+                "to": MembershipStatus.ARCHIVED,
+                "full_name": user.full_name,
+                **released,
+            },
         ),
     )
     clear_refresh_cookie(response)

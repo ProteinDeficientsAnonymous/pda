@@ -5,7 +5,7 @@ import time
 
 from community.image_compress import AVATAR_MAX_EDGE, UnsafeImageError, commit_photo, stored_photo
 from community.validation import Code, raise_validation
-from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log, audit_log_before_raise
 from config.auth import gated_jwt
 from config.ratelimit import client_ip, rate_limit
 from django.contrib.auth import authenticate
@@ -18,6 +18,7 @@ from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
 from users._consents import ConsentType, stamp_consents
+from users._login_blocks import reject_blocked_login
 from users._password_validation import validate_password
 from users.helpers import (
     check_and_set_email,
@@ -68,7 +69,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
     auth_user = authenticate(request, username=payload.phone_number, password=payload.password)
     if auth_user is None:
         logger.warning("Authentication failure: invalid credentials")
-        audit_log(
+        audit_log_before_raise(
             logging.WARNING,
             "login_failed",
             request,
@@ -76,22 +77,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
         )
         raise_validation(Code.Auth.INVALID_CREDENTIALS, status_code=401)
     user = User.objects.get(pk=auth_user.pk)
-    if user.archived_at is not None:
-        audit_log(
-            logging.WARNING,
-            "login_archived",
-            request,
-            target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
-        )
-        raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
-    if user.is_paused:
-        audit_log(
-            logging.WARNING,
-            "login_paused",
-            request,
-            target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
-        )
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+    reject_blocked_login(request, user, "login")
     user.last_login = timezone.now()
     user.save(update_fields=["last_login"])
     refresh = RefreshToken.for_user(user)
@@ -103,7 +89,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
         request,
         target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
-    return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
+    return Status(200, TokenOut(access=str(getattr(refresh, "access_token"))))
 
 
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)
@@ -137,8 +123,8 @@ def logout(request, response: HttpResponse):
 @router.get("/me/", response={200: UserOut, 401: ErrorOut, 403: ErrorOut}, auth=gated_jwt)
 def me(request):
     user = request.auth
-    if user.is_paused:
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
+    if user.is_guidelines_paused:
+        raise_validation(Code.Auth.ACCOUNT_GUIDELINES_PAUSED, status_code=403)
     return Status(200, UserOut.from_user(user))
 
 
@@ -377,7 +363,7 @@ def accept_consents(request, payload: AcceptConsentsIn):
 def change_password(request, payload: ChangePasswordIn):
     user = request.auth
     if not user.check_password(payload.current_password):
-        audit_log(
+        audit_log_before_raise(
             logging.WARNING,
             "password_change_failed",
             request,

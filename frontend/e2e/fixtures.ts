@@ -64,6 +64,7 @@ export interface SeedScenarioMap {
   };
   'waitlist-screens': { password: string; wren_phone: string; guest_token: string };
   'event-feedback': { event_title: string; question_label: string; feedback_url: string };
+  'view-planner': { refresh_token: string };
 }
 
 export type SeedScenario = keyof SeedScenarioMap;
@@ -71,7 +72,7 @@ export type SeedScenario = keyof SeedScenarioMap;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '../..');
 const BACKEND_DIR = path.resolve(ROOT_DIR, 'backend');
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 
 function resolveDatabaseUrl(): string {
   // falls back to per-worktree postgres (make dev-pg) when DATABASE_URL is unset locally
@@ -96,6 +97,13 @@ export function seed<S extends SeedScenario>(scenario: S): SeedScenarioMap[S] {
 // Logs in via the refresh cookie the SPA boots from — UI login is capped at 5/min per IP.
 export async function signInWithToken(context: BrowserContext, refreshToken: string) {
   await context.addCookies([
-    { name: 'refresh_token', value: refreshToken, url: BASE_URL, httpOnly: true, sameSite: 'Lax' },
+    {
+      name: 'refresh_token',
+      value: refreshToken,
+      url: BASE_URL,
+      httpOnly: true,
+      sameSite: 'Lax',
+      secure: BASE_URL.startsWith('https'),
+    },
   ]);
 }

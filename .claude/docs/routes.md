@@ -39,6 +39,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/settings` | Settings (profile, accessibility, **calendar ICS feed**) |
 | `/profile` | Profile |
 | `/volunteer` | Volunteer |
+| `/day-of` | Day-of guide for official events (members read; `manage_event_planning` edits) |
 | `/connect/authorize?request=<id>` | MCP consent screen (allow/deny an AI app); logged-out users return via `/login?redirect=` |
 | `/docs` | Docs index (**manage_documents**: folder/doc admin) |
 | `/docs/:id` | Doc detail / editor |
@@ -62,6 +63,7 @@ Source of truth: `frontend/src/router/routes.tsx`. All lazy-loaded screens sit u
 | `/admin/whatsapp` | `manage_whatsapp` |
 | `/admin/join-form` | `edit_join_questions` |
 | `/admin/event-speech` | `edit_speech_template` (speech template + open roles) |
+| `/admin/planning` | `view_event_planning` or `manage_event_planning` (availability + my slots; grid and slot editor need `manage_event_planning`) |
 | `/admin/surveys` | `manage_surveys` |
 | `/admin/surveys/new` | `manage_surveys` |
 | `/admin/surveys/:id` | `manage_surveys` |

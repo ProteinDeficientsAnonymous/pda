@@ -1,12 +1,16 @@
 import { useState } from 'react';
 
-import { extractApiErrorOr } from '@/api/apiErrors';
+import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
 import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
+import { Code } from '@/api/validationCodes.gen';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui/useConfirm';
 import {
+  areRsvpsClosed,
   type Event,
+  isRsvpDeadlinePassed,
   isRsvpInputStatus,
   type RsvpInputStatus,
   RsvpServerStatus,
@@ -14,13 +18,18 @@ import {
   spotsLeft,
 } from '@/models/event';
 
+import { MyOrderTotal } from './MyOrderTotal';
 import { RsvpBox } from './RsvpBox';
+import { MaybeDeadlineDialog, RsvpDeadlineNote, RsvpsClosedButton } from './RsvpDeadline';
+import { RSVP_PILL_CLASSES } from './rsvpPill';
 import type { RsvpAnswerValue } from './rsvpQuestions';
 
 interface Props {
   event: Event;
   token?: string;
   locked?: boolean;
+  /** RSVPs closed (host or deadline) and not a host: only going → can't go is left. */
+  rsvpsClosed?: boolean;
 }
 
 const STATUS_LINES: Record<RsvpInputStatus, string> = {
@@ -46,7 +55,7 @@ interface BoxState {
   initialStatus: RsvpInputStatus;
 }
 
-export function MyRsvpSection({ event, token, locked = false }: Props) {
+export function MyRsvpSection({ event, token, locked = false, rsvpsClosed = false }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
   const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
@@ -57,6 +66,8 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
   const myUserId = token ? event.viewerUserId : authUserId;
   const [error, setError] = useState<string | null>(null);
   const [box, setBox] = useState<BoxState | null>(null);
+  const [maybeDeadline, setMaybeDeadline] = useState<Date | null>(null);
+  const { confirm, element: confirmElement } = useConfirm();
 
   const myRsvp = event.myRsvp;
   const onWaitlist = myRsvp === RsvpServerStatus.Waitlisted;
@@ -67,18 +78,19 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
   const myGuest = event.guests.find((g) => g.userId === myUserId);
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
-  // An attending member already holds a seat — re-saving "going" keeps it.
-  const goingWouldWaitlist = atCapacity && myRsvp !== RsvpServerStatus.Attending;
   // Token holders are public rsvpers, and the public rsvp endpoints never save a +1 for them.
   const plusOneNote = plusOneUnavailableReason(event.allowPlusOnes, Boolean(token));
 
-  async function confirmRsvp(args: {
-    status: RsvpInputStatus;
-    comment?: string;
-    hasPlusOne: boolean;
-    paidConfirmed?: boolean;
-    questionnaireResponses: Record<string, RsvpAnswerValue>;
-  }) {
+  async function confirmRsvp(
+    args: {
+      status: RsvpInputStatus;
+      comment?: string;
+      hasPlusOne: boolean;
+      paidConfirmed?: boolean;
+      questionnaireResponses: Record<string, RsvpAnswerValue>;
+    },
+    openPaymentStep?: () => void,
+  ) {
     setError(null);
     try {
       if (token) {
@@ -101,9 +113,29 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
         });
       }
       setBox(null);
+      const newMaybe = args.status === RsvpStatus.Maybe && myRsvp !== RsvpServerStatus.Maybe;
+      // hosts can still pick maybe after the deadline, when a confirm-by date makes no sense
+      if (newMaybe && !isRsvpDeadlinePassed(event)) {
+        setMaybeDeadline(event.rsvpDeadline);
+      }
     } catch (err) {
+      if (openPaymentStep && hasErrorCode(err, Code.Event.PaymentConfirmationRequired)) {
+        openPaymentStep();
+        return;
+      }
       setError(extractError(err));
     }
+  }
+
+  async function cantGoAnymore() {
+    const ok = await confirm({
+      title: "can't go anymore?",
+      message: "rsvps are closed — you won't be able to switch back to going",
+      confirmLabel: "i can't go",
+      destructive: true,
+    });
+    if (!ok) return;
+    await confirmRsvp({ status: RsvpStatus.CantGo, hasPlusOne: false, questionnaireResponses: {} });
   }
 
   async function leaveWaitlist() {
@@ -143,10 +175,14 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
     <section aria-label="rsvp" className="flex flex-col gap-3">
       {!locked && onWaitlist ? (
         <WaitlistView
-          onEdit={() => {
-            setError(null);
-            setBox({ mode: 'edit', initialStatus: RsvpStatus.Attending });
-          }}
+          onEdit={
+            rsvpsClosed
+              ? undefined
+              : () => {
+                  setError(null);
+                  setBox({ mode: 'edit', initialStatus: RsvpStatus.Attending });
+                }
+          }
           onLeave={() => void leaveWaitlist()}
           busy={busy}
         />
@@ -156,6 +192,8 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           atCapacity={atCapacity}
           busy={busy}
           locked={locked}
+          closed={rsvpsClosed}
+          noNewRsvps={rsvpsClosed || event.rsvpsClosed}
           onOpenCreate={(status) => {
             setError(null);
             setBox({ mode: 'create', initialStatus: status });
@@ -168,7 +206,19 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
         />
       )}
 
+      {!locked && rsvpsClosed && myRsvp === RsvpServerStatus.Attending ? (
+        <Button
+          variant="ghost"
+          className="self-center"
+          disabled={busy}
+          onClick={() => void cantGoAnymore()}
+        >
+          i can't go anymore
+        </Button>
+      ) : null}
+      <MyOrderTotal event={event} />
       <SpotsLeft event={event} />
+      {locked ? null : <RsvpDeadlineNote event={event} closed={rsvpsClosed} />}
       {error && !box ? (
         <p role="alert" className="text-destructive text-sm">
           {error}
@@ -186,7 +236,6 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           allowPlusOnes={plusOneNote === null}
           plusOneNote={plusOneNote}
           allowComment={Boolean(token) || box.mode === 'create'}
-          atCapacity={goingWouldWaitlist}
           onWaitlist={onWaitlist}
           busy={busy}
           error={error}
@@ -194,7 +243,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           initialAnswers={Object.fromEntries(
             Object.entries(event.myQuestionnaireResponses).map(([id, snap]) => [id, snap.answer]),
           )}
-          onConfirm={(args) => void confirmRsvp(args)}
+          onConfirm={(args, openPaymentStep) => void confirmRsvp(args, openPaymentStep)}
           onRemove={box.mode === 'edit' ? () => void removeMyRsvp() : undefined}
           onClose={() => {
             setError(null);
@@ -202,18 +251,26 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           }}
         />
       ) : null}
+      {maybeDeadline ? (
+        <MaybeDeadlineDialog
+          deadline={maybeDeadline}
+          onClose={() => {
+            setMaybeDeadline(null);
+          }}
+        />
+      ) : null}
+      {confirmElement}
     </section>
   );
 }
-
-const RSVP_PILL_CLASSES =
-  'mx-auto inline-flex h-12 min-w-28 items-center justify-center rounded-full px-5 text-base font-medium bg-brand-600 text-brand-on';
 
 function RsvpControls({
   myInputStatus,
   atCapacity,
   busy,
   locked,
+  closed,
+  noNewRsvps,
   onOpenCreate,
   onOpenEdit,
 }: {
@@ -221,14 +278,19 @@ function RsvpControls({
   atCapacity: boolean;
   busy: boolean;
   locked?: boolean;
+  closed: boolean;
+  // Hosts skip `closed` but still shouldn't be offered a fresh rsvp on a host-closed event.
+  noNewRsvps: boolean;
   onOpenCreate: (status: RsvpInputStatus) => void;
   onOpenEdit: () => void;
 }) {
-  if (locked) {
+  if (!myInputStatus && noNewRsvps && !locked) return <RsvpsClosedButton />;
+  if (locked || closed) {
     if (!myInputStatus) return null;
+    const labels = locked ? PAST_STATUS_LABELS : STATUS_BADGE_LABELS;
     return (
       <span className={RSVP_PILL_CLASSES}>
-        <span role="status">{PAST_STATUS_LABELS[myInputStatus]}</span>
+        <span role="status">{labels[myInputStatus]}</span>
       </span>
     );
   }
@@ -272,7 +334,7 @@ function WaitlistView({
   onLeave,
   busy,
 }: {
-  onEdit: () => void;
+  onEdit: (() => void) | undefined;
   onLeave: () => void;
   busy: boolean;
 }) {
@@ -282,9 +344,11 @@ function WaitlistView({
         you're on the waitlist
       </span>
       <div className="flex gap-1">
-        <Button variant="ghost" onClick={onEdit} disabled={busy}>
-          edit
-        </Button>
+        {onEdit ? (
+          <Button variant="ghost" onClick={onEdit} disabled={busy}>
+            edit
+          </Button>
+        ) : null}
         <Button variant="ghost" onClick={onLeave} disabled={busy}>
           leave waitlist
         </Button>
@@ -295,7 +359,7 @@ function WaitlistView({
 
 function SpotsLeft({ event }: { event: Event }) {
   const left = spotsLeft(event);
-  if (left === null || left === 0) return null;
+  if (left === null || left === 0 || areRsvpsClosed(event)) return null;
   return (
     <p className="text-warning text-center text-xs">
       {left === 1 ? '1 spot left' : `${String(left)} spots left`}

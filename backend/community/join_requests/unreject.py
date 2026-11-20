@@ -1,18 +1,41 @@
 import logging
+from typing import NoReturn
 from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from django.db import IntegrityError, transaction
 from ninja import Router
 from ninja.responses import Status
 from users.permissions import PermissionKey
 
+from community.join_requests.approval import applicant_user
 from community.join_requests.manage import JoinRequestOut, join_request_out
-from community.models import JoinRequest, JoinRequestStatus
+from community.models import (
+    OPEN_JOIN_REQUEST_STATUSES,
+    JoinRequest,
+    JoinRequestEvent,
+    JoinRequestStatus,
+)
 from community.shared import ErrorOut
-from community.validation import Code, raise_validation
+from community.validation import Code, InvalidStateTransition, TransitionFailure, raise_validation
 
 router = Router()
+
+
+def _raise_open_request_exists(join_request: JoinRequest, before_status: str) -> NoReturn:
+    raise InvalidStateTransition(
+        Code.JoinRequest.OPEN_REQUEST_EXISTS,
+        TransitionFailure(
+            action="join_request_transition_rejected",
+            target_type=AuditTargetType.JOIN_REQUEST,
+            target_id=str(join_request.id),
+            event=JoinRequestEvent.UNREJECT,
+            from_status=before_status,
+            to_status=JoinRequestStatus.PENDING,
+            extra={"full_name": join_request.full_name},
+        ),
+    )
 
 
 @router.patch(
@@ -38,24 +61,27 @@ def unreject_join_request(request, id: UUID):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="unreject_join_request")
 
-    try:
-        join_request = JoinRequest.objects.get(id=id)
-    except JoinRequest.DoesNotExist:
-        raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
+    with transaction.atomic():
+        try:
+            join_request = JoinRequest.objects.select_for_update().get(id=id)
+        except JoinRequest.DoesNotExist:
+            raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
 
-    if join_request.status != JoinRequestStatus.REJECTED:
-        raise_validation(Code.JoinRequest.ONLY_REJECTED_CAN_BE_UN_REJECTED, status_code=400)
-    if JoinRequest.objects.filter(
-        phone_number=join_request.phone_number,
-        status__in=(JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE),
-    ).exists():
-        raise_validation(Code.JoinRequest.OPEN_REQUEST_EXISTS, status_code=400)
+        before_status = str(join_request.status)
+        fields = join_request.unreject(by=request.auth)
+        if JoinRequest.objects.filter(
+            phone_number=join_request.phone_number,
+            status__in=OPEN_JOIN_REQUEST_STATUSES,
+        ).exists():
+            _raise_open_request_exists(join_request, before_status)
+        # Only this row is locked; a concurrent unreject or submit for the phone trips the constraint.
+        try:
+            with transaction.atomic():
+                join_request.save(update_fields=fields)
+        except IntegrityError:
+            _raise_open_request_exists(join_request, before_status)
 
-    join_request.status = JoinRequestStatus.PENDING
-    join_request.rejection_reason = ""
-    join_request.rejection_note = ""
-    join_request.save(update_fields=["status", "rejection_reason", "rejection_note"])
-
+    user = applicant_user(join_request)
     audit_log(
         logging.INFO,
         "join_request_unrejected",
@@ -63,7 +89,13 @@ def unreject_join_request(request, id: UUID):
         target=AuditTarget(
             type=AuditTargetType.JOIN_REQUEST,
             id=str(join_request.id),
-            details={"full_name": join_request.full_name},
+            details={
+                "event": JoinRequestEvent.UNREJECT,
+                "from": before_status,
+                "to": JoinRequestStatus.PENDING,
+                "full_name": join_request.full_name,
+                "user_id": str(user.pk) if user else None,
+            },
         ),
     )
 

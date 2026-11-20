@@ -61,7 +61,6 @@ function httpError(status: number, code?: string) {
 }
 
 beforeEach(() => {
-  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
   vi.mocked(apiClient.get).mockReset().mockResolvedValue({ data: UNSAVED_WALK });
   vi.mocked(apiClient.put).mockReset().mockResolvedValue({ data: SAVED_WALK });
 });
@@ -76,6 +75,9 @@ describe('EventSpeechScreen', () => {
     expect(screen.getByText("who's the walk leader?")).toBeInTheDocument();
     expect(screen.getByText("who's in the back of the group?")).toBeInTheDocument();
     expect(screen.getByLabelText('walk details')).toBeInTheDocument();
+    expect(
+      screen.getByText('route, distance, where we end up — anything else walkers should know'),
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText('restaurant')).not.toBeInTheDocument();
 
     const roles = screen.getByLabelText('open roles');

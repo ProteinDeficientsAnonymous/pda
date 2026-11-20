@@ -13,10 +13,12 @@ from pydantic import BaseModel, Field
 from users.models import PublicRsvpToken, User
 
 from community.events.helpers import broadcast_capacity_change, event_out
-from community.events.schemas import EventOut, RsvpAnswer
+from community.events.rsvp_question_schemas import RsvpAnswer
+from community.events.schemas import EventOut
 from community.field_limits import FieldLimit
 from community.models import Event, EventRSVP, RSVPStatus
 from community.models.event import public_rsvp_eligible_q
+from community.rsvps._deadline import enforce_rsvps_open
 from community.rsvps.member import (
     RsvpApply,
     apply_rsvp_in_transaction,
@@ -30,6 +32,7 @@ from community.rsvps.public_shared import (
     email_details,
     load_public_rsvp_event,
     log_email_failure,
+    reject_if_rejected_applicant,
 )
 from community.rsvps.status_emails import email_promoted_users
 from community.rsvps.waitlist import promote_from_waitlist
@@ -81,7 +84,13 @@ def _eligible_event_rsvps(user):
     return (
         user.event_rsvps.filter(public_rsvp_eligible_q(timezone.now(), prefix="event__"))
         .select_related("event", "event__created_by")
-        .prefetch_related("event__co_hosts", "event__invited_users", "event__rsvps__user")
+        .prefetch_related(
+            "event__co_hosts",
+            "event__rsvps__user",
+            "event__tags",
+            "event__rsvp_questions",
+            "event__poll",
+        )
     )
 
 
@@ -144,7 +153,14 @@ def list_my_rsvps(request, token: str = ""):
 
 @router.post(
     "/public/my-rsvps/{event_id}/",
-    response={200: PublicRsvpOut, 400: ErrorOut, 404: ErrorOut, 422: ErrorOut, 429: ErrorOut},
+    response={
+        200: PublicRsvpOut,
+        400: ErrorOut,
+        404: ErrorOut,
+        409: ErrorOut,
+        422: ErrorOut,
+        429: ErrorOut,
+    },
     auth=None,
 )
 @rate_limit(key_func=client_ip, rate="30/h")
@@ -152,6 +168,9 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
     user = _resolve_token_user(token)
     event = load_public_rsvp_event(event_id)
     validate_rsvp_status(payload.status)
+    # Stepping down from an rsvp stays open; only new attendance waits on a re-application.
+    if payload.status != RSVPStatus.CANT_GO:
+        reject_if_rejected_applicant(request, user.phone_number, event.id)
 
     with transaction.atomic():
         final_status, promoted_user_ids, previous_status = apply_rsvp_in_transaction(
@@ -192,10 +211,10 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
 
     fresh_event = (
         Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+        .prefetch_related("co_hosts", "rsvps__user")
         .get(id=event.id)
     )
-    final_rsvp = user.event_rsvps.get(event=fresh_event)
+    final_rsvp = next(r for r in fresh_event.rsvps.all() if r.user_id == user.pk)
     return Status(
         200,
         PublicRsvpOut(
@@ -220,6 +239,7 @@ def delete_my_rsvp(request, event_id, token: str = ""):
         rsvp = EventRSVP.objects.filter(event=event, user=user).first()
         if not rsvp:
             raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
+        enforce_rsvps_open(user, event, rsvp, RSVPStatus.CANT_GO)
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.delete()
         if was_attending:

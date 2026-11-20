@@ -1,12 +1,14 @@
 import logging
 import re
+from datetime import date, datetime, time
 from urllib.parse import urlparse
 
 from config.auth import HARD_ACCOUNT_BLOCKS, account_block_code
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest, HttpResponse
 from ninja.security import HttpBearer
-from ninja_jwt.authentication import JWTAuth, JWTBaseAuthentication  # noqa: F401
+from ninja_jwt.authentication import JWTBaseAuthentication
 from ninja_jwt.exceptions import AuthenticationFailed, TokenError
 from pydantic import BaseModel
 from users.models import User as UserModel
@@ -29,7 +31,7 @@ def _allows_anonymous_write(path: str) -> bool:
 
 
 class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
-    """Anonymous for a missing, invalid, or blocked token on reads.
+    """Anonymous for a missing or blocked token on reads; 401 for an expired or invalid one.
 
     Pause and archive 403 on writes. Pending accounts are anonymous on writes
     that already allow anonymous callers, and 403 on every other write.
@@ -53,9 +55,8 @@ class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
         try:
             return self.jwt_authenticate(request, token)
         except (AuthenticationFailed, TokenError):
-            # Genuinely-invalid / expired / unparseable token — treat the
-            # caller as anonymous (public endpoints stay reachable).
-            return AnonymousUser()
+            # 401 so the client refreshes and retries; anonymous would hide drafts from their host.
+            raise
         except Exception:
             # Anything else (DB error, misconfiguration) is unexpected: log it
             # so it stays observable, but still degrade to anonymous rather
@@ -101,6 +102,10 @@ def validate_display_name(name: str, field: str = "display_name") -> None:
         raise_validation(Code.DisplayName.INVALID_CHARS, field=field)
     if all(c in " '-." for c in stripped):
         raise_validation(Code.DisplayName.NEEDS_A_LETTER, field=field)
+
+
+def local_midnight(day: date) -> datetime:
+    return datetime.combine(day, time.min, tzinfo=settings.COMMUNITY_TZ)
 
 
 def csv_safe(value: str) -> str:

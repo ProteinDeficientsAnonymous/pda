@@ -26,11 +26,11 @@ import { useConfirm } from '@/components/ui/useConfirm';
 import { type Event, eventHostCount, eventPath, EventType, isOfficialOrClub } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
-import { fromCashAppUrl } from '@/utils/paymentHandle';
 
 import { EventHostSection } from '../EventHostSection';
 import { eventMemberSectionFlags } from '../eventMemberFlags';
 import type { RsvpQuestionDraft } from '../rsvpQuestions';
+import { withDescriptionTemplate } from './descriptionTemplate';
 import { EventFormBasics } from './EventFormBasics';
 import { EventFormDetails } from './EventFormDetails';
 import { EventFormLinks, EventFormMoney } from './EventFormLinksAndCost';
@@ -39,12 +39,14 @@ import { EventFormQuestions } from './EventFormQuestions';
 import { EventFormRsvp } from './EventFormRsvp';
 import { EventFormSlug } from './EventFormSlug';
 import { EventFormTags } from './EventFormTags';
-import { withOfficialQuestions } from './officialQuestions';
-import { withOfficialTemplate } from './officialTemplate';
+import { officialExtras } from './officialQuestions';
+import { typeDefaults } from './typeDefaults';
 import { validateEventForm } from './validateEventForm';
 
 interface Props {
   existing?: Event;
+  initial?: Partial<EventFormValues>;
+  onCreated?: (event: Event) => Promise<void>;
 }
 
 // Field → section map. Drives which CollapsibleCard opens on validation
@@ -61,6 +63,7 @@ const RSVP_FIELDS: readonly (keyof EventFormValues)[] = [
   'rsvpEnabled',
   'allowPlusOnes',
   'maxAttendees',
+  'rsvpDeadline',
 ];
 const LINK_FIELDS: readonly (keyof EventFormValues)[] = [
   'whatsappLink',
@@ -82,16 +85,18 @@ function hasAnyError(
   return fields.some((k) => errors[k]);
 }
 
-export function EventForm({ existing }: Props) {
+export function EventForm({ existing, initial, onCreated }: Props) {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const canTagOfficial = hasPermission(user, Permission.TagOfficialEvent);
   const canTagClub = hasPermission(user, Permission.TagClubEvent);
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  const [values, setValues] = useState<EventFormValues>(() =>
-    existing ? eventToFormValues(existing) : emptyEventFormValues(),
-  );
+  const [values, setValues] = useState<EventFormValues>(() => {
+    if (existing) return eventToFormValues(existing);
+    const base = { ...emptyEventFormValues(), ...initial };
+    return { ...base, ...typeDefaults(base.eventType) };
+  });
   const [coHosts, setCoHosts] = useState<MemberSearchResult[]>([]);
   // On edit, pre-run validation so issues in the loaded values (e.g. a stale
   // draft whose start is now in the past) are visible immediately instead of
@@ -132,25 +137,38 @@ export function EventForm({ existing }: Props) {
   const update = useUpdateEvent(existing?.id ?? '');
   const uploadPhoto = useUploadEventPhoto();
   const { confirm, element: confirmElement } = useConfirm();
-  const { data: templates } = useEventDescriptionTemplates(!existing && canTagOfficial);
+  const { data: templates } = useEventDescriptionTemplates(
+    !existing && (canTagOfficial || canTagClub),
+  );
   const { data: officialDefaults } = useOfficialEventDefaults(canTagOfficial);
 
   const saving = create.isPending || update.isPending || uploadPhoto.isPending;
   const isDraft = values.status === 'draft';
 
+  const pendingOfficialPrefill = useRef(!existing && initial?.eventType === EventType.Official);
+  useEffect(() => {
+    if (!pendingOfficialPrefill.current || !officialDefaults || !templates) return;
+    pendingOfficialPrefill.current = false;
+    const extras = officialExtras(officialDefaults, true, values.cashappLink);
+    setRsvpQuestions(extras.questions);
+    setValues((v) => withDescriptionTemplate({ ...v, ...extras.values }, templates));
+  }, [officialDefaults, templates, values.cashappLink]);
+
   function patch(input: Partial<EventFormValues>) {
     let p = input;
-    if (p.eventType !== undefined && p.eventType !== values.eventType && officialDefaults) {
-      const official = p.eventType === EventType.Official;
-      setRsvpQuestions((qs) => withOfficialQuestions(qs, official, officialDefaults.rsvpQuestions));
-      if (official && !values.cashappLink.trim()) {
-        p = { ...p, cashappLink: fromCashAppUrl(officialDefaults.cashappLink) };
+    if (p.eventType !== undefined && p.eventType !== values.eventType) {
+      pendingOfficialPrefill.current = false;
+      if (officialDefaults) {
+        const official = p.eventType === EventType.Official;
+        const extras = officialExtras(officialDefaults, official, values.cashappLink);
+        setRsvpQuestions(extras.questions);
+        p = { ...p, ...extras.values };
       }
     }
     setValues((v) => {
       const next = { ...v, ...p };
       if (existing || (!('eventType' in p) && !('eventFormat' in p))) return next;
-      return withOfficialTemplate(next, templates);
+      return withDescriptionTemplate(next, templates);
     });
   }
 
@@ -252,6 +270,7 @@ export function EventForm({ existing }: Props) {
           toast.error("event saved, but couldn't create the poll — try from the event page");
         }
       }
+      await onCreated?.(created);
       if (nextStatus === 'draft') toast.success('saved draft');
       void navigate(eventPath(created));
     } catch (err) {
@@ -275,30 +294,43 @@ export function EventForm({ existing }: Props) {
   const linkCount = countFilled(values, LINK_FIELDS);
   const moneyFilled =
     values.price.trim().length > 0 ||
+    values.priceNote.trim().length > 0 ||
     values.venmoLink.trim().length > 0 ||
     values.cashappLink.trim().length > 0 ||
     values.zelleInfo.trim().length > 0;
   const hostsCount = existing ? eventHostCount(existing) : coHosts.length;
 
+  // Enter must never implicitly submit (#1496) — saving is button-only.
+  // Listener (not JSX onKeyDown) so the form stays a non-interactive element
+  // under jsx-a11y; old WebKit marks IME with keyCode 229 while isComposing is false.
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const keyCode = Reflect.get(e, 'keyCode');
+      if (
+        e.key === 'Enter' &&
+        !(e.isComposing || keyCode === 229) &&
+        target.closest('form') === form &&
+        target.matches('input, select')
+      ) {
+        e.preventDefault();
+      }
+    };
+    form.addEventListener('keydown', onKeyDown);
+    return () => {
+      form.removeEventListener('keydown', onKeyDown);
+    };
+  }, []);
+
   return (
-    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <form
       ref={formRef}
       onSubmit={(e) => {
         e.preventDefault();
         void submit('active');
-      }}
-      onKeyDown={(e) => {
-        // Enter must never implicitly submit (#1496) — saving is button-only; nested dialog forms and IME composition keep their defaults (old WebKit marks composition with keyCode 229 while reporting isComposing: false).
-        const target = e.target as Element;
-        if (
-          e.key === 'Enter' &&
-          // oxlint-disable-next-line typescript/no-deprecated -- the old-WebKit IME marker is only exposed via keyCode
-          !(e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) &&
-          target.closest('form') === e.currentTarget &&
-          target.matches('input, select')
-        )
-          e.preventDefault();
       }}
       className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-4"
     >

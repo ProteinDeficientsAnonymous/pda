@@ -29,11 +29,19 @@ class NotificationType(models.TextChoices):
     RSVP_DECLINED_NOTE = "rsvp_declined_note", "RSVP Declined Note"
     CHECKIN_NUDGE = "checkin_nudge", "Check-in Nudge"
     PAYMENT_REVOKED = "payment_revoked", "Payment Confirmation Revoked"
+    POLL_SEATED_UNPAID = "poll_seated_unpaid", "Seated From Poll, Unpaid"
     ACCOUNT_DELETED = "account_deleted", "Account Deleted"
     EVENT_FEEDBACK = "event_feedback", "Event Feedback"
     SURVEY_RESPONSE = "survey_response", "Survey Response"
     EVENT_UNPUBLISHED = "event_unpublished", "Event Unpublished"
     MEMBER_RESTORED = "member_restored", "Member Restored"
+    CHECK_IN_PROMOTION_FAILED = "check_in_promotion_failed", "Check-in Promotion Failed"
+    PLANNING_PROPOSED = "planning_proposed", "Planning Proposed"
+    PLANNING_WITHDRAWN = "planning_withdrawn", "Planning Withdrawn"
+    PLANNING_COMMITTED = "planning_committed", "Planning Committed"
+    PLANNING_DECLINED = "planning_declined", "Planning Declined"
+    PLANNING_UPCOMING = "planning_upcoming", "Planning Upcoming"
+    PLANNING_AVAILABILITY = "planning_availability", "Planning Availability"
 
 
 class Notification(models.Model):
@@ -92,8 +100,18 @@ class SseTicket(models.Model):
     token = models.CharField(max_length=64, unique=True, db_index=True)
     user = models.ForeignKey(
         "users.User",
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
         related_name="sse_tickets",
+    )
+    # Set only on anonymous tickets: the one public event whose pings they receive.
+    event = models.ForeignKey(
+        "community.Event",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="+",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
@@ -101,6 +119,12 @@ class SseTicket(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["expires_at"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(user__isnull=True) ^ models.Q(event__isnull=True),
+                name="sseticket_user_xor_event",
+            )
+        ]
 
     @property
     def is_expired(self) -> bool:
@@ -111,5 +135,13 @@ class SseTicket(models.Model):
         return cls.objects.create(
             token=secrets.token_urlsafe(32),
             user=user,
+            expires_at=timezone.now() + _SSE_TICKET_TTL,
+        )
+
+    @classmethod
+    def mint_for_event(cls, event) -> "SseTicket":
+        return cls.objects.create(
+            token=secrets.token_urlsafe(32),
+            event=event,
             expires_at=timezone.now() + _SSE_TICKET_TTL,
         )

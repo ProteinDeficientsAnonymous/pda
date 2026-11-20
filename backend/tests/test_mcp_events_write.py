@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 from functools import partial
 from unittest.mock import patch
 
@@ -6,7 +7,7 @@ import pytest
 from audit.models import AuditLogEntry
 from community.models import Event, EventTag
 from community.validation import Code
-from users.models import User
+from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
 from tests._http_helpers import FakeResp
@@ -19,10 +20,10 @@ WALK = {"title": "prospect park walk", "start_datetime": "2099-11-07T11:00"}
 
 def test_creates_draft_as_member_via_mcp(test_user):
     EventTag.objects.create(name="walk")
-    fields = {**WALK, "price": "$15", "latitude": 40.67, "longitude": -73.97, "tags": ["Walk"]}
+    fields = {**WALK, "price": "15", "latitude": 40.67, "longitude": -73.97, "tags": ["Walk"]}
     summary = run_tool(test_user, "create_event", fields=fields)
     event = Event.objects.get(pk=summary["id"])
-    assert (event.status, event.created_by, event.price) == ("draft", test_user, "$15")
+    assert (event.status, event.created_by, event.price) == ("draft", test_user, Decimal("15"))
     assert (summary["start_datetime"], summary["tags"]) == ("2099-11-07T11:00:00-05:00", ["walk"])
     assert summary["url"].endswith(f"/events/{event.slug or event.id}")
     entry = AuditLogEntry.objects.get(target_id=summary["id"])
@@ -55,7 +56,8 @@ def test_create_refuses_unknown_format(official_planner):
 
 @pytest.mark.parametrize(("is_member", "event_type"), [(True, "official"), (False, "community")])
 def test_view_refuses_official_without_permission_and_tentative(test_user, is_member, event_type):
-    User.objects.filter(pk=test_user.pk).update(is_member=is_member)
+    status = MembershipStatus.ACTIVE_MEMBER if is_member else MembershipStatus.TENTATIVE
+    User.objects.filter(pk=test_user.pk).update(membership_status=status)
     error = tool_error(test_user, "create_event", fields={**WALK, "event_type": event_type})
     assert json.loads(error)["status"] == 403
 

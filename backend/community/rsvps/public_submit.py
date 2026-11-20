@@ -2,9 +2,8 @@ import logging
 from enum import StrEnum
 from typing import NoReturn
 
-from config.audit import AuditTarget, AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log, audit_log_before_raise
 from config.ratelimit import client_ip, rate_limit
-from django.conf import settings
 from django.core.cache import caches
 from django.db import DatabaseError, IntegrityError, transaction
 from ninja import Router
@@ -12,10 +11,11 @@ from ninja.responses import Status
 from notifications.email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
-from users.models import PUBLIC_FORM_PHONE_REGION, PublicRsvpToken, User, validate_phone
+from users.models import SIGN_IN_STATUSES, PublicRsvpToken, User, status_change_stamp
+from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
 from community.events.helpers import broadcast_capacity_change, event_out
-from community.events.schemas import RsvpAnswer
+from community.events.rsvp_question_schemas import RsvpAnswer
 from community.field_limits import FieldLimit
 from community.models import Event, RSVPStatus
 from community.rsvps.member import (
@@ -31,6 +31,8 @@ from community.rsvps.public_shared import (
     email_details,
     load_public_rsvp_event,
     log_email_failure,
+    manage_rsvp_url,
+    reject_if_rejected_applicant,
 )
 from community.rsvps.status_emails import email_promoted_users
 from community.shared import ErrorOut, validate_display_name
@@ -81,7 +83,7 @@ def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicR
 
 def _reject_email_collision(request, email: str) -> NoReturn:
     """Generic rejection — a distinct code here would be an account-existence oracle (Issue 1001)."""
-    audit_log(
+    audit_log_before_raise(
         logging.WARNING,
         "public_rsvp_email_collision",
         request,
@@ -90,31 +92,16 @@ def _reject_email_collision(request, email: str) -> NoReturn:
     raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
 
 
-def _reject_if_paused_non_member(request, phone: str) -> None:
-    """Generic rejection that hides the pause; runs before the RSVP transaction so the audit row persists."""
-    user = User.objects.filter(
-        phone_number=phone, is_paused=True, is_member=False, archived_at__isnull=True
-    ).first()
-    if user is None:
-        return
-    audit_log(
-        logging.WARNING,
-        "public_rsvp_paused_user_blocked",
-        request,
-        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
-    )
-    raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
-
-
 def _create_public_rsvper(
     request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
     """Get-or-create the public rsvper User keyed on the unique phone number."""
-    defaults = {"first_name": first_name, "last_name": last_name, "is_member": False}
+    defaults = {"first_name": first_name, "last_name": last_name}
     try:
         with transaction.atomic():
             user, created = User.objects.get_or_create(
-                phone_number=phone, defaults={**defaults, "email": email or None}
+                phone_number=phone,
+                defaults={**defaults, "email": email or None, **status_change_stamp(None)},
             )
     except IntegrityError:
         _reject_email_collision(request, email)
@@ -137,7 +124,7 @@ def _resolve_public_rsvper(
     phone_match = User.objects.filter(phone_number=phone).first()
     email_match = User.objects.filter(email__iexact=email).first() if email else None
 
-    if phone_match and phone_match.is_member:
+    if phone_match and phone_match.membership_status in SIGN_IN_STATUSES:
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
     if phone_match and phone_match.archived_at:
@@ -200,7 +187,7 @@ def _send_recognized_login_link(request, user: User) -> None:
         # probe from spamming an unverified inbox or repeatedly extending the token.
         return
     token = PublicRsvpToken.issue_or_extend(user)
-    manage_url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
+    manage_url = manage_rsvp_url(token.token)
     try:
         result = send_rsvp_manage_link_email(
             sender=get_email_sender(),
@@ -238,8 +225,8 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     user = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
     if user is None:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
-    # Paused goes to login like a member; login only reveals the pause after the right password.
-    if user.is_member or user.is_paused:
+    # Anyone who can sign in goes to login; login only reveals a guidelines pause after the right password.
+    if user.membership_status in SIGN_IN_STATUSES:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
     if user.email:
         _send_recognized_login_link(request, user)
@@ -281,7 +268,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     normalized_email = payload.email.strip().lower()
     validate_rsvp_status(payload.status)
-    _reject_if_paused_non_member(request, validated_phone)
+    reject_if_rejected_applicant(request, validated_phone, event.id)
 
     with transaction.atomic():
         user, created = _resolve_public_rsvper(

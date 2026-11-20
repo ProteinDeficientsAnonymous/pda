@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import {
+  JoinRequestDecisionEvent,
   JoinRequestStatus,
   type JoinRequestSummary,
   useDecideJoinRequest,
@@ -37,6 +38,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: Filter.TENTATIVE, label: 'tentative' },
   { value: Filter.APPROVED, label: 'approved' },
   { value: Filter.REJECTED, label: 'rejected' },
+  { value: Filter.CLOSED, label: 'closed' },
   { value: Filter.RESTORED, label: 'restored' },
 ];
 
@@ -86,11 +88,15 @@ export default function JoinRequestsScreen() {
     const ok = await confirm(confirmPropsForDecision(decision, name));
     if (!ok) return;
 
-    const wireStatus = decision === 'manually_approved' ? JoinRequestStatus.APPROVED : decision;
+    // ConfirmedDecision excludes reject (that path uses RejectJoinRequestDialog).
+    const event =
+      decision === 'manually_approved' || decision === JoinRequestStatus.APPROVED
+        ? JoinRequestDecisionEvent.APPROVE
+        : JoinRequestDecisionEvent.MARK_TENTATIVE;
 
     setError(null);
     try {
-      const result = await decide.mutateAsync({ id: request.id, status: wireStatus });
+      const result = await decide.mutateAsync({ id: request.id, event });
       if (decision === 'manually_approved') {
         setMemberPromotionMessageFor({
           fullName: result.fullName,
@@ -345,9 +351,7 @@ function confirmPropsForDecision(status: ConfirmedDecision, name: string) {
 }
 
 function sortKey(request: JoinRequestSummary): number {
-  const stamp =
-    request.approvedAt ?? request.rejectedAt ?? request.tentativeAt ?? request.submittedAt;
-  return new Date(stamp).getTime();
+  return new Date(request.statusChangedAt ?? request.submittedAt).getTime();
 }
 
 function matchesQuery(request: JoinRequestSummary, q: string): boolean {

@@ -16,6 +16,7 @@ from users.permissions import PermissionKey
 
 from community.cohosts.helpers import pending_cohost_invites_out
 from community.cohosts.invite_helpers import get_my_pending_invite
+from community.events.price import price_text
 from community.events.schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community.models import (
     Event,
@@ -27,6 +28,7 @@ from community.models import (
     RSVPStatus,
     is_official_or_club,
 )
+from community.paypal.price import offered_paypal_price
 from community.rsvps.answers import (
     can_see_guest_questionnaire_responses,
     find_my_questionnaire_responses,
@@ -78,6 +80,10 @@ def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | No
             broadcast_event_update(event, exclude_user_ids=excluded)
 
     transaction.on_commit(_run)
+
+
+def event_co_host_ids(event: Event) -> set[str]:
+    return {str(u.pk) for u in event.co_hosts.all()}
 
 
 def is_cohost(requesting_user, co_host_ids: set[str]) -> bool:
@@ -359,14 +365,19 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
         whatsapp_link=gated(event.whatsapp_link, "", is_authed),
         partiful_link=gated(event.partiful_link, "", is_authed),
         other_link=gated(event.other_link, "", is_authed),
-        price=event.price,
+        price=price_text(event.price),
+        price_note=event.price_note,
         venmo_link=gated(event.venmo_link, "", show_payment_details),
         cashapp_link=gated(event.cashapp_link, "", show_payment_details),
         zelle_info=gated(event.zelle_info, "", show_payment_details),
+        accept_paypal=event.accept_paypal,
+        paypal_price=price_text(offered_paypal_price(event)),
         rsvp_enabled=event.rsvp_enabled,
         datetime_tbd=event.datetime_tbd,
         allow_plus_ones=event.allow_plus_ones,
         max_attendees=event.max_attendees,
+        rsvp_deadline=event.rsvp_deadline,
+        rsvps_closed=event.rsvps_closed,
         attending_count=_annotated_or(event, "attending_count", lambda: attending_headcount(event)),
         waitlisted_count=_annotated_or(event, "waitlisted_count", lambda: count_waitlisted(event)),
         guest_rsvp_count=_annotated_or(event, "guest_rsvp_count", lambda: count_guest_rsvps(event)),

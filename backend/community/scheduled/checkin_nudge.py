@@ -11,14 +11,16 @@ from notifications.email_helpers import CheckinReminderEmailDetails, send_checki
 from notifications.email_sender import get_email_sender
 from notifications.service import notify_checkin_reminder
 
-from community.models import Event, EventStatus, EventType
+from community.content.pages import DAY_OF_GUIDE_SLUG
+from community.models import EditablePage, Event, EventStatus, EventType
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
 logger = logging.getLogger(__name__)
 
-NUDGE_WINDOW = timedelta(hours=1)
+NUDGE_LEAD = timedelta(hours=2)
+NUDGE_GRACE = timedelta(hours=1)
 
 
 def due_checkin_nudge_events(now) -> Iterable[Event]:
@@ -28,10 +30,10 @@ def due_checkin_nudge_events(now) -> Iterable[Event]:
             status=EventStatus.ACTIVE,
             rsvp_enabled=True,
             checkin_nudge_sent_at__isnull=True,
-            start_datetime__lte=now,
-            start_datetime__gte=now - NUDGE_WINDOW,
+            start_datetime__lte=now + NUDGE_LEAD,
+            start_datetime__gte=now - NUDGE_GRACE,
         )
-        .select_related("created_by")
+        .select_related("created_by", "speech")
         .prefetch_related("co_hosts")
     )
 
@@ -51,8 +53,23 @@ def _claim_checkin_nudge(event: Event) -> bool:
     return True
 
 
+def _speech_url(event: Event) -> str:
+    if event.event_type != EventType.OFFICIAL or getattr(event, "speech", None) is not None:
+        return ""
+    return f"{settings.FRONTEND_BASE_URL}/events/{event.pk}/speech"
+
+
+def _day_of_guide_url(event: Event) -> str:
+    if event.event_type != EventType.OFFICIAL:
+        return ""
+    if not EditablePage.objects.filter(slug=DAY_OF_GUIDE_SLUG).exclude(content_html="").exists():
+        return ""
+    return f"{settings.FRONTEND_BASE_URL}/day-of"
+
+
 def send_checkin_nudge(event: Event) -> bool:
     """Claim the event, then email + in-app notify the host team. Returns False if already claimed."""
+    guide_url = _day_of_guide_url(event)
     if not _claim_checkin_nudge(event):
         return False
 
@@ -60,6 +77,7 @@ def send_checkin_nudge(event: Event) -> bool:
 
     sender = get_email_sender()
     event_url = f"{settings.FRONTEND_BASE_URL}/events/{event.pk}/check-in"
+    speech_url = _speech_url(event)
     for user in event.co_hosts.all():
         if not user.email:
             continue
@@ -71,9 +89,11 @@ def send_checkin_nudge(event: Event) -> bool:
                     display_name=user.full_name or "",
                     event_title=event.title,
                     event_url=event_url,
+                    speech_url=speech_url,
+                    guide_url=guide_url,
                 ),
             )
-        except Exception:  # noqa: BLE001 — one bad send must not abort the batch
+        except Exception:
             logger.warning("checkin_nudge_email_send_exception", exc_info=True)
             continue
         if not result.success:

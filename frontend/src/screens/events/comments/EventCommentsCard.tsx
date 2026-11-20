@@ -1,7 +1,11 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { useRef } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiError } from '@/api/apiErrors';
-import { useEventComments, usePostComment } from '@/api/eventComments';
+import { eventCommentKeys, useEventComments, usePostComment } from '@/api/eventComments';
+import { useAuthStore } from '@/auth/store';
+import { useEventSource } from '@/hooks/useEventSource';
 import type { CannotPostReason } from '@/models/eventComment';
 
 import { CommentComposer } from './CommentComposer';
@@ -33,12 +37,54 @@ function ComposerOrPrompt({
   if (cannotPostReason === 'rsvp_required') {
     return <p className="text-foreground-tertiary mb-4 text-sm">rsvp to join the conversation.</p>;
   }
+  if (cannotPostReason === 'members_only') {
+    return (
+      <p className="text-foreground-tertiary mb-4 text-sm">
+        comments are for members — attend an official or club event to join in
+      </p>
+    );
+  }
   return <p className="text-foreground-tertiary mb-4 text-sm">log in to comment.</p>;
+}
+
+function parseEventId(data: string): string | null {
+  try {
+    const parsed: unknown = JSON.parse(data);
+    if (typeof parsed === 'object' && parsed !== null && 'event_id' in parsed) {
+      return typeof parsed.event_id === 'string' ? parsed.event_id : null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 export function EventCommentsCard({ eventId, token }: Props) {
   const { data, isPending, isError } = useEventComments(eventId, token);
   const postComment = usePostComment(eventId, token);
+  const qc = useQueryClient();
+  // Members already get these pings through NotificationBell's stream.
+  const isUnauthed = useAuthStore((s) => s.status === 'unauthed');
+  const hasConnectedRef = useRef(false);
+  useEventSource({
+    url: '/api/notifications/stream/',
+    token: null,
+    eventScope: isUnauthed && token && data?.canPost ? { eventId, token } : null,
+    // Pings sent while the stream was down are lost, so catch up on reconnect.
+    onStatusChange: (connected) => {
+      if (!connected) return;
+      if (hasConnectedRef.current) {
+        void qc.invalidateQueries({ queryKey: eventCommentKeys.list(eventId) });
+      }
+      hasConnectedRef.current = true;
+    },
+    events: {
+      event_updated: (ev) => {
+        if (parseEventId(ev.data) !== eventId) return;
+        void qc.invalidateQueries({ queryKey: eventCommentKeys.list(eventId) });
+      },
+    },
+  });
 
   if (isPending) {
     return (

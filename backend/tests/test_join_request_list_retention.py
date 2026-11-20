@@ -1,9 +1,15 @@
 from datetime import timedelta
 
 import pytest
-from community.models import JoinRequest, JoinRequestStatus
+from community.models import JoinRequest, JoinRequestEvent, JoinRequestStatus
 from django.utils import timezone
 from users.models import User
+
+_STATUS_TO_EVENT = {
+    JoinRequestStatus.TENTATIVE: JoinRequestEvent.MARK_TENTATIVE,
+    JoinRequestStatus.APPROVED: JoinRequestEvent.APPROVE,
+    JoinRequestStatus.REJECTED: JoinRequestEvent.REJECT,
+}
 
 
 @pytest.mark.django_db
@@ -13,7 +19,7 @@ class TestJoinRequestListRetention:
     ):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -33,7 +39,7 @@ class TestJoinRequestListRetention:
     ):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -53,7 +59,7 @@ class TestJoinRequestListRetention:
     ):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -82,7 +88,7 @@ class TestJoinRequestListRetention:
         status, joined_whatsapp, visible = case
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": status},
+            {"event": _STATUS_TO_EVENT[status]},
             content_type="application/json",
             **vettor_headers,
         )
@@ -101,7 +107,7 @@ class TestJoinRequestListRetention:
     ):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -120,7 +126,7 @@ class TestJoinRequestListRetention:
     ):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )
@@ -171,7 +177,7 @@ class TestJoinRequestListRetention:
     ):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": status},
+            {"event": _STATUS_TO_EVENT[status]},
             content_type="application/json",
             **vettor_headers,
         )
@@ -193,13 +199,13 @@ class TestJoinRequestListRetention:
             first_name="Paused",
             phone_number="+12025550104",
             status=JoinRequestStatus.APPROVED,
-            approved_at=paused_at - timedelta(days=30),
+            status_changed_at=paused_at - timedelta(days=30),
         )
         new = JoinRequest.objects.create(
             first_name="Paused",
             phone_number="+12025550104",
             status=JoinRequestStatus.TENTATIVE,
-            tentative_at=paused_at + timedelta(days=1),
+            status_changed_at=paused_at + timedelta(days=1),
         )
 
         ids = [

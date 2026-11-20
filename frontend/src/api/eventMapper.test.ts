@@ -23,6 +23,12 @@ describe('mapEvent', () => {
     expect(result.startDatetime!.getUTCHours()).toBe(18);
   });
 
+  it('maps rsvp_deadline to a date, or null when unset', () => {
+    const deadline = mapEvent(wireEvent({ rsvp_deadline: '2026-04-14T18:00:00Z' })).rsvpDeadline;
+    expect(deadline?.toISOString()).toBe('2026-04-14T18:00:00.000Z');
+    expect(mapEvent(wireEvent()).rsvpDeadline).toBeNull();
+  });
+
   it('maps my_paid_confirmed', () => {
     expect(mapEvent(wireEvent({ my_paid_confirmed: true })).myPaidConfirmed).toBe(true);
   });
@@ -78,11 +84,23 @@ describe('mapEvent', () => {
         label: 'dietary?',
         fieldType: 'textarea',
         options: [],
+        optionPrices: [],
         required: true,
       },
     ]);
     expect(result.myQuestionnaireResponses).toEqual({
       q1: { label: 'dietary?', answer: 'none' },
+    });
+  });
+
+  it('maps the price saved with an answer', () => {
+    const result = mapEvent(
+      wireEvent({
+        my_questionnaire_responses: { q1: { label: 'meal', answer: 'plate', price_cents: 1850 } },
+      }),
+    );
+    expect(result.myQuestionnaireResponses).toEqual({
+      q1: { label: 'meal', answer: 'plate', priceCents: 1850 },
     });
   });
 

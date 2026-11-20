@@ -1,26 +1,36 @@
 import { Button } from '@/components/ui/Button';
+import { buttonClass } from '@/components/ui/buttonClass';
 import type { Event } from '@/models/event';
 import { cn } from '@/utils/cn';
-import { formatPrice } from '@/utils/eventCost';
+import { formatPriceWithNote } from '@/utils/eventCost';
+import { centsToDollars, formatCents } from '@/utils/orderPrice';
 import { toCashAppPayUrl, toVenmoUrl } from '@/utils/paymentHandle';
 
-const PAYMENT_LINK_CLASS =
-  'bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 w-full items-center justify-center rounded-md px-4 text-sm font-medium transition-colors';
+const PAYMENT_LINK_CLASS = buttonClass('primary', 'w-full');
 
 interface Props {
   event: Event;
   busy?: boolean;
+  /** Set for order events: what the guest's picks add up to, used in place of the event price. */
+  orderTotalCents?: number | null;
   onConfirm: () => void;
   onBack: () => void;
 }
 
-export function PaymentConfirmStep({ event, busy = false, onConfirm, onBack }: Props) {
+export function PaymentConfirmStep({
+  event,
+  busy = false,
+  orderTotalCents = null,
+  onConfirm,
+  onBack,
+}: Props) {
+  const price = orderTotalCents === null ? event.price : centsToDollars(orderTotalCents);
   const links: { label: string; url?: string }[] = [];
   if (event.venmoLink) links.push({ label: 'venmo', url: toVenmoUrl(event.venmoLink) });
   if (event.cashappLink) {
     links.push({
       label: 'cashapp',
-      url: toCashAppPayUrl(event.cashappLink, { price: event.price }),
+      url: toCashAppPayUrl(event.cashappLink, { price }),
     });
   }
   if (event.zelleInfo) links.push({ label: `zelle: ${event.zelleInfo}` });
@@ -28,7 +38,11 @@ export function PaymentConfirmStep({ event, busy = false, onConfirm, onBack }: P
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       <div>
-        <p className="text-foreground text-sm font-medium">{formatPrice(event.price)}</p>
+        <p className="text-foreground text-sm font-medium">
+          {orderTotalCents === null
+            ? formatPriceWithNote(event)
+            : `your total: ${formatCents(orderTotalCents)}`}
+        </p>
         <p className="text-foreground-secondary mt-1 text-sm">
           pay the host before you rsvp — then confirm below
         </p>

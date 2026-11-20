@@ -6,13 +6,6 @@ import { shot } from './shot';
 
 const ONBOARDING_PASSWORD = 'E2e-test-pass-1';
 
-async function hideBottomNav(page: Page) {
-  // The fixed bar is painted over the bottom of a tall element screenshot.
-  await page.locator('nav[aria-label="primary"]').evaluate((el) => {
-    el.style.display = 'none';
-  });
-}
-
 function section(page: Page, label: string) {
   return page.locator('section').filter({
     has: page.getByRole('heading', { name: label, exact: true }),
@@ -36,12 +29,10 @@ test('member screens', async ({ page }) => {
   await page.goto('/settings');
   const profile = section(page, 'profile');
   await expect(profile.getByText('june 15, 1990')).toBeVisible();
-  await hideBottomNav(page);
   await shot(page, 'settings-profile', { locator: profile });
 
   const privacy = section(page, 'privacy');
   await expect(privacy.getByText('show my last name to other members')).toBeVisible();
-  await hideBottomNav(page);
   await shot(page, 'settings-privacy', { locator: privacy });
 
   await page.goto('/profile');
@@ -69,7 +60,7 @@ test('member screens', async ({ page }) => {
     screen('notifications', '/notifications', { heading: 'notifications' }),
     screen('members', '/members', { text: 'Jamie Okafor' }),
     screen('my-events', '/events/mine', { text: 'potluck' }),
-    screen('event', '/events/potluck', { text: 'the park' }),
+    screen('event', '/events/potluck', { text: '$10 · deposit' }),
     screen('calendar-member', `/calendar?date=${data.calendar_date}&view=month`, {
       text: 'potluck',
     }),
@@ -90,6 +81,16 @@ test('member screens', async ({ page }) => {
     screen('past-event', '/events/hike', { text: 'the woods' }),
     screen('cancelled-event', '/events/picnic', { text: 'cancelled' }),
   ]);
+
+  // Money is collapsed on create/edit; open it so the price note field is in the shot.
+  await page.goto('/events/potluck/edit');
+  await expect(page.getByLabel('title')).toBeVisible();
+  await page.getByRole('button', { name: 'money' }).click();
+  const money = page.locator('section').filter({
+    has: page.getByRole('button', { name: 'money' }),
+  });
+  await expect(money.getByLabel('price note')).toHaveValue('deposit');
+  await shot(page, 'event-money', { locator: money });
 
   await page.goto('/events/mine');
   await page.locator('label', { has: page.getByRole('radio', { name: 'past' }) }).click();

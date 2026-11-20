@@ -3,6 +3,12 @@
 from django.db import models
 
 
+class ReserveEntryKind(models.TextChoices):
+    EVENT = "event", "Event"
+    COST = "cost", "Cost"
+    DONATION = "donation", "Donation"
+
+
 class PageVisibility(models.TextChoices):
     PUBLIC = "public", "Public"
     MEMBERS_ONLY = "members_only", "Members only"
@@ -31,6 +37,25 @@ class EventStatus(models.TextChoices):
     DELETED = "deleted", "Deleted"
 
 
+class PlanningSlotKind(models.TextChoices):
+    MONTHLY = "monthly", "Monthly"
+    BIANNUAL = "biannual", "Biannual"
+
+
+class BiannualInterest(models.TextChoices):
+    YES = "yes", "Yes"
+    MAYBE = "maybe", "Maybe"
+    NO = "no", "No"
+
+
+class AssignmentStatus(models.TextChoices):
+    DRAFT = "draft", "Draft"
+    PROPOSED = "proposed", "Proposed"
+    COMMITTED = "committed", "Committed"
+    DECLINED = "declined", "Declined"
+    WITHDRAWN = "withdrawn", "Withdrawn"
+
+
 class EventFlagStatus(models.TextChoices):
     PENDING = "pending", "Pending"
     DISMISSED = "dismissed", "Dismissed"
@@ -51,6 +76,36 @@ class JoinRequestStatus(models.TextChoices):
     TENTATIVE = "tentative", "Tentatively approved"
     APPROVED = "approved", "Approved"
     REJECTED = "rejected", "Rejected"
+    # Terminal: the tentative applicant was archived before they were approved.
+    CLOSED = "closed", "Closed"
+
+
+class JoinRequestEvent(models.TextChoices):
+    MARK_TENTATIVE = "mark_tentative", "Mark tentative"
+    APPROVE = "approve", "Approve"
+    PROMOTE_ON_CHECK_IN = "promote_on_check_in", "Promote on check-in"
+    REJECT = "reject", "Reject"
+    UNREJECT = "unreject", "Un-reject"
+    CLOSE = "close", "Close"
+
+
+# Open requests can still change status; every other status is final.
+OPEN_JOIN_REQUEST_STATUSES = (JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE)
+
+ALLOWED_JOIN_REQUEST_TRANSITIONS: dict[
+    tuple[JoinRequestStatus, JoinRequestEvent], JoinRequestStatus
+] = {
+    (JoinRequestStatus.PENDING, JoinRequestEvent.MARK_TENTATIVE): JoinRequestStatus.TENTATIVE,
+    (JoinRequestStatus.PENDING, JoinRequestEvent.APPROVE): JoinRequestStatus.APPROVED,
+    (JoinRequestStatus.PENDING, JoinRequestEvent.REJECT): JoinRequestStatus.REJECTED,
+    (JoinRequestStatus.TENTATIVE, JoinRequestEvent.APPROVE): JoinRequestStatus.APPROVED,
+    (
+        JoinRequestStatus.TENTATIVE,
+        JoinRequestEvent.PROMOTE_ON_CHECK_IN,
+    ): JoinRequestStatus.APPROVED,
+    (JoinRequestStatus.TENTATIVE, JoinRequestEvent.CLOSE): JoinRequestStatus.CLOSED,
+    (JoinRequestStatus.REJECTED, JoinRequestEvent.UNREJECT): JoinRequestStatus.PENDING,
+}
 
 
 class RejectionReason(models.TextChoices):
@@ -102,6 +157,7 @@ class JoinFormQuestionType(models.TextChoices):
     TEXT = QuestionType.TEXT.value, QuestionType.TEXT.label
     TEXTAREA = QuestionType.TEXTAREA.value, QuestionType.TEXTAREA.label
     SELECT = QuestionType.SELECT.value, QuestionType.SELECT.label
+    CHECKBOX = QuestionType.CHECKBOX.value, QuestionType.CHECKBOX.label
 
 
 class RsvpQuestionType(models.TextChoices):
@@ -129,6 +185,13 @@ class RSVPStatus(models.TextChoices):
     CANT_GO = "cant_go", "Can't go"
     WAITLISTED = "waitlisted", "Waitlisted"
     REMOVED = "removed", "Removed"
+
+
+class CancelReason(models.TextChoices):
+    SELF = "self", "Self"
+    HOST = "host", "Host"
+    PAUSE = "pause", "Pause"
+    ARCHIVE = "archive", "Archive"
 
 
 # Guests a payment import can match and verify.

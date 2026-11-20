@@ -7,27 +7,31 @@ from enum import StrEnum
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
-from django.conf import settings
-from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from notifications.service import create_join_request_notifications
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from users.models import PUBLIC_FORM_PHONE_REGION, User, can_sign_in_q, validate_phone
+from users.models import User, can_sign_in_q
+from users.phone import PUBLIC_FORM_PHONE_REGION, validate_phone
 
-from community._question_answers import assert_single_choice_member, is_answer_empty
+from community._question_answers import (
+    AnswerCodes,
+    ChoiceAnswer,
+    is_answer_empty,
+    normalize_answer,
+)
 from community.field_limits import FieldLimit
+from community.join_requests._vetting_email import send_vetting_email
 from community.models import (
+    OPEN_JOIN_REQUEST_STATUSES,
     JoinFormQuestion,
-    JoinFormQuestionType,
     JoinRequest,
     JoinRequestStatus,
 )
 from community.shared import (
     ErrorOut,
-    flatten_to_single_line,
     logger,
     validate_display_name,
 )
@@ -35,13 +39,18 @@ from community.validation import Code, ValidationException, raise_validation
 
 router = Router()
 
+_ANSWER_CODES = AnswerCodes(
+    invalid_option=Code.JoinRequest.ANSWER_INVALID_OPTION,
+    invalid_format=Code.JoinRequest.ANSWER_INVALID_FORMAT,
+)
+
 
 class JoinRequestIn(BaseModel):
     first_name: str = Field(default="", max_length=FieldLimit.FIRST_NAME)
     last_name: str = Field(default="", max_length=FieldLimit.LAST_NAME)
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     email: EmailStr
-    answers: dict[str, str] = {}
+    answers: dict[str, ChoiceAnswer] = {}
     # Consent timestamps are recorded on the join request for TCPA/Twilio proof (see #501).
     sms_consent: bool = False
     guidelines_consent: bool = False
@@ -50,9 +59,9 @@ class JoinRequestIn(BaseModel):
 
     @field_validator("answers")
     @classmethod
-    def validate_answer_lengths(cls, v: dict[str, str]) -> dict[str, str]:
+    def validate_answer_lengths(cls, v: dict[str, ChoiceAnswer]) -> dict[str, ChoiceAnswer]:
         for key, answer in v.items():
-            if len(answer) > FieldLimit.DESCRIPTION:
+            if len("".join(answer)) > FieldLimit.DESCRIPTION:
                 raise_validation(
                     Code.JoinRequest.ANSWER_TOO_LONG,
                     field=f"answers.{key}",
@@ -97,60 +106,39 @@ class CheckPhoneIn(BaseModel):
     phone_number: str = Field(max_length=FieldLimit.PHONE)
 
 
-def _validate_answers(
-    answers: dict[str, str],
-    questions: dict[str, JoinFormQuestion],
-) -> None:
-    """Validate answers against questions. Raises ValidationException on failure."""
-    for q_id, q in questions.items():
-        answer = answers.get(q_id, "").strip()
-        if q.required and is_answer_empty(answer):
-            raise_validation(
-                Code.JoinRequest.ANSWER_REQUIRED,
-                field=f"answers.{q_id}",
-                label=q.label,
-            )
-        if q.field_type == JoinFormQuestionType.SELECT and not is_answer_empty(answer):
-            assert_single_choice_member(
-                answer,
-                q.options,
-                code=Code.JoinRequest.ANSWER_INVALID_OPTION,
-                field=f"answers.{q_id}",
-                label=q.label,
-            )
-
-
 def _build_custom_answers(
-    answers: dict[str, str],
+    answers: dict[str, ChoiceAnswer],
     questions: dict[str, JoinFormQuestion],
 ) -> dict:
-    """Snapshot answers with their labels."""
+    """Validate answers and snapshot them with their labels. Raises ValidationException."""
     result = {}
     for q_id, q in questions.items():
-        answer = answers.get(q_id, "").strip()
-        if answer:
-            result[q_id] = {"label": q.label, "answer": answer}
+        field = f"answers.{q_id}"
+        answer = normalize_answer(answers.get(q_id, ""), q, codes=_ANSWER_CODES, field=field)
+        if is_answer_empty(answer):
+            if q.required:
+                raise_validation(Code.JoinRequest.ANSWER_REQUIRED, field=field, label=q.label)
+            continue
+        result[q_id] = {"label": q.label, "answer": answer}
     return result
+
+
+def _answer_line(label: str, answer: ChoiceAnswer) -> str:
+    if isinstance(answer, list):
+        # One option per line: option labels may contain commas.
+        return f"{label}:" + "".join(f"\n- {v}" for v in answer)
+    return f"{label}: {answer}"
 
 
 def send_join_request_email(full_name: str, phone: str, custom_answers: dict) -> None:
     """Send vetting email for a new join request."""
-    if not settings.VETTING_EMAIL:
-        return
-    try:
-        # Flatten to single-line so a newline in the name can't forge email headers.
-        safe_subject = flatten_to_single_line(f"New PDA Join Request: {full_name}")
-        answer_lines = "\n".join(
-            f"{data['label']}: {data['answer']}" for data in custom_answers.values()
-        )
-        send_mail(
-            subject=safe_subject,
-            message=f"Name: {full_name}\nPhone: {phone}\n\n{answer_lines}",
-            from_email=settings.DEFAULT_FROM_EMAIL or "noreply@pda.org",
-            recipient_list=[settings.VETTING_EMAIL],
-        )
-    except Exception:
-        logger.exception("Failed to send vetting email for join request")
+    answer_lines = "\n".join(
+        _answer_line(data["label"], data["answer"]) for data in custom_answers.values()
+    )
+    send_vetting_email(
+        f"New PDA Join Request: {full_name}",
+        f"Name: {full_name}\nPhone: {phone}\n\n{answer_lines}",
+    )
 
 
 def _honeypot_decoy_response(first_name: str, full_name: str) -> JoinRequestSubmittedOut:
@@ -168,7 +156,7 @@ def _raise_if_open_request(validated_phone: str) -> None:
     live_statuses = set(
         JoinRequest.objects.filter(
             phone_number=validated_phone,
-            status__in=(JoinRequestStatus.PENDING, JoinRequestStatus.TENTATIVE),
+            status__in=OPEN_JOIN_REQUEST_STATUSES,
         ).values_list("status", flat=True)
     )
     if JoinRequestStatus.PENDING in live_statuses:
@@ -210,9 +198,7 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
         )
     matched = phone_user or email_user
 
-    if matched and (
-        matched.is_member or matched.is_paused or matched.attendance_paused_at is not None
-    ):
+    if matched and matched.is_member:
         raise_validation(Code.JoinRequest.ALREADY_MEMBER, status_code=409)
     _raise_if_open_request(validated_phone)
 
@@ -270,8 +256,6 @@ def submit_join_request(request, payload: JoinRequestIn):
     matched_user, email_claimed = _resolve_submission_user(validated_phone, normalized_email)
 
     questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
-    _validate_answers(payload.answers, questions)
-
     custom_answers = _build_custom_answers(payload.answers, questions)
 
     now = timezone.now()
@@ -310,7 +294,10 @@ def submit_join_request(request, payload: JoinRequestIn):
         target=AuditTarget(
             type=AuditTargetType.JOIN_REQUEST,
             id=str(join_request.id),
-            details={"full_name": full_name},
+            details={
+                "full_name": full_name,
+                "user_id": str(matched_user.pk) if matched_user else None,
+            },
         ),
     )
     send_join_request_email(full_name, validated_phone, custom_answers)

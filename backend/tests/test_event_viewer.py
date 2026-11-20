@@ -4,7 +4,7 @@ import pytest
 from community.events.viewer import resolve_event_viewer
 from community.models import EventType, PageVisibility
 from django.utils import timezone
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken, User
 
 from tests._events import make_event, make_rsvp
 
@@ -26,7 +26,7 @@ def public_rsvper(db):
         first_name="Non",
         last_name="Member",
         email="non@example.com",
-        is_member=False,
+        membership_status=MembershipStatus.NONE,
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])
@@ -42,19 +42,19 @@ class TestResolveEventViewer:
     def test_no_token_no_jwt_returns_none(self, rf, event):
         request = _request(rf)
         request.auth = None
-        assert resolve_event_viewer(request, event.id) is None
+        assert resolve_event_viewer(request, event) is None
 
     def test_real_jwt_user_returned_regardless_of_token(self, rf, event, test_user):
         request = _request(rf)
         request.auth = test_user
-        assert resolve_event_viewer(request, event.id) == test_user
+        assert resolve_event_viewer(request, event) == test_user
 
     def test_valid_token_with_rsvp_on_this_event_unlocks(self, rf, event, public_rsvper):
         make_rsvp(event, public_rsvper)
         token = PublicRsvpToken.issue(public_rsvper)
         request = _request(rf, query=f"token={token.token}")
         request.auth = None
-        assert resolve_event_viewer(request, event.id) == public_rsvper
+        assert resolve_event_viewer(request, event) == public_rsvper
 
     def test_valid_token_without_rsvp_unlocks_eligible_event(self, rf, event, public_rsvper):
         # Reusing one token across events: no RSVP on THIS event, but the token
@@ -62,12 +62,12 @@ class TestResolveEventViewer:
         token = PublicRsvpToken.issue(public_rsvper)
         request = _request(rf, query=f"token={token.token}")
         request.auth = None
-        assert resolve_event_viewer(request, event.id) == public_rsvper
+        assert resolve_event_viewer(request, event) == public_rsvper
 
     def test_invalid_token_stays_locked(self, rf, event):
         request = _request(rf, query="token=not-a-real-token")
         request.auth = None
-        assert resolve_event_viewer(request, event.id) is None
+        assert resolve_event_viewer(request, event) is None
 
     def test_expired_token_stays_locked(self, rf, event, public_rsvper):
         make_rsvp(event, public_rsvper)
@@ -77,7 +77,7 @@ class TestResolveEventViewer:
         token.save(update_fields=["expires_at"])
         request = _request(rf, query=f"token={token.token}")
         request.auth = None
-        assert resolve_event_viewer(request, event.id) is None
+        assert resolve_event_viewer(request, event) is None
 
     def test_valid_token_stays_locked_on_members_only_event(self, rf, event, public_rsvper):
         # The token only unlocks public-RSVP-eligible events — a members-only
@@ -87,4 +87,4 @@ class TestResolveEventViewer:
         event.save(update_fields=["visibility"])
         request = _request(rf, query=f"token={token.token}")
         request.auth = None
-        assert resolve_event_viewer(request, event.id) is None
+        assert resolve_event_viewer(request, event) is None
