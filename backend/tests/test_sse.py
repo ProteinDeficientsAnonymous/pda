@@ -3,6 +3,7 @@
 import asyncio
 from datetime import timedelta
 from unittest.mock import MagicMock
+from uuid import uuid4
 
 import psycopg
 import pytest
@@ -271,6 +272,13 @@ class TestAnonymousSseTicketMint:
     def test_invalid_token_returns_404(self, api_client, public_event):
         response = _mint_anonymous(api_client, public_event, "garbage")
         assert response.status_code == 404
+
+    def test_unknown_event_returns_404(self, api_client, rsvp_token):
+        response = api_client.post(
+            f"/api/notifications/sse-ticket/?event_id={uuid4()}&token={rsvp_token}",
+        )
+        assert response.status_code == 404
+        assert not SseTicket.objects.exists()
 
     def test_members_only_event_returns_404(self, api_client, public_event, non_member, rsvp_token):
         EventRSVP.objects.create(event=public_event, user=non_member, status=RSVPStatus.ATTENDING)
