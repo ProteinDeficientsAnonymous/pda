@@ -2880,11 +2880,7 @@ export interface paths {
         put?: never;
         /**
          * Create Sse Ticket
-         * @description Mint a short-lived single-use ticket for opening the SSE stream.
-         *
-         *     Lets the client open the stream with ?ticket= instead of the JWT (EventSource
-         *     can't send an auth header). Without a JWT, pass ?event_id= and the rsvp
-         *     ?token= to get a ticket that only receives that event's comment pings.
+         * @description Mint a single-use stream ticket; without a JWT, ?event_id= and ?token= scope it to one event.
          */
         post: operations["notifications_api_create_sse_ticket"];
         delete?: never;
