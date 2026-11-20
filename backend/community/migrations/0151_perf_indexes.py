@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0149_seed_planning_checklist"),
+        ("community", "0150_join_form_checkbox_question"),
     ]
 
     operations = [
