@@ -2,6 +2,7 @@ import calendar
 import json
 import secrets
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 from django.core.cache import caches
 from django.core.management.base import BaseCommand
@@ -42,6 +43,7 @@ from ._e2e_common import (
     random_event,
     random_phone,
 )
+from ._e2e_planning import seed_view_planner
 
 
 def _seed_member() -> dict:
@@ -244,6 +246,8 @@ def _seed_member_screens() -> dict:
         status=EventStatus.ACTIVE,
         rsvp_enabled=True,
         created_by=seed,
+        price=Decimal("10.00"),
+        price_note="deposit",
     )
     EventRsvpQuestion.objects.create(
         event=event,
@@ -468,6 +472,7 @@ SCENARIOS = {
     "attendance-analytics": seed_attendance_analytics,
     "waitlist-screens": _seed_waitlist_screens,
     "event-feedback": _seed_event_feedback,
+    "view-planner": seed_view_planner,
 }
 
 

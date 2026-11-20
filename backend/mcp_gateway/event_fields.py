@@ -21,7 +21,12 @@ class EventFields(BaseModel):
     location: str = Field("", description="place name and address shown to members")
     latitude: float | None = Field(None, description="meetup point latitude (see find_location)")
     longitude: float | None = Field(None, description="meetup point longitude")
-    price: str = Field("", description="free text, e.g. '$15' or '$10-20 sliding scale'")
+    price: str = Field(
+        "", description="dollar amount per person, e.g. '15' or '12.50'; blank if free or a range"
+    )
+    price_note: str = Field(
+        "", description="shown after the price, e.g. 'deposit' or 'sliding scale $6-$8'"
+    )
     venmo_link: str = Field("", description="full link, e.g. https://venmo.com/u/handle")
     cashapp_link: str = Field("", description="full link, e.g. https://cash.app/$cashtag")
     zelle_info: str = Field("", description="zelle email or phone number")
@@ -75,13 +80,16 @@ async def to_event_in(fields: EventFields, user: User, **extra: Any) -> EventIn:
 async def to_event_patch(
     changes: dict[str, Any], user: User, **extra: Any
 ) -> tuple[EventPatchIn, dict[str, Any]]:
-    """return(tuple): the patch, and the changes with tags as their stored names."""
+    """return(tuple): the patch, and the changes with tags and price as stored."""
     data = {key: value for key, value in changes.items() if key != "tags"}
     if "tags" in changes:
         tags = await _tags(changes["tags"], user)
         data["tag_ids"] = list(tags.values())
         changes = {**changes, "tags": sorted(tags)}
-    return build(EventPatchIn, {**data, **extra}), changes
+    patch = build(EventPatchIn, {**data, **extra})
+    if "price" in changes:
+        changes = {**changes, "price": patch.price}
+    return patch, changes
 
 
 def event_summary(event: dict[str, Any]) -> dict[str, Any]:

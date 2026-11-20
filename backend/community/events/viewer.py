@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from django.http import HttpRequest
 from users.models import PublicRsvpToken, User
 
@@ -7,7 +5,7 @@ from community.models import Event
 from community.shared import authenticated_user
 
 
-def resolve_event_viewer(request: HttpRequest, event_id: UUID) -> "User | None":
+def resolve_event_viewer(request: HttpRequest, event: Event) -> "User | None":
     """Resolve the effective viewer for one event: real member, or a non-member
     RSVP-token holder on any public-RSVP-eligible event, or None.
 
@@ -28,9 +26,7 @@ def resolve_event_viewer(request: HttpRequest, event_id: UUID) -> "User | None":
     user = PublicRsvpToken.resolve_user(token)
     if user is None:
         return None
-    # Re-derive eligibility per request so an event that drops out of public-RSVP
-    # eligibility (MEMBERS_ONLY, cancelled, past, …) stops unlocking immediately.
-    event = Event.objects.filter(id=event_id).first()
-    if event is None or not event.is_public_rsvp_eligible:
+    # Pass an event loaded this request so a MEMBERS_ONLY/cancelled/past flip locks at once.
+    if not event.is_public_rsvp_eligible:
         return None
     return user

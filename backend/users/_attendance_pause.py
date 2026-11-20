@@ -117,7 +117,11 @@ def apply_attendance_pause(request, user: User) -> PauseImpact:
             logging.WARNING,
             "user_attendance_paused",
             request,
-            target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk), details=details),
+            target=AuditTarget(
+                type=AuditTargetType.USER,
+                id=str(user.pk),
+                details={"full_name": user.full_name, **details},
+            ),
         )
     return impact
 

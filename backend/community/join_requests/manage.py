@@ -27,6 +27,7 @@ from community.join_requests._history import (
 )
 from community.join_requests._rejection import Rejection, send_join_rejection, validate_rejection
 from community.join_requests.approval import (
+    applicant_user,
     provision_approved_user,
     provision_tentative_user,
     send_join_approval,
@@ -51,7 +52,7 @@ router = Router()
 class JoinRequestAnswerOut(BaseModel):
     question_id: str
     label: str
-    answer: str
+    answer: str | list[str]
 
 
 class JoinRequestRsvpOut(BaseModel):
@@ -311,14 +312,32 @@ _DECISION_ACTIONS = {
 }
 
 
+def _audit_reactivated(request, user: User, join_request: JoinRequest) -> None:
+    audit_log(
+        logging.WARNING,
+        "user_reactivated",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.USER,
+            id=str(user.pk),
+            details={
+                "full_name": user.full_name,
+                "join_request_id": str(join_request.id),
+                "membership_status": user.membership_status,
+            },
+        ),
+    )
+
+
 def _apply_status_transition(
-    id: UUID, status: str, actor, rejection: Rejection
+    request, id: UUID, status: str, rejection: Rejection
 ) -> tuple[JoinRequest, str | None, bool, bool]:
     """Stamp + provision inside one locked transaction.
 
     Returns ``(join_request, magic_token, user_created, promoted_from_tentative)``.
     select_for_update() serializes concurrent approvals so only one provisions.
     """
+    actor = request.auth
     with transaction.atomic():
         try:
             join_request = JoinRequest.objects.select_for_update().get(id=id)
@@ -334,13 +353,15 @@ def _apply_status_transition(
 
         _stamp_decision(join_request, status, actor, rejection)
         if status == JoinRequestStatus.TENTATIVE:
-            _, magic_token = provision_tentative_user(join_request, actor)
+            user, magic_token, reactivated = provision_tentative_user(join_request, actor)
+            if reactivated:
+                _audit_reactivated(request, user, join_request)
             return join_request, magic_token, False, False
         if status == JoinRequestStatus.APPROVED:
-            magic_token, user_created = provision_approved_user(
-                join_request, actor, was_tentative=was_tentative
-            )
-            return join_request, magic_token, user_created, was_tentative
+            provisioned = provision_approved_user(join_request, actor, was_tentative=was_tentative)
+            if provisioned.reactivated_user is not None:
+                _audit_reactivated(request, provisioned.reactivated_user, join_request)
+            return join_request, provisioned.magic_token, provisioned.user_created, was_tentative
     return join_request, None, False, False
 
 
@@ -392,7 +413,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
         else Rejection()
     )
     join_request, magic_token, user_created, promoted = _apply_status_transition(
-        id, payload.status, request.auth, rejection
+        request, id, payload.status, rejection
     )
 
     if promoted:
@@ -404,6 +425,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     if payload.status == JoinRequestStatus.REJECTED:
         send_join_rejection(join_request)
 
+    approved_user = applicant_user(join_request)
     action = _DECISION_ACTIONS[payload.status]
     audit_log(
         logging.INFO,
@@ -414,17 +436,11 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             id=str(join_request.id),
             details={
                 "full_name": join_request.full_name,
+                "user_id": str(approved_user.id) if approved_user else None,
                 "user_created": user_created,
                 "rejection_reason": join_request.rejection_reason,
             },
         ),
-    )
-
-    # A promoted non-member is the linked User itself (which may have been
-    # matched by email, so its phone can differ from the request's). Fall back
-    # to the phone lookup for the create/reactivate paths.
-    approved_user = (
-        join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
     )
     return Status(
         200,

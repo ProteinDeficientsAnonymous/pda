@@ -158,7 +158,7 @@ def calendar_feed(request, token: str = ""):
         cal.add_component(_build_vevent(event, request, is_authed=is_authed))
     cal.add_missing_timezones()
 
-    response = HttpResponse(cal.to_ical(), content_type="text/calendar")
+    response = HttpResponse(_unfolded_ical(cal), content_type="text/calendar")
     response["Content-Disposition"] = 'inline; filename="pda-calendar.ics"'
     return response
 
@@ -186,7 +186,7 @@ def single_event_ics(request, event_id: str):
     cal.add_component(_build_vevent(event, request, is_authed=viewer is not None))
     cal.add_missing_timezones()
 
-    response = HttpResponse(cal.to_ical(), content_type="text/calendar")
+    response = HttpResponse(_unfolded_ical(cal), content_type="text/calendar")
     response["Content-Disposition"] = f'inline; filename="{_ics_filename(event)}"'
     return response
 
@@ -198,6 +198,11 @@ def _ics_filename(event) -> str:
     CR/LF/quote header injection in Content-Disposition.
     """
     return f"event-{event.id}.ics"
+
+
+def _unfolded_ical(cal: icalendar.Calendar) -> bytes:
+    # Google Calendar links a folded URL only up to the fold (#2208); RFC 5545 folding is a SHOULD.
+    return "".join(f"{line}\r\n" for line in cal.content_lines() if line).encode()
 
 
 def _new_calendar() -> icalendar.Calendar:

@@ -50,6 +50,7 @@ from community.events.listing import (
     list_count_annotations,
 )
 from community.events.official_defaults import apply_official_defaults
+from community.events.price import parse_price
 from community.events.public_rsvper_removal import (
     email_removed_public_rsvpers,
     guard_or_remove_ineligible_public_rsvpers,
@@ -126,7 +127,7 @@ def _get_visible_event(request, event_id: str):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    viewer = event_viewer_for(resolve_event_viewer(request, event.id), event)
+    viewer = event_viewer_for(resolve_event_viewer(request, event), event)
     enforce_event_read_visibility(event, viewer)
     return event, viewer
 
@@ -248,7 +249,8 @@ def create_event(request, payload: EventIn):
         whatsapp_link=payload.whatsapp_link,
         partiful_link=payload.partiful_link,
         other_link=payload.other_link,
-        price=payload.price,
+        price=parse_price(payload.price),
+        price_note=payload.price_note,
         venmo_link=payload.venmo_link,
         cashapp_link=payload.cashapp_link,
         zelle_info=payload.zelle_info,
