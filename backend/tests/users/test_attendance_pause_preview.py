@@ -1,14 +1,16 @@
 import pytest
-from community.models import EventType
+from community.models import EventCoHostInvite, EventType
+from django.utils import timezone
 from tests._auth import auth_headers_for
 from tests._events import make_event, make_rsvp
+from tests._users import grant
 from users import _attendance_pause_api
 from users._attendance_pause import PauseImpact
 from users.models import User
 
 
-def _preview(api_client, user: User, headers: dict):
-    return api_client.get(f"/api/auth/users/{user.pk}/attendance-pause-preview/", **headers)
+def _preview(api_client, user: User, headers: dict, kind: str = "attendance"):
+    return api_client.get(f"/api/auth/users/{user.pk}/{kind}-pause-preview/", **headers)
 
 
 @pytest.mark.django_db
@@ -38,8 +40,9 @@ class TestAttendancePausePreview:
             removed_rsvps=[make_event(title="removed rsvp")],
             removed_hosting=[make_event(title="removed hosting")],
             drafted_events=[make_event(title="drafted")],
+            rescinded_invites=[make_event(title="invite")],
         )
-        monkeypatch.setattr(_attendance_pause_api, "attendance_pause_impact", lambda _: impact)
+        monkeypatch.setattr(_attendance_pause_api, "pause_impact", lambda *_: impact)
 
         response = _preview(api_client, member, manage_users_headers)
 
@@ -49,11 +52,50 @@ class TestAttendancePausePreview:
             "removed rsvp": ("rsvp", "removed"),
             "removed hosting": ("hosting", "removed"),
             "drafted": ("hosting", "drafted"),
+            "invite": ("cohost_invite", "rescinded"),
         }
+
+    def test_lists_stripped_roles_and_whatsapp(self, api_client, manage_users_headers, member):
+        role = grant(member)
+        member.has_joined_whatsapp = True
+        member.save(update_fields=["has_joined_whatsapp"])
+
+        body = _preview(api_client, member, manage_users_headers).json()
+
+        assert body["stripped_roles"] == [role.name]
+        assert body["clears_whatsapp"] is True
+
+    def test_lists_pending_cohost_invites(
+        self, api_client, manage_users_headers, member, other_user
+    ):
+        event = make_event(created_by=other_user, title="potluck")
+        EventCoHostInvite.objects.create(event=event, user=member)
+
+        [listed] = _preview(api_client, member, manage_users_headers).json()["events"]
+
+        assert (listed["id"], listed["role"], listed["outcome"]) == (
+            str(event.pk),
+            "cohost_invite",
+            "rescinded",
+        )
+
+    def test_archived_user_shows_no_changes(
+        self, api_client, manage_users_headers, member, other_user
+    ):
+        make_rsvp(make_event(created_by=other_user), member)
+        make_event(created_by=member)
+        grant(member)
+        member.archived_at = timezone.now()
+        member.has_joined_whatsapp = True
+        member.save(update_fields=["archived_at", "has_joined_whatsapp"])
+
+        response = _preview(api_client, member, manage_users_headers)
+
+        assert response.json() == {"events": [], "stripped_roles": [], "clears_whatsapp": False}
 
     def test_empty_when_nothing_upcoming(self, api_client, manage_users_headers, member):
         response = _preview(api_client, member, manage_users_headers)
-        assert response.json() == {"events": []}
+        assert response.json() == {"events": [], "stripped_roles": [], "clears_whatsapp": False}
 
     def test_requires_manage_users(self, api_client, member, other_user):
         response = _preview(api_client, member, auth_headers_for(other_user))
@@ -62,3 +104,26 @@ class TestAttendancePausePreview:
     def test_unknown_user_is_404(self, api_client, manage_users_headers, non_member):
         response = _preview(api_client, non_member, manage_users_headers)
         assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestGuidelinesPausePreview:
+    def test_lists_official_rsvp_as_removed(
+        self, api_client, manage_users_headers, member, other_user
+    ):
+        official = make_event(created_by=other_user, event_type=EventType.OFFICIAL)
+        make_rsvp(official, member)
+        drafted = make_event(created_by=member, event_type=EventType.CLUB)
+
+        response = _preview(api_client, member, manage_users_headers, "guidelines")
+
+        assert response.status_code == 200
+        pairs = {e["id"]: (e["role"], e["outcome"]) for e in response.json()["events"]}
+        assert pairs == {
+            str(official.pk): ("rsvp", "removed"),
+            str(drafted.pk): ("hosting", "drafted"),
+        }
+
+    def test_requires_manage_users(self, api_client, member, other_user):
+        response = _preview(api_client, member, auth_headers_for(other_user), "guidelines")
+        assert response.status_code == 403

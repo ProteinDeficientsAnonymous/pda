@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 
@@ -9,7 +9,8 @@ interface Props {
   onSubmit: (body: string) => void | Promise<void>;
   submitting: boolean;
   placeholder?: string;
-  autoFocus?: boolean;
+  /** Focus the textarea after mount (e.g. when opening a reply). */
+  focusOnMount?: boolean;
   label?: string;
 }
 
@@ -29,13 +30,18 @@ export function CommentComposer({
   onSubmit,
   submitting,
   placeholder = 'say something…',
-  autoFocus = false,
+  focusOnMount = false,
   label = 'comment',
 }: Props) {
   const [value, setValue] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const trimmed = value.trim();
   const state = counterState(value.length);
   const disabled = submitting || trimmed.length === 0 || state === 'over';
+
+  useEffect(() => {
+    if (focusOnMount) textareaRef.current?.focus();
+  }, [focusOnMount]);
 
   const submit = async () => {
     if (disabled) return;
@@ -55,14 +61,13 @@ export function CommentComposer({
   return (
     <div className="flex flex-col gap-2">
       <textarea
+        ref={textareaRef}
         aria-label={label}
         value={value}
         onChange={(e) => {
           setValue(e.target.value);
         }}
         placeholder={placeholder}
-        // oxlint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus={autoFocus}
         rows={3}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {

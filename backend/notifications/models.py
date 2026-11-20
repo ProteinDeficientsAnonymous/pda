@@ -34,6 +34,13 @@ class NotificationType(models.TextChoices):
     SURVEY_RESPONSE = "survey_response", "Survey Response"
     EVENT_UNPUBLISHED = "event_unpublished", "Event Unpublished"
     MEMBER_RESTORED = "member_restored", "Member Restored"
+    CHECK_IN_PROMOTION_FAILED = "check_in_promotion_failed", "Check-in Promotion Failed"
+    PLANNING_PROPOSED = "planning_proposed", "Planning Proposed"
+    PLANNING_WITHDRAWN = "planning_withdrawn", "Planning Withdrawn"
+    PLANNING_COMMITTED = "planning_committed", "Planning Committed"
+    PLANNING_DECLINED = "planning_declined", "Planning Declined"
+    PLANNING_UPCOMING = "planning_upcoming", "Planning Upcoming"
+    PLANNING_AVAILABILITY = "planning_availability", "Planning Availability"
 
 
 class Notification(models.Model):
@@ -111,6 +118,12 @@ class SseTicket(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["expires_at"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(user__isnull=True) ^ models.Q(event__isnull=True),
+                name="sseticket_user_xor_event",
+            )
+        ]
 
     @property
     def is_expired(self) -> bool:

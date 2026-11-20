@@ -67,12 +67,7 @@ def _event_for_anonymous_stream(request, event_id: UUID) -> Event:
 )
 @rate_limit(key_func=auth_or_ip_key, rate="30/m")
 def create_sse_ticket(request, event_id: UUID | None = None):
-    """Mint a short-lived single-use ticket for opening the SSE stream.
-
-    Lets the client open the stream with ?ticket= instead of the JWT (EventSource
-    can't send an auth header). Without a JWT, pass ?event_id= and the rsvp
-    ?token= to get a ticket that only receives that event's comment pings.
-    """
+    """Mint a single-use stream ticket; without a JWT, ?event_id= and ?token= scope it to one event."""
     if not isinstance(request.auth, AnonymousUser):
         ticket = SseTicket.mint_for_user(request.auth)
     elif event_id is None:

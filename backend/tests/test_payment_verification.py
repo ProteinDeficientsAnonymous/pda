@@ -8,6 +8,7 @@ from community.rsvps._payment_verification import MISCLICK_WINDOW, apply_payment
 from django.apps import apps
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
+from users.models import MembershipStatus
 
 from tests._auth import auth_headers_for
 from tests._payment_helpers import create_paid_event
@@ -28,7 +29,9 @@ def event(test_user):
 @pytest.fixture
 def guest(django_user_model):
     return django_user_model.objects.create_user(
-        phone_number="+14155550501", first_name="Guest", is_member=True
+        phone_number="+14155550501",
+        first_name="Guest",
+        membership_status=MembershipStatus.ACTIVE_MEMBER,
     )
 
 
@@ -240,7 +243,9 @@ class TestHostSetRsvpVerifies:
             payment_verified_by=test_user,
         )
         cohost = django_user_model.objects.create_user(
-            phone_number="+14155550503", first_name="Cohost", is_member=True
+            phone_number="+14155550503",
+            first_name="Cohost",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         event.co_hosts.add(cohost)
 
@@ -440,7 +445,9 @@ class TestBackfill:
 
     def test_other_guests_entries_do_not_leak(self, rsvp, event, test_user, django_user_model):
         other = django_user_model.objects.create_user(
-            phone_number="+14155550502", first_name="Other", is_member=True
+            phone_number="+14155550502",
+            first_name="Other",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
         _log(
             "guest_payment_changed",

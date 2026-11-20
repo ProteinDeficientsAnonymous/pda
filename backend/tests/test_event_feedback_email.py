@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from notifications.email_sender import SendResult
-from notifications.event_feedback_email import send_event_feedback_email
+from notifications.event_feedback_email import EventFeedbackMail, send_event_feedback_email
 
 URL = "https://pda.test/feedback#abc123"
 
@@ -19,11 +19,13 @@ def _send(
     result = send_event_feedback_email(
         sender=sender,
         to="member@example.test",
-        display_name=display_name,
-        event_title=event_title,
-        event_date=event_date,
-        url=URL,
-        reminder=reminder,
+        mail=EventFeedbackMail(
+            display_name=display_name,
+            event_title=event_title,
+            event_date=event_date,
+            url=URL,
+            reminder=reminder,
+        ),
     )
     return result, sender.send.call_args.kwargs
 

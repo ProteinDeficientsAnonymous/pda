@@ -23,7 +23,7 @@ from community.models import (
 )
 from community.validation import Code
 from notifications.models import Notification, NotificationType
-from users.models import PublicRsvpToken, User
+from users.models import MEMBER_STATUSES, MembershipStatus, PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import (
     URL_TEMPLATE,
@@ -34,6 +34,7 @@ from tests._public_rsvp_helpers import (
     post,
 )
 from tests._time import future_iso, past_iso
+from tests._users import make_user
 
 
 @pytest.fixture
@@ -133,7 +134,7 @@ class TestPublicRsvpDedup:
 
         assert response.status_code == 200
         assert response.json()["rsvp_token"] == ""
-        assert User.objects.filter(is_member=False).count() == 1
+        assert User.objects.exclude(membership_status__in=MEMBER_STATUSES).count() == 1
         existing.refresh_from_db()
         assert existing.email == "sam@example.com"
 
@@ -180,10 +181,19 @@ class TestPublicRsvpDedup:
 
 @pytest.mark.django_db
 class TestPublicRsvpMemberCollision:
-    def test_phone_belongs_to_member(self, api_client, official_event, fake_email_sender):
-        User.objects.create_user(
-            phone_number="+14155550123", first_name="A", last_name="Member", is_member=True
-        )
+    @pytest.mark.parametrize(
+        "status",
+        [
+            MembershipStatus.ACTIVE_MEMBER,
+            MembershipStatus.GUIDELINES_PAUSED,
+            MembershipStatus.ATTENDANCE_PAUSED,
+            MembershipStatus.TENTATIVE,
+        ],
+    )
+    def test_phone_that_can_sign_in_must_sign_in(
+        self, api_client, official_event, fake_email_sender, status
+    ):
+        make_user(phone_number="+14155550123", membership_status=status)
 
         response = post(api_client, official_event)
 
@@ -198,7 +208,7 @@ class TestPublicRsvpMemberCollision:
             first_name="A",
             last_name="Member",
             email="sam@example.com",
-            is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         response = post(api_client, official_event)
@@ -216,7 +226,7 @@ class TestPublicRsvpMemberCollision:
             first_name="A",
             last_name="Member",
             email="Sam@Example.COM",
-            is_member=True,
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         response = post(api_client, official_event, email="sam@example.com")
@@ -229,7 +239,10 @@ class TestPublicRsvpMemberCollision:
         self, api_client, official_event, fake_email_sender
     ):
         User.objects.create_user(
-            phone_number="(415) 555-0123", first_name="A", last_name="Member", is_member=True
+            phone_number="(415) 555-0123",
+            first_name="A",
+            last_name="Member",
+            membership_status=MembershipStatus.ACTIVE_MEMBER,
         )
 
         response = post(api_client, official_event, email="different@example.com")

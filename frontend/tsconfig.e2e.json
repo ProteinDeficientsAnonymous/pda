@@ -25,6 +25,8 @@
     "e2e/**/*.ts",
     "visual/**/*.ts",
     "playwright.config.ts",
-    "playwright.visual.config.ts"
+    "playwright.visual.config.ts",
+    "playwright.staging.config.ts",
+    "staging-smoke/**/*.ts"
   ]
 }

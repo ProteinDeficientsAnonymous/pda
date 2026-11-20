@@ -9,7 +9,7 @@ import pytest
 from asgiref.sync import async_to_sync
 from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
 from django.conf import settings
-from django.db import DatabaseError
+from django.db import DatabaseError, IntegrityError, transaction
 from django.utils import timezone
 from ninja_jwt.tokens import AccessToken, RefreshToken
 from notifications import sse
@@ -23,9 +23,10 @@ from notifications.sse import (
     sse_generator,
     try_acquire_anonymous_slot,
 )
-from users.models import PublicRsvpToken, User
+from users.models import MembershipStatus, PublicRsvpToken
 
 from tests._auth import auth_headers_for
+from tests._public_rsvp_helpers import make_public_rsvper
 from tests._time import future_iso
 
 _MEMBER = StreamScope(user_id="user-2", event_id=None)
@@ -123,6 +124,44 @@ class TestAnonymousConnectionCap:
         assert async_to_sync(drain)() == []
         assert sse._anonymous_connections == 0
 
+    @pytest.mark.parametrize(
+        ("scope", "channels"),
+        [
+            (_ANON_EVENT_1, ["LISTEN event_updates"]),
+            (_MEMBER, ["LISTEN notifications", "LISTEN event_updates"]),
+        ],
+    )
+    def test_listen_channels_per_scope(self, monkeypatch, scope, channels):
+        conn = _FakeListenConn()
+
+        async def fake_connect(*_args, **_kwargs):
+            return conn
+
+        monkeypatch.setattr(sse, "_build_async_dsn", lambda: "postgresql://fake")
+        monkeypatch.setattr(sse.psycopg.AsyncConnection, "connect", fake_connect)
+
+        async def drain():
+            return [frame async for frame in sse_generator(scope)]
+
+        assert async_to_sync(drain)() == ["event: connected\ndata: {}\n\n"]
+        assert conn.executed == channels
+
+
+class _FakeListenConn:
+    closed = True
+
+    def __init__(self):
+        self.executed: list[str] = []
+
+    async def execute(self, sql: str) -> None:
+        self.executed.append(sql)
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_exc):
+        return False
+
 
 class TestNotifyReadStateChanged:
     def test_publishes_read_payload_on_postgres(self, monkeypatch):
@@ -177,8 +216,8 @@ class TestSseTicketMint:
         assert not SseTicket.objects.exists()
 
     def test_paused_user_returns_403(self, test_user, api_client):
-        test_user.is_paused = True
-        test_user.save(update_fields=["is_paused"])
+        test_user.membership_status = MembershipStatus.GUIDELINES_PAUSED
+        test_user.save(update_fields=["membership_status"])
         response = api_client.post("/api/notifications/sse-ticket/", **auth_headers_for(test_user))
         assert response.status_code == 403
         assert not SseTicket.objects.exists()
@@ -198,15 +237,7 @@ def public_event(db, test_user):
 
 @pytest.fixture
 def non_member(db):
-    user = User.objects.create_user(
-        phone_number="+12025550188",
-        first_name="Non",
-        last_name="Member",
-        is_member=False,
-    )
-    user.set_unusable_password()
-    user.save(update_fields=["password"])
-    return user
+    return make_public_rsvper("+12025550188", "non.member@example.com", name="Non Member")
 
 
 @pytest.fixture
@@ -272,6 +303,12 @@ class TestConsumeTicket:
         scope = async_to_sync(consume_ticket)(ticket.token)
         assert scope == StreamScope(user_id=None, event_id=str(public_event.pk))
 
+    @pytest.mark.parametrize("bind", ["neither", "both"])
+    def test_ticket_needs_exactly_one_of_user_or_event(self, test_user, public_event, bind):
+        fields = {"user": test_user, "event": public_event} if bind == "both" else {}
+        with pytest.raises(IntegrityError), transaction.atomic():
+            SseTicket.objects.create(token="t", expires_at=timezone.now(), **fields)
+
     def test_second_consume_is_rejected(self, public_event):
         ticket = SseTicket.mint_for_event(public_event)
         assert async_to_sync(consume_ticket)(ticket.token) is not None
@@ -292,7 +329,7 @@ class TestSseStreamAuth:
 
     def test_jwt_in_query_no_longer_works(self, test_user, api_client):
         """Regression guard: the old ?token=<jwt> path must not authenticate."""
-        token = str(RefreshToken.for_user(test_user).access_token)  # ty: ignore[unresolved-attribute]
+        token = str(getattr(RefreshToken.for_user(test_user), "access_token"))
         response = api_client.get(f"/api/notifications/stream/?token={token}")
         assert response.status_code == 401
 

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, time, timedelta
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 from uuid import UUID
 
 from django.conf import settings
 from django.utils import timezone
 from notifications.email_sender import EmailStream, SendResult, get_email_sender
-from notifications.event_feedback_email import send_event_feedback_email
+from notifications.event_feedback_email import EventFeedbackMail, send_event_feedback_email
 
 from community.models import (
     AttendanceStatus,
@@ -19,6 +19,7 @@ from community.models import (
     Survey,
 )
 from community.models.event import is_past_q
+from community.shared import local_midnight
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -30,12 +31,8 @@ FEEDBACK_LOOKBACK = timedelta(days=7)
 REMINDER_AFTER_DAYS = 3
 
 
-def _local_midnight(day: date) -> datetime:
-    return datetime.combine(day, time.min, tzinfo=settings.COMMUNITY_TZ)
-
-
 def feedback_cutoff(now: datetime) -> datetime:
-    return _local_midnight(timezone.localtime(now, settings.COMMUNITY_TZ).date())
+    return local_midnight(timezone.localtime(now, settings.COMMUNITY_TZ).date())
 
 
 def feedback_url(token: str) -> str:
@@ -61,7 +58,7 @@ def due_feedback_events(now: datetime) -> QuerySet[Event]:
     )
 
 
-def _event_date_label(event: Event) -> str | None:
+def event_date_label(event: Event) -> str | None:
     if event.start_datetime is None:
         return None
     local = timezone.localtime(event.start_datetime, settings.COMMUNITY_TZ)
@@ -76,13 +73,15 @@ def _send(
         result = send_event_feedback_email(
             sender=sender,
             to=user.email or "",
-            display_name=user.first_name or "",
-            event_title=request.event.title,
-            event_date=_event_date_label(request.event),
-            url=feedback_url(request.token),
-            reminder=reminder,
+            mail=EventFeedbackMail(
+                display_name=user.first_name or "",
+                event_title=request.event.title,
+                event_date=event_date_label(request.event),
+                url=feedback_url(request.token),
+                reminder=reminder,
+            ),
         )
-    except Exception:  # noqa: BLE001 — one bad send must not abort the batch
+    except Exception:
         logger.warning("event_feedback_email_send_exception", exc_info=True)
         return None
     if not result.success:
@@ -151,9 +150,9 @@ def send_first_requests(now: datetime) -> tuple[int, int]:
 def send_reminders(now: datetime) -> tuple[int, int]:
     """Send the single reminder to non-responders three local days after the first email."""
     today = timezone.localtime(now, settings.COMMUNITY_TZ).date()
-    first_sent_before = _local_midnight(today - timedelta(days=REMINDER_AFTER_DAYS - 1))
+    first_sent_before = local_midnight(today - timedelta(days=REMINDER_AFTER_DAYS - 1))
     first_sent_after = (
-        _local_midnight(today) - FEEDBACK_LOOKBACK - timedelta(days=REMINDER_AFTER_DAYS)
+        local_midnight(today) - FEEDBACK_LOOKBACK - timedelta(days=REMINDER_AFTER_DAYS)
     )
     due = EventFeedbackRequest.objects.filter(
         first_sent_at__lt=first_sent_before,

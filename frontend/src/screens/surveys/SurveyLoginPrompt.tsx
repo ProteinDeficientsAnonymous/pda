@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 
+import { buttonClass } from '@/components/ui/buttonClass';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 
 function useLoginHref() {
@@ -17,10 +18,7 @@ export function SurveyLoginNotice() {
           this link may go to a members-only survey — sign in to check
         </p>
         <div className="flex flex-wrap gap-3">
-          <Link
-            to={loginHref}
-            className="bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
-          >
+          <Link to={loginHref} className={buttonClass()}>
             log in
           </Link>
           <Link
