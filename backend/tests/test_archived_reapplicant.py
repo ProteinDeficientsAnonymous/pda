@@ -4,7 +4,7 @@ import pytest
 from community.join_requests.approval import maybe_promote_tentative
 from community.models import JoinRequest, JoinRequestStatus
 from django.utils import timezone
-from users.models import MembershipStatus, Role
+from users.models import MembershipStatus, Role, User
 
 from tests._tentative_helpers import open_official_event
 from tests._users import make_user
@@ -66,6 +66,21 @@ def test_marking_tentative_unarchives(
 
     login = api_client.get(f"/api/auth/magic-login/{body['magic_link_token']}/")
     assert login.status_code == 200
+
+
+def test_marking_tentative_unarchives_linked_account_with_other_phone(
+    api_client, vettor_headers, sample_join_request
+):
+    linked = make_user(phone_number="+16505559999", archived_at=timezone.now())
+    sample_join_request.user = linked
+    sample_join_request.save(update_fields=["user"])
+
+    body = _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.TENTATIVE)
+
+    linked.refresh_from_db()
+    assert (linked.membership_status, linked.archived_at) == (MembershipStatus.TENTATIVE, None)
+    assert body["user_id"] == str(linked.pk)
+    assert not User.objects.filter(phone_number=PHONE).exists()
 
 
 def test_tentative_then_approved_is_a_member(

@@ -257,9 +257,13 @@ def provision_approved_user(join_request, requesting_user, *, was_tentative: boo
     return(Provisioned): login token (None for a tentative promotion or an existing
     active member), user_created (also True on reactivation), and the reactivated user.
     """
-    # A linked non-member is promoted in place; an archived one is reactivated below.
     # SET_NULL FK means a deleted user falls through.
     linked = join_request.user
+    if linked is not None and linked.archived_at is not None:
+        # Its phone can differ from the request's, so the phone match below would miss it.
+        return Provisioned(
+            _reactivate_archived_user(linked, join_request, requesting_user), True, linked
+        )
     if linked is not None and linked.membership_status not in MEMBER_OR_ARCHIVED:
         if was_tentative:
             promote_tentative_member(join_request.user, join_request, requesting_user)

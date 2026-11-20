@@ -141,6 +141,67 @@ def test_reapproval_reactivates_archived_user(
     assert entry.details["membership_status"] == MembershipStatus.ACTIVE_MEMBER
 
 
+def _link_archived(join_request) -> User:
+    linked = User.objects.create_user(
+        phone_number="+14155550177",
+        email="prior@example.com",
+        first_name="Prior",
+        membership_status=MembershipStatus.ARCHIVED,
+        archived_at=timezone.now(),
+    )
+    join_request.user = linked
+    join_request.save(update_fields=["user"])
+    return linked
+
+
+def test_reapproval_reactivates_linked_archived_user_with_other_phone(
+    api_client, vettor_headers, sample_join_request
+):
+    linked = _link_archived(sample_join_request)
+
+    body = _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+
+    linked.refresh_from_db()
+    assert linked.archived_at is None
+    assert linked.membership_status == MembershipStatus.ACTIVE_MEMBER
+    assert not User.objects.filter(phone_number=sample_join_request.phone_number).exists()
+    assert body["user_id"] == str(linked.pk)
+    assert body["magic_link_token"]
+    assert _entry("user_reactivated").target_id == str(linked.pk)
+    approved = _entry("join_request_approved").details
+    assert (approved["user_id"], approved["user_created"]) == (str(linked.pk), True)
+
+
+@pytest.mark.parametrize(
+    "phone_match_fields",
+    [
+        {"membership_status": MembershipStatus.ACTIVE_MEMBER},
+        {"membership_status": MembershipStatus.ARCHIVED, "archived_at": timezone.now()},
+    ],
+)
+def test_reapproval_prefers_linked_archived_user_over_phone_match(
+    api_client, vettor_headers, sample_join_request, phone_match_fields
+):
+    linked = _link_archived(sample_join_request)
+    phone_match = User.objects.create_user(
+        phone_number=sample_join_request.phone_number, first_name="Other", **phone_match_fields
+    )
+
+    body = _decide(api_client, vettor_headers, sample_join_request, JoinRequestStatus.APPROVED)
+
+    linked.refresh_from_db()
+    assert linked.archived_at is None
+    untouched = User.objects.get(pk=phone_match.pk)
+    assert (untouched.membership_status, untouched.archived_at, untouched.first_name) == (
+        phone_match.membership_status,
+        phone_match.archived_at,
+        "Other",
+    )
+    assert body["user_id"] == str(linked.pk)
+    assert _entry("user_reactivated").target_id == str(linked.pk)
+    assert _entry("join_request_approved").details["user_id"] == str(linked.pk)
+
+
 def test_reapproval_records_pause_restored_from_archive(
     api_client, vettor_headers, sample_join_request
 ):
