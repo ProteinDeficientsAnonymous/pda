@@ -6,6 +6,13 @@ import { MembershipStatus, type User } from './user';
 /** checkbox answers are a list of ticked options; older ones are comma-joined strings */
 export type QuestionnaireAnswer = string | string[];
 
+export interface QuestionnaireSnapshot {
+  label: string;
+  answer: QuestionnaireAnswer;
+  /** What a priced answer cost when it was saved. */
+  priceCents?: number;
+}
+
 export const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
 
 export const EventType = {
@@ -120,7 +127,7 @@ export interface EventGuest {
   paidConfirmed: boolean;
   paymentVerified: boolean;
   /** Host-only RSVP question snapshots; empty for non-hosts. */
-  questionnaireResponses: Record<string, { label: string; answer: QuestionnaireAnswer }>;
+  questionnaireResponses: Record<string, QuestionnaireSnapshot>;
 }
 
 export interface EventCancellation {
@@ -197,7 +204,7 @@ export interface Event {
   myRsvp: string | null;
   myPaidConfirmed: boolean;
   /** Snapshot responses for the viewer's RSVP: questionId → { label, answer }. */
-  myQuestionnaireResponses: Record<string, { label: string; answer: QuestionnaireAnswer }>;
+  myQuestionnaireResponses: Record<string, QuestionnaireSnapshot>;
   rsvpQuestions: EventRsvpQuestion[];
   viewerUserId: string | null;
   invitedUserIds: string[];
