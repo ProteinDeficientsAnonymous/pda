@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { useRef } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiError } from '@/api/apiErrors';
@@ -64,10 +65,19 @@ export function EventCommentsCard({ eventId, token }: Props) {
   const qc = useQueryClient();
   // Members already get these pings through NotificationBell's stream.
   const isUnauthed = useAuthStore((s) => s.status === 'unauthed');
+  const hasConnectedRef = useRef(false);
   useEventSource({
     url: '/api/notifications/stream/',
     token: null,
     eventScope: isUnauthed && token && data?.canPost ? { eventId, token } : null,
+    // Pings sent while the stream was down are lost, so catch up on reconnect.
+    onStatusChange: (connected) => {
+      if (!connected) return;
+      if (hasConnectedRef.current) {
+        void qc.invalidateQueries({ queryKey: eventCommentKeys.list(eventId) });
+      }
+      hasConnectedRef.current = true;
+    },
     events: {
       event_updated: (ev) => {
         if (parseEventId(ev.data) !== eventId) return;

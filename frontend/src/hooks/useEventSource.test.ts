@@ -1,4 +1,5 @@
 import { renderHook } from '@testing-library/react';
+import { AxiosError, type AxiosResponse } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { refreshAccessToken } from '@/api/client';
@@ -27,6 +28,12 @@ class FakeEventSource {
 const mockedFetchTicket = vi.mocked(fetchSseTicket);
 const mockedRefresh = vi.mocked(refreshAccessToken);
 const scope = { eventId: 'evt-1', token: 'rsvp-tok' };
+
+function httpError(status: number) {
+  return new AxiosError('fail', String(status), undefined, undefined, {
+    status,
+  } as AxiosResponse);
+}
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -76,6 +83,24 @@ describe('useEventSource', () => {
 
     await vi.advanceTimersByTimeAsync(1000);
     expect(mockedRefresh).not.toHaveBeenCalled();
+    expect(mockedFetchTicket).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops retrying when the scoped ticket is rejected', async () => {
+    mockedFetchTicket.mockRejectedValue(httpError(404));
+    renderHook(() =>
+      useEventSource({ url: '/stream/', token: null, eventScope: scope, events: {} }),
+    );
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(mockedFetchTicket).toHaveBeenCalledOnce();
+  });
+
+  it('keeps retrying a scoped ticket after a server error', async () => {
+    mockedFetchTicket.mockRejectedValueOnce(httpError(503));
+    renderHook(() =>
+      useEventSource({ url: '/stream/', token: null, eventScope: scope, events: {} }),
+    );
+    await vi.advanceTimersByTimeAsync(1000);
     expect(mockedFetchTicket).toHaveBeenCalledTimes(2);
   });
 

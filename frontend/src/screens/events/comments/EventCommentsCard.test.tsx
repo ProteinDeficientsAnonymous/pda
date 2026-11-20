@@ -175,5 +175,21 @@ describe('EventCommentsCard', () => {
       onUpdate(new MessageEvent('event_updated', { data: JSON.stringify({ event_id: eventId }) }));
       await waitFor(() => expect(getCalls()).toBe(before + 1));
     });
+
+    it('refetches comments on reconnect but not on the first connect', async () => {
+      authState.status = 'unauthed';
+      renderCard('rsvp-tok');
+      await screen.findByRole('button', { name: /post/i });
+      const onStatusChange = lastStreamOptions().onStatusChange!;
+      const getCalls = () => vi.mocked(apiClient.get).mock.calls.length;
+      const before = getCalls();
+
+      onStatusChange(true);
+      onStatusChange(false);
+      expect(getCalls()).toBe(before);
+
+      onStatusChange(true);
+      await waitFor(() => expect(getCalls()).toBe(before + 1));
+    });
   });
 });

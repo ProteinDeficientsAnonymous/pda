@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 
+import { getApiStatus } from '@/api/apiErrors';
 import { refreshAccessToken } from '@/api/client';
 import { fetchSseTicket, type SseEventScope } from '@/api/notifications';
 import { API_BASE_URL } from '@/config/env';
@@ -7,6 +8,12 @@ import { API_BASE_URL } from '@/config/env';
 import { isRateLimitError, normalBackoffDelay, rateLimitBackoffDelay } from './sseBackoff';
 
 type Handler = (event: MessageEvent<string>) => void;
+
+// The rsvp token or event no longer qualifies; retrying can't succeed.
+function isTerminalScopeError(err: unknown): boolean {
+  const status = getApiStatus(err);
+  return status !== null && status >= 400 && status < 500;
+}
 
 interface Options {
   url: string;
@@ -103,6 +110,8 @@ export function useEventSource({
         if (state.closed) return;
         if (isRateLimitError(err)) {
           scheduleRateLimitedReconnect();
+        } else if (scope && isTerminalScopeError(err)) {
+          return;
         } else {
           scheduleReconnect();
         }
