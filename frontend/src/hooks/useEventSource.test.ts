@@ -95,13 +95,60 @@ describe('useEventSource', () => {
     expect(mockedFetchTicket).toHaveBeenCalledOnce();
   });
 
-  it('keeps retrying a scoped ticket after a server error', async () => {
-    mockedFetchTicket.mockRejectedValueOnce(httpError(503));
+  it('keeps retrying a scoped ticket after a non-404 error', async () => {
+    mockedFetchTicket.mockRejectedValueOnce(httpError(403));
     renderHook(() =>
       useEventSource({ url: '/stream/', token: null, eventScope: scope, events: {} }),
     );
     await vi.advanceTimersByTimeAsync(1000);
     expect(mockedFetchTicket).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps backing off when a stream opens but closes before connecting', async () => {
+    const onStatusChange = vi.fn();
+    renderHook(() =>
+      useEventSource({
+        url: '/stream/',
+        token: null,
+        eventScope: scope,
+        events: {},
+        onStatusChange,
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    FakeEventSource.instances[0]!.emit('open');
+    FakeEventSource.instances[0]!.emit('error');
+    await vi.advanceTimersByTimeAsync(1000);
+    FakeEventSource.instances[1]!.emit('open');
+    FakeEventSource.instances[1]!.emit('error');
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(mockedFetchTicket).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(mockedFetchTicket).toHaveBeenCalledTimes(3);
+    expect(onStatusChange).not.toHaveBeenCalledWith(true);
+  });
+
+  it('reports connected on the server frame and resets backoff', async () => {
+    const onStatusChange = vi.fn();
+    renderHook(() =>
+      useEventSource({
+        url: '/stream/',
+        token: null,
+        eventScope: scope,
+        events: {},
+        onStatusChange,
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    FakeEventSource.instances[0]!.emit('error');
+    await vi.advanceTimersByTimeAsync(1000);
+    FakeEventSource.instances[1]!.emit('connected');
+    expect(onStatusChange).toHaveBeenLastCalledWith(true);
+    FakeEventSource.instances[1]!.emit('error');
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(mockedFetchTicket).toHaveBeenCalledTimes(3);
   });
 
   it('refreshes the session then backs off when an authed stream errors', async () => {

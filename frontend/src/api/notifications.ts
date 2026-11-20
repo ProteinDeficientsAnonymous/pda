@@ -40,15 +40,14 @@ export const BELL_NOTIFICATION_LIMIT = 10;
 // Page size the full notifications screen requests per "load more".
 export const NOTIFICATIONS_PAGE_SIZE = 30;
 
-// EventSource can't send an Authorization header, so the SSE stream is opened
-// with a short-lived single-use ticket instead of the JWT. Fetch one here (the
-// access token rides the apiClient interceptor), then open the stream with it.
-// Logged-out viewers pass an event + rsvp token and only get that event's pings.
 export interface SseEventScope {
   eventId: string;
   token: string;
 }
 
+// EventSource can't send an Authorization header, so the SSE stream is opened
+// with a short-lived single-use ticket instead of the JWT. Fetch one here (the
+// access token rides the apiClient interceptor), then open the stream with it.
 export async function fetchSseTicket(scope?: SseEventScope): Promise<string> {
   const params = scope ? { event_id: scope.eventId, token: scope.token } : undefined;
   const { data } = await apiClient.post<{ ticket: string }>(

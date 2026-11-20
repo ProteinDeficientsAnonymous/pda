@@ -1,19 +1,17 @@
 import { useEffect, useRef } from 'react';
 
-import { getApiStatus } from '@/api/apiErrors';
 import { refreshAccessToken } from '@/api/client';
 import { fetchSseTicket, type SseEventScope } from '@/api/notifications';
 import { API_BASE_URL } from '@/config/env';
 
-import { isRateLimitError, normalBackoffDelay, rateLimitBackoffDelay } from './sseBackoff';
+import {
+  isRateLimitError,
+  isScopeGoneError,
+  normalBackoffDelay,
+  rateLimitBackoffDelay,
+} from './sseBackoff';
 
 type Handler = (event: MessageEvent<string>) => void;
-
-// The rsvp token or event no longer qualifies; retrying can't succeed.
-function isTerminalScopeError(err: unknown): boolean {
-  const status = getApiStatus(err);
-  return status !== null && status >= 400 && status < 500;
-}
 
 interface Options {
   url: string;
@@ -82,7 +80,8 @@ export function useEventSource({
     }
 
     function attachHandlers(source: EventSource) {
-      source.addEventListener('open', () => {
+      // A 200 can still close before LISTEN succeeds; only the server's first frame proves it's up.
+      source.addEventListener('connected', () => {
         retry = 0;
         onStatusChangeRef.current?.(true);
       });
@@ -110,7 +109,7 @@ export function useEventSource({
         if (state.closed) return;
         if (isRateLimitError(err)) {
           scheduleRateLimitedReconnect();
-        } else if (scope && isTerminalScopeError(err)) {
+        } else if (scope && isScopeGoneError(err)) {
           return;
         } else {
           scheduleReconnect();
