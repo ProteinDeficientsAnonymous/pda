@@ -102,6 +102,20 @@ class TestSendMonthlyDigestCommand:
         assert f"http://localhost:3000/members/{ada.pk}" in text
         assert f'href="http://localhost:3000/members/{bo.pk}"' in html
 
+    def test_veganniversary_shows_profile_photo_or_initials_fallback(
+        self, fake_email_sender, monkeypatch
+    ):
+        _freeze(monkeypatch, FIRST_OF_JUNE)
+        _shoutout("+12025550304", "Ada", 2021, profile_photo="profile_photos/ada.jpg")
+        _shoutout("+12025550305", "Bo", 2021)
+        call_command("send_monthly_digest")
+        html = fake_email_sender.send.call_args.kwargs["html"]
+        assert 'src="http://localhost:3000/media/profile_photos/ada.jpg"' in html
+        assert 'alt="ada"' in html
+        assert 'width="32" height="32"' in html
+        assert html.count("<img") == 1
+        assert ">bo</div>" in html
+
     def test_omits_veganniversary_in_other_month(self, fake_email_sender, monkeypatch):
         _freeze(monkeypatch, FIRST_OF_JUNE)
         _shoutout("+12025550307", "Dana", 2018, month=7)
@@ -283,3 +297,31 @@ class TestSendMonthlyDigestEmail:
         assert "coming up in june:" not in text
         assert "happy june veganniversary!" in text
         assert "see the full calendar" in text
+
+    def test_veganniversary_photo_url_passes_through_signed_urls(self):
+        sender = MagicMock()
+        sender.send.return_value = SendResult(success=True, provider_message_id="msg")
+        signed = "https://b2.test/profile_photos/bo.jpg?X-Amz-Signature=abc&X-Amz-Expires=604800"
+        send_monthly_digest_email(
+            sender=sender,
+            to="ada@example.test",
+            mail=MonthlyDigestMail(
+                display_name="Ada",
+                month="June",
+                events=[],
+                urls={"calendar_url": "c", "settings_url": "s"},
+                veganniversaries=[
+                    {
+                        "label": "1 year",
+                        "people": [
+                            {"name": "Bo", "url": "u", "photo_url": signed, "initials": "bo"}
+                        ],
+                    }
+                ],
+            ),
+        )
+        html = sender.send.call_args.kwargs["html"]
+        assert (
+            'src="https://b2.test/profile_photos/bo.jpg?X-Amz-Signature=abc&amp;X-Amz-Expires=604800"'
+            in html
+        )

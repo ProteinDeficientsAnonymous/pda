@@ -2,6 +2,8 @@ from collections import defaultdict
 from collections.abc import Callable
 from datetime import date, datetime
 
+from config.media_proxy import media_path
+from config.og_preview import absolute
 from django.conf import settings
 from django.db.models import QuerySet
 from notifications.email_helpers import format_event_when
@@ -79,6 +81,8 @@ def veganniversary_groups(*, today, users) -> list[dict]:
         grouped[years].append(
             {
                 "name": user.first_name,
+                "photo_url": absolute(media_path(user.profile_photo)),
+                "initials": user.first_name[:2].lower(),
                 "url": f"{settings.FRONTEND_BASE_URL}/members/{user.pk}",
             }
         )
