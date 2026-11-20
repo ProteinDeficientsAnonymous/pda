@@ -8,7 +8,7 @@ LEGACY_FIELDS = {
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("users", "0061_remove_user_is_paused"),
+        ("users", "0062_remove_create_user_permission"),
     ]
 
     # Re-add the fields to state only so RemoveField can drop the columns, SQLite included.

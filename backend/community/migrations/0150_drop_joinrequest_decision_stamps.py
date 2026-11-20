@@ -24,7 +24,7 @@ LEGACY_FIELDS = {name: field for stamp in STAMPS for name, field in _legacy_fiel
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0135_remove_joinrequest_decision_stamps"),
+        ("community", "0149_seed_planning_checklist"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
