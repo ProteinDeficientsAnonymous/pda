@@ -13,8 +13,14 @@ interface ShotOptions {
 async function freezeMotion(page: Page) {
   // Tailwind `transition-colors` ignores reduced motion, so a theme switch
   // is still fading when the screenshot is taken.
+  //
+  // Full-page shots stitch viewport captures; `position: fixed` chrome is
+  // redrawn on every slice and shows up mid-page. Hide it for screenshots only.
   await page.addStyleTag({
-    content: '*, *::before, *::after { animation: none !important; transition: none !important; }',
+    content: [
+      '*, *::before, *::after { animation: none !important; transition: none !important; }',
+      'nav[aria-label="primary"], button[aria-label="send feedback"] { display: none !important; }',
+    ].join('\n'),
   });
 }
 
