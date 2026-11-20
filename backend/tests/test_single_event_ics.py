@@ -51,6 +51,17 @@ class TestSingleEventIcs:
         assert resp.status_code == 200
         assert "Slug Picnic" in resp.content.decode()
 
+    def test_view_on_pda_url_is_not_split_by_line_folding(self, api_client, test_user):
+        event = Event.objects.create(
+            title="Walk in Central Park Arts and Crafts",
+            description="Bring hummus!",
+            start_datetime=timezone.now(),
+            created_by=test_user,
+        )
+
+        content = api_client.get(f"/api/community/events/{event.slug}/ics/").content.decode()
+        assert f"View on PDA: http://testserver/events/{event.slug}\r\n" in content
+
     def test_returns_404_for_unknown_slug(self, api_client):
         resp = api_client.get("/api/community/events/no-such-event/ics/")
         assert resp.status_code == 404

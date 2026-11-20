@@ -136,6 +136,18 @@ class TestCalendarFeed:
         # the event detail page (issue #347).
         assert "View on PDA: http" in content
 
+    def test_feed_keeps_view_on_pda_url_on_one_line(self, api_client, auth_headers, test_user):
+        token = api_client.post("/api/community/calendar/token/", **auth_headers).json()["token"]
+        event = Event.objects.create(
+            title="Walk in Central Park Arts and Crafts",
+            description="Join us!",
+            start_datetime=timezone.now(),
+            created_by=test_user,
+        )
+
+        content = api_client.get(f"/api/community/calendar/feed/?token={token}").content.decode()
+        assert f"View on PDA: http://testserver/events/{event.slug}\r\n" in content
+
     def test_feed_invalid_token_403(self, api_client):
         resp = api_client.get("/api/community/calendar/feed/?token=bogus-token")
         assert resp.status_code == 403
