@@ -1,3 +1,15 @@
+# [0.265.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.264.0...v0.265.0) (2026-11-20)
+
+
+### Bug Fixes
+
+* delete expired sse tickets in bounded batches ([#2599](https://github.com/ProteinDeficientsAnonymous/pda/issues/2599)) ([3060db9](https://github.com/ProteinDeficientsAnonymous/pda/commit/3060db9347de3c89c301eebfbb8ab45e64e73662))
+
+
+### Features
+
+* **audit:** name paused members and log edits made with a pause ([#2295](https://github.com/ProteinDeficientsAnonymous/pda/issues/2295)) ([2a0a99e](https://github.com/ProteinDeficientsAnonymous/pda/commit/2a0a99e5175d0d46c3cdccdfd67a70cf2687971c))
+
 # [0.264.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.263.1...v0.264.0) (2026-11-20)
 
 
