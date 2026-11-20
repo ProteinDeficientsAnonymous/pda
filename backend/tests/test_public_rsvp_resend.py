@@ -10,7 +10,7 @@ from community.rsvps.public_resend import NEUTRAL_RESPONSE
 from community.validation import Code
 from django.utils import timezone
 from notifications.email_sender import SendResult
-from users.models import MembershipStatus, PublicRsvpToken
+from users.models import MembershipStatus, PublicRsvpToken, User
 
 from tests._public_rsvp_helpers import LIMITED_USER_FACTORIES, make_public_rsvper
 
@@ -74,9 +74,7 @@ class TestResendManageLink:
 
     def test_member_contact_gets_no_non_member_link(self, api_client, fake_email_sender):
         member = make_public_rsvper(PHONE, EMAIL)
-        member.save(
-            update_fields=member.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=None)
-        )
+        member.save(update_fields=member.approve_membership(by=None))
 
         response = post(api_client)
 
@@ -116,12 +114,8 @@ class TestResendManageLink:
 
     def test_archived_non_member_gets_no_link(self, api_client, fake_email_sender):
         user = make_public_rsvper(PHONE, EMAIL)
-        user.archived_at = timezone.now()
-        user.save(
-            update_fields=[
-                "archived_at",
-                *user.set_membership_status(MembershipStatus.ARCHIVED, by=None),
-            ]
+        User.objects.filter(pk=user.pk).update(
+            archived_at=timezone.now(), membership_status=MembershipStatus.ARCHIVED
         )
 
         post(api_client)
@@ -130,14 +124,8 @@ class TestResendManageLink:
 
     def test_archived_member_contact_gets_no_link(self, api_client, fake_email_sender):
         member = make_public_rsvper(PHONE, EMAIL)
-        member.set_membership_status(MembershipStatus.ACTIVE_MEMBER, by=None)
-        member.archived_at = timezone.now()
-        member.save(
-            update_fields=[
-                "archived_at",
-                *member.set_membership_status(MembershipStatus.ARCHIVED, by=None),
-            ]
-        )
+        fields = [*member.approve_membership(by=None), *member.archive(by=None)]
+        member.save(update_fields=list(dict.fromkeys(fields)))
 
         post(api_client)
 

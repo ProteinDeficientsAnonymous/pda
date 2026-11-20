@@ -91,9 +91,9 @@ function ReportBody({
       <div className="flex flex-wrap gap-2 text-xs">
         <Pill label="attended" value={report.attendedCount} />
         <Pill label="no-show" value={report.noShowCount} />
-        <Pill label="didn't go" value={report.didntGoCount} />
         <Pill label="canceled" value={report.canceledCount} />
-        <Pill label="unmarked" value={report.unmarkedCount} />
+        <Pill label="unmarked going" value={report.unmarkedGoingCount} />
+        <Pill label="unmarked maybe/waitlisted" value={report.unmarkedNotGoingCount} />
       </div>
 
       <PersonSection title="attended" people={report.attended} empty="nobody checked in">
@@ -104,15 +104,23 @@ function ReportBody({
         {(p) => <PersonRow key={p.userId} person={p} />}
       </PersonSection>
 
-      <PersonSection title="didn't go" people={report.didntGo} empty="no one marked didn't go">
-        {(p) => <PersonRow key={p.userId} person={p} />}
-      </PersonSection>
-
       <PersonSection title="canceled" people={report.canceled} empty="nobody canceled">
         {(p) => <CanceledRow key={p.userId} person={p} />}
       </PersonSection>
 
-      <PersonSection title="unmarked" people={report.unmarked} empty="everyone got marked">
+      <PersonSection
+        title="unmarked — were going"
+        people={report.unmarkedGoing}
+        empty="everyone going got marked"
+      >
+        {(p) => <PersonRow key={p.userId} person={p} />}
+      </PersonSection>
+
+      <PersonSection
+        title="unmarked — maybe or waitlisted"
+        people={report.unmarkedNotGoing}
+        empty="no unmarked maybes"
+      >
         {(p) => <PersonRow key={p.userId} person={p} />}
       </PersonSection>
     </div>

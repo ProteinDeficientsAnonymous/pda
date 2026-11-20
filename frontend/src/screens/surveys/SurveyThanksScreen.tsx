@@ -2,12 +2,14 @@ import { Link, useParams } from 'react-router-dom';
 
 import { useSurvey } from '@/api/surveys';
 import { buttonClass } from '@/components/ui/buttonClass';
+import { useScrollToTopOnMount } from '@/hooks/useScrollToTopOnMount';
 import { thankYouMessage } from '@/models/survey';
 import { ContentContainer, ContentLoading } from '@/screens/public/ContentContainer';
 
 export default function SurveyThanksScreen() {
   const { slug } = useParams<{ slug: string }>();
   const { data: survey, isPending } = useSurvey(slug);
+  useScrollToTopOnMount();
   if (isPending) return <ContentLoading />;
   return (
     <ContentContainer>

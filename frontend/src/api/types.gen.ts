@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/audit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Audit Log */
+        get: operations["audit_api_list_audit_log"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/accept-consents/": {
         parameters: {
             query?: never;
@@ -2880,10 +2897,7 @@ export interface paths {
         put?: never;
         /**
          * Create Sse Ticket
-         * @description Mint a short-lived single-use ticket for opening the SSE stream.
-         *
-         *     Lets the client open the stream with ?ticket= instead of the JWT (EventSource
-         *     can't send an auth header).
+         * @description Mint a single-use stream ticket; without a JWT, ?event_id= and ?token= scope it to one event.
          */
         post: operations["notifications_api_create_sse_ticket"];
         delete?: never;
@@ -3122,6 +3136,88 @@ export interface components {
             /** User Id */
             user_id: string;
         };
+        /** AuditLogEntryOut */
+        AuditLogEntryOut: {
+            /** Action */
+            action: string;
+            /** Actor Id */
+            actor_id: string | null;
+            /** Actor Label */
+            actor_label: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Target Id */
+            target_id: string;
+            /** Target Type */
+            target_type: string;
+        };
+        /** AuditLogPageOut */
+        AuditLogPageOut: {
+            /** Entries */
+            entries: components["schemas"]["AuditLogEntryOut"][];
+            /** Next Offset */
+            next_offset: number | null;
+            /** Total */
+            total: number;
+        };
+        /** AuditLogQuery */
+        AuditLogQuery: {
+            /**
+             * Action
+             * @description exact action, e.g. user_paused
+             */
+            action?: string | null;
+            /**
+             * Actor Id
+             * @description only actions this person took
+             */
+            actor_id?: string | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
+            /**
+             * Member Id
+             * @description entries targeting this user, plus any entry whose details.user_id names them
+             */
+            member_id?: string | null;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
+            /**
+             * Since
+             * @description on or after this time; utc unless an offset is given
+             */
+            since?: string | null;
+            /** Target Id */
+            target_id?: string | null;
+            target_type?: components["schemas"]["AuditTargetType"] | null;
+            /**
+             * Until
+             * @description before this time; utc unless an offset is given
+             */
+            until?: string | null;
+        };
+        /**
+         * AuditTargetType
+         * @enum {string}
+         */
+        AuditTargetType: "doc_folder" | "document" | "editable_page" | "event" | "event_poll" | "event_tag" | "faq" | "feature_flag" | "guidelines" | "homepage" | "join_form_question" | "join_request" | "mcp_connection" | "member_promotion_email" | "member_promotion_message" | "member_restored_email" | "rejection_email" | "reserve_entry" | "role" | "slot_assignment" | "speech_template" | "survey" | "survey_question" | "tentative_approval_message" | "user" | "welcome_template" | "whatsapp_link";
         /** AvailabilityIn */
         AvailabilityIn: {
             biannual_interest: components["schemas"]["BiannualInterest"];
@@ -3264,16 +3360,6 @@ export interface components {
              */
             canceled_count: number;
             /**
-             * Didnt Go
-             * @default []
-             */
-            didnt_go: components["schemas"]["CheckInReportPersonOut"][];
-            /**
-             * Didnt Go Count
-             * @default 0
-             */
-            didnt_go_count: number;
-            /**
              * No Show Count
              * @default 0
              */
@@ -3284,15 +3370,25 @@ export interface components {
              */
             no_shows: components["schemas"]["CheckInReportPersonOut"][];
             /**
-             * Unmarked
+             * Unmarked Going
              * @default []
              */
-            unmarked: components["schemas"]["CheckInReportPersonOut"][];
+            unmarked_going: components["schemas"]["CheckInReportPersonOut"][];
             /**
-             * Unmarked Count
+             * Unmarked Going Count
              * @default 0
              */
-            unmarked_count: number;
+            unmarked_going_count: number;
+            /**
+             * Unmarked Not Going
+             * @default []
+             */
+            unmarked_not_going: components["schemas"]["CheckInReportPersonOut"][];
+            /**
+             * Unmarked Not Going Count
+             * @default 0
+             */
+            unmarked_not_going_count: number;
         };
         /** CheckInReportPersonOut */
         CheckInReportPersonOut: {
@@ -3445,6 +3541,8 @@ export interface components {
              * @default 5
              */
             cohost_count: number;
+            /** Event Format */
+            event_format?: string | null;
             /**
              * Going Count
              * @default 5
@@ -3893,6 +3991,11 @@ export interface components {
         /** EventIn */
         EventIn: {
             /**
+             * Accept Paypal
+             * @default false
+             */
+            accept_paypal: boolean;
+            /**
              * Allow Plus Ones
              * @default false
              */
@@ -3957,6 +4060,11 @@ export interface components {
              * @default
              */
             price: string;
+            /**
+             * Price Note
+             * @default
+             */
+            price_note: string;
             /** Rsvp Deadline */
             rsvp_deadline?: string | null;
             /**
@@ -4074,6 +4182,11 @@ export interface components {
              */
             price: string;
             /**
+             * Price Note
+             * @default
+             */
+            price_note: string;
+            /**
              * Slug
              * @default
              */
@@ -4143,6 +4256,11 @@ export interface components {
         };
         /** EventOut */
         EventOut: {
+            /**
+             * Accept Paypal
+             * @default false
+             */
+            accept_paypal: boolean;
             /**
              * Allow Plus Ones
              * @default false
@@ -4290,6 +4408,11 @@ export interface components {
              */
             partiful_link: string;
             /**
+             * Paypal Price
+             * @default
+             */
+            paypal_price: string;
+            /**
              * Pending Cohost Invites
              * @default []
              */
@@ -4306,6 +4429,11 @@ export interface components {
              * @default
              */
             price: string;
+            /**
+             * Price Note
+             * @default
+             */
+            price_note: string;
             /** Rsvp Deadline */
             rsvp_deadline?: string | null;
             /**
@@ -4318,6 +4446,11 @@ export interface components {
              * @default []
              */
             rsvp_questions: components["schemas"]["EventRsvpQuestionOut"][];
+            /**
+             * Rsvps Closed
+             * @default false
+             */
+            rsvps_closed: boolean;
             /**
              * Slug
              * @default
@@ -4367,6 +4500,8 @@ export interface components {
         };
         /** EventPatchIn */
         EventPatchIn: {
+            /** Accept Paypal */
+            accept_paypal?: boolean | null;
             /** Allow Plus Ones */
             allow_plus_ones?: boolean | null;
             /** Cashapp Link */
@@ -4403,10 +4538,14 @@ export interface components {
             partiful_link?: string | null;
             /** Price */
             price?: string | null;
+            /** Price Note */
+            price_note?: string | null;
             /** Rsvp Deadline */
             rsvp_deadline?: string | null;
             /** Rsvp Enabled */
             rsvp_enabled?: boolean | null;
+            /** Rsvps Closed */
+            rsvps_closed?: boolean | null;
             /** Slug */
             slug?: string | null;
             /** Start Datetime */
@@ -4523,6 +4662,11 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
+            /**
              * Options
              * @default []
              */
@@ -4542,6 +4686,11 @@ export interface components {
             field_type: "textarea" | "select" | "checkbox";
             /** Label */
             label: string;
+            /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
             /**
              * Options
              * @default []
@@ -4567,6 +4716,11 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Option Prices
+             * @default []
+             */
+            option_prices: number[];
+            /**
              * Options
              * @default []
              */
@@ -4585,6 +4739,11 @@ export interface components {
             id?: string | null;
             /** Label */
             label: string;
+            /**
+             * Option Prices
+             * @description Cents per option, parallel to options; empty = unpriced.
+             */
+            option_prices?: number[];
             /**
              * Options
              * @default []
@@ -4977,11 +5136,11 @@ export interface components {
          * @description Question types supported by join forms.
          * @enum {string}
          */
-        JoinFormQuestionType: "text" | "textarea" | "select";
+        JoinFormQuestionType: "text" | "textarea" | "select" | "checkbox";
         /** JoinRequestAnswerOut */
         JoinRequestAnswerOut: {
             /** Answer */
-            answer: string;
+            answer: string | string[];
             /** Label */
             label: string;
             /** Question Id */
@@ -4994,7 +5153,7 @@ export interface components {
              * @default {}
              */
             answers: {
-                [key: string]: string;
+                [key: string]: string | string[];
             };
             /**
              * Email
@@ -5146,8 +5305,16 @@ export interface components {
             /** Title */
             title: string;
         };
-        /** JoinRequestStatusIn */
+        /**
+         * JoinRequestStatusIn
+         * @description Decision payload: fire an event, not a target status.
+         */
         JoinRequestStatusIn: {
+            /**
+             * Event
+             * @default
+             */
+            event: string;
             /**
              * Rejection Note
              * @default
@@ -5158,7 +5325,11 @@ export interface components {
              * @default
              */
             rejection_reason: string;
-            /** Status */
+            /**
+             * Status
+             * @deprecated
+             * @default
+             */
             status: string;
         };
         /** JoinRequestSubmittedOut */
@@ -6511,6 +6682,11 @@ export interface components {
              */
             cant_go: string[];
             /**
+             * Co Hosts
+             * @default []
+             */
+            co_hosts: string[];
+            /**
              * Invited
              * @default []
              */
@@ -6858,6 +7034,50 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    audit_api_list_audit_log: {
+        parameters: {
+            query?: {
+                /** @description entries targeting this user, plus any entry whose details.user_id names them */
+                member_id?: string | null;
+                /** @description only actions this person took */
+                actor_id?: string | null;
+                /** @description exact action, e.g. user_paused */
+                action?: string | null;
+                target_type?: components["schemas"]["AuditTargetType"] | null;
+                target_id?: string | null;
+                /** @description on or after this time; utc unless an offset is given */
+                since?: string | null;
+                /** @description before this time; utc unless an offset is given */
+                until?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogPageOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     users__auth_accept_consents: {
         parameters: {
             query?: never;
@@ -8120,6 +8340,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15181,7 +15410,9 @@ export interface operations {
     };
     notifications_api_create_sse_ticket: {
         parameters: {
-            query?: never;
+            query?: {
+                event_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15195,6 +15426,24 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SseTicketOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Too Many Requests */

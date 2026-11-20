@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useEvent } from '@/api/events';
 import { Code } from '@/api/validationCodes';
+import { EventType } from '@/models/event';
 import { apiError } from '@/test/apiError';
 import { setAuthed } from '@/test/auth';
 import { creator, makeEvent, nonHost } from '@/test/fixtures';
@@ -69,6 +70,25 @@ describe('EventAttendanceScreen', () => {
 
     expect(screen.getByRole('heading', { name: /check-in/i })).toBeInTheDocument();
     expect(screen.getByText(BASE_EVENT.title)).toBeInTheDocument();
+  });
+
+  it('links official-event hosts to the day-of guide', () => {
+    vi.mocked(useEvent).mockReturnValue({
+      data: { ...BASE_EVENT, eventType: EventType.Official },
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    setAuthed(creator);
+    renderScreen();
+
+    expect(screen.getByRole('link', { name: 'day-of guide' })).toHaveAttribute('href', '/day-of');
+  });
+
+  it('leaves the day-of guide link off other events', () => {
+    setAuthed(creator);
+    renderScreen();
+
+    expect(screen.queryByRole('link', { name: 'day-of guide' })).not.toBeInTheDocument();
   });
 
   it('blocks non-host members with a forbidden notice', () => {

@@ -24,13 +24,13 @@ _RELOAD_FAILED = "every change was saved, but the survey couldn't be reloaded: c
 
 
 def _plan(
-    detail: dict[str, Any], settings: dict[str, Any], ops: list[Any], orders: dict[str, int]
+    detail: dict[str, Any], settings: SurveyChanges | None, ops: list[Any], orders: dict[str, int]
 ) -> Edit:
     """Check every change against the survey before saving any; return the view calls to make."""
     edit, count = Edit(), detail["response_count"]
     if count:
         edit.notes.append(f"this survey already has {count} response{'s' * (count != 1)}")
-    if settings:
+    if settings is not None and settings.model_fields_set:
         plan_settings(edit, detail, settings)
     questions = Questions(edit, detail["questions"], bool(count), orders)
     for number, op in enumerate(ops, start=1):
@@ -120,7 +120,7 @@ async def update_survey(
         raise ToolError("no changes given")
     detail = survey_detail(before)
     orders = {q["id"]: q["display_order"] for q in before["questions"]}
-    edit = _plan(detail, changed, questions or [], orders)
+    edit = _plan(detail, settings, questions or [], orders)
     # exclude_unset: an explicit null, like show_if: null, is a change the token must cover.
     ops = [op.model_dump(mode="json", exclude_unset=True) for op in questions or []]
     # status turns on by the clock alone, so it would expire a token for no reason.

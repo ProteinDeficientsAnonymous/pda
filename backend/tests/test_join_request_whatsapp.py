@@ -1,5 +1,5 @@
 import pytest
-from community.models import JoinRequestStatus
+from community.models import JoinRequestEvent
 from users.models import User
 
 
@@ -10,7 +10,7 @@ class TestJoinRequestWhatsapp:
     ):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
+            {"event": JoinRequestEvent.APPROVE},
             content_type="application/json",
             **vettor_headers,
         )

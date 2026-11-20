@@ -3,10 +3,10 @@ from datetime import UTC, datetime
 
 import pytest
 from community.attendance.analytics import (
-    compute_member_stats,
+    EMPTY_MEMBER_STATS,
     is_compliant,
     is_pause_candidate,
-    user_rsvps_for_attendance,
+    member_stats_by_user,
 )
 from community.management.commands._e2e_common import random_phone
 from community.management.commands.e2e_seed import month_end
@@ -16,6 +16,7 @@ from community.models import (
     Event,
     EventRSVP,
     JoinRequest,
+    PlanningYear,
     RSVPStatus,
     Survey,
 )
@@ -24,6 +25,8 @@ from django.core.management.base import CommandError
 from ninja_jwt.tokens import RefreshToken
 from users.models import PublicRsvpToken, User
 from users.permissions import PermissionKey
+
+from tests._auth import auth_headers_for
 
 
 @pytest.mark.django_db
@@ -162,6 +165,24 @@ def test_e2e_seed_member_screens_host_admin_and_gates(capsys):
     assert Event.objects.filter(slug="picnic").count() == 1
 
 
+@pytest.mark.django_db
+def test_e2e_seed_member_screens_fills_every_report_section(capsys, api_client):
+    call_command("e2e_seed", "member-screens")
+    out = json.loads(capsys.readouterr().out)
+    seed = User.objects.get(phone_number=out["seed_phone"])
+    report = api_client.get(
+        f"/api/community/events/{out['hike_id']}/report/", **auth_headers_for(seed)
+    ).json()
+    counts = {k: v for k, v in report.items() if k.endswith("_count")}
+    assert counts == {
+        "attended_count": 1,
+        "no_show_count": 1,
+        "canceled_count": 1,
+        "unmarked_going_count": 1,
+        "unmarked_not_going_count": 1,
+    }
+
+
 def test_month_end_in_january_uses_prior_december():
 
     now = datetime(2026, 1, 4, 12, 0, tzinfo=UTC)
@@ -213,9 +234,8 @@ def test_e2e_seed_attendance_analytics_compliant_and_at_risk(capsys):
     assert admin.has_permission(PermissionKey.MANAGE_EVENTS)
     assert admin.has_permission(PermissionKey.MANAGE_USERS)
     members = User.objects.filter(first_name__icontains=out["search"])
-    stats = {
-        u.full_name.lower(): compute_member_stats(user_rsvps_for_attendance(u)) for u in members
-    }
+    by_user = member_stats_by_user(members)
+    stats = {u.full_name.lower(): by_user.get(u.pk, EMPTY_MEMBER_STATS) for u in members}
     assert is_compliant(stats[out["compliant_name"]])
     assert is_pause_candidate(stats[out["at_risk_name"]])
     assert out["at_risk_name"] > out["compliant_name"]
@@ -244,6 +264,23 @@ def test_e2e_seed_member_screens_clears_waitlist_screens(capsys):
     call_command("e2e_seed", "waitlist-screens")
     call_command("e2e_seed", "member-screens")
     assert not Event.objects.filter(slug="supper").exists()
+
+
+@pytest.mark.django_db
+def test_e2e_seed_view_planner_has_only_view_planning(capsys):
+    call_command("e2e_seed", "view-planner")
+    out = json.loads(capsys.readouterr().out)
+    planner = User.objects.get(id=RefreshToken(out["refresh_token"])["user_id"])
+    perms = [p for role in planner.roles.all() for p in role.permissions]
+    assert perms == [PermissionKey.VIEW_EVENT_PLANNING]
+    assert PlanningYear.objects.exists()
+
+
+@pytest.mark.django_db
+def test_e2e_seed_view_planner_reuses_existing_year(capsys):
+    PlanningYear.create_with_default_slots(2000)
+    call_command("e2e_seed", "view-planner")
+    assert list(PlanningYear.objects.values_list("year", flat=True)) == [2000]
 
 
 @pytest.mark.django_db
