@@ -1,3 +1,10 @@
+# [0.274.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.273.0...v0.274.0) (2026-11-20)
+
+
+### Features
+
+* **community:** encode JoinRequestStatus as an event-driven state machine ([#2578](https://github.com/ProteinDeficientsAnonymous/pda/issues/2578)) ([30cf9eb](https://github.com/ProteinDeficientsAnonymous/pda/commit/30cf9ebceebef6560c123e0e7cf96ffc706f06d4))
+
 # [0.273.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.272.0...v0.273.0) (2026-11-20)
 
 
