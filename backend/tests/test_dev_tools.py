@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 from community.models import Event, EventStatus, EventType, PageVisibility, RSVPStatus
 from community.rsvps.answers import build_rsvp_answers
@@ -130,12 +132,12 @@ class TestCreateDevTestEvent:
         monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
         response = api_client.post(
             "/api/community/dev/test-events/",
-            data={"price": "$10", "venmo_link": "@test-venmo", "zelle_info": "test@zelle.com"},
+            data={"price": "10", "venmo_link": "@test-venmo", "zelle_info": "test@zelle.com"},
             content_type="application/json",
             **dev_tools_headers,
         )
         event = Event.objects.get(id=response.json()["id"])
-        assert event.price == "$10"
+        assert event.price == Decimal("10")
         assert event.venmo_link == "@test-venmo"
         assert event.zelle_info == "test@zelle.com"
 

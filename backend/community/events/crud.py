@@ -50,18 +50,19 @@ from community.events.listing import (
     list_count_annotations,
 )
 from community.events.official_defaults import apply_official_defaults
+from community.events.price import parse_price
 from community.events.public_rsvper_removal import (
     email_removed_public_rsvpers,
     guard_or_remove_ineligible_public_rsvpers,
 )
 from community.events.read_visibility import enforce_event_read_visibility
+from community.events.rsvp_question_schemas import validate_event_rsvp_question
 from community.events.schemas import (
     EventIn,
     EventListOut,
     EventOut,
     EventPatchIn,
     RSVPGuestOut,
-    validate_event_rsvp_question,
 )
 from community.events.viewer import resolve_event_viewer
 from community.models import (
@@ -248,7 +249,8 @@ def create_event(request, payload: EventIn):
         whatsapp_link=payload.whatsapp_link,
         partiful_link=payload.partiful_link,
         other_link=payload.other_link,
-        price=payload.price,
+        price=parse_price(payload.price),
+        price_note=payload.price_note,
         venmo_link=payload.venmo_link,
         cashapp_link=payload.cashapp_link,
         zelle_info=payload.zelle_info,

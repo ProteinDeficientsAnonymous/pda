@@ -1,7 +1,7 @@
 import type { Event } from '@/models/event';
 
 export function eventRequiresPaymentConfirmation(event: Event): boolean {
-  const hasPrice = event.price.trim().length > 0;
+  const hasPrice = event.price.trim().length > 0 || event.priceNote.trim().length > 0;
   const hasPaymentMethod = [event.venmoLink, event.cashappLink, event.zelleInfo].some(
     (value) => value.trim().length > 0,
   );
@@ -16,4 +16,8 @@ export function formatPrice(price: string): string {
   if (/^\$/.test(trimmed)) return trimmed;
   if (/^\d/.test(trimmed)) return `$${trimmed}`;
   return trimmed;
+}
+
+export function formatPriceWithNote(event: Pick<Event, 'price' | 'priceNote'>): string {
+  return [formatPrice(event.price), event.priceNote.trim()].filter(Boolean).join(' · ');
 }

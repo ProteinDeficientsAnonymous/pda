@@ -44,6 +44,7 @@ export interface WireEvent {
   cashapp_link?: string;
   zelle_info?: string;
   price?: string;
+  price_note?: string;
 
   rsvp_enabled?: boolean;
   allow_plus_ones?: boolean;
@@ -195,6 +196,7 @@ export function mapEvent(e: WireEvent): Event {
     cashappLink: e.cashapp_link ?? '',
     zelleInfo: e.zelle_info ?? '',
     price: e.price ?? '',
+    priceNote: e.price_note ?? '',
 
     rsvpEnabled: e.rsvp_enabled ?? false,
     allowPlusOnes: e.allow_plus_ones ?? false,
