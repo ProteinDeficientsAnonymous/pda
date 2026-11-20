@@ -258,7 +258,7 @@ if IS_PRODUCTION and BREVO_API_KEY and not BREVO_FROM_EMAIL:
 # Public app origin: magic-login links and the MCP OAuth issuer/resource base.
 # In production, set to the public app URL (e.g. https://pda.example.com).
 # In dev/test, defaults to localhost:3000.
-FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000")
+FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL") or "http://localhost:3000"
 
 # Floor for the attendance-reminder clock — no one's anchor predates this date.
 # Movable until the program announcement date is final (see attendance-analytics-design.md).
