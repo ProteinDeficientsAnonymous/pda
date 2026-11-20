@@ -61,6 +61,12 @@ def test_requires_permission(api_client, member):
     assert_error_code(response, Code.Perm.DENIED)
 
 
+def test_rejects_offset_past_bound(api_client, auditor):
+    response = api_client.get(URL, {"offset": 10**20}, **auth_headers_for(auditor))
+
+    assert response.status_code == 422
+
+
 def test_member_history_includes_linked_join_requests(api_client, auditor, member):
     _entry("user_paused", auditor, (AuditTargetType.USER, str(member.pk)))
     _entry(
@@ -103,3 +109,11 @@ def test_paginates_newest_first(api_client, auditor):
         2,
     )
     assert (_actions(second), second["next_offset"]) == (["action_3"], None)
+
+
+def test_next_offset_stops_at_offset_cap(api_client, auditor, monkeypatch):
+    monkeypatch.setattr("audit.api.MAX_OFFSET", 1)
+    for days_ago in (3, 2, 1):
+        _entry(f"action_{days_ago}", days_ago=days_ago)
+
+    assert _get(api_client, auditor, limit=2)["next_offset"] is None

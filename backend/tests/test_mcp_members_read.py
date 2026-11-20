@@ -7,7 +7,7 @@ from django.utils import timezone
 from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_gateway.server import pda_mcp
-from users.models import User
+from users.models import MembershipStatus, User
 
 from tests._mcp_members_helpers import (
     BUCKETS,
@@ -37,16 +37,19 @@ def test_buckets_are_disjoint_and_match_app_definitions(manage_users_user):
     make_member(needs_onboarding=True)
     # A login-link reset re-flags needs_onboarding on a member who already set up.
     make_member(needs_onboarding=True, onboarded_at=timezone.now())
-    make_member(is_paused=True)
-    make_member(is_paused=True, needs_onboarding=True)
+    make_member(membership_status=MembershipStatus.GUIDELINES_PAUSED)
+    make_member(membership_status=MembershipStatus.GUIDELINES_PAUSED, needs_onboarding=True)
+    make_member(attendance_paused_at=timezone.now())
     make_member(archived_at=timezone.now())
-    make_member(archived_at=timezone.now(), is_paused=True)
+    make_member(
+        archived_at=timezone.now(), status_before_archive=MembershipStatus.GUIDELINES_PAUSED
+    )
     body = member_totals(manage_users_user)
     assert {k: body[k] for k in ("total", *BUCKETS)} == {
-        "total": 8,
+        "total": 9,
         "active": 3,
         "still_onboarding": 1,
-        "paused": 2,
+        "paused": 3,
         "archived": 2,
     }
     assert sum(body[k] for k in BUCKETS) == body["total"]
@@ -78,12 +81,14 @@ def test_self_deleted_member_counts_as_archived(
 def test_non_members_are_not_counted(manage_users_user):
     make_public_rsvper("+12025550198", "n@e.com")
     make_tentative_member("+12025550197", "t@e.com")
-    make_member(is_member=False, needs_onboarding=True)
-    make_member(is_member=False, is_paused=True)
-    make_member(is_member=False, archived_at=timezone.now())
+    make_member(membership_status=MembershipStatus.NONE, needs_onboarding=True)
+    make_member(membership_status=MembershipStatus.NONE)
+    make_member(membership_status=MembershipStatus.ARCHIVED, archived_at=timezone.now())
     body = member_totals(manage_users_user)
-    assert body["total"] == body["active"] == body["new_in_period"] == 1
-    assert body["still_onboarding"] == body["paused"] == body["archived"] == 0
+    # An archived applicant counts as archived, same as an archived member.
+    assert body["total"] == body["new_in_period"] == 2
+    assert body["active"] == body["archived"] == 1
+    assert body["still_onboarding"] == body["paused"] == 0
 
 
 def test_new_in_period_boundary(manage_users_user):
@@ -93,7 +98,7 @@ def test_new_in_period_boundary(manage_users_user):
     make_joined(29.99)
     make_joined(30.01)
     make_joined(6, archived_at=timezone.now())
-    make_joined(1, is_member=False)
+    make_joined(1, membership_status=MembershipStatus.NONE)
     body = member_totals(manage_users_user)
     assert body["new_in_period"] == 2
     assert body["period_days"] == 30

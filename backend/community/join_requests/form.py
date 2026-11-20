@@ -12,7 +12,7 @@ from users.permissions import PermissionKey
 
 from community.field_limits import FieldLimit
 from community.models import JoinFormQuestion, JoinFormQuestionType
-from community.shared import ErrorOut, logger  # noqa: F401
+from community.shared import ErrorOut
 from community.validation import Code, raise_validation
 
 router = Router()

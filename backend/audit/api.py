@@ -14,6 +14,8 @@ from users.permissions import PermissionKey
 
 from audit.models import AuditLogEntry, AuditTargetType
 
+MAX_OFFSET = 100_000
+
 router = Router()
 
 
@@ -32,7 +34,7 @@ class AuditLogFilters(Schema):
 
 class AuditLogQuery(AuditLogFilters):
     limit: int = Field(50, ge=1, le=100)
-    offset: int = Field(0, ge=0)
+    offset: int = Field(0, ge=0, le=MAX_OFFSET)
 
 
 class AuditLogEntryOut(Schema):
@@ -95,6 +97,6 @@ def list_audit_log(request, params: Query[AuditLogQuery]):
         AuditLogPageOut(
             entries=[AuditLogEntryOut.model_validate(e, from_attributes=True) for e in page],
             total=total,
-            next_offset=end if end < total else None,
+            next_offset=end if end < total and end <= MAX_OFFSET else None,
         ),
     )

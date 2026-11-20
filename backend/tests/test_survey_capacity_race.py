@@ -3,10 +3,18 @@ import threading
 import pytest
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
 from django import db
+from django.conf import settings
 from django.test import Client
 
 from tests._auth import auth_headers_for
 from tests._users import make_user
+
+pytestmark = [
+    pytest.mark.skipif(
+        "postgresql" not in settings.DATABASES["default"]["ENGINE"],
+        reason="needs concurrent postgres writers",
+    ),
+]
 
 
 @pytest.mark.django_db(transaction=True, serialized_rollback=True)

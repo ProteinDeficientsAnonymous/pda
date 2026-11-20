@@ -58,6 +58,20 @@ describe('MagicLoginScreen', () => {
     currentUser = null;
   });
 
+  it('offers a rejected applicant the join form instead of a new link', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.AccountRejected));
+    renderAt('tok-rejected');
+    expect(await screen.findByText(/request to join again/i)).toHaveAttribute('href', '/join');
+    expect(screen.queryByText(/send me a new link/i)).toBeNull();
+  });
+
+  it('tells a non-member they cannot sign in', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.NotAMember));
+    renderAt('tok-non-member');
+    expect(await screen.findByText("can't sign in")).toBeInTheDocument();
+    expect(screen.queryByText(/send me a new link/i)).toBeNull();
+  });
+
   it('routes a needsPasswordReset user (has a name) to /new-password', async () => {
     currentUser = makeUser({ needsPasswordReset: true, firstName: 'Alice', fullName: 'Alice' });
     renderAt('tok-1');
@@ -121,7 +135,7 @@ describe('MagicLoginScreen', () => {
   });
 
   it('should tell a paused user they cannot sign in', async () => {
-    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.AccountPaused));
+    magicLoginMock.mockRejectedValueOnce(apiError(403, Code.Auth.AccountGuidelinesPaused));
     renderAt('tok-paused');
     expect(await screen.findByText("can't sign in")).toBeInTheDocument();
     expect(
