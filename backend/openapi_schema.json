@@ -1259,10 +1259,16 @@
             "type": "integer"
           },
           "event_format": {
-            "default": "walk",
-            "maxLength": 20,
-            "title": "Event Format",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Format"
           },
           "going_count": {
             "default": 5,

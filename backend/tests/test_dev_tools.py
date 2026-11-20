@@ -186,8 +186,8 @@ class TestCreateDevTestEvent:
         [
             ({"is_official": True}, EventFormat.WALK),
             ({"is_official": True, "event_format": "restaurant"}, EventFormat.RESTAURANT),
-            ({"event_format": "restaurant"}, ""),
-            ({"is_club": True, "event_format": "walk"}, ""),
+            ({}, ""),
+            ({"is_club": True}, ""),
         ],
     )
     def test_event_format_set_only_on_official(
@@ -203,11 +203,20 @@ class TestCreateDevTestEvent:
         assert response.status_code == 201
         assert Event.objects.get(id=response.json()["id"]).event_format == expected
 
-    def test_invalid_event_format_rejected(self, api_client, dev_tools_headers, monkeypatch):
+    @pytest.mark.parametrize(
+        "data",
+        [
+            {"is_official": True, "event_format": "picnic"},
+            {"event_format": "picnic"},
+            {"event_format": "restaurant"},
+            {"is_club": True, "event_format": "walk"},
+        ],
+    )
+    def test_invalid_event_format_rejected(self, api_client, dev_tools_headers, monkeypatch, data):
         monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
         response = api_client.post(
             "/api/community/dev/test-events/",
-            data={"is_official": True, "event_format": "picnic"},
+            data=data,
             content_type="application/json",
             **dev_tools_headers,
         )

@@ -51,7 +51,7 @@ export function useCreateDevTestEvents() {
           is_canceled: options.isCanceled,
           is_official: options.isOfficial,
           is_club: options.isClub,
-          event_format: options.eventFormat,
+          event_format: options.isOfficial ? options.eventFormat : null,
           make_me_host: options.makeMeHost,
           make_me_guest: options.makeMeGuest,
           price: options.price,

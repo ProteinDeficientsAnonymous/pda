@@ -46,7 +46,7 @@ class DevTestEventIn(BaseModel):
     is_canceled: bool = False
     is_official: bool = False
     is_club: bool = False
-    event_format: str = Field(default=EventFormat.WALK, max_length=FieldLimit.CHOICE)
+    event_format: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     make_me_host: bool = False
     make_me_guest: bool = False
     price: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
@@ -105,9 +105,10 @@ def _event_type(payload: DevTestEventIn) -> str:
 
 
 def _event_format(payload: DevTestEventIn, event_type: str) -> str:
-    if event_type != EventType.OFFICIAL:
-        return ""
-    return validated_event_format(payload.event_format, event_type)
+    event_format = validated_event_format(payload.event_format, event_type)
+    if event_type == EventType.OFFICIAL:
+        return event_format or EventFormat.WALK
+    return event_format
 
 
 @router.post(

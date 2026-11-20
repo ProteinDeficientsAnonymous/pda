@@ -3445,11 +3445,8 @@ export interface components {
              * @default 5
              */
             cohost_count: number;
-            /**
-             * Event Format
-             * @default walk
-             */
-            event_format: string;
+            /** Event Format */
+            event_format?: string | null;
             /**
              * Going Count
              * @default 5
