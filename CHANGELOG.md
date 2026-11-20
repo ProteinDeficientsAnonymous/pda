@@ -1,3 +1,10 @@
+## [0.271.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.3...v0.271.4) (2026-11-20)
+
+
+### Bug Fixes
+
+* key questionnaire answers by question id ([#2601](https://github.com/ProteinDeficientsAnonymous/pda/issues/2601)) ([b1356db](https://github.com/ProteinDeficientsAnonymous/pda/commit/b1356db6c25f0461490f89d458fc53d9f2ba7397))
+
 ## [0.271.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.2...v0.271.3) (2026-11-20)
 
 
