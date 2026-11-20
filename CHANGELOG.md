@@ -1,3 +1,10 @@
+## [0.271.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.1...v0.271.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* **visual:** hide fixed chrome in fullPage screenshots ([#2614](https://github.com/ProteinDeficientsAnonymous/pda/issues/2614)) ([8f7bb4a](https://github.com/ProteinDeficientsAnonymous/pda/commit/8f7bb4aa0d115d9f73a754543b50cb7bbdae57f1))
+
 ## [0.271.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.271.0...v0.271.1) (2026-11-20)
 
 
