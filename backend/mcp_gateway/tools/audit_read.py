@@ -25,7 +25,8 @@ class AuditHistoryFilters(AuditLogFilters):
         "user_archived, user_reactivated), actor_label (who did it; anonymous for public forms "
         "and failed sign-ins), target_type and target_id (what it was done to), details (names, "
         "user_id and other context) and created_at. paged: fetch more with offset=next_offset, "
-        "keeping the same filters."
+        "keeping the same filters. next_offset is null at the end and past offset 100000; if "
+        "total is still higher, narrow the filters (e.g. until) to reach older entries."
     ),
 )
 async def audit_history(
