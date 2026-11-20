@@ -3,8 +3,7 @@ map $http_user_agent $event_unfurl_bot {
     "~*(facebookexternalhit|twitterbot|slackbot|whatsapp|telegrambot|discordbot|linkedinbot|pinterest|redditbot|embedly|iframely|skypeuripreview|vkshare|bluesky|mastodon)" 1;
 }
 
-# Railway's edge appends the address it saw, so only the right-most X-Forwarded-For hop
-# can't be spoofed (same rule as TRUSTED_PROXY_COUNT=1 in backend/config/ratelimit.py).
+# Railway's edge appends the address it saw, so only the right-most XFF hop can't be spoofed.
 map $http_x_forwarded_for $mcp_client_ip {
     default $remote_addr;
     "~([^, ]+) *$" $1;

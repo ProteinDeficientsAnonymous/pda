@@ -3,6 +3,8 @@ from io import StringIO
 
 import pytest
 from django.core.management import call_command
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from notifications.models import Notification, SseTicket
 
@@ -47,3 +49,23 @@ def test_purges_only_old_read_notifications(test_user):
 
     assert set(Notification.objects.values_list("pk", flat=True)) == {recent_read.pk, old_unread.pk}
     assert "Deleted 1 old read notifications" in out.getvalue()
+
+
+@pytest.mark.django_db
+def test_deletes_backlog_across_multiple_batches(test_user, monkeypatch):
+    monkeypatch.setattr("notifications.management.commands.cleanup_notifications._BATCH_SIZE", 2)
+    fresh = _ticket(test_user, used=False, expired=False)
+    for _ in range(5):
+        _ticket(test_user, used=True, expired=True)
+        _notification(test_user, is_read=True, age_days=91)
+    out = StringIO()
+
+    with CaptureQueriesContext(connection) as ctx:
+        call_command("cleanup_notifications", stdout=out)
+
+    assert set(SseTicket.objects.values_list("pk", flat=True)) == {fresh.pk}
+    assert not Notification.objects.exists()
+    assert "Deleted 5 expired SSE tickets" in out.getvalue()
+    assert "Deleted 5 old read notifications" in out.getvalue()
+    deletes = [q["sql"] for q in ctx.captured_queries if q["sql"].startswith("DELETE")]
+    assert len(deletes) == 6

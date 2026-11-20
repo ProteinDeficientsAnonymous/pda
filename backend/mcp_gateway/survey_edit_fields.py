@@ -29,16 +29,17 @@ def partial_model(model: type[BaseModel], name: str) -> Any:
 SurveyChanges = partial_model(SurveySettings, "SurveyChanges")
 
 
-def normalize_settings(changed: dict[str, Any], title: str) -> dict[str, Any]:
-    if "slug" not in changed:
-        return changed
-    slug = slugify(changed["slug"] or changed.get("title") or title)[: FieldLimit.SLUG].strip("-")
+def normalize_settings(changes: SurveyChanges, title: str) -> SurveyChanges:
+    if "slug" not in changes.model_fields_set:
+        return changes
+    slug = slugify(changes.slug or changes.title or title)[: FieldLimit.SLUG].strip("-")
     if not slug:
         raise ToolError("give a slug with letters or numbers")
-    return {**changed, "slug": slug}
+    return changes.model_copy(update={"slug": slug})
 
 
-def settings_diff(detail: dict[str, Any], changed: dict[str, Any]) -> dict[str, Any]:
+def settings_diff(detail: dict[str, Any], changes: SurveyChanges) -> dict[str, Any]:
+    changed = changes.model_dump(mode="json", exclude_unset=True)
     shown = {key: local_time(v) if key in _TIMES else v for key, v in changed.items()}
     return {
         key: {"before": detail[key], "after": value}
