@@ -14,23 +14,31 @@ from users.permissions import PermissionKey
 
 from audit.models import AuditLogEntry, AuditTargetType
 
+MAX_LIMIT = 100
 MAX_OFFSET = 100_000
 
 router = Router()
 
 
-class AuditLogQuery(Schema):
-    target_type: AuditTargetType | None = None
-    target_id: str | None = Field(None, max_length=64)
+class AuditLogFilters(Schema):
     member_id: UUID | None = Field(
         None,
         description="entries targeting this user, plus any entry whose details.user_id names them",
     )
-    actor_id: UUID | None = None
-    action: str | None = Field(None, max_length=64)
-    since: datetime | None = None
-    until: datetime | None = None
-    limit: int = Field(50, ge=1, le=100)
+    actor_id: UUID | None = Field(None, description="only actions this person took")
+    action: str | None = Field(None, max_length=64, description="exact action, e.g. user_paused")
+    target_type: AuditTargetType | None = None
+    target_id: str | None = Field(None, max_length=64)
+    since: datetime | None = Field(
+        None, description="on or after this time; utc unless an offset is given"
+    )
+    until: datetime | None = Field(
+        None, description="before this time; utc unless an offset is given"
+    )
+
+
+class AuditLogQuery(AuditLogFilters):
+    limit: int = Field(50, ge=1, le=MAX_LIMIT)
     offset: int = Field(0, ge=0, le=MAX_OFFSET)
 
 

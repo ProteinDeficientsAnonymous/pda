@@ -3177,9 +3177,15 @@ export interface components {
         };
         /** AuditLogQuery */
         AuditLogQuery: {
-            /** Action */
+            /**
+             * Action
+             * @description exact action, e.g. user_paused
+             */
             action?: string | null;
-            /** Actor Id */
+            /**
+             * Actor Id
+             * @description only actions this person took
+             */
             actor_id?: string | null;
             /**
              * Limit
@@ -3196,12 +3202,18 @@ export interface components {
              * @default 0
              */
             offset: number;
-            /** Since */
+            /**
+             * Since
+             * @description on or after this time; utc unless an offset is given
+             */
             since?: string | null;
             /** Target Id */
             target_id?: string | null;
             target_type?: components["schemas"]["AuditTargetType"] | null;
-            /** Until */
+            /**
+             * Until
+             * @description before this time; utc unless an offset is given
+             */
             until?: string | null;
         };
         /**
@@ -6955,13 +6967,17 @@ export interface operations {
     audit_api_list_audit_log: {
         parameters: {
             query?: {
-                target_type?: components["schemas"]["AuditTargetType"] | null;
-                target_id?: string | null;
                 /** @description entries targeting this user, plus any entry whose details.user_id names them */
                 member_id?: string | null;
+                /** @description only actions this person took */
                 actor_id?: string | null;
+                /** @description exact action, e.g. user_paused */
                 action?: string | null;
+                target_type?: components["schemas"]["AuditTargetType"] | null;
+                target_id?: string | null;
+                /** @description on or after this time; utc unless an offset is given */
                 since?: string | null;
+                /** @description before this time; utc unless an offset is given */
                 until?: string | null;
                 limit?: number;
                 offset?: number;

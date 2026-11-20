@@ -605,6 +605,7 @@
                 "type": "null"
               }
             ],
+            "description": "exact action, e.g. user_paused",
             "title": "Action"
           },
           "actor_id": {
@@ -617,6 +618,7 @@
                 "type": "null"
               }
             ],
+            "description": "only actions this person took",
             "title": "Actor Id"
           },
           "limit": {
@@ -656,6 +658,7 @@
                 "type": "null"
               }
             ],
+            "description": "on or after this time; utc unless an offset is given",
             "title": "Since"
           },
           "target_id": {
@@ -690,6 +693,7 @@
                 "type": "null"
               }
             ],
+            "description": "before this time; utc unless an offset is given",
             "title": "Until"
           }
         },
@@ -9743,6 +9747,63 @@
         "operationId": "audit_api_list_audit_log",
         "parameters": [
           {
+            "description": "entries targeting this user, plus any entry whose details.user_id names them",
+            "in": "query",
+            "name": "member_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "entries targeting this user, plus any entry whose details.user_id names them",
+              "title": "Member Id"
+            }
+          },
+          {
+            "description": "only actions this person took",
+            "in": "query",
+            "name": "actor_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "only actions this person took",
+              "title": "Actor Id"
+            }
+          },
+          {
+            "description": "exact action, e.g. user_paused",
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "exact action, e.g. user_paused",
+              "title": "Action"
+            }
+          },
+          {
             "in": "query",
             "name": "target_type",
             "required": false,
@@ -9775,59 +9836,7 @@
             }
           },
           {
-            "description": "entries targeting this user, plus any entry whose details.user_id names them",
-            "in": "query",
-            "name": "member_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "entries targeting this user, plus any entry whose details.user_id names them",
-              "title": "Member Id"
-            }
-          },
-          {
-            "in": "query",
-            "name": "actor_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Actor Id"
-            }
-          },
-          {
-            "in": "query",
-            "name": "action",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Action"
-            }
-          },
-          {
+            "description": "on or after this time; utc unless an offset is given",
             "in": "query",
             "name": "since",
             "required": false,
@@ -9841,10 +9850,12 @@
                   "type": "null"
                 }
               ],
+              "description": "on or after this time; utc unless an offset is given",
               "title": "Since"
             }
           },
           {
+            "description": "before this time; utc unless an offset is given",
             "in": "query",
             "name": "until",
             "required": false,
@@ -9858,6 +9869,7 @@
                   "type": "null"
                 }
               ],
+              "description": "before this time; utc unless an offset is given",
               "title": "Until"
             }
           },
