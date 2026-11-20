@@ -61,6 +61,10 @@ def render_config(backend: Path, targets: list[str], tests: list[str]) -> str:
     return "".join(
         [
             f"{CONFIG_MARKER}\n[mutmut]\n",
+            # plain fork hands every worker the parent's open Postgres connection, and they hang
+            "process_isolation=forkserver\n",
+            # its forkserver logger otherwise writes to a closed stream and floods the output
+            "log_to_file=true\n",
             block("source_paths", source_packages(backend)),
             block("only_mutate", targets),
             block("also_copy", also_copy),

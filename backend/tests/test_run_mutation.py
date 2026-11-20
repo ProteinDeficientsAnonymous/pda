@@ -63,6 +63,8 @@ def test_render_config_scopes_mutation_to_the_diff(mod, backend):
     parser = configparser.ConfigParser()
     parser.read_string(text)
     section = parser["mutmut"]
+    assert section["process_isolation"] == "forkserver"
+    assert section["log_to_file"] == "true"
     assert section["source_paths"].split() == ["community/", "users/"]
     assert section["only_mutate"].split() == ["users/_transitions.py"]
     assert section["also_copy"].split() == ["templates/", "manage.py", "openapi_schema.json"]
