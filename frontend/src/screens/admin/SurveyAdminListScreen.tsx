@@ -88,14 +88,14 @@ function SurveyRow({
 }) {
   return (
     <article className="border-border bg-surface flex flex-col gap-2 rounded-lg border p-3 md:flex-row md:items-center md:justify-between md:gap-3">
-      <div className="min-w-0">
+      <div className="min-w-0 [overflow-wrap:anywhere] break-words">
         <Link
           to={`/admin/surveys/${survey.id}`}
-          className="text-foreground text-sm font-medium break-words underline"
+          className="text-foreground text-sm font-medium underline"
         >
           {survey.title}
         </Link>
-        <p className="text-muted text-xs break-words">
+        <p className="text-muted text-xs">
           /{survey.slug} · {surveyVisibilityLabel(survey.visibility)} ·{' '}
           {String(survey.responseCount)} responses ·{' '}
           {format(new Date(survey.createdAt), 'MMM d, yyyy').toLowerCase()}
@@ -116,6 +116,7 @@ function SurveyRow({
         </Link>
         <Button
           variant="ghost"
+          className="h-9 px-3"
           onClick={() => {
             onDelete(survey);
           }}
