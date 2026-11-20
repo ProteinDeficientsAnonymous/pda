@@ -6,8 +6,9 @@ from community.models import SpeechTemplate
 from community.speech._render import render_speech_html
 from community.speech.seed import (
     DEFAULT_OPEN_ROLES,
-    add_walk_mixup_note,
     default_template_docs,
+    note,
+    p,
     seed_default_template,
 )
 
@@ -79,7 +80,6 @@ def test_speaker_notes_are_blockquotes():
     assert len(_blockquote_texts(shared)) == 2
     assert any("count off" in t for t in _blockquote_texts(walk))
     assert "mix it up halfway through" in _blockquote_texts(walk)[-1]
-    assert walk["content"][-1]["type"] == "blockquote"
     notes = _blockquote_texts(restaurant)
     assert len(notes) == 3
     assert any("chaotic but the dust will settle" in t for t in notes)
@@ -172,10 +172,19 @@ def test_migration_seeds_via_historical_model():
     assert SpeechTemplate.get().open_roles == DEFAULT_OPEN_ROLES
 
 
+add_walk_mixup_note = importlib.import_module(
+    "community.migrations.0153_add_walk_mixup_note"
+).add_walk_mixup_note
+
+
 def _walk_without_note() -> str:
     _, walk, _ = default_template_docs()
     walk["content"].pop()
     return json.dumps(walk)
+
+
+def _walk_with(*blocks) -> str:
+    return json.dumps({"type": "doc", "content": list(blocks)})
 
 
 @pytest.mark.django_db
@@ -196,8 +205,22 @@ def test_mixup_note_added_once():
     assert sum("halfway" in t for t in _blockquote_texts(walk)) == 1
 
 
+@pytest.mark.django_db
+def test_mixup_note_ignores_halfway_outside_notes():
+    _reset(walk_pm=_walk_with(p("we stop halfway for a photo")))
+    add_walk_mixup_note(SpeechTemplate)
+    assert "mix it up" in SpeechTemplate.get().walk_pm
+
+
 @pytest.mark.parametrize(
-    "walk_pm", ["", "not json", '{"type": "doc", "content": []}', "mix halfway"]
+    "walk_pm",
+    [
+        "",
+        "not json",
+        _walk_with(),
+        _walk_with({"type": "paragraph"}),
+        _walk_with(p("walk"), note("mix it up halfway")),
+    ],
 )
 @pytest.mark.django_db
 def test_mixup_note_skips_empty_invalid_or_already_noted_docs(walk_pm):

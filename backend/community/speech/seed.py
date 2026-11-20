@@ -1,7 +1,5 @@
 import json
 
-from community.content.prosemirror_html import parse_prosemirror_doc
-
 DEFAULT_OPEN_ROLES = [
     "whatsapp moderators (our biggest need at the moment)",
     "someone to send out announcements",
@@ -92,13 +90,6 @@ def _shared_doc() -> dict:
     )
 
 
-def walk_mixup_note() -> dict:
-    return note(
-        "don't forget to stay together, and mix it up halfway through the walk and again once "
-        "the walk has ended, about 15 min in or when people seem to be done eating"
-    )
-
-
 def _walk_doc() -> dict:
     return _doc(
         h("Walk stuff"),
@@ -144,7 +135,10 @@ def _walk_doc() -> dict:
         note(
             "count off (each person says their own number around the circle), then start the walk"
         ),
-        walk_mixup_note(),
+        note(
+            "don't forget to stay together. mix it up halfway through the walk, and again after "
+            "the walk ends: about 15 min into eating, or when people seem done eating"
+        ),
     )
 
 
@@ -196,16 +190,3 @@ def seed_default_template(template_model) -> None:
     if not template.open_roles:
         template.open_roles = list(DEFAULT_OPEN_ROLES)
     template.save()
-
-
-def add_walk_mixup_note(template_model) -> None:
-    """Append the mix-up note to a saved walk doc that is valid and never mentions halfway."""
-    template = template_model.objects.filter(pk=1).first()
-    if template is None or "halfway" in template.walk_pm.lower():
-        return
-    doc = parse_prosemirror_doc(template.walk_pm)
-    if doc is None or not isinstance(doc.get("content"), list) or not doc["content"]:
-        return
-    doc["content"].append(walk_mixup_note())
-    template.walk_pm = json.dumps(doc)
-    template.save(update_fields=["walk_pm", "updated_at"])
