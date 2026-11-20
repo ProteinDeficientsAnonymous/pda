@@ -269,10 +269,9 @@ def main() -> int:
         print("__FULL__")
         return 0
 
-    if not result:
-        return 0
-
-    for p in sorted(result):
+    # a deleted test file would make pytest fail on a missing path
+    existing = sorted(p for p in result if (REPO_ROOT / "backend" / p).exists())
+    for p in existing:
         print(p)
     return 0
 

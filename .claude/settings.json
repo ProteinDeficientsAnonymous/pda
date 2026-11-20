@@ -49,14 +49,13 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-gate-files.py\""
           }
         ]
-      }
-    ],
-    "Stop": [
+      },
       {
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-fast-gates.py\"",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-push-gates.py\"",
             "timeout": 600
           }
         ]
