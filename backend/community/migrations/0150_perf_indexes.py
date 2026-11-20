@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0132_member_restored_email_template"),
+        ("community", "0149_seed_planning_checklist"),
     ]
 
     operations = [
