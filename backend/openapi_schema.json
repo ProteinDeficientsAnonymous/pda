@@ -17753,6 +17753,61 @@
         ]
       }
     },
+    "/api/community/paypal/webhook/": {
+      "post": {
+        "operationId": "community_paypal_webhook_paypal_webhook",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Paypal Webhook",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/planning/assignments/{assignment_id}/": {
       "delete": {
         "operationId": "community_planning_proposals_withdraw_assignment",

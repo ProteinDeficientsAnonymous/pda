@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
@@ -60,7 +61,7 @@ class TestCreatePayPalOrder:
         token_call, order_call = paypal_http.call_args_list
         assert token_call.args[0] == "https://api-m.sandbox.paypal.com/v1/oauth2/token"
         assert order_call.kwargs["headers"]["Authorization"] == "Bearer token"
-        unit = order_call.kwargs["json"]["purchase_units"][0]
+        unit = json.loads(order_call.kwargs["content"])["purchase_units"][0]
         assert unit["custom_id"] == str(rsvp.pk)
         assert unit["amount"] == {"currency_code": "USD", "value": "10.87"}
 

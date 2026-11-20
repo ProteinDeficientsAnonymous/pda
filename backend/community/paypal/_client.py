@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 
 import httpx
@@ -26,15 +27,17 @@ def _access_token() -> str:
     return resp.json()["access_token"]
 
 
-def post(path: str, payload: dict, *, request_id: str | None = None) -> dict:
+def post(path: str, payload: dict | str, *, request_id: str | None = None) -> dict:
     """POST to the PayPal REST API; raises httpx.HTTPError on any failure.
 
+    param(payload): a dict, or a JSON string sent as-is.
     param(request_id): PayPal-Request-Id, so a retried call returns the first result.
     """
-    headers = {"Authorization": f"Bearer {_access_token()}"}
+    headers = {"Authorization": f"Bearer {_access_token()}", "Content-Type": "application/json"}
     if request_id:
         headers["PayPal-Request-Id"] = request_id
-    resp = httpx.post(_url(path), json=payload, headers=headers, timeout=_TIMEOUT)
+    body = payload if isinstance(payload, str) else json.dumps(payload)
+    resp = httpx.post(_url(path), content=body, headers=headers, timeout=_TIMEOUT)
     resp.raise_for_status()
     return resp.json()
 
