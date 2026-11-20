@@ -18,7 +18,7 @@ def make_importer() -> User:
 def make_event(creator: User, co_host: User | None = None, **fields) -> Event:
     start = timezone.now() + timedelta(days=2)
     event = create_paid_event(
-        created_by=creator, price="$15", start_datetime=start, end_datetime=start, **fields
+        created_by=creator, price="15", start_datetime=start, end_datetime=start, **fields
     )
     Event.objects.filter(pk=event.pk).update(created_at=timezone.now() - timedelta(days=10))
     event.co_hosts.add(creator, *([co_host] if co_host else []))

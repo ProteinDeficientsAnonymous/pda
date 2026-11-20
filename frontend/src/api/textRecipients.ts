@@ -8,6 +8,7 @@ export interface TextRecipients {
   cantGo: string[];
   waitlisted: string[];
   invited: string[];
+  coHosts: string[];
 }
 
 interface WireTextRecipients {
@@ -16,6 +17,7 @@ interface WireTextRecipients {
   cant_go: string[];
   waitlisted: string[];
   invited: string[];
+  co_hosts: string[];
 }
 
 function mapRecipients(w: WireTextRecipients): TextRecipients {
@@ -25,6 +27,7 @@ function mapRecipients(w: WireTextRecipients): TextRecipients {
     cantGo: w.cant_go,
     waitlisted: w.waitlisted,
     invited: w.invited,
+    coHosts: w.co_hosts,
   };
 }
 

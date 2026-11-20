@@ -64,6 +64,7 @@ export interface SeedScenarioMap {
   };
   'waitlist-screens': { password: string; wren_phone: string; guest_token: string };
   'event-feedback': { event_title: string; question_label: string; feedback_url: string };
+  'view-planner': { refresh_token: string };
 }
 
 export type SeedScenario = keyof SeedScenarioMap;

@@ -17,6 +17,11 @@
         "params": []
       },
       {
+        "name": "PRICE_INVALID",
+        "value": "event.price_invalid",
+        "params": []
+      },
+      {
         "name": "START_DATETIME_MUST_BE_FUTURE",
         "value": "event.start_datetime_must_be_future",
         "params": []
@@ -930,6 +935,13 @@
       {
         "name": "ANSWER_INVALID_OPTION",
         "value": "join_request.answer_invalid_option",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "ANSWER_INVALID_FORMAT",
+        "value": "join_request.answer_invalid_format",
         "params": [
           "label"
         ]

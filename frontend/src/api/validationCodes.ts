@@ -54,6 +54,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'pick a start time, or mark the time as tbd';
     case Code.Event.MaxAttendeesMustBeAtLeastOne:
       return 'max attendees must be at least 1 — leave blank for unlimited';
+    case Code.Event.PriceInvalid:
+      return 'price must be a dollar amount, like 10 or 12.50 — leave blank if free';
     case Code.Event.StartDatetimeMustBeFuture:
       return 'start date must be in the future';
     case Code.Event.EndBeforeStart:
@@ -491,6 +493,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.JoinRequest.AnswerInvalidOption: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `invalid option for "${label}"` : 'invalid option';
+    }
+    case Code.JoinRequest.AnswerInvalidFormat: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label ? `invalid answer format for "${label}"` : 'invalid answer format';
     }
     case Code.JoinRequest.InvalidStatus:
       return 'invalid status for this action';

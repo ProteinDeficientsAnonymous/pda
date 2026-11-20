@@ -35,6 +35,7 @@ function recipients(overrides: Partial<TextRecipients> = {}): TextRecipients {
     cantGo: ['+15553334444'],
     waitlisted: [],
     invited: [],
+    coHosts: [],
     ...overrides,
   };
 }
@@ -125,6 +126,26 @@ describe('GroupTextDialog', () => {
     mockLoaded(recipients({ invited: ['+15558887777'] }));
     render(<GroupTextDialog eventId="e1" open onClose={noop} />);
     expect(screen.getByRole('button', { name: /invited/i })).toBeInTheDocument();
+  });
+
+  it('counts co-hosts in the selected numbers without a chip', () => {
+    mockLoaded(recipients({ coHosts: ['+15550001111'] }));
+    render(<GroupTextDialog eventId="e1" open onClose={noop} />);
+    expect(screen.getByText(/3 numbers selected/i)).toBeInTheDocument();
+    expect(screen.getByText(/co-hosts are always included/i)).toBeInTheDocument();
+  });
+
+  it('still lets you text co-hosts when no group has a number', () => {
+    mockLoaded(
+      recipients({
+        attending: [],
+        maybe: [],
+        cantGo: [],
+        coHosts: ['+15550001111'],
+      }),
+    );
+    render(<GroupTextDialog eventId="e1" open onClose={noop} />);
+    expect(screen.getByText(/1 number selected/i)).toBeInTheDocument();
   });
 
   it('shows an empty state when no group has a number', () => {

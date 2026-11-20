@@ -38,6 +38,7 @@ from community.models import (
     EventCommentReaction,
     EventRSVP,
     ReactionEmoji,
+    RSVPStatus,
 )
 from community.shared import ErrorOut, optional_jwt
 from community.validation import Code, raise_validation
@@ -51,7 +52,9 @@ router = Router()
 def _viewer_has_rsvp(event: Event, user) -> bool:
     if user is None:
         return False
-    return EventRSVP.objects.filter(event=event, user=user).exists()
+    return (
+        EventRSVP.objects.filter(event=event, user=user).exclude(status=RSVPStatus.REMOVED).exists()
+    )
 
 
 def can_post_comments(
@@ -59,8 +62,9 @@ def can_post_comments(
     user,
     co_host_pks: set[str] | None = None,
 ) -> bool:
-    """Posting requires either an RSVP or host/admin privilege on the event."""
-    if user is None:
+    """Posting requires an RSVP or host/admin privilege, and never a limited user outside official/club."""
+    # An attendance pause leaves can't-go RSVP rows behind, so gate limited users first.
+    if event_viewer_for(user, event) is None:
         return False
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
@@ -230,7 +234,7 @@ def post_comment(request, event_id: UUID, payload: CommentBodyIn):
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     user = resolve_event_viewer(request, event_id)
-    enforce_event_read_visibility(event, user)
+    enforce_event_read_visibility(event, event_viewer_for(user, event))
     _require_rsvp_for_post(event, user)
     with transaction.atomic():
         comment = EventComment.objects.create(event=event, author=user, body=payload.body)
@@ -261,7 +265,7 @@ def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     user = resolve_event_viewer(request, event_id)
-    enforce_event_read_visibility(event, user)
+    enforce_event_read_visibility(event, event_viewer_for(user, event))
     _require_rsvp_for_post(event, user)
     try:
         parent = EventComment.objects.get(id=comment_id, event=event)
@@ -336,7 +340,7 @@ def toggle_reaction(request, event_id: UUID, comment_id: UUID, payload: Reaction
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     user = resolve_event_viewer(request, event_id)
-    enforce_event_read_visibility(event, user)
+    enforce_event_read_visibility(event, event_viewer_for(user, event))
     _require_rsvp_for_post(event, user)
     if payload.emoji not in _VALID_EMOJIS:
         raise_validation(Code.Comment.INVALID_EMOJI, status_code=422)
