@@ -22,7 +22,9 @@ class _Tally:
     going: int = 0
     attended_members: set[UUID] = field(default_factory=set)
 
-    def add_rsvp(self, event_id: UUID, user_id: UUID, status: str, marks: tuple, member: bool):
+    def add_rsvp(
+        self, event_id: UUID, user_id: UUID, status: str, marks: tuple[str, ...], member: bool
+    ):
         """marks(tuple): the rsvp's attendance, then its plus-one's when it has one"""
         if any(m != AttendanceStatus.UNKNOWN for m in marks):
             self.marked.add(event_id)
@@ -77,6 +79,8 @@ def _tally_window(lo: datetime, now: datetime, bucket: str) -> dict[str, dict[st
         "plus_one_attendance",
         "user__membership_status",
     ):
+        if event_id not in where:  # event edited into the window between the two queries
+            continue
         key, event_type = where[event_id]
         marks = (mark, plus_one_mark) if plus_one else (mark,)
         for k in (key, "total"):
