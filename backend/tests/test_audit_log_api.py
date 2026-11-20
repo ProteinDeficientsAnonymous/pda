@@ -109,3 +109,11 @@ def test_paginates_newest_first(api_client, auditor):
         2,
     )
     assert (_actions(second), second["next_offset"]) == (["action_3"], None)
+
+
+def test_next_offset_stops_at_offset_cap(api_client, auditor, monkeypatch):
+    monkeypatch.setattr("audit.api.MAX_OFFSET", 1)
+    for days_ago in (3, 2, 1):
+        _entry(f"action_{days_ago}", days_ago=days_ago)
+
+    assert _get(api_client, auditor, limit=2)["next_offset"] is None
