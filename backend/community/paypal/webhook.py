@@ -17,6 +17,7 @@ router = Router()
 
 CAPTURE_COMPLETED_EVENT = "PAYMENT.CAPTURE.COMPLETED"
 MAX_WEBHOOK_BYTES = 64 * 1024
+VERIFY_PATH = "/v1/notifications/verify-webhook-signature"
 _SIGNATURE_HEADERS = {
     "auth_algo": "HTTP_PAYPAL_AUTH_ALGO",
     "cert_url": "HTTP_PAYPAL_CERT_URL",
@@ -31,8 +32,27 @@ def _signature_verified(request, raw_event: str) -> bool:
     fields["webhook_id"] = settings.PAYPAL_WEBHOOK_ID
     # Splice the raw body in: PayPal checks the signature against the exact bytes it sent.
     body = f'{json.dumps(fields)[:-1]}, "webhook_event": {raw_event}}}'
-    result = post("/v1/notifications/verify-webhook-signature", body)
+    try:
+        result = post(VERIFY_PATH, body)
+    except httpx.HTTPStatusError as exc:
+        # PayPal answers a malformed signature with a 4xx rather than a FAILURE status.
+        if exc.request.url.path == VERIFY_PATH and exc.response.status_code < 500:
+            return False
+        raise
     return result.get("verification_status") == "SUCCESS"
+
+
+def _signed_json_object(request) -> dict | None:
+    """return(None): too large, missing a signature header, or not a json object."""
+    if len(request.body) > MAX_WEBHOOK_BYTES:
+        return None
+    if not all(request.META.get(header) for header in _SIGNATURE_HEADERS.values()):
+        return None
+    try:
+        event = json.loads(request.body.decode())
+    except ValueError:
+        return None
+    return event if isinstance(event, dict) else None
 
 
 @router.post(
@@ -44,15 +64,10 @@ def _signature_verified(request, raw_event: str) -> bool:
 def paypal_webhook(request):
     if not paypal_configured() or not settings.PAYPAL_WEBHOOK_ID:
         return Status(503, {"detail": "paypal is not configured"})
-    if len(request.body) > MAX_WEBHOOK_BYTES:
-        return Status(400, {"detail": "webhook too large"})
-    try:
-        raw_event = request.body.decode()
-        event = json.loads(raw_event)
-    except ValueError:
-        event = None
-    if not isinstance(event, dict):
-        return Status(400, {"detail": "webhook is not a json object"})
+    event = _signed_json_object(request)
+    if event is None:
+        return Status(400, {"detail": "webhook is malformed"})
+    raw_event = request.body.decode()
     try:
         verified = _signature_verified(request, raw_event)
     except httpx.HTTPError:

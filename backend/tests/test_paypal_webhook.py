@@ -1,9 +1,9 @@
 import json
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from community.paypal.webhook import MAX_WEBHOOK_BYTES
+from community.paypal.webhook import MAX_WEBHOOK_BYTES, VERIFY_PATH
 
 from tests._paypal_helpers import completed_capture, create_paypal_rsvp, mock_paypal
 
@@ -88,9 +88,35 @@ class TestWebhook:
     @pytest.mark.parametrize("body", ["not json", "[]", "{" + " " * MAX_WEBHOOK_BYTES + "}"])
     def test_non_object_body_is_rejected(self, api_client, rsvp, body):
         with mock_paypal({}) as http:
-            response = api_client.post(WEBHOOK_URL, body, content_type="application/json")
+            response = api_client.post(
+                WEBHOOK_URL, body, content_type="application/json", **SIGNATURE_HEADERS
+            )
         assert response.status_code == 400
         http.assert_not_called()
+
+    def test_missing_signature_header_is_rejected_without_calling_paypal(self, api_client, rsvp):
+        headers = {
+            k: v for k, v in SIGNATURE_HEADERS.items() if k != "HTTP_PAYPAL_TRANSMISSION_SIG"
+        }
+        with mock_paypal({}) as http:
+            response = api_client.post(
+                WEBHOOK_URL, "{}", content_type="application/json", **headers
+            )
+        assert response.status_code == 400
+        http.assert_not_called()
+
+    def test_verify_4xx_is_an_invalid_signature(self, api_client, rsvp):
+        request = httpx.Request("POST", f"https://api-m.sandbox.paypal.com{VERIFY_PATH}")
+        refused = MagicMock()
+        refused.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "bad request", request=request, response=httpx.Response(400, request=request)
+        )
+        token = MagicMock(**{"json.return_value": {"access_token": "token"}})
+        with patch("community.paypal._client.httpx.post", side_effect=[token, refused]):
+            response = api_client.post(
+                WEBHOOK_URL, "{}", content_type="application/json", **SIGNATURE_HEADERS
+            )
+        assert response.status_code == 400
 
     def test_unconfigured_webhook_is_unavailable(self, api_client, settings):
         settings.PAYPAL_WEBHOOK_ID = ""
