@@ -81,15 +81,9 @@ def _plain_text(html: str) -> str:
     return _BLANK_RUNS.sub("\n\n", lines).strip()
 
 
-def _official_day_of_guide_html(event: Event, guide_html: str | None) -> str:
-    if event.event_type != EventType.OFFICIAL:
-        return ""
-    return _day_of_guide_html() if guide_html is None else guide_html
-
-
-def send_checkin_nudge(event: Event, guide_html: str | None = None) -> bool:
+def send_checkin_nudge(event: Event) -> bool:
     """Claim the event, then email + in-app notify the host team. Returns False if already claimed."""
-    guide_html = _official_day_of_guide_html(event, guide_html)
+    guide_html = _day_of_guide_html() if event.event_type == EventType.OFFICIAL else ""
     guide_text = _plain_text(guide_html)
     if not _claim_checkin_nudge(event):
         return False
@@ -126,7 +120,4 @@ def send_checkin_nudge(event: Event, guide_html: str | None = None) -> bool:
 
 def send_due_checkin_nudges() -> int:
     """Send + stamp every event currently due a check-in nudge. Returns the count sent."""
-    events = list(due_checkin_nudge_events(timezone.now()))
-    has_official = any(event.event_type == EventType.OFFICIAL for event in events)
-    guide_html = _day_of_guide_html() if has_official else ""
-    return sum(send_checkin_nudge(event, guide_html) for event in events)
+    return sum(send_checkin_nudge(event) for event in due_checkin_nudge_events(timezone.now()))
