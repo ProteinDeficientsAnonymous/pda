@@ -40,8 +40,7 @@ MIGRATION_MARK = "/migrations/"
 USERS_TESTS: frozenset[str] = frozenset(
     {
         "tests/test_user_model.py",
-        "tests/users/test_users_crud.py",
-        "tests/users/test_users_admin_extended.py",
+        "tests/users/",
         "tests/test_auth.py",
         "tests/test_auth_cookie.py",
         "tests/test_auth_update_me.py",
@@ -179,13 +178,12 @@ def _needs_full(path: str) -> bool:
 
 
 def _test_path_from_diff(p: str) -> str | None:
-    """Map backend/tests/test_foo.py diff path to pytest arg tests/test_foo.py."""
+    """Map backend/tests/users/test_foo.py diff path to pytest arg tests/users/test_foo.py."""
     if not p.startswith("backend/tests/") or not p.endswith(".py"):
         return None
-    name = p.rsplit("/", 1)[-1]
-    if not name.startswith("test_"):
+    if not p.rsplit("/", 1)[-1].startswith("test_"):
         return None
-    return "tests/" + name
+    return p.removeprefix("backend/")
 
 
 def _bundle_for_backend_source(p: str) -> frozenset[str] | None:
@@ -269,10 +267,9 @@ def main() -> int:
         print("__FULL__")
         return 0
 
-    if not result:
-        return 0
-
-    for p in sorted(result):
+    # a deleted test file would make pytest fail on a missing path
+    existing = sorted(p for p in result if (REPO_ROOT / "backend" / p).exists())
+    for p in existing:
         print(p)
     return 0
 

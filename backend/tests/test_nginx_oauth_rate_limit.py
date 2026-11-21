@@ -1,9 +1,10 @@
 import re
-from pathlib import Path
 
 import pytest
 
-TEMPLATE = (Path(__file__).resolve().parents[2] / "nginx.conf.template").read_text()
+from tests._paths import REPO_ROOT
+
+TEMPLATE = (REPO_ROOT / "nginx.conf.template").read_text()
 
 
 def _client_ip_pattern() -> re.Pattern[str]:

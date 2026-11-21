@@ -49,3 +49,5 @@ node_modules/
 .coverage
 .coverage.*
 coverage.xml
+backend/mutants/
+backend/setup.cfg

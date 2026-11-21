@@ -1,9 +1,9 @@
 import subprocess
-from pathlib import Path
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+from tests._paths import REPO_ROOT
+
 SCRIPT = REPO_ROOT / "scripts" / "dev_pg_db.sh"
 
 

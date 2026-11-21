@@ -40,6 +40,25 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-top-of-file-comments.py\""
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-gate-files.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-push-gates.py\"",
+            "timeout": 600
+          }
+        ]
       }
     ]
   },

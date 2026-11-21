@@ -1,9 +1,10 @@
 import importlib.util
-from pathlib import Path
 
 import pytest
 
-_SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "sync_cursor_rules.py"
+from tests._paths import REPO_ROOT
+
+_SCRIPT = REPO_ROOT / "scripts" / "sync_cursor_rules.py"
 _spec = importlib.util.spec_from_file_location("sync_cursor_rules", _SCRIPT)
 scr = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(scr)

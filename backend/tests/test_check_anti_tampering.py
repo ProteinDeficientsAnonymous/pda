@@ -3,8 +3,9 @@ from pathlib import Path
 
 import pytest
 
-SCRIPT_PATH = Path(__file__).resolve().parents[2] / "scripts" / "check_anti_tampering.py"
-REPO_ROOT = Path(__file__).resolve().parents[2]
+from tests._paths import REPO_ROOT
+
+SCRIPT_PATH = REPO_ROOT / "scripts" / "check_anti_tampering.py"
 
 
 def _load_module():
