@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
@@ -80,6 +81,19 @@ describe('TentativeApprovalMessageDialog', () => {
     expect(sms?.getAttribute('href')).toContain(
       encodeURIComponent(`${window.location.origin}/magic-login/magic123`),
     );
+  });
+
+  it('copies the full message so it can be pasted when a send link opens empty', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    renderDialog(makeUser(), 'magic123');
+
+    await userEvent.click(screen.getByRole('button', { name: 'copy message' }));
+
+    expect(writeText).toHaveBeenCalledWith(
+      `hi Sam, from Vetter — you are tentatively in. sign in: ${window.location.origin}/magic-login/magic123`,
+    );
+    expect(await screen.findByRole('button', { name: 'copied ✓' })).toBeInTheDocument();
   });
 
   it('hides edit-template trigger without permission', () => {
