@@ -39,6 +39,49 @@ class TestResendMagicLink:
         assert body["magic_link_token"] != original_token
         assert body["status"] == JoinRequestStatus.APPROVED
 
+    def test_success_for_tentative_user_who_has_not_logged_in(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        tentative_response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        original_token = tentative_response.json()["magic_link_token"]
+
+        response = api_client.post(
+            f"/api/community/join-requests/{sample_join_request.id}/resend-magic-link/",
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["magic_link_token"] not in (None, original_token)
+        assert body["status"] == JoinRequestStatus.TENTATIVE
+
+    def test_tentative_resend_targets_the_linked_user_not_the_phone_match(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        linked = User.objects.create(phone_number="+16505559999", first_name="Linked")
+        sample_join_request.user = linked
+        sample_join_request.save(update_fields=["user"])
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"event": JoinRequestEvent.MARK_TENTATIVE},
+            content_type="application/json",
+            **vettor_headers,
+        )
+
+        response = api_client.post(
+            f"/api/community/join-requests/{sample_join_request.id}/resend-magic-link/",
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 200
+        token = response.json()["magic_link_token"]
+        assert MagicLoginToken.objects.get(token=token).user_id == linked.id
+
     def test_resend_invalidates_previous_unused_tokens(
         self, api_client, vettor_headers, sample_join_request
     ):

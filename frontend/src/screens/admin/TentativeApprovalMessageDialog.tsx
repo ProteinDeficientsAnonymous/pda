@@ -37,6 +37,7 @@ export function TentativeApprovalMessageDialog({
   magicLinkToken,
 }: Props) {
   const [editorOpen, setEditorOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
   const templateQ = useTentativeApprovalMessage();
   const whatsappLinkQ = useWhatsAppLink();
@@ -54,6 +55,14 @@ export function TentativeApprovalMessageDialog({
   const sendButtonsDisabled = templateQ.isPending;
   const canEditTemplate = hasPermission(currentUser, Permission.ApproveJoinRequests);
 
+  async function copyMessage() {
+    await navigator.clipboard.writeText(message);
+    setCopied(true);
+    window.setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  }
+
   return (
     <>
       <Dialog open={open} onClose={onClose} title={`welcome ${fullName}`}>
@@ -66,7 +75,13 @@ export function TentativeApprovalMessageDialog({
         <div className="mt-3 flex flex-wrap gap-2">
           <SendLink href={smsHref} label="send via sms" disabled={sendButtonsDisabled} />
           <SendLink href={whatsappHref} label="send via whatsapp" disabled={sendButtonsDisabled} />
+          <Button variant="secondary" onClick={() => void copyMessage()}>
+            {copied ? 'copied ✓' : 'copy message'}
+          </Button>
         </div>
+        <p className="text-muted mt-2 text-xs">
+          if the draft opens empty, copy the message and paste it in
+        </p>
         {canEditTemplate ? (
           <div className="mt-3">
             <button
