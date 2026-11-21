@@ -4,6 +4,7 @@ import subprocess
 import sys
 
 import pytest
+import yaml
 
 from tests._paths import REPO_ROOT
 
@@ -72,8 +73,13 @@ def test_non_push_commands_emit_nothing(hook, repo, monkeypatch, capsys):
     assert _run_main(hook, monkeypatch, capsys, event) == (0, "")
 
 
+@pytest.fixture
+def no_open_pr(hook, monkeypatch):
+    monkeypatch.setattr(hook, "has_open_pr", lambda where: False)
+
+
 @pytest.mark.unit
-def test_push_emits_ci_reminder_naming_the_branch(hook, repo, monkeypatch, capsys):
+def test_push_emits_ci_reminder_naming_the_branch(hook, repo, monkeypatch, capsys, no_open_pr):
     event = {"cwd": str(repo), "tool_input": {"command": "git push -u origin feat-x"}}
     code, out = _run_main(hook, monkeypatch, capsys, event)
     assert code == 0
@@ -81,6 +87,75 @@ def test_push_emits_ci_reminder_naming_the_branch(hook, repo, monkeypatch, capsy
     assert specific["hookEventName"] == "PostToolUse"
     assert "`feat-x`" in specific["additionalContext"]
     assert "fix any failure" in specific["additionalContext"]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("branch", "expected"),
+    [
+        ("main", True),
+        ("claude/dreamy-cray", True),
+        ("claude/nested/name", True),
+        ("feat-x", True),
+        ("fix-y", True),
+        ("chore-z", True),
+        ("feat/x", False),
+        ("wip", False),
+        ("", False),
+    ],
+)
+def test_ci_runs_for_ci_push_branches(hook, tmp_path, no_open_pr, branch, expected):
+    assert hook.ci_runs("git push", tmp_path, branch) is expected
+
+
+@pytest.mark.unit
+def test_ci_runs_for_other_branches_only_with_an_open_pr(hook, tmp_path, monkeypatch):
+    monkeypatch.setattr(hook, "has_open_pr", lambda where: True)
+    assert hook.ci_runs("git push", tmp_path, "wip") is True
+    assert hook.ci_runs("git push", tmp_path / "missing", "wip") is False
+
+
+@pytest.mark.unit
+def test_pr_creation_always_reminds(hook, tmp_path, no_open_pr):
+    assert hook.ci_runs("git push -u origin wip && gh pr create --fill", tmp_path, "wip") is True
+
+
+@pytest.mark.unit
+def test_push_without_ci_emits_nothing(hook, tmp_path, monkeypatch, capsys, no_open_pr):
+    root = tmp_path / "wip-repo"
+    root.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "wip"], cwd=root, check=True)
+    event = {"cwd": str(root), "tool_input": {"command": "git push"}}
+    assert _run_main(hook, monkeypatch, capsys, event) == (0, "")
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("returncode", "stdout", "expected"),
+    [(0, "OPEN\n", True), (0, "MERGED\n", False), (1, "", False)],
+)
+def test_has_open_pr_reads_gh_state(hook, tmp_path, monkeypatch, returncode, stdout, expected):
+    done = subprocess.CompletedProcess([], returncode, stdout=stdout, stderr="")
+    monkeypatch.setattr(hook.subprocess, "run", lambda *a, **k: done)
+    assert hook.has_open_pr(tmp_path) is expected
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("error", [OSError("no gh"), subprocess.TimeoutExpired("gh", 10)])
+def test_has_open_pr_tolerates_missing_or_slow_gh(hook, tmp_path, monkeypatch, error):
+    def boom(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(hook.subprocess, "run", boom)
+    assert hook.has_open_pr(tmp_path) is False
+
+
+@pytest.mark.unit
+def test_branch_patterns_match_ci_push_trigger(hook):
+    workflow = yaml.safe_load((REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text())
+    # PyYAML reads the bare `on:` key as boolean True
+    ci_branches = workflow[True]["push"]["branches"]
+    assert [b.replace("**", "*") for b in ci_branches] == list(hook.CI_PUSH_BRANCHES)
 
 
 @pytest.mark.unit

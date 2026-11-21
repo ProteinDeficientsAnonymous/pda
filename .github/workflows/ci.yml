@@ -4,13 +4,14 @@ on:
   pull_request:
   merge_group:
   push:
-    branches: [main]
+    # agent branches get CI before a PR exists; keep in sync with post-push-ci-reminder.py
+    branches: [main, "claude/**", "feat-*", "fix-*", "chore-*"]
 
 # Cancel older runs of the same branch when a new push arrives — the latest
 # commit is the one we care about.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
 
 permissions:
   contents: read
