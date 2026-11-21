@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useRoles } from '@/api/roles';
@@ -129,6 +129,36 @@ describe('MemberDetailScreen edit form', () => {
       mutateAsync: updateMutateAsync,
       isPending: false,
     } as unknown as ReturnType<typeof useUpdateUser>);
+  });
+
+  it("drops the previous member's login link when navigating to another member", async () => {
+    const grace = { ...member, id: 'member-2', fullName: 'grace hopper', firstName: 'grace' };
+    vi.mocked(useUsers).mockReturnValue({
+      data: [member, grace],
+      isPending: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useUsers>);
+    vi.mocked(useSendMemberMagicLink).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue({ magicLinkToken: 'ada-tok' }),
+      isPending: false,
+    } as unknown as ReturnType<typeof useSendMemberMagicLink>);
+    render(
+      <MemoryRouter initialEntries={['/admin/members/member-1']}>
+        <Link to="/admin/members/member-2">open grace</Link>
+        <Routes>
+          <Route path="/admin/members/:id" element={<MemberDetailScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'generate magic login link' }));
+    expect(await screen.findByText(/ada-tok/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('link', { name: 'open grace' }));
+
+    expect(await screen.findByRole('heading', { name: /grace hopper/ })).toBeInTheDocument();
+    expect(screen.queryByText(/ada-tok/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'generate magic login link' })).toBeInTheDocument();
   });
 
   it('renders connected apps for the member', () => {
