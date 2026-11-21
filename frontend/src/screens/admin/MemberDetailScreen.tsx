@@ -41,7 +41,8 @@ export default function MemberDetailScreen() {
   const member = data.find((m) => m.id === id);
   if (!member) return <ContentError message="member not found" />;
 
-  return <MemberDetailView member={member} />;
+  // Keyed so a generated login link or open edit form can't carry over to the next member.
+  return <MemberDetailView key={member.id} member={member} />;
 }
 
 function MemberDetailView({ member }: { member: Member }) {
