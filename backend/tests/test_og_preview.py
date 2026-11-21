@@ -1,6 +1,5 @@
 import io
 import uuid
-from pathlib import Path
 
 import pytest
 from community.models import (
@@ -14,6 +13,7 @@ from community.models import (
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 
+from tests._paths import REPO_ROOT
 from tests._time import future_iso
 
 
@@ -275,5 +275,5 @@ class TestStaticPageOgPreview:
         assert response.status_code == 404
 
     def test_logo_is_served_by_frontend(self):
-        repo_root = Path(__file__).resolve().parents[2]
+        repo_root = REPO_ROOT
         assert (repo_root / "frontend" / "public" / "og" / "pda-logo.png").is_file()

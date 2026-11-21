@@ -6,7 +6,9 @@ from pathlib import Path
 
 import pytest
 
-HOOK_PATH = Path(__file__).resolve().parents[2] / ".claude" / "hooks" / "pre-push-gates.py"
+from tests._paths import REPO_ROOT
+
+HOOK_PATH = REPO_ROOT / ".claude" / "hooks" / "pre-push-gates.py"
 
 
 def _git(root: Path, *args: str) -> None:
@@ -58,6 +60,16 @@ def repo(tmp_path):
         ("git status", None),
         ("git pushy", None),
         ("git push origin --delete old-branch", None),
+        ("git push origin :old-branch", None),
+        ("git commit -m 'docs: explain git push flow'", None),
+        ("echo git push later", None),
+        ("gh pr create -d --base main", "."),
+        ("git push origin feat; git branch -d old", "."),
+        ("git push origin feat || git branch -d old", "."),
+        ("git -c push.default=current push", "."),
+        ("git --no-pager push", "."),
+        ("FOO=1 git push", "."),
+        ("(cd sub && git push)", "sub"),
     ],
 )
 def test_push_dir(hook, tmp_path, command, expected):
@@ -77,10 +89,18 @@ def test_select_gates_by_changed_area(hook):
     names = [g.name for g in gates]
     assert names[:4] == ["ruff check", "ruff format", "ty", "affected pytest"]
     assert dict(gates[3].env) == {"TEST_BASE": "abc123"}
-    assert "vitest related" in names
+    vitest = next(g for g in gates if g.name == "vitest related")
+    # a bare --silent would swallow the first path as its value
+    assert vitest.cmd[vitest.cmd.index("src/App.tsx") - 1] == "--silent=passed-only"
     oxlint = next(g for g in gates if g.name == "oxlint")
     assert oxlint.cmd[-1] == "src/App.tsx"
     assert "visual/login.spec.ts" not in oxlint.cmd
+
+
+@pytest.mark.unit
+def test_generated_files_skip_lint_but_still_typecheck_and_test(hook):
+    gates = hook.select_gates(["frontend/src/api/types.gen.ts"], have_uv=True, have_pnpm=True)
+    assert [g.name for g in gates] == ["tsc", "vitest related"]
 
 
 @pytest.mark.unit
@@ -121,6 +141,22 @@ def test_failure_blocks_then_caps_after_three_rounds(hook, repo, monkeypatch):
     code, message = hook.evaluate(repo, "s1")
     assert code == 0
     assert "for a human to look" in json.loads(message)["systemMessage"]
+    code, message = hook.evaluate(repo, "s1")
+    assert code == 2
+    assert "fix round 1/3" in message
+
+
+@pytest.mark.unit
+def test_fix_rounds_are_counted_per_branch(hook, repo, monkeypatch):
+    _commit(repo, {"backend/a.py": "x = 1\n"})
+    monkeypatch.setattr(hook, "run_gate", lambda root, gate: f"## {gate.name} failed")
+    monkeypatch.setattr(hook.shutil, "which", lambda name: "/bin/" + name)
+    for _ in range(3):
+        hook.evaluate(repo, "s1")
+    _git(repo, "checkout", "-qb", "other")
+    code, message = hook.evaluate(repo, "s1")
+    assert code == 2
+    assert "fix round 1/3" in message
 
 
 @pytest.mark.unit
@@ -146,13 +182,18 @@ def test_added_suppression_blocks_push(hook, repo, monkeypatch):
         repo,
         {
             "scripts/check_anti_tampering.py": real.read_text(),
-            "notes.ts": f"// {banned}\nconst a = 1;\n",
+            "frontend/notes.ts": f"// {banned}\nconst a = 1;\n",
+            "frontend/dist/bundle.js": f"// {banned}\n",
+            ".claude/hooks/h.py": "# no" + "qa: E501\n",
         },
     )
     monkeypatch.setattr(hook.shutil, "which", lambda name: None)
     code, message = hook.evaluate(repo, "s2")
     assert code == 2
-    assert f"{banned} suppression" in message
+    assert f"frontend/notes.ts:1: {banned} suppression" in message
+    # CI's scan skips these, so the hook must too
+    assert "frontend/dist" not in message
+    assert ".claude/hooks/h.py" not in message
 
 
 def _stdin(monkeypatch, event: dict) -> None:

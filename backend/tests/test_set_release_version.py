@@ -1,11 +1,12 @@
 import importlib.util
 import json
 import tomllib
-from pathlib import Path
 
 import pytest
 
-_SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "set_release_version.py"
+from tests._paths import REPO_ROOT
+
+_SCRIPT = REPO_ROOT / "scripts" / "set_release_version.py"
 _spec = importlib.util.spec_from_file_location("set_release_version", _SCRIPT)
 srv = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(srv)

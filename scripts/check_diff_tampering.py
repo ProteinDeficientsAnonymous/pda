@@ -19,13 +19,17 @@ GATE_PATH_PREFIXES = (
     "scripts/check_",
     "scripts/run_mutation.py",
     "scripts/list_affected_tests.py",
+    "frontend/tsconfig",
 )
 GATE_PATHS = frozenset(
     {
         "Makefile",
+        "pyproject.toml",
         ".claude/settings.json",
         ".gitleaks.toml",
         "frontend/.oxlintrc.json",
+        "frontend/.oxfmtrc.json",
+        "frontend/package.json",
         "frontend/vitest.config.ts",
         "frontend/playwright.config.ts",
         "frontend/playwright.visual.config.ts",
@@ -40,8 +44,11 @@ TEST_FILE = re.compile(
 TEST_DEF = re.compile(r"^\s*(?:async\s+)?def\s+test_\w*|^\s*(?:it|test)(?:\.each\(.*?\))?\(")
 ASSERTION = re.compile(r"\bassert\b|\bexpect(?:\.\w+)?\(|\bself\.assert\w+\(|\bpytest\.raises\(")
 TRIVIAL_ASSERTION = re.compile(
-    r"^\s*assert\s+(?:True|1|not\s+False)\s*(?:#.*)?$"
+    r"^\s*assert\s+(?:True|1|not\s+False)\s*(?:,.*)?(?:#.*)?$"
+    r"|^\s*assert\s+(?P<same>[\w.]+|'[^']*'|\"[^\"]*\")\s*==\s*(?P=same)\s*(?:,.*)?(?:#.*)?$"
+    r"|^\s*assert\s+.+\s+or\s+True\s*(?:,.*)?(?:#.*)?$"
     r"|expect\((?:true|1)\)\.(?:toBe\((?:true|1)\)|toBeTruthy\(\))"
+    r"|expect\((?P<lit>\d+|true|false|'[^']*'|\"[^\"]*\")\)\.(?:toBe|toEqual)\((?P=lit)\)"
 )
 
 
@@ -79,26 +86,34 @@ def _count(pattern: re.Pattern[str], lines: list[str]) -> int:
     return sum(1 for line in lines if pattern.search(line))
 
 
-def _test_file_findings(path: str, delta: FileDelta) -> list[str]:
+def _net_loss(pattern: re.Pattern[str], delta: FileDelta) -> int:
+    return _count(pattern, delta.removed) - _count(pattern, delta.added)
+
+
+def _test_file_findings(path: str, delta: FileDelta, net: dict[str, bool]) -> list[str]:
     findings: list[str] = []
-    lost_tests = _count(TEST_DEF, delta.removed) - _count(TEST_DEF, delta.added)
-    if lost_tests > 0:
-        findings.append(f"{path}: {lost_tests} test(s) removed")
-    lost_asserts = _count(ASSERTION, delta.removed) - _count(ASSERTION, delta.added)
-    if lost_asserts > 0:
-        findings.append(f"{path}: net {lost_asserts} assertion(s) removed")
+    if net["tests"] and (lost := _net_loss(TEST_DEF, delta)) > 0:
+        findings.append(f"{path}: {lost} test(s) removed")
+    if net["asserts"] and (lost := _net_loss(ASSERTION, delta)) > 0:
+        findings.append(f"{path}: net {lost} assertion(s) removed")
     trivial = [line.strip() for line in delta.added if TRIVIAL_ASSERTION.search(line)]
     findings.extend(f"{path}: trivially-true assertion added -> {line}" for line in trivial)
     return findings
 
 
 def analyse(deltas: dict[str, FileDelta]) -> list[str]:
+    test_paths = [path for path in sorted(deltas) if TEST_FILE.match(path)]
+    # netted across the diff so moving or renaming tests between files isn't reported as loss
+    net = {
+        key: sum(_net_loss(pattern, deltas[p]) for p in test_paths) > 0
+        for key, pattern in (("tests", TEST_DEF), ("asserts", ASSERTION))
+    }
     findings: list[str] = []
     for path in sorted(deltas):
         if is_gate_path(path):
             findings.append(f"{path}: gate config changed — needs a human reviewer")
-        if TEST_FILE.match(path):
-            findings.extend(_test_file_findings(path, deltas[path]))
+        if path in test_paths:
+            findings.extend(_test_file_findings(path, deltas[path], net))
     return findings
 
 
@@ -128,7 +143,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base", default=os.environ.get("DIFF_COVER_BASE", "origin/main"))
     parser.add_argument("--enforce", action="store_true")
     args = parser.parse_args(argv)
-    findings = analyse(parse_diff(branch_diff(args.base)))
+    try:
+        diff = branch_diff(args.base)
+    except subprocess.CalledProcessError:
+        print(f"::notice::cannot diff against {args.base}; diff tampering check skipped")
+        return 1 if args.enforce else 0
+    findings = analyse(parse_diff(diff))
     _report(findings, args.enforce)
     if not findings:
         print("No weakened tests or gate-config changes.")

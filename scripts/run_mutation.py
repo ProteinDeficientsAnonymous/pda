@@ -20,6 +20,10 @@ MAX_SHOWN = 20
 SCOPE_NOTE = "mutmut 3 skips decorated functions (ninja endpoints, `@property`, validators); those are not covered."
 
 
+class MutmutFailed(Exception):
+    pass
+
+
 def changed_backend_files(base: str) -> list[str]:
     out = subprocess.check_output(
         ["git", "diff", "--name-only", "--diff-filter=AM", f"{base}...HEAD", "--", "backend/"],
@@ -114,7 +118,10 @@ def run_mutmut(targets: list[str], tests: list[str]) -> tuple[list[str], dict[st
     shutil.rmtree(BACKEND / "mutants", ignore_errors=True)
     CONFIG.write_text(render_config(BACKEND, targets, tests))
     try:
-        subprocess.run([*MUTMUT, "run"], cwd=BACKEND, check=False)
+        # mutmut exits 0 with survivors; non-zero means its clean baseline run or setup broke
+        run = subprocess.run([*MUTMUT, "run"], cwd=BACKEND, check=False)
+        if run.returncode != 0:
+            raise MutmutFailed(f"mutmut run exited {run.returncode}; see its output above")
         survivors = survivor_ids(_mutmut("results").stdout)
         # `mutmut show` needs the config too, so collect diffs before it is removed
         diffs = {m: _mutmut("show", m).stdout.strip() for m in survivors[:MAX_SHOWN]}
@@ -143,17 +150,26 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     tests = args.tests or affected_tests(args.base)
     print("Mutating:", ", ".join(targets), "| tests:", " ".join(tests), flush=True)
-    survivors, diffs = run_mutmut(targets, tests)
-    text = (
+    try:
+        survivors, diffs = run_mutmut(targets, tests)
+    except MutmutFailed as exc:
+        _write(f"### Mutation testing: could not run\n{exc}. No mutants were tested.")
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            print(f"::error::mutation testing could not run: {exc}")
+        return 1
+    _write(
         report(survivors, diffs)
         if survivors
         else f"### Mutation testing: no surviving mutants\n{SCOPE_NOTE}"
     )
+    return 1 if survivors and args.enforce else 0
+
+
+def _write(text: str) -> None:
     print(text)
     if summary := os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(summary, "a", encoding="utf-8") as fh:
             fh.write(text + "\n")
-    return 1 if survivors and args.enforce else 0
 
 
 if __name__ == "__main__":

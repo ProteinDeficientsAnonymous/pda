@@ -1,10 +1,11 @@
 import importlib.util
 import sys
-from pathlib import Path
 
 import pytest
 
-SCRIPT_PATH = Path(__file__).resolve().parents[2] / "scripts" / "check_diff_tampering.py"
+from tests._paths import REPO_ROOT
+
+SCRIPT_PATH = REPO_ROOT / "scripts" / "check_diff_tampering.py"
 
 
 def _load_module():
@@ -62,6 +63,49 @@ def test_trivially_true_assertion_is_flagged():
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    "line",
+    [
+        "    assert True, 'covered'",
+        "    assert 1 == 1",
+        "    assert resp.ok or True",
+        "  expect(1)" + ".toBe(1);",
+        "  expect('a')" + ".toEqual('a');",
+    ],
+)
+def test_trivially_true_assertion_variants_are_flagged(line):
+    mod = _load_module()
+    diff = _diff("frontend/src/a.test.ts", ["  expect(x).toBe(2);"], [line])
+    findings = mod.analyse(mod.parse_diff(diff))
+    assert any("trivially-true assertion added" in f for f in findings)
+
+
+@pytest.mark.unit
+def test_moving_tests_between_files_is_not_flagged():
+    mod = _load_module()
+    moved = ["def test_rsvp_limit():", "    assert resp.status_code == 403"]
+    diff = "\n".join(
+        [
+            _diff("backend/tests/test_events.py", moved, []),
+            _diff("backend/tests/events/test_rsvp.py", [], moved),
+        ]
+    )
+    assert mod.analyse(mod.parse_diff(diff)) == []
+
+
+@pytest.mark.unit
+def test_net_loss_across_files_is_reported_per_losing_file():
+    mod = _load_module()
+    diff = "\n".join(
+        [
+            _diff("backend/tests/test_a.py", ["def test_a():", "def test_b():"], []),
+            _diff("backend/tests/test_b.py", [], ["def test_c():"]),
+        ]
+    )
+    assert mod.analyse(mod.parse_diff(diff)) == ["backend/tests/test_a.py: 2 test(s) removed"]
+
+
+@pytest.mark.unit
 def test_deleted_test_file_counts_removed_tests():
     mod = _load_module()
     diff = _diff(
@@ -90,6 +134,10 @@ def test_removed_sql_comment_line_is_not_read_as_a_header():
         "Makefile",
         ".claude/settings.json",
         "scripts/check_anti_tampering.py",
+        "pyproject.toml",
+        "frontend/package.json",
+        "frontend/.oxfmtrc.json",
+        "frontend/tsconfig.app.json",
     ],
 )
 def test_gate_config_changes_are_flagged(path):
@@ -127,6 +175,19 @@ def test_main_writes_annotations_and_step_summary_in_ci(monkeypatch, capsys, tmp
     assert mod.main([]) == 0
     assert "::warning file=Makefile::gate config changed" in capsys.readouterr().out
     assert "`Makefile: gate config changed" in summary.read_text()
+
+
+@pytest.mark.unit
+def test_missing_base_is_a_notice_in_observe_mode(monkeypatch, capsys):
+    mod = _load_module()
+
+    def fail(base):
+        raise mod.subprocess.CalledProcessError(128, "git diff")
+
+    monkeypatch.setattr(mod, "branch_diff", fail)
+    assert mod.main(["--base", "nope"]) == 0
+    assert mod.main(["--base", "nope", "--enforce"]) == 1
+    assert "diff tampering check skipped" in capsys.readouterr().out
 
 
 @pytest.mark.unit

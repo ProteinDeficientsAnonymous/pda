@@ -7,8 +7,6 @@ import hashlib
 import importlib.util
 import json
 import os
-import re
-import shlex
 import shutil
 import subprocess
 import sys
@@ -21,11 +19,6 @@ OUTPUT_TAIL_LINES = 40
 STATE_DIR = Path(tempfile.gettempdir()) / "pda-push-gate"
 BASE_REFS = ("origin/main", "main")
 CODE_SUFFIXES = (".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs")
-PUSH = re.compile(
-    r"(?:^|[;&|(]\s*|\s)(?:git(?:\s+-C\s+(?P<gitdir>\"[^\"]+\"|'[^']+'|\S+))?\s+push\b|gh\s+pr\s+create\b)"
-)
-CD = re.compile(r"(?:^|[;&|(]\s*)cd\s+(\"[^\"]+\"|'[^']+'|[^\s;&|]+)")
-SKIP_PUSH_FLAGS = re.compile(r"\s(?:--delete|-d)\b")
 
 
 @dataclass(frozen=True)
@@ -41,21 +34,18 @@ def git(root: Path, *args: str) -> str:
     return result.stdout.strip() if result.returncode == 0 else ""
 
 
-def _unquote(token: str) -> str:
-    return shlex.split(token)[0] if token else token
+def _load_module(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load {path}")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
 
 
-def push_dir(command: str, cwd: Path) -> Path | None:
-    """return(Path | None): the directory a push in `command` runs from, or None when it doesn't push."""
-    match = PUSH.search(command)
-    if match is None or SKIP_PUSH_FLAGS.search(command[match.end() :].split("&&")[0]):
-        return None
-    where = cwd
-    for cd in CD.finditer(command[: match.start() + 1]):
-        where = (where / Path(_unquote(cd.group(1))).expanduser()).resolve()
-    if match.group("gitdir"):
-        where = (where / Path(_unquote(match.group("gitdir"))).expanduser()).resolve()
-    return where
+shell_parse = _load_module("shell_parse", Path(__file__).with_name("shell_parse.py"))
+push_dir = shell_parse.push_dir
 
 
 def merge_base(root: Path) -> str:
@@ -93,6 +83,8 @@ def select_gates(
         and f.endswith((".ts", ".tsx"))
         and not f.startswith("frontend/visual/")
     ]
+    # oxlint/oxfmt exit non-zero when every path given is in their ignore list (generated files)
+    lintable = [f for f in frontend if not f.endswith(".gen.ts")]
     gates: list[Gate] = []
     if backend and have_uv:
         gates += [
@@ -106,14 +98,17 @@ def select_gates(
                 env=(("TEST_BASE", base),),
             ),
         ]
+    if lintable and have_pnpm:
+        gates += [
+            Gate("oxlint", ["pnpm", "exec", "oxlint", *lintable], "frontend"),
+            Gate("oxfmt", ["pnpm", "exec", "oxfmt", "--check", *lintable], "frontend"),
+        ]
     if frontend and have_pnpm:
         gates += [
-            Gate("oxlint", ["pnpm", "exec", "oxlint", *frontend], "frontend"),
-            Gate("oxfmt", ["pnpm", "exec", "oxfmt", "--check", *frontend], "frontend"),
             Gate("tsc", ["pnpm", "exec", "tsc", "-b", "--noEmit", "--pretty", "false"], "frontend"),
             Gate(
                 "vitest related",
-                ["pnpm", "exec", "vitest", "related", "--run", "--silent", *frontend],
+                ["pnpm", "exec", "vitest", "related", "--run", "--silent=passed-only", *frontend],
                 "frontend",
             ),
         ]
@@ -124,17 +119,22 @@ def suppression_findings(root: Path, files: list[str]) -> list[str]:
     script = root / "scripts" / "check_anti_tampering.py"
     if not script.is_file():
         return []
-    spec = importlib.util.spec_from_file_location("check_anti_tampering", script)
-    if spec is None or spec.loader is None:
-        return []
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    code = [f for f in files if f.endswith(CODE_SUFFIXES)]
+    mod = _load_module("check_anti_tampering", script)
+    code = [f for f in files if _scanned_by_ci(mod, f)]
     return [
         hit
         for f in code
         for hit in mod.scan_text(f, (root / f).read_text(encoding="utf-8", errors="replace"))
     ]
+
+
+def _scanned_by_ci(mod, rel: str) -> bool:
+    parts = Path(rel).parts
+    return (
+        parts[0] in mod.SCAN_ROOTS
+        and Path(rel).suffix in mod.SCAN_SUFFIXES
+        and not mod.SKIP_DIR_NAMES.intersection(parts)
+    )
 
 
 def run_gate(root: Path, gate: Gate) -> str | None:
@@ -152,16 +152,22 @@ def run_gate(root: Path, gate: Gate) -> str | None:
     return f"## {gate.name} failed\n{tail}"
 
 
-def load_state(session_id: str) -> dict:
+def _state_file(session_id: str, root: Path) -> Path:
+    branch = git(root, "rev-parse", "--abbrev-ref", "HEAD")
+    key = hashlib.sha256(f"{root}\0{branch}".encode()).hexdigest()[:16]
+    return STATE_DIR / f"{session_id}-{key}.json"
+
+
+def load_state(path: Path) -> dict:
     try:
-        return json.loads((STATE_DIR / f"{session_id}.json").read_text())
+        return json.loads(path.read_text())
     except (OSError, ValueError):
         return {}
 
 
-def save_state(session_id: str, state: dict) -> None:
+def save_state(path: Path, state: dict) -> None:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
-    (STATE_DIR / f"{session_id}.json").write_text(json.dumps(state))
+    path.write_text(json.dumps(state))
 
 
 def repo_root(where: Path) -> Path | None:
@@ -190,16 +196,20 @@ def evaluate(root: Path, session_id: str) -> tuple[int, str]:
     files = changed_files(root)
     if not files:
         return 0, ""
-    state = load_state(session_id)
+    state_file = _state_file(session_id, root)
+    state = load_state(state_file)
     fp = fingerprint(root, files)
     if state.get("passed") == fp:
         return 0, ""
     failures = _failures(root, files)
     if not failures:
-        save_state(session_id, {"passed": fp, "rounds": 0})
+        save_state(state_file, {"passed": fp, "rounds": 0})
         return 0, ""
     rounds = int(state.get("rounds", 0)) + 1
-    save_state(session_id, {"passed": state.get("passed"), "rounds": rounds})
+    # the pass-through is one-off: the next failing push starts a fresh streak of blocks
+    save_state(
+        state_file, {"passed": state.get("passed"), "rounds": 0 if rounds > MAX_ROUNDS else rounds}
+    )
     if rounds > MAX_ROUNDS:
         message = (
             f"fast gates still failing after {MAX_ROUNDS} fix rounds; pushing for a human to look"

@@ -2,11 +2,12 @@ import configparser
 import importlib.util
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
 
-SCRIPT_PATH = Path(__file__).resolve().parents[2] / "scripts" / "run_mutation.py"
+from tests._paths import REPO_ROOT
+
+SCRIPT_PATH = REPO_ROOT / "scripts" / "run_mutation.py"
 
 
 @pytest.fixture
@@ -98,13 +99,28 @@ def test_run_mutmut_writes_then_removes_config_and_collects_diffs(mod, monkeypat
         return _done(f"diff of {args[1]}")
 
     monkeypatch.setattr(mod, "_mutmut", fake_mutmut)
-    monkeypatch.setattr(mod.subprocess, "run", lambda cmd, **k: None)
+    monkeypatch.setattr(mod.subprocess, "run", lambda cmd, **k: _done(""))
     survivors, diffs = mod.run_mutmut(["users/a.py"], ["tests/"])
     assert survivors == ["users.x__mutmut_1"]
     assert diffs == {"users.x__mutmut_1": "diff of users.x__mutmut_1"}
     assert seen_config == [True, True]
     assert not (backend / "setup.cfg").exists()
     assert not (backend / "mutants").exists()
+
+
+@pytest.mark.unit
+def test_failed_mutmut_run_fails_the_step_instead_of_passing(mod, monkeypatch, backend, capsys):
+    monkeypatch.setattr(mod, "BACKEND", backend)
+    monkeypatch.setattr(mod, "CONFIG", backend / "setup.cfg")
+    monkeypatch.setattr(mod.subprocess, "run", lambda cmd, **k: subprocess.CompletedProcess(cmd, 1))
+    monkeypatch.setattr(mod, "_mutmut", lambda *a: pytest.fail("results must not be read"))
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    assert mod.main(["users/a.py", "--tests", "tests/"]) == 1
+    out = capsys.readouterr().out
+    assert "could not run" in out
+    assert "no surviving mutants" not in out
+    assert "::error::" in out
+    assert not (backend / "setup.cfg").exists()
 
 
 @pytest.mark.unit

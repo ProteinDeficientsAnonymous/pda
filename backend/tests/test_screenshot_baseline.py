@@ -7,15 +7,16 @@ reg-actions then reports every screenshot as new.
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 
 import pytest
+
+from tests._paths import REPO_ROOT
 
 pytestmark = pytest.mark.unit
 
 
 def _load():
-    path = Path(__file__).resolve().parents[2] / "scripts" / "screenshot_baseline.py"
+    path = REPO_ROOT / "scripts" / "screenshot_baseline.py"
     spec = importlib.util.spec_from_file_location("screenshot_baseline", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)

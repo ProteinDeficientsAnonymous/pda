@@ -1,9 +1,10 @@
 import re
-from pathlib import Path
 
 import pytest
 
-NGINX_TEMPLATE = Path(__file__).resolve().parents[2] / "nginx.conf.template"
+from tests._paths import REPO_ROOT
+
+NGINX_TEMPLATE = REPO_ROOT / "nginx.conf.template"
 
 
 def _event_preview_location() -> re.Pattern[str]:

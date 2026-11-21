@@ -34,13 +34,16 @@ def _values(user: User) -> dict[str, object]:
 @pytest.mark.unit
 @settings(max_examples=200, deadline=None)
 @given(
-    status=st.sampled_from(_LIVE_STATUSES),
-    before_archive=st.none() | st.sampled_from([MembershipStatus.ACTIVE_MEMBER, *PAUSED_STATUSES]),
+    start=st.tuples(st.sampled_from(_LIVE_STATUSES), st.none())
+    | st.tuples(
+        st.just(MembershipStatus.ARCHIVED),
+        st.sampled_from([MembershipStatus.ACTIVE_MEMBER, *PAUSED_STATUSES]),
+    ),
     events=st.lists(st.sampled_from(list(MembershipEvent)), min_size=1, max_size=12),
 )
-def test_every_changed_field_is_in_update_fields(status, before_archive, events):
+def test_every_changed_field_is_in_update_fields(start, events):
     # a field changed in memory but missing from update_fields is silently never saved
-    user = _user(status, before_archive)
+    user = _user(*start)
     actor = _user(MembershipStatus.ACTIVE_MEMBER, None)
     for event in events:
         before = _values(user)

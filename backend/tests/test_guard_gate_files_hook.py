@@ -1,11 +1,13 @@
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+from tests._paths import REPO_ROOT
+
 HOOK_PATH = REPO_ROOT / ".claude" / "hooks" / "guard-gate-files.py"
 
 
@@ -53,3 +55,53 @@ def test_main_prints_decision_json(hook, monkeypatch, capsys):
     monkeypatch.setattr(sys, "stdin", type("S", (), {"read": lambda self: payload})())
     assert hook.main() == 0
     assert json.loads(capsys.readouterr().out)["hookSpecificOutput"]["permissionDecision"] == "ask"
+
+
+def _bash(command: str, cwd: Path = REPO_ROOT) -> dict:
+    return {"tool_name": "Bash", "tool_input": {"command": command}, "cwd": str(cwd)}
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "command",
+    [
+        "sed -i 's/a/b/' Makefile",
+        "perl -pi -e 's/a/b/' Makefile",
+        "echo x >> .github/workflows/ci.yml",
+        "cat x | tee .claude/settings.json",
+        "cd .github && rm workflows/ci.yml",
+        "cp /tmp/x scripts/check_anti_tampering.py",
+        "printf '' > pyproject.toml 2>/dev/null",
+    ],
+)
+def test_bash_write_to_gate_file_asks_the_human(hook, command):
+    result = hook.decision(_bash(command))
+    assert result is not None
+    assert result["hookSpecificOutput"]["permissionDecision"] == "ask"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "command",
+    [
+        "cat Makefile",
+        "grep -n x .github/workflows/ci.yml",
+        "echo x > backend/notes.txt",
+        "git status 2>&1",
+        "sed -n 1,5p Makefile",
+    ],
+)
+def test_bash_reads_and_ordinary_writes_are_allowed(hook, command):
+    assert hook.decision(_bash(command)) is None
+
+
+@pytest.mark.unit
+def test_broken_checker_asks_instead_of_failing_open(hook, monkeypatch, tmp_path):
+    repo = tmp_path / "repo"
+    (repo / "scripts").mkdir(parents=True)
+    (repo / "scripts" / "check_diff_tampering.py").write_text("def is_gate_path(:\n")
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    result = hook.decision(_event(repo / "README.md"))
+    assert result is not None
+    reason = result["hookSpecificOutput"]["permissionDecisionReason"]
+    assert "failed to load" in reason

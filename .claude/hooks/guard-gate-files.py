@@ -24,24 +24,27 @@ def repo_root_of(path: Path) -> Path | None:
     return Path(result.stdout.strip()) if result.returncode == 0 else None
 
 
+def _load_module(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load {path}")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+shell_parse = _load_module("shell_parse", Path(__file__).with_name("shell_parse.py"))
+
+
 def is_gate_path(root: Path, rel: str) -> bool:
     script = root / "scripts" / "check_diff_tampering.py"
-    spec = importlib.util.spec_from_file_location("check_diff_tampering", script)
-    if not script.is_file() or spec is None or spec.loader is None:
+    if not script.is_file():
         return False
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = mod
-    spec.loader.exec_module(mod)
-    return mod.is_gate_path(rel)
+    return _load_module("check_diff_tampering", script).is_gate_path(rel)
 
 
-def decision(event: dict) -> dict | None:
-    raw = (event.get("tool_input") or {}).get("file_path") or (event.get("tool_input") or {}).get(
-        "notebook_path"
-    )
-    if not raw:
-        return None
-    path = Path(raw).resolve()
+def _gate_reason(path: Path) -> str | None:
     root = repo_root_of(path)
     if root is None:
         return None
@@ -49,9 +52,27 @@ def decision(event: dict) -> dict | None:
         rel = path.relative_to(root.resolve()).as_posix()
     except ValueError:
         return None
-    if not is_gate_path(root, rel):
+    try:
+        gated = is_gate_path(root, rel)
+    except Exception as exc:  # a broken checker must not switch the guard off
+        return f"the gate-path checker failed to load ({exc!r}), so {rel} is treated as gate config"
+    if not gated:
         return None
-    reason = f"{rel} is gate config (CI, hooks, checkers). Agents may change it only with the human's explicit OK."
+    return f"{rel} is gate config (CI, hooks, checkers). Agents may change it only with the human's explicit OK."
+
+
+def _targets(event: dict) -> list[Path]:
+    tool_input = event.get("tool_input") or {}
+    if command := tool_input.get("command"):
+        return shell_parse.write_targets(command, Path(event.get("cwd") or "."))
+    raw = tool_input.get("file_path") or tool_input.get("notebook_path")
+    return [Path(raw).resolve()] if raw else []
+
+
+def decision(event: dict) -> dict | None:
+    reason = next((r for path in _targets(event) if (r := _gate_reason(path))), None)
+    if reason is None:
+        return None
     return {
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
