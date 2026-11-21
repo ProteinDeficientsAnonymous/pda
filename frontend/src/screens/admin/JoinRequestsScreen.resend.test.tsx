@@ -81,4 +81,30 @@ describe('JoinRequestsScreen re-send welcome', () => {
     expect(await screen.findByText(/know they're tentatively in/)).toBeInTheDocument();
     expect(screen.getByText(/magic-login\/fresh-tok/)).toBeInTheDocument();
   });
+
+  it('opens the approval credentials for an approved request', async () => {
+    vi.mocked(useResendMagicLink).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue({
+        fullName: 'Ada Lovelace',
+        firstName: 'Ada',
+        phoneNumber: '+16505550001',
+        status: JoinRequestStatus.APPROVED,
+        magicLinkToken: 'fresh-tok',
+      }),
+      isPending: false,
+    } as unknown as ReturnType<typeof useResendMagicLink>);
+    mockResult([
+      makeRequest({ id: 'jr-approved', status: JoinRequestStatus.APPROVED, onboardedAt: null }),
+    ]);
+
+    renderWithProviders(<JoinRequestsScreen />);
+    await userEvent.click(screen.getByRole('radio', { name: 'approved' }));
+    await userEvent.click(screen.getByRole('button', { name: 're-send welcome' }));
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 're-send' }),
+    );
+
+    expect(await screen.findByText(/share this one-time login link/)).toBeInTheDocument();
+    expect(screen.queryByText(/know they're tentatively in/)).not.toBeInTheDocument();
+  });
 });
