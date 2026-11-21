@@ -337,8 +337,13 @@ jobs:
       - name: Resolve the base commit
         run: echo "BASE_SHA=$(git rev-parse HEAD^1)" >> "$GITHUB_ENV"
 
+      # bootstrap: until the base itself base-loads these, its copies predate this interface
       - name: Load test-strength scripts from the base branch
         run: |
+          if ! git show "$BASE_SHA:.github/workflows/ci.yml" | grep -q "Load test-strength scripts from the base branch"; then
+            echo "::notice::the base branch predates base-loaded test-strength scripts; using the PR copies"
+            exit 0
+          fi
           for f in scripts/check_fail_to_pass.py scripts/run_mutation.py scripts/list_affected_tests.py; do
             git checkout "$BASE_SHA" -- "$f" 2>/dev/null || echo "::notice::$f is new in this PR; using the PR copy"
           done
