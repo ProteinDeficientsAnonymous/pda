@@ -1,4 +1,4 @@
-"""Re-send magic link for an approved join request that hasn't yet onboarded.
+"""Re-send magic link for an approved or tentative join request that hasn't yet onboarded.
 
 Split from ``manage.py`` to keep that file under the 500-line cap.
 """
@@ -24,6 +24,8 @@ from community.validation import Code, raise_validation
 
 router = Router()
 
+_RESENDABLE_STATUSES = frozenset({JoinRequestStatus.APPROVED, JoinRequestStatus.TENTATIVE})
+
 
 @router.post(
     "/join-requests/{id}/resend-magic-link/",
@@ -32,7 +34,7 @@ router = Router()
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def resend_magic_link(request, id: UUID):
-    """Mint a fresh magic-login link for an approved join request whose user
+    """Mint a fresh magic-login link for an approved or tentative join request whose user
     has not yet onboarded. Invalidates any prior unused magic tokens for the
     user so the welcome message in the wild can't be claimed twice. Refuses
     on already-logged-in users (use the members screen's password reset
@@ -59,7 +61,7 @@ def resend_magic_link(request, id: UUID):
     except JoinRequest.DoesNotExist:
         raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
 
-    if join_request.status != JoinRequestStatus.APPROVED:
+    if join_request.status not in _RESENDABLE_STATUSES:
         raise_validation(Code.JoinRequest.NOT_APPROVED, status_code=400)
 
     user = User.objects.filter(phone_number=join_request.phone_number).first()

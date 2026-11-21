@@ -153,7 +153,14 @@ export default function JoinRequestsScreen() {
     setError(null);
     try {
       const result = await resend.mutateAsync(request.id);
-      if (result.magicLinkToken) {
+      if (result.status === JoinRequestStatus.TENTATIVE) {
+        setTentativeMessageFor({
+          fullName: result.fullName,
+          firstName: result.firstName,
+          phoneNumber: result.phoneNumber,
+          magicLinkToken: result.magicLinkToken,
+        });
+      } else if (result.magicLinkToken) {
         setCredsFor({
           fullName: result.fullName,
           firstName: result.firstName,

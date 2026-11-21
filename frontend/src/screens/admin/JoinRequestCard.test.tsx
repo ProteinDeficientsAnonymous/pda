@@ -37,6 +37,20 @@ describe('JoinRequestCard tentative', () => {
     );
     expect(screen.queryByText(/pause/)).not.toBeInTheDocument();
   });
+
+  it('offers re-send welcome until they sign in', () => {
+    renderCard(makeRequest({ status: JoinRequestStatus.TENTATIVE, onboardedAt: null }));
+
+    expect(screen.getByRole('button', { name: 're-send welcome' })).toBeInTheDocument();
+  });
+
+  it('hides re-send welcome once they have signed in', () => {
+    renderCard(
+      makeRequest({ status: JoinRequestStatus.TENTATIVE, onboardedAt: '2026-01-02T18:00:00Z' }),
+    );
+
+    expect(screen.queryByRole('button', { name: 're-send welcome' })).not.toBeInTheDocument();
+  });
 });
 
 describe('JoinRequestCard decision', () => {
