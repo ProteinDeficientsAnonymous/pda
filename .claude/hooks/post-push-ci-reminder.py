@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import fnmatch
 import importlib.util
 import json
 import subprocess
@@ -23,9 +22,6 @@ def _load_module(name: str, path: Path):
 
 shell_parse = _load_module("shell_parse", Path(__file__).with_name("shell_parse.py"))
 push_dir = shell_parse.push_dir
-
-# mirrors the push branches in .github/workflows/ci.yml; fnmatch's * also matches "/"
-CI_PUSH_BRANCHES = ("main", "claude/*", "feat-*", "fix-*", "chore-*")
 
 
 def current_branch(where: Path) -> str:
@@ -60,20 +56,16 @@ def has_open_pr(where: Path) -> bool:
     return result.returncode == 0 and result.stdout.strip() == "OPEN"
 
 
-def ci_runs(command: str, where: Path, branch: str) -> bool:
-    if creates_pr(command):
-        return True
-    if any(fnmatch.fnmatchcase(branch, pattern) for pattern in CI_PUSH_BRANCHES):
-        return True
-    return where.is_dir() and has_open_pr(where)
+def ci_runs(command: str, where: Path) -> bool:
+    # ci.yml runs on pull_request, not on plain branch pushes
+    return creates_pr(command) or (where.is_dir() and has_open_pr(where))
 
 
 def reminder(branch: str) -> str:
     pushed = f"`{branch}`" if branch else "this branch"
     return (
         f"You pushed {pushed}; GitHub CI is now running on it. Watch the run until every check "
-        "finishes (`gh pr checks --watch` with a PR, `gh run watch` without, or subscribe to the "
-        "PR's activity), then fix any "
+        "finishes (e.g. `gh pr checks --watch`, or subscribe to the PR's activity), then fix any "
         "failure at its cause, commit, and push again. Do not suppress, skip, or weaken tests to "
         "get green; if a failure looks unrelated or flaky, say so instead of declaring the work done."
     )
@@ -84,13 +76,12 @@ def output(event: dict) -> dict | None:
     where = push_dir(command, Path(event.get("cwd") or "."))
     if where is None:
         return None
-    branch = current_branch(where)
-    if not ci_runs(command, where, branch):
+    if not ci_runs(command, where):
         return None
     return {
         "hookSpecificOutput": {
             "hookEventName": "PostToolUse",
-            "additionalContext": reminder(branch),
+            "additionalContext": reminder(current_branch(where)),
         }
     }
 
