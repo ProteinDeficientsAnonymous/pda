@@ -14,9 +14,10 @@ from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from users.helpers import create_magic_token
-from users.models import MagicLoginToken, MembershipStatus, User
+from users.models import MagicLoginToken, MembershipStatus
 from users.permissions import PermissionKey
 
+from community.join_requests.approval import applicant_user
 from community.join_requests.manage import ApproveJoinRequestOut
 from community.models import JoinRequest, JoinRequestStatus
 from community.shared import ErrorOut
@@ -64,7 +65,7 @@ def resend_magic_link(request, id: UUID):
     if join_request.status not in _RESENDABLE_STATUSES:
         raise_validation(Code.JoinRequest.NOT_APPROVED, status_code=400)
 
-    user = User.objects.filter(phone_number=join_request.phone_number).first()
+    user = applicant_user(join_request)
     if user is None:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if user.archived_at is not None:
