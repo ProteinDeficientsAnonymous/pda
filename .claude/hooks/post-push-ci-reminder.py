@@ -8,6 +8,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import quote
 
 
 def _load_module(name: str, path: Path):
@@ -41,10 +42,14 @@ def creates_pr(command: str) -> bool:
     return any(seg[:3] == ["gh", "pr", "create"] for seg in shell_parse.segments(command))
 
 
-def has_open_pr(where: Path) -> bool:
+def has_open_pr(where: Path, branch: str) -> bool:
+    if not branch:
+        return False
+    # REST, not `gh pr view`: cloud sessions' GitHub proxy rejects GraphQL
+    endpoint = f"repos/{{owner}}/{{repo}}/pulls?state=open&head={{owner}}:{quote(branch, safe='/')}"
     try:
         result = subprocess.run(
-            ["gh", "pr", "view", "--json", "state", "--jq", ".state"],
+            ["gh", "api", endpoint, "--jq", "length"],
             cwd=where,
             capture_output=True,
             text=True,
@@ -53,12 +58,12 @@ def has_open_pr(where: Path) -> bool:
         )
     except (OSError, subprocess.TimeoutExpired):
         return False
-    return result.returncode == 0 and result.stdout.strip() == "OPEN"
+    return result.returncode == 0 and result.stdout.strip() not in ("", "0")
 
 
-def ci_runs(command: str, where: Path) -> bool:
+def ci_runs(command: str, where: Path, branch: str) -> bool:
     # ci.yml runs on pull_request, not on plain branch pushes
-    return creates_pr(command) or (where.is_dir() and has_open_pr(where))
+    return creates_pr(command) or (where.is_dir() and has_open_pr(where, branch))
 
 
 def reminder(branch: str) -> str:
@@ -76,12 +81,13 @@ def output(event: dict) -> dict | None:
     where = push_dir(command, Path(event.get("cwd") or "."))
     if where is None:
         return None
-    if not ci_runs(command, where):
+    branch = current_branch(where)
+    if not ci_runs(command, where, branch):
         return None
     return {
         "hookSpecificOutput": {
             "hookEventName": "PostToolUse",
-            "additionalContext": reminder(current_branch(where)),
+            "additionalContext": reminder(branch),
         }
     }
 

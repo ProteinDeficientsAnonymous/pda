@@ -74,12 +74,12 @@ def test_non_push_commands_emit_nothing(hook, repo, monkeypatch, capsys):
 
 @pytest.fixture
 def open_pr(hook, monkeypatch):
-    monkeypatch.setattr(hook, "has_open_pr", lambda where: True)
+    monkeypatch.setattr(hook, "has_open_pr", lambda where, branch: True)
 
 
 @pytest.fixture
 def no_open_pr(hook, monkeypatch):
-    monkeypatch.setattr(hook, "has_open_pr", lambda where: False)
+    monkeypatch.setattr(hook, "has_open_pr", lambda where, branch: False)
 
 
 @pytest.mark.unit
@@ -101,23 +101,47 @@ def test_push_without_pr_emits_nothing(hook, repo, monkeypatch, capsys, no_open_
 
 @pytest.mark.unit
 def test_pr_creation_reminds_without_checking_gh(hook, tmp_path, no_open_pr):
-    assert hook.ci_runs("git push -u origin feat-x && gh pr create --fill", tmp_path) is True
+    assert (
+        hook.ci_runs("git push -u origin feat-x && gh pr create --fill", tmp_path, "feat-x") is True
+    )
 
 
 @pytest.mark.unit
 def test_missing_push_dir_skips_pr_lookup(hook, tmp_path, open_pr):
-    assert hook.ci_runs("git push", tmp_path / "missing") is False
+    assert hook.ci_runs("git push", tmp_path / "missing", "feat-x") is False
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
     ("returncode", "stdout", "expected"),
-    [(0, "OPEN\n", True), (0, "MERGED\n", False), (1, "", False)],
+    [(0, "1\n", True), (0, "0\n", False), (1, "", False)],
 )
-def test_has_open_pr_reads_gh_state(hook, tmp_path, monkeypatch, returncode, stdout, expected):
-    done = subprocess.CompletedProcess([], returncode, stdout=stdout, stderr="")
-    monkeypatch.setattr(hook.subprocess, "run", lambda *a, **k: done)
-    assert hook.has_open_pr(tmp_path) is expected
+def test_has_open_pr_counts_open_prs_for_branch(
+    hook, tmp_path, monkeypatch, returncode, stdout, expected
+):
+    calls = []
+
+    def run(cmd, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, returncode, stdout=stdout, stderr="")
+
+    monkeypatch.setattr(hook.subprocess, "run", run)
+    assert hook.has_open_pr(tmp_path, "claude/x y") is expected
+    assert calls == [
+        [
+            "gh",
+            "api",
+            "repos/{owner}/{repo}/pulls?state=open&head={owner}:claude/x%20y",
+            "--jq",
+            "length",
+        ]
+    ]
+
+
+@pytest.mark.unit
+def test_has_open_pr_needs_a_branch(hook, tmp_path, monkeypatch):
+    monkeypatch.setattr(hook.subprocess, "run", lambda *a, **k: pytest.fail("should not call gh"))
+    assert hook.has_open_pr(tmp_path, "") is False
 
 
 @pytest.mark.unit
@@ -127,7 +151,7 @@ def test_has_open_pr_tolerates_missing_or_slow_gh(hook, tmp_path, monkeypatch, e
         raise error
 
     monkeypatch.setattr(hook.subprocess, "run", boom)
-    assert hook.has_open_pr(tmp_path) is False
+    assert hook.has_open_pr(tmp_path, "feat-x") is False
 
 
 @pytest.mark.unit
