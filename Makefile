@@ -375,7 +375,11 @@ agent-frontend-e2e:
 agent-frontend-typecheck:
 	cd frontend && pnpm exec tsc -b --noEmit --pretty false
 
-agent-ci: agent-backend-ci agent-frontend-ci
+# lint first: ruff --fix rewrites files the parallel steps read. The frontend runs after
+# the backend because vitest's pool and pytest together starve Hypothesis's health checks.
+agent-ci: agent-lint
+	@$(MAKE) --no-print-directory -j --keep-going agent-backend-ci
+	@$(MAKE) --no-print-directory agent-frontend-ci
 
 agent-backend-ci: agent-lint agent-check agent-test agent-typecheck agent-complexity agent-check-private-modules agent-check-codes
 
