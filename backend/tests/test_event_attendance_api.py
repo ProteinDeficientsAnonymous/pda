@@ -152,6 +152,22 @@ class TestSetAttendance:
         rsvp.refresh_from_db()
         assert rsvp.checked_in_at == first_check_in
 
+    def test_unknown_clears_checked_in_at(self, api_client, open_check_in_event, host, members):
+        rsvp = EventRSVP.objects.create(
+            event=open_check_in_event, user=members[0], status=RSVPStatus.ATTENDING
+        )
+        url = f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/"
+        for attendance in (AttendanceStatus.ATTENDED, AttendanceStatus.UNKNOWN):
+            api_client.post(
+                url,
+                {"attendance": attendance},
+                content_type="application/json",
+                **auth_headers_for(host),
+            )
+        rsvp.refresh_from_db()
+        assert rsvp.attendance == AttendanceStatus.UNKNOWN
+        assert rsvp.checked_in_at is None
+
     def test_cohost_can_mark(self, api_client, open_check_in_event, cohost, members):
         EventRSVP.objects.create(
             event=open_check_in_event, user=members[0], status=RSVPStatus.ATTENDING

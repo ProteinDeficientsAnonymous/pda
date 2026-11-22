@@ -140,6 +140,8 @@ def _apply_attendance_mark(
     # check-in time if attendance is later flipped and re-marked.
     if payload.attendance == AttendanceStatus.ATTENDED and getattr(rsvp, checked_in_field) is None:
         setattr(rsvp, checked_in_field, timezone.now())
+    elif payload.attendance == AttendanceStatus.UNKNOWN:
+        setattr(rsvp, checked_in_field, None)
     rsvp.save(update_fields=[attendance_field, checked_in_field, "updated_at"])
 
     if payload.attendance != AttendanceStatus.ATTENDED or payload.for_plus_one:
@@ -147,14 +149,9 @@ def _apply_attendance_mark(
     return promote_or_restore_on_check_in(request, rsvp.user, rsvp.event)
 
 
-@router.post(
-    "/events/{event_id}/rsvps/{user_id}/attendance/",
-    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
-    auth=gated_jwt,
-)
-@rate_limit(key_func=lambda r: str(r.auth.pk), rate="60/m")
-def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn):
-    event = load_editable_event(request.auth, event_id, "set_attendance")
+def markable_rsvp(user: User, event_id: UUID, user_id: UUID, payload: AttendanceIn) -> EventRSVP:
+    """The RSVP `user` may give this attendance mark; raises the website's error otherwise."""
+    event = load_editable_event(user, event_id, "set_attendance")
     if not _check_in_open(event):
         raise_validation(Code.Event.ATTENDANCE_OPENS_LATER, status_code=400)
 
@@ -165,6 +162,17 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
         raise_validation(Code.Event.NO_PLUS_ONE_TO_CHECK_IN, status_code=400)
     if payload.attendance == AttendanceStatus.DIDNT_GO and rsvp.status != RSVPStatus.ATTENDING:
         raise_validation(Code.Event.DIDNT_GO_REQUIRES_GOING, status_code=400)
+    return rsvp
+
+
+@router.post(
+    "/events/{event_id}/rsvps/{user_id}/attendance/",
+    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
+    auth=gated_jwt,
+)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="60/m")
+def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn):
+    rsvp = markable_rsvp(request.auth, event_id, user_id, payload)
 
     # A failed promotion or restore rolls back in its own savepoint; the mark stays.
     with transaction.atomic():
