@@ -7,6 +7,7 @@ from community.events.schemas import AttendanceIn
 from community.models import AttendanceStatus
 from community.validation import ValidationException
 from pydantic import Field
+from users.helpers import visible_display_name
 from users.models import User
 
 from mcp_gateway.confirm import Confirmed, ConfirmToken, issue_confirm_token, use_confirm_token
@@ -18,7 +19,7 @@ def _current_mark(user: User, event_id: UUID, member_id: UUID, payload: Attendan
     rsvp = markable_rsvp(user, event_id, member_id, payload)
     return {
         "event": rsvp.event.title,
-        "member": rsvp.user.full_name,
+        "member": visible_display_name(rsvp.user, user),
         "for_plus_one": payload.for_plus_one,
         "was": rsvp.plus_one_attendance if payload.for_plus_one else rsvp.attendance,
     }

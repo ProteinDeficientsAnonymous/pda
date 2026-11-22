@@ -137,3 +137,10 @@ def test_token_bound_to_the_mark(host, event, guest):
     )
 
     assert "doesn't match" in error
+
+
+def test_preview_hides_a_hidden_last_name(host, event):
+    guest = make_user(first_name="Robin", last_name="Oak", hide_last_name=True)
+    make_rsvp(event, guest)
+
+    assert _call(host, event, guest, AttendanceStatus.ATTENDED)["member"] == "Robin"
