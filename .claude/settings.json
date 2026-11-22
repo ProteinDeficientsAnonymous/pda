@@ -49,14 +49,21 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-gate-files.py\""
           }
         ]
-      },
+      }
+    ],
+    "PostToolUse": [
       {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-push-gates.py\"",
-            "timeout": 600
+            "if": "Bash(git push*)",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-push-ci-reminder.py\""
+          },
+          {
+            "type": "command",
+            "if": "Bash(gh pr create*)",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-push-ci-reminder.py\""
           }
         ]
       }
