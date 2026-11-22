@@ -253,6 +253,24 @@ class TestSetAttendance:
         )
         assert response.status_code == 422
 
+    def test_clears_attended_mark_on_maybe_rsvp(
+        self, api_client, open_check_in_event, host, members
+    ):
+        rsvp = EventRSVP.objects.create(
+            event=open_check_in_event, user=members[0], status=RSVPStatus.MAYBE
+        )
+        url = f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/"
+        for attendance in (AttendanceStatus.ATTENDED, AttendanceStatus.UNKNOWN):
+            response = api_client.post(
+                url,
+                {"attendance": attendance},
+                content_type="application/json",
+                **auth_headers_for(host),
+            )
+            assert response.status_code == 200
+        rsvp.refresh_from_db()
+        assert rsvp.attendance == AttendanceStatus.UNKNOWN
+
     def test_default_attendance_is_unknown(self, stats_event, members):
         rsvp = EventRSVP.objects.create(
             event=stats_event, user=members[0], status=RSVPStatus.ATTENDING

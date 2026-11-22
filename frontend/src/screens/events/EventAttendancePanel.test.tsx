@@ -177,46 +177,107 @@ describe('EventAttendancePanel', () => {
     expect(screen.getByText('cassie')).toBeInTheDocument();
   });
 
-  it("offers didn't attend only for guests who rsvp'd going", () => {
+  it("offers no-show for going guests and didn't go for everyone else", () => {
     mockStats(BASE_STATS);
     renderPanel(MIXED_RSVP_EVENT);
 
     expect(screen.getAllByRole('button', { name: /^attended$/i })).toHaveLength(3);
-    const [didntAttend, ...rest] = screen.getAllByRole('button', { name: /^didn't attend$/i });
-    expect(rest).toHaveLength(0);
-    expect(didntAttend?.closest('li')).toHaveTextContent('alice');
+    const [noShow, ...otherNoShows] = screen.getAllByRole('button', { name: /^no-show$/i });
+    expect(otherNoShows).toHaveLength(0);
+    expect(noShow?.closest('li')).toHaveTextContent('alice');
+    const didntGo = screen.getAllByRole('button', { name: /^didn't go$/i });
+    expect(didntGo.map((b) => b.closest('li')?.textContent)).toEqual([
+      expect.stringContaining('mabel'),
+      expect.stringContaining('cassie'),
+    ]);
+    didntGo.forEach((btn) => {
+      expect(btn).toHaveAttribute('aria-pressed', 'true');
+    });
   });
 
-  it("fires didn't go for a going guest and their +1, and hides it for a maybe +1", () => {
+  it('marks a going guest and their +1 as no-shows', () => {
+    mockStats(BASE_STATS);
+    renderPanel(
+      makeEvent({
+        isPast: true,
+        guests: [makeGuest({ userId: 'alice', name: 'alice', hasPlusOne: true })],
+      }),
+    );
+
+    screen.getAllByRole('button', { name: /^no-show$/i }).forEach((btn) => {
+      fireEvent.click(btn);
+    });
+
+    const onError = expect.objectContaining({ onError: expect.any(Function) });
+    expect(setAttendanceMutate).toHaveBeenCalledWith(
+      { userId: 'alice', attendance: AttendanceStatus.DidntGo, forPlusOne: false },
+      onError,
+    );
+    expect(setAttendanceMutate).toHaveBeenCalledWith(
+      { userId: 'alice', attendance: AttendanceStatus.DidntGo, forPlusOne: true },
+      onError,
+    );
+  });
+
+  it("clears a maybe guest's attended mark with didn't go, never saving a no-show", () => {
     mockStats(BASE_STATS);
     renderPanel(
       makeEvent({
         isPast: true,
         guests: [
-          makeGuest({ userId: 'alice', name: 'alice', hasPlusOne: true }),
           makeGuest({
             userId: 'mabel',
             name: 'mabel',
             status: RsvpServerStatus.Maybe,
+            attendance: AttendanceStatus.Attended,
             hasPlusOne: true,
           }),
         ],
       }),
     );
 
-    const didntAttend = screen.getAllByRole('button', { name: /^didn't attend$/i });
-    expect(didntAttend).toHaveLength(2);
-    didntAttend.forEach((btn) => {
-      fireEvent.click(btn);
+    const [mabelDidntGo, plusOneDidntGo] = screen.getAllByRole('button', {
+      name: /^didn't go$/i,
     });
+    expect(mabelDidntGo).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(mabelDidntGo!);
+    fireEvent.click(plusOneDidntGo!);
 
+    expect(setAttendanceMutate).toHaveBeenCalledTimes(1);
     expect(setAttendanceMutate).toHaveBeenCalledWith(
-      { userId: 'alice', attendance: AttendanceStatus.DidntGo, forPlusOne: false },
+      { userId: 'mabel', attendance: AttendanceStatus.Unknown, forPlusOne: false },
       expect.objectContaining({ onError: expect.any(Function) }),
     );
+  });
+
+  it('clears a mark when the active button is clicked again', () => {
+    mockStats(BASE_STATS);
+    renderPanel(
+      makeEvent({
+        isPast: true,
+        guests: [
+          makeGuest({ userId: 'alice', name: 'alice', attendance: AttendanceStatus.DidntGo }),
+          makeGuest({
+            userId: 'mabel',
+            name: 'mabel',
+            status: RsvpServerStatus.Maybe,
+            attendance: AttendanceStatus.Attended,
+          }),
+        ],
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /^no-show$/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /^attended$/i })[1]!);
+
+    const onError = expect.objectContaining({ onError: expect.any(Function) });
     expect(setAttendanceMutate).toHaveBeenCalledWith(
-      { userId: 'alice', attendance: AttendanceStatus.DidntGo, forPlusOne: true },
-      expect.objectContaining({ onError: expect.any(Function) }),
+      { userId: 'alice', attendance: AttendanceStatus.Unknown, forPlusOne: false },
+      onError,
+    );
+    expect(setAttendanceMutate).toHaveBeenCalledWith(
+      { userId: 'mabel', attendance: AttendanceStatus.Unknown, forPlusOne: false },
+      onError,
     );
   });
 
