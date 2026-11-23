@@ -26,6 +26,7 @@ from users.helpers import (
     resolve_name_fields,
 )
 from users.models import User
+from users.phone import normalize_phone_number
 from users.refresh_cookie import (
     clear_refresh_cookie,
     read_refresh_cookie,
@@ -61,6 +62,14 @@ _ALLOWED_IMAGE_TYPES = {
 }
 
 
+def _login_failed_details(phone_number: str) -> dict:
+    """Name the member whose sign-in failed, by id only, so stuck members can be spotted."""
+    phone = normalize_phone_number(phone_number)
+    user_id = User.objects.filter(phone_number=phone).values_list("pk", flat=True).first()
+    details = {"reason": "invalid_credentials"}
+    return {**details, "user_id": str(user_id)} if user_id else details
+
+
 @router.post(
     "/login/", response={200: TokenOut, 401: ErrorOut, 403: ErrorOut, 429: ErrorOut}, auth=None
 )
@@ -73,7 +82,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
             logging.WARNING,
             "login_failed",
             request,
-            target=AuditTarget(details={"reason": "invalid_credentials"}),
+            target=AuditTarget(details=_login_failed_details(payload.phone_number)),
         )
         raise_validation(Code.Auth.INVALID_CREDENTIALS, status_code=401)
     user = User.objects.get(pk=auth_user.pk)
