@@ -47,52 +47,28 @@ export function EventCheckInList({
                   <span className="text-foreground truncate text-sm">{g.name}</span>
                   <span className="text-muted shrink-0 text-xs">{rsvpGroupLabel(g.status)}</span>
                 </span>
-                <div className="flex gap-1">
-                  <AttendanceButton
-                    active={g.attendance === AttendanceStatus.Attended}
-                    label="attended"
-                    onClick={() => {
-                      onMark(g.userId, AttendanceStatus.Attended);
-                    }}
-                    disabled={isPending}
-                  />
-                  {g.status === RsvpServerStatus.Attending ? (
-                    <AttendanceButton
-                      active={g.attendance === AttendanceStatus.DidntGo}
-                      label="didn't attend"
-                      onClick={() => {
-                        onMark(g.userId, AttendanceStatus.DidntGo);
-                      }}
-                      disabled={isPending}
-                    />
-                  ) : null}
-                </div>
+                <AttendanceButtons
+                  rsvpStatus={g.status}
+                  attendance={g.attendance}
+                  onMark={(attendance) => {
+                    onMark(g.userId, attendance);
+                  }}
+                  disabled={isPending}
+                />
               </div>
               {g.hasPlusOne ? (
                 <div className="border-border bg-surface-dim/40 ml-4 flex items-center justify-between gap-2 rounded-md border p-2">
                   <span className="text-foreground-secondary truncate text-sm">
                     {firstName(g.name)}&apos;s +1
                   </span>
-                  <div className="flex gap-1">
-                    <AttendanceButton
-                      active={g.plusOneAttendance === AttendanceStatus.Attended}
-                      label="attended"
-                      onClick={() => {
-                        onMark(g.userId, AttendanceStatus.Attended, true);
-                      }}
-                      disabled={isPending}
-                    />
-                    {g.status === RsvpServerStatus.Attending ? (
-                      <AttendanceButton
-                        active={g.plusOneAttendance === AttendanceStatus.DidntGo}
-                        label="didn't attend"
-                        onClick={() => {
-                          onMark(g.userId, AttendanceStatus.DidntGo, true);
-                        }}
-                        disabled={isPending}
-                      />
-                    ) : null}
-                  </div>
+                  <AttendanceButtons
+                    rsvpStatus={g.status}
+                    attendance={g.plusOneAttendance}
+                    onMark={(attendance) => {
+                      onMark(g.userId, attendance, true);
+                    }}
+                    disabled={isPending}
+                  />
                 </div>
               ) : null}
             </li>
@@ -156,6 +132,62 @@ function FilterChip({
     >
       {label}
     </button>
+  );
+}
+
+function AttendanceButtons({
+  rsvpStatus,
+  attendance,
+  onMark,
+  disabled,
+}: {
+  rsvpStatus: string;
+  attendance: AttendanceStatusValue;
+  onMark: (attendance: AttendanceStatusValue) => void;
+  disabled: boolean;
+}) {
+  const attended = attendance === AttendanceStatus.Attended;
+  const attendedButton = (
+    <AttendanceButton
+      active={attended}
+      label="attended"
+      onClick={() => {
+        onMark(attended ? AttendanceStatus.Unknown : AttendanceStatus.Attended);
+      }}
+      disabled={disabled}
+    />
+  );
+
+  if (rsvpStatus === RsvpServerStatus.Attending) {
+    const noShow = attendance === AttendanceStatus.DidntGo;
+    return (
+      <div className="flex gap-1">
+        {attendedButton}
+        <AttendanceButton
+          active={noShow}
+          label="no-show"
+          onClick={() => {
+            onMark(noShow ? AttendanceStatus.Unknown : AttendanceStatus.DidntGo);
+          }}
+          disabled={disabled}
+        />
+      </div>
+    );
+  }
+
+  // A didn't-go mark counts as a no-show, so non-going guests fall back to unmarked instead.
+  return (
+    <div className="flex gap-1">
+      {attendedButton}
+      <AttendanceButton
+        active={!attended}
+        label="didn't go"
+        onClick={() => {
+          if (attendance !== AttendanceStatus.Unknown) onMark(AttendanceStatus.Unknown);
+        }}
+        disabled={disabled}
+      />
+    </div>
   );
 }
 
