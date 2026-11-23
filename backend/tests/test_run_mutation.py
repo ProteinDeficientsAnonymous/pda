@@ -48,11 +48,11 @@ def test_changed_backend_files_skips_tests_and_migrations(mod, monkeypatch):
     ("listed", "expected"),
     [
         ("tests/test_a.py\ntests/test_b.py\n", ["tests/test_a.py", "tests/test_b.py"]),
-        ("__FULL__\n", ["tests/"]),
-        ("", ["tests/"]),
+        ("__FULL__\n", None),
+        ("", None),
     ],
 )
-def test_affected_tests_falls_back_to_the_full_suite(mod, monkeypatch, listed, expected):
+def test_affected_tests_has_no_list_for_the_full_suite(mod, monkeypatch, listed, expected):
     monkeypatch.setattr(mod.subprocess, "check_output", lambda *a, **k: listed)
     assert mod.affected_tests("origin/main") == expected
 
@@ -121,6 +121,44 @@ def test_failed_mutmut_run_fails_the_step_instead_of_passing(mod, monkeypatch, b
     assert "no surviving mutants" not in out
     assert "::error::" in out
     assert not (backend / "setup.cfg").exists()
+
+
+@pytest.mark.unit
+def test_full_suite_diff_skips_mutation_with_a_notice(mod, monkeypatch, capsys):
+    monkeypatch.setattr(mod, "changed_backend_files", lambda base: ["community/views.py"])
+    monkeypatch.setattr(mod, "affected_tests", lambda base: None)
+    monkeypatch.setattr(mod, "run_mutmut", lambda *a: pytest.fail("must not mutate"))
+    assert mod.main(["--enforce"]) == 0
+    assert "Mutation testing: skipped" in capsys.readouterr().out
+
+
+@pytest.mark.unit
+def test_failed_baseline_is_rerun_unmutated_and_its_failures_shown(
+    mod, monkeypatch, backend, capsys
+):
+    monkeypatch.setattr(mod, "BACKEND", backend)
+    monkeypatch.setattr(mod, "CONFIG", backend / "setup.cfg")
+    calls: list[tuple[list[str], dict]] = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append((cmd, kwargs))
+        if cmd[-1] == "run":
+            (backend / "mutants").mkdir()
+            return subprocess.CompletedProcess(cmd, 1)
+        return subprocess.CompletedProcess(
+            cmd, 1, stdout="FAILED tests/test_x.py::test_y\n", stderr=""
+        )
+
+    monkeypatch.setattr(mod.subprocess, "run", fake_run)
+    assert mod.main(["users/a.py", "--tests", "tests/test_x.py"]) == 1
+    out = capsys.readouterr().out
+    assert "FAILED tests/test_x.py::test_y" in out
+    rerun, kwargs = calls[1]
+    assert rerun[-1] == "tests/test_x.py"
+    assert "addopts=" in rerun
+    assert kwargs["cwd"] == backend / "mutants"
+    assert kwargs["env"]["MUTANT_UNDER_TEST"] == ""
+    assert not (backend / "mutants").exists()
 
 
 @pytest.mark.unit
