@@ -1,3 +1,10 @@
+# [0.278.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.277.4...v0.278.0) (2026-11-23)
+
+
+### Features
+
+* **mcp:** add set_event_attendance tool ([#2644](https://github.com/ProteinDeficientsAnonymous/pda/issues/2644)) ([4a75412](https://github.com/ProteinDeficientsAnonymous/pda/commit/4a754120d16cd832f818fe327ab207238e41f6ff))
+
 ## [0.277.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.277.3...v0.277.4) (2026-11-23)
 
 
