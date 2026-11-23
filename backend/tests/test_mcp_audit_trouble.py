@@ -59,7 +59,39 @@ def test_groups_failures_by_action(auditor):
     sample = body["actions"][1]["samples"][0]
     assert sample["ip"] == ip_hash("203.0.113.5")
     assert "203.0.113.5" not in str(body)
-    assert body["truncated"] is False
+    assert (body["clusters"], body["truncated"]) == ([], False)
+
+
+def test_cluster_recovers_after_a_later_success(auditor):
+    for minute in (0, 1, 2):
+        _entry("login_failed", minute, ip="203.0.113.5")
+    _entry("login_success", 5, ip="203.0.113.5")
+
+    [cluster] = _report(auditor)["clusters"]
+
+    assert (cluster["ip"], cluster["failures"], cluster["actions"]) == (
+        ip_hash("203.0.113.5"),
+        3,
+        ["login_failed"],
+    )
+    assert cluster["recovered_at"] is not None
+
+
+def test_member_stuck_without_success(auditor):
+    for minute in (0, 20, 40, 200):
+        _entry("magic_login_failed", minute, user_id="m1")
+    _entry("login_success", 50, ip="198.51.100.9")
+
+    [cluster] = _report(auditor)["clusters"]
+
+    assert (cluster["member_id"], cluster["failures"], cluster["recovered_at"]) == ("m1", 3, None)
+
+
+def test_failures_spread_over_hours_are_not_a_cluster(auditor):
+    for minute in (0, 61, 122):
+        _entry("login_failed", minute, ip="203.0.113.5")
+
+    assert _report(auditor)["clusters"] == []
 
 
 def test_window_bounds(auditor):
