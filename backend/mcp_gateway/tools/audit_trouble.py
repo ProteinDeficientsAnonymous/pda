@@ -15,8 +15,8 @@ from mcp_gateway.server import pda_tool
     PermissionKey.VIEW_AUDIT_LOG,
     description=(
         "spot members who had trouble and failures worth fixing, from the audit log. covers "
-        "failure actions (failed sign-ins, permission denials, rejected transitions, failed "
-        "rsvp emails, …) between since and until. actions: one row per failure action with "
+        "failure actions (failed sign-ins and rsvps, permission denials, rejected transitions, "
+        "failed emails, …) between since and until. actions: one row per failure action with "
         "count, first_seen, last_seen, members (user ids, from details.user_id, a user target "
         "or the actor) and the latest samples (ip is a short hash, never the address). "
         f"clusters: the same member_id or ip failing {CLUSTER_MIN}+ times within an hour; "
