@@ -1,3 +1,10 @@
+# [0.279.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.278.0...v0.279.0) (2026-11-23)
+
+
+### Features
+
+* **mcp:** add trouble_report tool for failure-type audit actions ([#2650](https://github.com/ProteinDeficientsAnonymous/pda/issues/2650)) ([ece48f1](https://github.com/ProteinDeficientsAnonymous/pda/commit/ece48f1ec341b4d9369f5a4a1bbf1e351ded6632))
+
 # [0.278.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.277.4...v0.278.0) (2026-11-23)
 
 
