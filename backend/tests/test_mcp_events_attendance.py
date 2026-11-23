@@ -31,9 +31,16 @@ def event(host):
     )
 
 
+def _args(event, guest, attendance) -> dict:
+    return {"event_id": str(event.pk), "member_id": str(guest.pk), "attendance": attendance}
+
+
 def _call(user, event, guest, attendance, **extra) -> dict:
-    args = {"event_id": str(event.pk), "member_id": str(guest.pk), "attendance": attendance}
-    return run_tool(user, TOOL, **args, **extra)
+    return run_tool(user, TOOL, **_args(event, guest, attendance), **extra)
+
+
+def _refused(user, event, guest, attendance, **extra) -> str:
+    return tool_error(user, TOOL, **_args(event, guest, attendance), **extra)
 
 
 def _confirmed(user, event, guest, attendance, **extra) -> dict:
@@ -91,26 +98,17 @@ def test_clearing_to_unknown_clears_check_in(host, event, guest, for_plus_one):
         AttendanceStatus.ATTENDED if for_plus_one else AttendanceStatus.DIDNT_GO
     )
     rsvp.refresh_from_db()
-    cleared = (
-        (rsvp.plus_one_attendance, rsvp.plus_one_checked_in_at)
-        if for_plus_one
-        else (rsvp.attendance, rsvp.checked_in_at)
-    )
-    kept = rsvp.checked_in_at if for_plus_one else rsvp.plus_one_checked_in_at
-    assert cleared == (AttendanceStatus.UNKNOWN, None)
-    assert kept is not None
+    member = (rsvp.attendance, rsvp.checked_in_at is None)
+    plus_one = (rsvp.plus_one_attendance, rsvp.plus_one_checked_in_at is None)
+    cleared, kept = (plus_one, member) if for_plus_one else (member, plus_one)
+    assert cleared == (AttendanceStatus.UNKNOWN, True)
+    assert kept[1] is False
 
 
 def test_refuses_a_member_who_cant_edit_the_event(event, guest):
     rsvp = make_rsvp(event, guest)
 
-    error = tool_error(
-        make_user(),
-        TOOL,
-        event_id=str(event.pk),
-        member_id=str(guest.pk),
-        attendance=AttendanceStatus.ATTENDED,
-    )
+    error = _refused(make_user(), event, guest, AttendanceStatus.ATTENDED)
 
     assert '"status": 403' in error
     assert '"action": "set_attendance"' in error
@@ -121,13 +119,7 @@ def test_refuses_a_member_who_cant_edit_the_event(event, guest):
 def test_didnt_go_requires_a_going_rsvp(host, event, guest):
     make_rsvp(event, guest, status=RSVPStatus.MAYBE)
 
-    error = tool_error(
-        host,
-        TOOL,
-        event_id=str(event.pk),
-        member_id=str(guest.pk),
-        attendance=AttendanceStatus.DIDNT_GO,
-    )
+    error = _refused(host, event, guest, AttendanceStatus.DIDNT_GO)
 
     assert "didnt_go_requires_going" in error.lower()
 
@@ -136,14 +128,7 @@ def test_token_bound_to_the_mark(host, event, guest):
     make_rsvp(event, guest)
     token = _call(host, event, guest, AttendanceStatus.ATTENDED)["confirm_token"]
 
-    error = tool_error(
-        host,
-        TOOL,
-        event_id=str(event.pk),
-        member_id=str(guest.pk),
-        attendance=AttendanceStatus.DIDNT_GO,
-        confirm_token=token,
-    )
+    error = _refused(host, event, guest, AttendanceStatus.DIDNT_GO, confirm_token=token)
 
     assert "doesn't match" in error
 
@@ -160,13 +145,7 @@ def test_preview_honors_hide_last_name(host, event, self_mark, shown):
 
 
 def test_refuses_a_member_without_an_rsvp(host, event, guest):
-    error = tool_error(
-        host,
-        TOOL,
-        event_id=str(event.pk),
-        member_id=str(guest.pk),
-        attendance=AttendanceStatus.ATTENDED,
-    )
+    error = _refused(host, event, guest, AttendanceStatus.ATTENDED)
 
     assert '"status": 404' in error
     assert "rsvp_not_found" in error.lower()
