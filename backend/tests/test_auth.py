@@ -1,6 +1,7 @@
 """Tests for auth endpoints: login, refresh, me, change-password, onboarding."""
 
 import pytest
+from audit.models import AuditLogEntry
 from community.validation import Code
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
@@ -61,11 +62,13 @@ class TestLogin:
     def test_login_wrong_password(self, api_client, test_user):
         response = api_client.post(
             "/api/auth/login/",
-            {"phone_number": "+12025550101", "password": "wrongpassword"},
+            {"phone_number": "(202) 555-0101", "password": "wrongpassword"},
             content_type="application/json",
         )
         assert response.status_code == 401
         assert_error_code(response, Code.Auth.INVALID_CREDENTIALS)
+        details = AuditLogEntry.objects.get(action="login_failed").details
+        assert details == {"reason": "invalid_credentials", "user_id": str(test_user.pk)}
 
     def test_login_unknown_phone(self, api_client, db):
         response = api_client.post(
@@ -74,6 +77,8 @@ class TestLogin:
             content_type="application/json",
         )
         assert response.status_code == 401
+        details = AuditLogEntry.objects.get(action="login_failed").details
+        assert details == {"reason": "invalid_credentials"}
 
     def test_login_missing_password(self, api_client, db):
         response = api_client.post(
