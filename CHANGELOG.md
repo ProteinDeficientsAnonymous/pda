@@ -1,3 +1,11 @@
+## [0.277.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.277.2...v0.277.3) (2026-11-23)
+
+
+### Bug Fixes
+
+* **events:** let hosts undo attendance marks on check-in ([#2645](https://github.com/ProteinDeficientsAnonymous/pda/issues/2645)) ([4b029be](https://github.com/ProteinDeficientsAnonymous/pda/commit/4b029be13bd80e86e7f1dd1b217886579ba177ca))
+* **join:** say vetters reach out via text or whatsapp ([#2646](https://github.com/ProteinDeficientsAnonymous/pda/issues/2646)) ([37da296](https://github.com/ProteinDeficientsAnonymous/pda/commit/37da296e157e3aa15a1e632e47fe4fea5430185a))
+
 ## [0.277.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.277.1...v0.277.2) (2026-11-20)
 
 
