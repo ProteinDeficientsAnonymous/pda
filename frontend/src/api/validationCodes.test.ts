@@ -77,9 +77,9 @@ describe('messageForCode', () => {
     );
   });
 
-  it("says only going guests can be marked didn't attend", () => {
+  it('says only going guests can be marked a no-show', () => {
     expect(messageForCode({ code: Code.Event.DidntGoRequiresGoing, field: null })).toBe(
-      "only guests who rsvp'd going can be marked didn't attend",
+      "only guests who rsvp'd going can be marked a no-show",
     );
   });
 

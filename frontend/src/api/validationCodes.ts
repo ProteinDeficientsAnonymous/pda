@@ -129,7 +129,7 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Event.NoPlusOneToCheckIn:
       return "this guest doesn't have a +1 to check in";
     case Code.Event.DidntGoRequiresGoing:
-      return "only guests who rsvp'd going can be marked didn't attend";
+      return "only guests who rsvp'd going can be marked a no-show";
     case Code.Event.BlastInvalidAudience:
       return 'that audience choice is not valid';
     case Code.Event.BlastNoRecipients:
