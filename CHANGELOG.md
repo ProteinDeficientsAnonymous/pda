@@ -1,3 +1,10 @@
+## [0.277.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.277.3...v0.277.4) (2026-11-23)
+
+
+### Bug Fixes
+
+* **ci:** scope mutation testing for mcp_gateway, audit, and test helpers ([#2647](https://github.com/ProteinDeficientsAnonymous/pda/issues/2647)) ([377b790](https://github.com/ProteinDeficientsAnonymous/pda/commit/377b790d3e83e7506d1597137841c61483271f27))
+
 ## [0.277.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.277.2...v0.277.3) (2026-11-23)
 
 
