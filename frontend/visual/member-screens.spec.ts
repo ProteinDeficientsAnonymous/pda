@@ -73,6 +73,7 @@ test('member screens', async ({ page }) => {
       heading: 'check-in',
       text: 'check-in opens an hour before the event',
     }),
+    screen('event-check-in-open', '/events/hike/check-in', { text: "didn't go" }),
     screen('event-rsvps', '/events/potluck/manage-rsvps', { heading: 'manage rsvps' }),
     screen('event-report', `/events/${data.hike_id}/report`, {
       heading: 'check-in report',
