@@ -18,6 +18,7 @@ from community.events.helpers import broadcast_capacity_change, event_out
 from community.events.rsvp_question_schemas import RsvpAnswer
 from community.field_limits import FieldLimit
 from community.models import Event, RSVPStatus
+from community.rsvps._failure_audit import audit_rsvp_failure
 from community.rsvps.member import (
     RsvpApply,
     apply_rsvp_in_transaction,
@@ -246,6 +247,7 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     auth=None,
 )
 @rate_limit(key_func=client_ip, rate="5/h")
+@audit_rsvp_failure
 def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     event = load_public_rsvp_event(event_id)
 

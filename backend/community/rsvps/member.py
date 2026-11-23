@@ -31,6 +31,7 @@ from community.events.read_visibility import enforce_event_read_visibility
 from community.events.schemas import EventOut, RSVPIn
 from community.models import CancelReason, Event, EventComment, EventRSVP, RSVPStatus
 from community.rsvps._deadline import enforce_rsvps_open
+from community.rsvps._failure_audit import audit_rsvp_failure
 from community.rsvps._waitlist_place import keep_waitlist_place, save_would_seat_waitlister
 from community.rsvps.answers import (
     AnswersIn,
@@ -354,6 +355,7 @@ def apply_rsvp_in_transaction(event_id, user, rsvp: RsvpApply) -> tuple[str, lis
     auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
+@audit_rsvp_failure
 def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     try:
         Event.objects.get(id=event_id)
@@ -408,6 +410,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
+@audit_rsvp_failure
 def delete_rsvp(request, event_id: UUID):
     try:
         Event.objects.get(id=event_id)

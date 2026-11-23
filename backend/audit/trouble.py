@@ -26,6 +26,7 @@ FAILURE_ACTIONS = (
     "public_rsvp_recognized_email_failed",
     "public_rsvp_rejected_applicant_blocked",
     "public_rsvp_resend_email_failed",
+    "rsvp_failed",
     "user_transition_rejected",
 )
 SUCCESS_ACTIONS = (
