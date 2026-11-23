@@ -14,7 +14,7 @@ export default function JoinSuccessScreen() {
         </div>
         <h1 className="text-2xl font-medium tracking-tight">request received!</h1>
         <p className="text-foreground-tertiary text-sm">
-          a vetting member will review your request and reach out soon
+          a vetting member will review your request and reach out soon via text or whatsapp
         </p>
         <Link
           to="/"
