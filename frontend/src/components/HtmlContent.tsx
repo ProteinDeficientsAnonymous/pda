@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { cn } from '@/utils/cn';
+import { addHeadingAnchors, scrollToHash } from '@/utils/headingAnchors';
 import { sanitizeHtml } from '@/utils/sanitize';
 
 interface Props {
@@ -9,7 +10,12 @@ interface Props {
 }
 
 export function HtmlContent({ html, className }: Props) {
-  const safe = useMemo(() => sanitizeHtml(html), [html]);
+  const safe = useMemo(() => addHeadingAnchors(sanitizeHtml(html)), [html]);
+
+  // content arrives after the browser's own load-time hash jump, so redo it once it's in the dom
+  useEffect(() => {
+    scrollToHash(window.location.hash);
+  }, [safe]);
   return (
     <div
       className={cn(
@@ -18,6 +24,9 @@ export function HtmlContent({ html, className }: Props) {
         '[&_h1]:mt-6 [&_h1]:mb-2 [&_h1]:text-2xl [&_h1]:font-medium',
         '[&_h2]:mt-5 [&_h2]:mb-2 [&_h2]:text-xl [&_h2]:font-medium',
         '[&_h3]:mt-4 [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:font-medium',
+        '[&_:is(h1,h2,h3)]:scroll-mt-14',
+        '[&_a.heading-anchor]:text-muted [&_a.heading-anchor]:ms-2 [&_a.heading-anchor]:no-underline [&_a.heading-anchor]:opacity-0 [&_a.heading-anchor]:transition-opacity',
+        '[&_:is(h1,h2,h3):hover_a.heading-anchor]:opacity-100 [&_a.heading-anchor:focus-visible]:opacity-100 pointer-coarse:[&_a.heading-anchor]:opacity-60',
         '[&_p]:my-3',
         '[&_ul]:my-3 [&_ul]:list-disc [&_ul]:ps-6',
         '[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:ps-6',
