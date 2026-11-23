@@ -18,10 +18,13 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+BACKEND_DIR = REPO_ROOT / "backend"
+TESTS_DIR = BACKEND_DIR / "tests"
 
 # When any of these paths (prefix match on normalized diff paths) change, run everything.
 FULL_PREFIXES: tuple[str, ...] = (
@@ -96,11 +99,25 @@ CONFIG_TESTS: frozenset[str] = frozenset(
     }
 )
 
+
+def _tests_matching(*patterns: str) -> frozenset[str]:
+    return frozenset(
+        p.relative_to(BACKEND_DIR).as_posix()
+        for pattern in patterns
+        for p in TESTS_DIR.glob(pattern)
+    )
+
+
+MCP_GATEWAY_TESTS = _tests_matching("test_mcp_*.py", "test_prune_mcp_oauth.py")
+AUDIT_TESTS = _tests_matching("test_*audit*.py", "users/test_*audit*.py")
+
 BACKEND_BUNDLES: tuple[tuple[str, frozenset[str]], ...] = (
     ("backend/users/", USERS_TESTS),
     ("backend/notifications/", NOTIFICATIONS_TESTS),
     ("backend/community/", COMMUNITY_TESTS),
     ("backend/config/", CONFIG_TESTS),
+    ("backend/mcp_gateway/", MCP_GATEWAY_TESTS),
+    ("backend/audit/", AUDIT_TESTS),
 )
 
 
@@ -186,6 +203,44 @@ def _test_path_from_diff(p: str) -> str | None:
     return p.removeprefix("backend/")
 
 
+def _tests_using_helper(module: str) -> set[str] | None:
+    """Test paths importing tests.<module>, directly or through other helpers; None if a root conftest does."""
+    sources = {f: f.read_text(encoding="utf-8") for f in TESTS_DIR.rglob("*.py")}
+    pending, seen, tests = [module], {module}, set()
+    while pending:
+        imported = re.compile(rf"\btests\.{re.escape(pending.pop())}\b")
+        for f, text in sources.items():
+            if not imported.search(text):
+                continue
+            if f == TESTS_DIR / "conftest.py":
+                return None
+            if f.name == "conftest.py":
+                tests.add(f.parent.relative_to(BACKEND_DIR).as_posix() + "/")
+            elif f.name.startswith("test_"):
+                tests.add(f.relative_to(BACKEND_DIR).as_posix())
+            elif f.parent == TESTS_DIR and f.stem.startswith("_") and f.stem not in seen:
+                seen.add(f.stem)
+                pending.append(f.stem)
+    return tests
+
+
+def _is_test_support(p: str) -> bool:
+    """A helper module directly under backend/tests/, or a nested conftest."""
+    rel = p.removeprefix("backend/tests/")
+    if rel == p or not p.endswith(".py"):
+        return False
+    name = rel.rsplit("/", 1)[-1]
+    return ("/" not in rel and name.startswith("_")) or ("/" in rel and name == "conftest.py")
+
+
+def _tests_for_test_support(p: str) -> set[str] | None:
+    """Tests affected by a test-support file; None if the full suite is."""
+    rel = p.removeprefix("backend/")
+    if rel.endswith("/conftest.py"):
+        return {rel.removesuffix("conftest.py")}
+    return _tests_using_helper(rel.removeprefix("tests/").removesuffix(".py"))
+
+
 def _bundle_for_backend_source(p: str) -> frozenset[str] | None:
     """Return tests bundle for app code path, or None if unknown under backend/."""
     for prefix, bundle in BACKEND_BUNDLES:
@@ -198,6 +253,12 @@ def _add_backend_path(p: str, candidates: set[str]) -> bool:
     """Add tests for one backend path. Return False if the full suite is required."""
     if rel_test := _test_path_from_diff(p):
         candidates.add(rel_test)
+        return True
+    if _is_test_support(p):
+        support = _tests_for_test_support(p)
+        if support is None:
+            return False
+        candidates.update(support)
         return True
     bundle = _bundle_for_backend_source(p)
     if bundle is None:
