@@ -46,8 +46,14 @@ def test_preview_changes_nothing(host, event, guest):
 
     preview = _call(host, event, guest, AttendanceStatus.ATTENDED)
 
-    assert preview["was"] == AttendanceStatus.UNKNOWN
-    assert preview["confirm_token"]
+    assert preview.pop("confirm_token")
+    assert preview == {
+        "event": "potluck",
+        "member": "Robin",
+        "for_plus_one": False,
+        "was": AttendanceStatus.UNKNOWN,
+        "attendance": AttendanceStatus.ATTENDED,
+    }
     rsvp.refresh_from_db()
     assert rsvp.attendance == AttendanceStatus.UNKNOWN
 
@@ -71,9 +77,8 @@ def test_clearing_to_unknown_clears_check_in(host, event, guest, for_plus_one):
     rsvp = make_rsvp(
         event,
         guest,
-        status=RSVPStatus.MAYBE,
         has_plus_one=True,
-        attendance=AttendanceStatus.ATTENDED,
+        attendance=AttendanceStatus.DIDNT_GO,
         checked_in_at=timezone.now(),
         plus_one_attendance=AttendanceStatus.ATTENDED,
         plus_one_checked_in_at=timezone.now(),
@@ -81,7 +86,10 @@ def test_clearing_to_unknown_clears_check_in(host, event, guest, for_plus_one):
 
     result = _confirmed(host, event, guest, AttendanceStatus.UNKNOWN, for_plus_one=for_plus_one)
 
-    assert result["was"] == AttendanceStatus.ATTENDED
+    assert result["for_plus_one"] is for_plus_one
+    assert result["was"] == (
+        AttendanceStatus.ATTENDED if for_plus_one else AttendanceStatus.DIDNT_GO
+    )
     rsvp.refresh_from_db()
     cleared = (
         (rsvp.plus_one_attendance, rsvp.plus_one_checked_in_at)
@@ -105,6 +113,7 @@ def test_refuses_a_member_who_cant_edit_the_event(event, guest):
     )
 
     assert '"status": 403' in error
+    assert '"action": "set_attendance"' in error
     rsvp.refresh_from_db()
     assert rsvp.attendance == AttendanceStatus.UNKNOWN
 
@@ -139,8 +148,25 @@ def test_token_bound_to_the_mark(host, event, guest):
     assert "doesn't match" in error
 
 
-def test_preview_hides_a_hidden_last_name(host, event):
+@pytest.mark.parametrize(("self_mark", "shown"), [(False, "Robin"), (True, "Robin Oak")])
+def test_preview_honors_hide_last_name(host, event, self_mark, shown):
     guest = make_user(first_name="Robin", last_name="Oak", hide_last_name=True)
+    if self_mark:
+        event.co_hosts.add(guest)
     make_rsvp(event, guest)
 
-    assert _call(host, event, guest, AttendanceStatus.ATTENDED)["member"] == "Robin"
+    viewer = guest if self_mark else host
+    assert _call(viewer, event, guest, AttendanceStatus.ATTENDED)["member"] == shown
+
+
+def test_refuses_a_member_without_an_rsvp(host, event, guest):
+    error = tool_error(
+        host,
+        TOOL,
+        event_id=str(event.pk),
+        member_id=str(guest.pk),
+        attendance=AttendanceStatus.ATTENDED,
+    )
+
+    assert '"status": 404' in error
+    assert "rsvp_not_found" in error.lower()
