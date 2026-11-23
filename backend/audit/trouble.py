@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.utils import timezone
@@ -28,6 +28,16 @@ FAILURE_ACTIONS = (
     "public_rsvp_resend_email_failed",
     "user_transition_rejected",
 )
+SUCCESS_ACTIONS = (
+    "login_success",
+    "magic_login_success",
+    "password_changed",
+    "public_rsvp_created",
+    "public_rsvp_updated",
+    "rsvp_changed",
+)
+CLUSTER_MIN = 3
+CLUSTER_SPAN = timedelta(hours=1)
 SAMPLES_PER_ACTION = 3
 MAX_ROWS = 5000
 _FIELDS = ("action", "created_at", "actor_id", "actor_label", "target_type", "target_id")
@@ -88,10 +98,50 @@ def _by_action(failures: list[dict]) -> list[dict]:
     )
 
 
+def _bursts(rows: list[dict]):
+    start = 0
+    while start < len(rows):
+        end = start
+        while (
+            end < len(rows) and rows[end]["created_at"] - rows[start]["created_at"] <= CLUSTER_SPAN
+        ):
+            end += 1
+        if end - start >= CLUSTER_MIN:
+            yield rows[start:end]
+            start = end
+        else:
+            start += 1
+
+
+def _cluster(key: str, value: str, burst: list[dict], successes: list[dict]) -> dict:
+    last = burst[-1]["created_at"]
+    recovered = (s["created_at"] for s in successes if s[key] == value and s["created_at"] > last)
+    return {
+        key: value,
+        "failures": len(burst),
+        "actions": sorted({r["action"] for r in burst}),
+        "first_seen": burst[0]["created_at"],
+        "last_seen": last,
+        "recovered_at": next(recovered, None),
+    }
+
+
+def _clusters(failures: list[dict], successes: list[dict]) -> list[dict]:
+    clusters = [
+        _cluster(key, value, burst, successes)
+        for key in ("member_id", "ip")
+        for value, rows in _group(failures, key).items()
+        for burst in _bursts(rows)
+    ]
+    return sorted(clusters, key=lambda c: c["first_seen"])
+
+
 def trouble_report(since: datetime, until: datetime | None = None) -> dict:
     until = until or timezone.now()
     failures = _rows(FAILURE_ACTIONS, since, until)
+    successes = _rows(SUCCESS_ACTIONS, since, until)
     return {
         "actions": _by_action(failures),
+        "clusters": _clusters(failures, successes),
         "truncated": len(failures) >= MAX_ROWS,
     }
