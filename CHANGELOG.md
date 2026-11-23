@@ -1,3 +1,12 @@
+# [0.280.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.279.0...v0.280.0) (2026-11-23)
+
+
+### Features
+
+* **auth:** record the member's id on failed password sign-ins ([#2652](https://github.com/ProteinDeficientsAnonymous/pda/issues/2652)) ([03f4502](https://github.com/ProteinDeficientsAnonymous/pda/commit/03f4502eb334dc09722701d413d0d9cd7db0816c))
+* **mcp:** flag repeat-failure clusters in trouble_report ([#2651](https://github.com/ProteinDeficientsAnonymous/pda/issues/2651)) ([bb0a418](https://github.com/ProteinDeficientsAnonymous/pda/commit/bb0a41855def98909f52d05e7dbc4ca262449cf1))
+* **rsvps:** audit rsvps a member couldn't save as rsvp_failed ([#2653](https://github.com/ProteinDeficientsAnonymous/pda/issues/2653)) ([9220267](https://github.com/ProteinDeficientsAnonymous/pda/commit/9220267ba6cdf9248a61e745ac3eb753d899b977))
+
 # [0.279.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.278.0...v0.279.0) (2026-11-23)
 
 
