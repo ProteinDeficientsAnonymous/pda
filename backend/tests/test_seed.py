@@ -5,7 +5,7 @@ from community.management.commands._seed_data import (
     SEED_EVENT_RSVP_QUESTIONS,
 )
 from community.management.commands._seed_event_feedback import FEEDBACK_EVENT_TITLE
-from community.models import Event, EventRSVP, EventType, JoinRequest, RSVPStatus, Survey
+from community.models import Club, Event, EventRSVP, EventType, JoinRequest, RSVPStatus, Survey
 from community.models.choices import AttendanceStatus, SurveyQuestionType
 from django.core.management import call_command
 from django.utils import timezone
@@ -174,3 +174,18 @@ def test_seed_creates_official_feedback_survey_and_due_event():
     assert event in due_feedback_events(timezone.now())
     attended = event.rsvps.filter(attendance=AttendanceStatus.ATTENDED, checked_in_at__isnull=False)
     assert attended.count() == 3
+
+
+@pytest.mark.django_db
+def test_seed_creates_clubs_once():
+    call_command("seed")
+    call_command("seed")
+
+    assert dict(Club.objects.values_list("name", "requirements")) == {
+        "board game club": "",
+        "book club": "",
+        "doggie meetup club": "must be dog parent // guardian",
+        "movie club": "",
+        "outdoor adventures": "",
+        "queer and vegan": "must identify as queer // 2slgbtqia+",
+    }
