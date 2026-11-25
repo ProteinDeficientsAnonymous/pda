@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 
 def load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
     return (
-        Event.objects.select_related("created_by")
+        Event.objects.select_related("created_by", "club")
         .prefetch_related("co_hosts", "invited_users", "rsvps__user", "rsvp_questions")
         .filter(id=event_id)
         .first()
