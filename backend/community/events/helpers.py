@@ -14,6 +14,7 @@ from notifications.service import broadcast_event_update
 from users.helpers import visible_display_name
 from users.permissions import PermissionKey
 
+from community.clubs.api import club_out
 from community.cohosts.helpers import pending_cohost_invites_out
 from community.cohosts.invite_helpers import get_my_pending_invite
 from community.events.price import price_text
@@ -419,6 +420,7 @@ def event_out(event: Event, requesting_user=None) -> EventOut:
         pending_cohost_invites=pending_invites_out,
         my_pending_cohost_invite_id=my_pending_invite_id,
         tags=tags_out(event),
+        club=club_out(event.club) if event.club_id else None,
         rsvp_questions=[
             event_rsvp_question_out(question) for question in event.rsvp_questions.all()
         ],

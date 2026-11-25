@@ -2561,6 +2561,18 @@
             "title": "Cashapp Link",
             "type": "string"
           },
+          "club_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Id"
+          },
           "co_host_ids": {
             "default": [],
             "items": {
@@ -3035,6 +3047,16 @@
             "title": "Cashapp Link",
             "type": "string"
           },
+          "club": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClubOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "co_host_ids": {
             "default": [],
             "items": {
@@ -3458,6 +3480,18 @@
               }
             ],
             "title": "Cashapp Link"
+          },
+          "club_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Id"
           },
           "co_host_ids": {
             "anyOf": [

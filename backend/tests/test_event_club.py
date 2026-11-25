@@ -1,5 +1,5 @@
 import pytest
-from community.models import Event, EventType
+from community.models import Club, Event, EventType
 from django.utils import timezone
 from users.permissions import PermissionKey
 
@@ -29,6 +29,8 @@ class TestClubEventVisibility:
             "event_type": "club",
             "visibility": "public",
         }
+        if "club_id" not in overrides:
+            payload["club_id"] = str(Club.objects.get_or_create(name="book club")[0].id)
         payload.update(overrides)
         return payload
 

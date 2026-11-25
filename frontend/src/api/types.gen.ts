@@ -4060,6 +4060,8 @@ export interface components {
              * @default
              */
             cashapp_link: string;
+            /** Club Id */
+            club_id?: string | null;
             /**
              * Co Host Ids
              * @default []
@@ -4331,6 +4333,7 @@ export interface components {
              * @default
              */
             cashapp_link: string;
+            club?: components["schemas"]["ClubOut"] | null;
             /**
              * Co Host Ids
              * @default []
@@ -4561,6 +4564,8 @@ export interface components {
             allow_plus_ones?: boolean | null;
             /** Cashapp Link */
             cashapp_link?: string | null;
+            /** Club Id */
+            club_id?: string | null;
             /** Co Host Ids */
             co_host_ids?: string[] | null;
             /** Datetime Tbd */
