@@ -11,20 +11,17 @@ interface Props {
 export function EventFormClub({ value, onChange, error }: Props) {
   const { data: clubs, isPending, isError } = useClubs();
 
-  if (isPending) return <p className="text-foreground-tertiary text-sm">loading clubs…</p>;
-  if (isError) {
-    return <p className="text-foreground-tertiary text-sm">couldn't load clubs — try again</p>;
-  }
-  if (clubs.length === 0) {
-    return (
-      <div className="flex flex-col gap-1">
-        <p className="text-foreground-tertiary text-sm">
-          no clubs yet — add them in admin &gt; clubs
-        </p>
-        {error ? <p className="text-destructive text-xs">{error}</p> : null}
-      </div>
-    );
-  }
+  const errorLine = error ? <p className="text-destructive text-xs">{error}</p> : null;
+  const note = (text: string) => (
+    <div className="flex flex-col gap-1">
+      <p className="text-foreground-tertiary text-sm">{text}</p>
+      {errorLine}
+    </div>
+  );
+
+  if (isPending) return note('loading clubs…');
+  if (isError) return note("couldn't load clubs — try again");
+  if (clubs.length === 0) return note('no clubs yet — add them in admin > clubs');
 
   return (
     <Select
