@@ -1,3 +1,12 @@
+# [0.283.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.282.0...v0.283.0) (2026-11-25)
+
+
+### Features
+
+* **clubs:** events carry their club in the frontend model and payloads ([#2667](https://github.com/ProteinDeficientsAnonymous/pda/issues/2667)) ([23eca5a](https://github.com/ProteinDeficientsAnonymous/pda/commit/23eca5a3dc61833935afb5b9961a48e15cd051af))
+* **clubs:** pick a club on the event form ([#2668](https://github.com/ProteinDeficientsAnonymous/pda/issues/2668)) ([ddd068b](https://github.com/ProteinDeficientsAnonymous/pda/commit/ddd068bd8845148f2635dce5a2fc448e24f0460b))
+* **join:** suggest official and club events in the tentative message ([#2672](https://github.com/ProteinDeficientsAnonymous/pda/issues/2672)) ([9c63eb6](https://github.com/ProteinDeficientsAnonymous/pda/commit/9c63eb61027b2024abfbd0939fe31044e772ee02))
+
 # [0.282.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.281.0...v0.282.0) (2026-11-25)
 
 
