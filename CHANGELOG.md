@@ -1,3 +1,10 @@
+# [0.282.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.281.0...v0.282.0) (2026-11-25)
+
+
+### Features
+
+* **join:** suggest a club event matching the applicant's picked clubs ([#2666](https://github.com/ProteinDeficientsAnonymous/pda/issues/2666)) ([3f703b2](https://github.com/ProteinDeficientsAnonymous/pda/commit/3f703b216ad1680746292c4c18a39ae6289fee1a))
+
 # [0.281.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.280.0...v0.281.0) (2026-11-25)
 
 
