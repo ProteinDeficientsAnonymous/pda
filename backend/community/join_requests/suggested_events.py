@@ -74,7 +74,7 @@ def suggest_club_event(join_request: JoinRequest, now: datetime) -> tuple[Event 
     if picked is not None:
         return picked, True
     # Clubs with requirements (e.g. dog parents only) are suggested only to people who picked them.
-    return upcoming.filter(club__isnull=False, club__requirements="").first(), False
+    return upcoming.filter(club__requirements="").first(), False
 
 
 @router.get(
