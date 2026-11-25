@@ -95,6 +95,8 @@ export interface WireEvent {
 
   tags?: WireTag[];
 
+  club?: { id: string; name: string; requirements: string } | null;
+
   is_past?: boolean;
   status?: string;
   is_partiful_import?: boolean;
@@ -240,6 +242,7 @@ export function mapEvent(e: WireEvent): Event {
     photoUpdatedAt: e.photo_updated_at ?? null,
 
     tags: (e.tags ?? []).map(mapTag),
+    club: e.club ? { id: e.club.id, name: e.club.name, requirements: e.club.requirements } : null,
 
     isPast: e.is_past ?? false,
     status: e.status ?? 'active',

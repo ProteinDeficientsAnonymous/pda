@@ -13,7 +13,7 @@ vi.mock('@/api/client');
 vi.mock('@/api/content', () => ({
   useTentativeApprovalMessage: () => ({
     data: {
-      body: 'hi ${FIRST_NAME}, from ${SENDER_NAME} — you are tentatively in. sign in: ${MAGIC_LINK}',
+      body: 'hi ${FIRST_NAME}, from ${SENDER_NAME} — you are tentatively in. sign in: ${MAGIC_LINK}\n\n${NEXT_OFFICIAL_EVENT}\n\n${CLUB_EVENT}',
       updatedAt: '2026-01-01',
     },
     isPending: false,
@@ -25,6 +25,22 @@ vi.mock('@/api/content', () => ({
     isPending: false,
     isError: false,
   }),
+}));
+
+const suggestedEvents = vi.hoisted(() => ({
+  data: {
+    nextOfficialEvent: null as null | {
+      id: string;
+      slug: string;
+      title: string;
+      startDatetime: Date;
+    },
+    clubEvent: null as null | { id: string; slug: string; title: string; startDatetime: Date },
+  },
+}));
+
+vi.mock('@/api/joinSuggestedEvents', () => ({
+  useJoinRequestSuggestedEvents: () => ({ ...suggestedEvents, isPending: false }),
 }));
 
 function makeUser(overrides?: Partial<User>): User {
@@ -39,6 +55,7 @@ function makeUser(overrides?: Partial<User>): User {
 }
 
 beforeEach(() => {
+  suggestedEvents.data = { nextOfficialEvent: null, clubEvent: null };
   useAuthStore.setState({ status: 'idle', user: null, accessToken: null });
 });
 
@@ -56,6 +73,7 @@ function renderDialog(user: User | null, magicLinkToken: string | null = null) {
       firstName="Sam"
       phoneNumber="+12025551234"
       magicLinkToken={magicLinkToken}
+      joinRequestId="jr1"
     />,
   );
 }
@@ -102,5 +120,27 @@ describe('TentativeApprovalMessageDialog', () => {
     expect(
       screen.getByRole('button', { name: /edit tentative approval message/i }),
     ).toBeInTheDocument();
+  });
+
+  it('adds the suggested official and club events to the message', () => {
+    suggestedEvents.data = {
+      nextOfficialEvent: {
+        id: 'o1',
+        slug: 'walk',
+        title: 'Park Walk',
+        startDatetime: new Date(2026, 11, 19, 11, 0),
+      },
+      clubEvent: {
+        id: 'c1',
+        slug: 'book-club',
+        title: 'Book Club',
+        startDatetime: new Date(2026, 11, 10, 18, 30),
+      },
+    };
+    renderDialog(makeUser());
+    expect(screen.getByText(/here's the next official event:/)).toHaveTextContent(
+      `here's the next official event: Park Walk — sat dec 19, 11:00 am ${window.location.origin}/events/walk`,
+    );
+    expect(screen.getByText(/here's a club event we think you'd love:/)).toBeInTheDocument();
   });
 });
