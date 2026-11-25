@@ -58,7 +58,9 @@ export function TentativeApprovalMessageDialog({
       eventsQ.data?.nextOfficialEvent ?? null,
     ),
     clubEvent: buildEventSection(
-      "here's a club event we think you'd love:",
+      eventsQ.data?.clubEventFromPickedClub
+        ? "here's a club event we think you'd love:"
+        : "here's a club event coming up:",
       eventsQ.data?.clubEvent ?? null,
     ),
   });

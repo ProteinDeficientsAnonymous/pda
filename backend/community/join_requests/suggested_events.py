@@ -39,6 +39,8 @@ class SuggestedEventOut(BaseModel):
 class SuggestedEventsOut(BaseModel):
     next_official_event: SuggestedEventOut | None
     club_event: SuggestedEventOut | None
+    # False when club_event is a fallback from a club they didn't pick.
+    club_event_from_picked_club: bool = False
 
 
 def _event_out(event: Event | None) -> SuggestedEventOut | None:
@@ -65,12 +67,14 @@ def _upcoming(event_type: str, starts_after: datetime) -> QuerySet[Event]:
     )
 
 
-def suggest_club_event(join_request: JoinRequest, now: datetime) -> Event | None:
-    return (
-        _upcoming(EventType.CLUB, now + CLUB_EVENT_LEAD_TIME)
-        .filter(club__in=join_request.interested_clubs.all())
-        .first()
-    )
+def suggest_club_event(join_request: JoinRequest, now: datetime) -> tuple[Event | None, bool]:
+    """return(tuple): the event, and whether it's from a club the applicant picked."""
+    upcoming = _upcoming(EventType.CLUB, now + CLUB_EVENT_LEAD_TIME)
+    picked = upcoming.filter(club__in=join_request.interested_clubs.all()).first()
+    if picked is not None:
+        return picked, True
+    # Clubs with requirements (e.g. dog parents only) are suggested only to people who picked them.
+    return upcoming.filter(club__requirements="").first(), False
 
 
 @router.get(
@@ -99,12 +103,14 @@ def join_request_suggested_events(request, id: UUID):
     if join_request is None:
         raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
     now = timezone.now()
+    club_event, from_picked_club = suggest_club_event(join_request, now)
     return Status(
         200,
         SuggestedEventsOut(
             next_official_event=_event_out(
                 _upcoming(EventType.OFFICIAL, now).filter(rsvp_enabled=True).first()
             ),
-            club_event=_event_out(suggest_club_event(join_request, now)),
+            club_event=_event_out(club_event),
+            club_event_from_picked_club=from_picked_club,
         ),
     )

@@ -1,3 +1,31 @@
+## [0.287.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.287.0...v0.287.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* **join:** list a join request's answers in join-form order ([#2677](https://github.com/ProteinDeficientsAnonymous/pda/issues/2677)) ([00c2aa3](https://github.com/ProteinDeficientsAnonymous/pda/commit/00c2aa3080810189de63af206d6e803f4e8f28bb))
+
+# [0.287.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.286.1...v0.287.0) (2026-11-25)
+
+
+### Features
+
+* **join:** suggest an open club's event when no picked club has one ([#2676](https://github.com/ProteinDeficientsAnonymous/pda/issues/2676)) ([f0110c3](https://github.com/ProteinDeficientsAnonymous/pda/commit/f0110c3a48dc3a68ec8e37d84d5c2c292c2c5bab))
+
+## [0.286.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.286.0...v0.286.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* **join:** style checkbox questions and separate the consents ([#2675](https://github.com/ProteinDeficientsAnonymous/pda/issues/2675)) ([a48454c](https://github.com/ProteinDeficientsAnonymous/pda/commit/a48454c8917ed7261b26757009ebe0f6ce851ecd))
+
+# [0.286.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.285.0...v0.286.0) (2026-11-25)
+
+
+### Features
+
+* **mcp:** tools to list and manage clubs ([#2674](https://github.com/ProteinDeficientsAnonymous/pda/issues/2674)) ([fce0a86](https://github.com/ProteinDeficientsAnonymous/pda/commit/fce0a862547597b904b14b66a60e7a3fbad649e7))
+
 # [0.285.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.284.0...v0.285.0) (2026-11-25)
 
 
