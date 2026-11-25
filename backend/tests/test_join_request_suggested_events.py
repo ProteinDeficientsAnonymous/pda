@@ -47,6 +47,11 @@ def book(db):
     return Club.objects.create(name="book club")
 
 
+@pytest.fixture
+def movie(db):
+    return Club.objects.create(name="movie club")
+
+
 def _get(api_client, headers, join_request):
     response = api_client.get(_url(join_request.id), **headers)
     assert response.status_code == 200
@@ -83,7 +88,62 @@ class TestNextOfficialEvent:
     def test_nothing_upcoming(self, api_client, vettor_headers, book):
         body = _get(api_client, vettor_headers, _join_request(book))
 
-        assert body == {"next_official_event": None}
+        assert body == {"next_official_event": None, "club_event": None}
+
+
+@pytest.mark.django_db
+class TestClubEvent:
+    def test_matches_only_the_picked_club(self, api_client, vettor_headers, book, movie):
+        _event("movie night", EventType.CLUB, 8, club=movie)
+        picked = _event("book night", EventType.CLUB, 10, club=book)
+
+        body = _get(api_client, vettor_headers, _join_request(book))
+
+        assert body["club_event"]["id"] == str(picked.id)
+
+    def test_two_picked_clubs_gives_the_soonest_of_either(
+        self, api_client, vettor_headers, book, movie
+    ):
+        _event("book night", EventType.CLUB, 12, club=book)
+        sooner = _event("movie night", EventType.CLUB, 9, club=movie)
+
+        body = _get(api_client, vettor_headers, _join_request(book, movie))
+
+        assert body["club_event"]["id"] == str(sooner.id)
+
+    def test_is_at_least_a_week_out(self, api_client, vettor_headers, book):
+        _event("too soon", EventType.CLUB, 6, club=book)
+        later = _event("next month", EventType.CLUB, 30, club=book)
+
+        body = _get(api_client, vettor_headers, _join_request(book))
+
+        assert body["club_event"]["id"] == str(later.id)
+
+    def test_ignores_non_club_events(self, api_client, vettor_headers, book):
+        _event("official", EventType.OFFICIAL, 9, club=book)
+        _event("community", EventType.COMMUNITY, 9, club=book)
+
+        assert _get(api_client, vettor_headers, _join_request(book))["club_event"] is None
+
+    def test_none_when_no_clubs_picked(self, api_client, vettor_headers, book):
+        _event("book night", EventType.CLUB, 10, club=book)
+
+        assert _get(api_client, vettor_headers, _join_request())["club_event"] is None
+
+    def test_skips_cancelled_draft_invite_only_and_tbd_events(
+        self, api_client, vettor_headers, book
+    ):
+        _event("cancelled", EventType.CLUB, 9, club=book, status=EventStatus.CANCELLED)
+        _event("draft", EventType.CLUB, 9, club=book, status=EventStatus.DRAFT)
+        _event("secret", EventType.CLUB, 9, club=book, visibility=PageVisibility.INVITE_ONLY)
+        _event("tbd", EventType.CLUB, 9, club=book, datetime_tbd=True)
+        members = _event(
+            "members", EventType.CLUB, 11, club=book, visibility=PageVisibility.MEMBERS_ONLY
+        )
+
+        body = _get(api_client, vettor_headers, _join_request(book))
+
+        assert body["club_event"]["id"] == str(members.id)
 
 
 @pytest.mark.django_db

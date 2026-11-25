@@ -6453,6 +6453,7 @@ export interface components {
         };
         /** SuggestedEventsOut */
         SuggestedEventsOut: {
+            club_event: components["schemas"]["SuggestedEventOut"] | null;
             next_official_event: components["schemas"]["SuggestedEventOut"] | null;
         };
         /** SurveyAnswersIn */
