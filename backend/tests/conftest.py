@@ -1,3 +1,4 @@
+import os
 from unittest.mock import MagicMock
 
 import pytest
@@ -20,6 +21,18 @@ from tests._users import make_user
 def pytest_configure() -> None:
     # Fast MD5 hasher for tests only — default PBKDF2 is ~600k iterations per create_user.
     django_settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+
+
+if _MUTATION_DB_TEMPLATE := os.environ.get("PDA_MUTATION_DB_TEMPLATE"):
+    # mutmut runs one pytest session per mutant, in parallel: clone a pre-migrated DB per process
+    @pytest.fixture(scope="session")
+    def django_db_modify_db_settings() -> None:
+        for db in django_settings.DATABASES.values():
+            db["TEST"] = {
+                **db.get("TEST", {}),
+                "NAME": f"{_MUTATION_DB_TEMPLATE}_{os.getpid()}",
+                "TEMPLATE": _MUTATION_DB_TEMPLATE,
+            }
 
 
 @pytest.hookimpl(hookwrapper=True)
