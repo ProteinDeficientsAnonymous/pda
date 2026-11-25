@@ -23,6 +23,13 @@ describe('mapEvent', () => {
     expect(result.startDatetime!.getUTCHours()).toBe(18);
   });
 
+  it('maps the club, or null when unset', () => {
+    const club = { id: 'c1', name: 'book club', requirements: 'read the book' };
+    expect(mapEvent(wireEvent({ club })).club).toEqual(club);
+    expect(mapEvent(wireEvent({ club: null })).club).toBeNull();
+    expect(mapEvent(wireEvent()).club).toBeNull();
+  });
+
   it('maps rsvp_deadline to a date, or null when unset', () => {
     const deadline = mapEvent(wireEvent({ rsvp_deadline: '2026-04-14T18:00:00Z' })).rsvpDeadline;
     expect(deadline?.toISOString()).toBe('2026-04-14T18:00:00.000Z');

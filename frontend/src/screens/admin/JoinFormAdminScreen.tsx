@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import type { JoinQuestion } from '@/api/join';
 import { useDeleteJoinQuestion, useJoinQuestions, useReorderJoinQuestions } from '@/api/join';
@@ -20,6 +21,9 @@ export default function JoinFormAdminScreen() {
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load questions — try refreshing" />;
+
+  const editable = data.filter((q) => !q.managed);
+  const managed = data.filter((q) => q.managed);
 
   function handleReorder(nextIds: string[]) {
     reorder.mutate(nextIds);
@@ -52,11 +56,11 @@ export default function JoinFormAdminScreen() {
         questions shown to applicants on /join. name + phone are always included.
       </p>
 
-      {data.length === 0 ? (
+      {editable.length === 0 ? (
         <p className="text-muted text-sm">no custom questions yet</p>
       ) : (
         <SortableList
-          items={data}
+          items={editable}
           onReorder={handleReorder}
           ariaLabel="join form questions"
           renderItem={(q) => (
@@ -99,6 +103,22 @@ export default function JoinFormAdminScreen() {
           )}
         />
       )}
+
+      {managed.length > 0 ? (
+        <ul aria-label="managed questions" className="mt-2 flex flex-col gap-2">
+          {managed.map((q) => (
+            <li
+              key={q.id}
+              className="border-border bg-surface flex w-full min-w-0 items-center justify-between gap-2 rounded-lg border p-3"
+            >
+              <p className="min-w-0 flex-1 text-sm font-medium break-words">{q.label}</p>
+              <Link to="/admin/clubs" className="text-brand-700 shrink-0 text-xs underline">
+                managed in clubs
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       <JoinQuestionDialog
         open={creating}

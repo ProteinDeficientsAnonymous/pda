@@ -20,6 +20,8 @@ export interface JoinQuestion {
   options: string[];
   required: boolean;
   displayOrder: number;
+  /** Built-in question owned by another admin screen (the clubs question); not editable here. */
+  managed: boolean;
 }
 
 interface WireQuestion {
@@ -29,20 +31,12 @@ interface WireQuestion {
   options?: string[];
   required?: boolean;
   display_order: number;
+  managed?: boolean;
 }
 
 async function fetchJoinQuestions(): Promise<JoinQuestion[]> {
   const { data } = await apiClient.get<WireQuestion[]>('/api/community/join-form/');
-  return data
-    .map((q) => ({
-      id: q.id,
-      label: q.label,
-      fieldType: q.field_type,
-      options: q.options ?? [],
-      required: q.required ?? false,
-      displayOrder: q.display_order,
-    }))
-    .sort((a, b) => a.displayOrder - b.displayOrder);
+  return data.map(fromWire).sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
 export function useJoinQuestions() {
@@ -334,6 +328,7 @@ function fromWire(w: WireQuestion): JoinQuestion {
     options: w.options ?? [],
     required: w.required ?? false,
     displayOrder: w.display_order,
+    managed: w.managed ?? false,
   };
 }
 

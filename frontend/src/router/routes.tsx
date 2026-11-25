@@ -62,6 +62,7 @@ const JoinRequestsAdmin = lazyWithRetry(() => import('@/screens/admin/JoinReques
 const EventManagement = lazyWithRetry(() => import('@/screens/admin/EventManagementScreen'));
 const FlaggedEvents = lazyWithRetry(() => import('@/screens/admin/FlaggedEventsScreen'));
 const AttendanceReport = lazyWithRetry(() => import('@/screens/admin/AttendanceReportScreen'));
+const ClubsAdmin = lazyWithRetry(() => import('@/screens/admin/ClubsAdminScreen'));
 const JoinFormAdmin = lazyWithRetry(() => import('@/screens/admin/JoinFormAdminScreen'));
 const SurveyAdminList = lazyWithRetry(() => import('@/screens/admin/SurveyAdminListScreen'));
 const SurveyBuilder = lazyWithRetry(() => import('@/screens/admin/SurveyBuilderScreen'));
@@ -185,6 +186,7 @@ export const router = createBrowserRouter([
                   { path: '/events/manage', element: el(<EventManagement />) },
                   { path: '/admin/flagged-events', element: el(<FlaggedEvents />) },
                   { path: '/admin/attendance', element: el(<AttendanceReport />) },
+                  { path: '/admin/clubs', element: el(<ClubsAdmin />) },
                 ],
               },
               {
