@@ -502,6 +502,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/clubs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Clubs */
+        get: operations["community_clubs_api_list_clubs"];
+        put?: never;
+        /** Create Club */
+        post: operations["community_clubs_api_create_club"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/clubs/{club_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Club */
+        delete: operations["community_clubs_api_delete_club"];
+        options?: never;
+        head?: never;
+        /** Update Club */
+        patch: operations["community_clubs_api_update_club"];
+        trace?: never;
+    };
     "/api/community/dev/test-events/": {
         parameters: {
             query?: never;
@@ -3217,7 +3253,7 @@ export interface components {
          * AuditTargetType
          * @enum {string}
          */
-        AuditTargetType: "doc_folder" | "document" | "editable_page" | "event" | "event_poll" | "event_tag" | "faq" | "feature_flag" | "guidelines" | "homepage" | "join_form_question" | "join_request" | "mcp_connection" | "member_promotion_email" | "member_promotion_message" | "member_restored_email" | "rejection_email" | "reserve_entry" | "role" | "slot_assignment" | "speech_template" | "survey" | "survey_question" | "tentative_approval_message" | "user" | "welcome_template" | "whatsapp_link";
+        AuditTargetType: "club" | "doc_folder" | "document" | "editable_page" | "event" | "event_poll" | "event_tag" | "faq" | "feature_flag" | "guidelines" | "homepage" | "join_form_question" | "join_request" | "mcp_connection" | "member_promotion_email" | "member_promotion_message" | "member_restored_email" | "rejection_email" | "reserve_entry" | "role" | "slot_assignment" | "speech_template" | "survey" | "survey_question" | "tentative_approval_message" | "user" | "welcome_template" | "whatsapp_link";
         /** AvailabilityIn */
         AvailabilityIn: {
             biannual_interest: components["schemas"]["BiannualInterest"];
@@ -3458,6 +3494,25 @@ export interface components {
         ChecklistTickIn: {
             /** Done */
             done: boolean;
+        };
+        /** ClubIn */
+        ClubIn: {
+            /** Name */
+            name: string;
+            /**
+             * Requirements
+             * @default
+             */
+            requirements: string;
+        };
+        /** ClubOut */
+        ClubOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Requirements */
+            requirements: string;
         };
         /** CommentBodyIn */
         CommentBodyIn: {
@@ -8307,6 +8362,159 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_clubs_api_list_clubs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubOut"][];
+                };
+            };
+        };
+    };
+    community_clubs_api_create_club: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_clubs_api_delete_club: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_clubs_api_update_club: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
