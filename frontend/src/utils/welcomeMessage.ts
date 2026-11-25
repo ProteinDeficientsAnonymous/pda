@@ -1,3 +1,5 @@
+import { formatEventDateTime } from './datetime';
+
 export function buildMagicLinkUrl(token: string): string {
   return `${window.location.origin}/magic-login/${token}`;
 }
@@ -15,6 +17,22 @@ export interface WelcomeMessageVars {
   senderName: string;
   magicLink?: string;
   whatsappLink: string;
+  nextOfficialEvent?: string;
+  clubEvent?: string;
+}
+
+export interface MessageEvent {
+  id: string;
+  slug: string;
+  title: string;
+  startDatetime: Date;
+}
+
+// A lead-in line plus the event, or '' so the message drops the whole section.
+export function buildEventSection(lead: string, event: MessageEvent | null): string {
+  if (!event) return '';
+  const url = `${window.location.origin}/events/${event.slug || event.id}`;
+  return `${lead}\n${event.title} — ${formatEventDateTime(event.startDatetime, null)}\n${url}`;
 }
 
 export function renderWelcomeMessage(template: string, vars: WelcomeMessageVars): string {
@@ -27,6 +45,11 @@ export function renderWelcomeMessage(template: string, vars: WelcomeMessageVars)
       // dropped doesn't send the literal ${RSVP_LINK} text.
       .replaceAll('${RSVP_LINK}', '')
       .replaceAll('${WHATSAPP_LINK}', vars.whatsappLink)
+      .replaceAll('${NEXT_OFFICIAL_EVENT}', vars.nextOfficialEvent ?? '')
+      .replaceAll('${CLUB_EVENT}', vars.clubEvent ?? '')
+      // An empty event section would otherwise leave a run of blank lines behind.
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/\n+$/, '')
   );
 }
 
