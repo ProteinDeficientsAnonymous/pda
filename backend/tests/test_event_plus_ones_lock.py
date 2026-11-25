@@ -1,5 +1,5 @@
 import pytest
-from community.models import Event, EventType, PageVisibility
+from community.models import Club, Event, EventType, PageVisibility
 from community.validation import Code
 from users.permissions import PermissionKey
 
@@ -20,6 +20,12 @@ def tagger_headers(tagger):
     return auth_headers_for(tagger)
 
 
+def _club_fields(event_type) -> dict:
+    if event_type != EventType.CLUB:
+        return {}
+    return {"club_id": str(Club.objects.get_or_create(name="book club")[0].id)}
+
+
 def _create(api_client, headers, event_type, *, allow_plus_ones):
     return api_client.post(
         EVENTS_URL,
@@ -29,6 +35,7 @@ def _create(api_client, headers, event_type, *, allow_plus_ones):
             "event_type": event_type,
             "visibility": PageVisibility.PUBLIC,
             "allow_plus_ones": allow_plus_ones,
+            **_club_fields(event_type),
         },
         content_type="application/json",
         **headers,
@@ -142,7 +149,12 @@ class TestUpdate:
     ):
         event = _event(tagger, EventType.OFFICIAL, allow_plus_ones=True)
         response = _patch(
-            api_client, tagger_headers, event, event_type=EventType.CLUB, allow_plus_ones=True
+            api_client,
+            tagger_headers,
+            event,
+            event_type=EventType.CLUB,
+            allow_plus_ones=True,
+            **_club_fields(EventType.CLUB),
         )
         assert response.status_code == 200
         event.refresh_from_db()

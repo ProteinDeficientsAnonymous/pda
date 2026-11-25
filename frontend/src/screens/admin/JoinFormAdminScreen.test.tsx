@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JoinQuestion } from '@/api/join';
 
@@ -27,14 +27,28 @@ const questions: JoinQuestion[] = [
   },
 ];
 
+let shown: JoinQuestion[] = questions;
+
 vi.mock('@/api/join', () => ({
   DEFAULT_JOIN_QUESTION_TYPE: 'text',
-  useJoinQuestions: () => ({ data: questions, isPending: false, isError: false }),
+  useJoinQuestions: () => ({ data: shown, isPending: false, isError: false }),
   useReorderJoinQuestions: () => ({ mutate: vi.fn() }),
   useDeleteJoinQuestion: () => ({ mutate: vi.fn() }),
   useCreateJoinQuestion: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useUpdateJoinQuestion: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
+
+function renderScreen() {
+  render(
+    <MemoryRouter>
+      <JoinFormAdminScreen />
+    </MemoryRouter>,
+  );
+}
+
+beforeEach(() => {
+  shown = questions;
+});
 
 describe('JoinFormAdminScreen', () => {
   it('shows a managed question read-only with a link to clubs', () => {
@@ -51,5 +65,19 @@ describe('JoinFormAdminScreen', () => {
       'href',
       '/admin/clubs',
     );
+  });
+
+  it('shows the empty state when only managed questions exist', () => {
+    shown = questions.filter((q) => q.managed);
+    renderScreen();
+    expect(screen.getByText('no custom questions yet')).toBeInTheDocument();
+    expect(screen.getByText('which clubs?')).toBeInTheDocument();
+  });
+
+  it('omits the managed list when there are no managed questions', () => {
+    shown = questions.filter((q) => !q.managed);
+    renderScreen();
+    expect(screen.getByRole('button', { name: 'edit why join?' })).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'managed questions' })).not.toBeInTheDocument();
   });
 });
