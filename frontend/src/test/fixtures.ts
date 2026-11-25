@@ -96,6 +96,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     photoUrl: '',
     photoUpdatedAt: null,
     tags: [],
+    club: null,
     isPast: false,
     status: EventStatus.Active,
     isPartifulImport: false,
