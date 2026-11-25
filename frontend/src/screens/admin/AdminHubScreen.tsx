@@ -47,6 +47,12 @@ const TILES: Tile[] = [
     perm: Permission.ManageEvents,
   },
   {
+    to: '/admin/clubs',
+    label: 'clubs',
+    description: 'manage clubs and what it takes to join them',
+    perm: Permission.ManageEvents,
+  },
+  {
     to: '/admin/surveys',
     label: 'surveys',
     description: 'build and review surveys + polls',
