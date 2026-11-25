@@ -102,6 +102,13 @@ export interface EventTag {
   slug: string;
 }
 
+// The club a club event is for (same shape as api/clubs `Club`).
+export interface EventClub {
+  id: string;
+  name: string;
+  requirements: string;
+}
+
 export type EventRsvpQuestionType = components['schemas']['EventRsvpQuestionIn']['field_type'];
 
 export interface EventRsvpQuestion {
@@ -225,6 +232,8 @@ export interface Event {
 
   // Curated tags assigned to the event. Present on both list and detail.
   tags: EventTag[];
+
+  club: EventClub | null;
 
   isPast: boolean;
   status: string;
