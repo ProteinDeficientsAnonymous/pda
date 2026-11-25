@@ -231,53 +231,59 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
           />
         ))}
 
-        <label className="text-foreground flex items-start gap-2 text-sm leading-relaxed">
-          <input
-            type="checkbox"
-            checked={smsConsent}
-            onChange={(e) => {
-              setSmsConsent(e.target.checked);
-            }}
-            className="mt-1"
-            aria-describedby={errors.smsConsent ? 'sms-consent-error' : undefined}
-          />
-          <span>
-            i agree to pda's{' '}
-            <Link to="/sms-policy" target="_blank" className="text-brand-700 underline">
-              sms policy
-            </Link>{' '}
-            — i may receive event-related text messages and can reply STOP to opt out.
-          </span>
-        </label>
-        {errors.smsConsent ? (
-          <p id="sms-consent-error" role="alert" className="text-destructive -mt-2 text-xs">
-            {errors.smsConsent}
-          </p>
-        ) : null}
+        <div className="border-border mt-2 flex flex-col gap-4 border-t pt-5">
+          <label className="text-foreground flex items-start gap-2 text-sm leading-relaxed">
+            <input
+              type="checkbox"
+              checked={smsConsent}
+              onChange={(e) => {
+                setSmsConsent(e.target.checked);
+              }}
+              className="accent-brand-600 mt-1 h-4 w-4 shrink-0 cursor-pointer rounded"
+              aria-describedby={errors.smsConsent ? 'sms-consent-error' : undefined}
+            />
+            <span>
+              i agree to pda's{' '}
+              <Link to="/sms-policy" target="_blank" className="text-brand-700 underline">
+                sms policy
+              </Link>{' '}
+              — i may receive event-related text messages and can reply STOP to opt out.
+            </span>
+          </label>
+          {errors.smsConsent ? (
+            <p id="sms-consent-error" role="alert" className="text-destructive -mt-2 text-xs">
+              {errors.smsConsent}
+            </p>
+          ) : null}
 
-        <label className="text-foreground flex items-start gap-2 text-sm leading-relaxed">
-          <input
-            type="checkbox"
-            checked={guidelinesConsent}
-            onChange={(e) => {
-              setGuidelinesConsent(e.target.checked);
-            }}
-            className="mt-1"
-            aria-describedby={errors.guidelinesConsent ? 'guidelines-consent-error' : undefined}
-          />
-          <span>
-            i have read and agree to the{' '}
-            <Link to="/guidelines" target="_blank" className="text-brand-700 underline">
-              community guidelines
-            </Link>{' '}
-            and community agreements
-          </span>
-        </label>
-        {errors.guidelinesConsent ? (
-          <p id="guidelines-consent-error" role="alert" className="text-destructive -mt-2 text-xs">
-            {errors.guidelinesConsent}
-          </p>
-        ) : null}
+          <label className="text-foreground flex items-start gap-2 text-sm leading-relaxed">
+            <input
+              type="checkbox"
+              checked={guidelinesConsent}
+              onChange={(e) => {
+                setGuidelinesConsent(e.target.checked);
+              }}
+              className="accent-brand-600 mt-1 h-4 w-4 shrink-0 cursor-pointer rounded"
+              aria-describedby={errors.guidelinesConsent ? 'guidelines-consent-error' : undefined}
+            />
+            <span>
+              i have read and agree to the{' '}
+              <Link to="/guidelines" target="_blank" className="text-brand-700 underline">
+                community guidelines
+              </Link>{' '}
+              and community agreements
+            </span>
+          </label>
+          {errors.guidelinesConsent ? (
+            <p
+              id="guidelines-consent-error"
+              role="alert"
+              className="text-destructive -mt-2 text-xs"
+            >
+              {errors.guidelinesConsent}
+            </p>
+          ) : null}
+        </div>
 
         {serverError ? (
           <p role="alert" className="text-destructive text-sm">
