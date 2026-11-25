@@ -24,6 +24,11 @@ from community._question_answers import (
 )
 from community.field_limits import FieldLimit
 from community.join_requests._vetting_email import send_vetting_email
+from community.join_requests.clubs_question import (
+    CLUBS_QUESTION_ID,
+    build_clubs_question,
+    clubs_for_answer,
+)
 from community.models import (
     OPEN_JOIN_REQUEST_STATUSES,
     JoinFormQuestion,
@@ -256,6 +261,9 @@ def submit_join_request(request, payload: JoinRequestIn):
     matched_user, email_claimed = _resolve_submission_user(validated_phone, normalized_email)
 
     questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
+    clubs_question = build_clubs_question()
+    if clubs_question:
+        questions[CLUBS_QUESTION_ID] = clubs_question[0]
     custom_answers = _build_custom_answers(payload.answers, questions)
 
     now = timezone.now()
@@ -281,6 +289,9 @@ def submit_join_request(request, payload: JoinRequestIn):
                 matched_user.email = normalized_email
                 matched_user.save(update_fields=["email"])
             join_request.save()
+            if clubs_question and CLUBS_QUESTION_ID in custom_answers:
+                chosen = custom_answers[CLUBS_QUESTION_ID]["answer"]
+                join_request.interested_clubs.set(clubs_for_answer(clubs_question[1], chosen))
     except IntegrityError:
         # A concurrent submission won the open-request unique constraint.
         _raise_if_open_request(validated_phone)
