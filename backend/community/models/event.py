@@ -122,6 +122,7 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     if TYPE_CHECKING:
         created_by_id: uuid.UUID | None
+        club_id: uuid.UUID | None
         rsvps: "Manager[EventRSVP]"
         poll: "EventPoll"
         comments: "Manager[EventComment]"
@@ -142,6 +143,13 @@ class Event(models.Model):
         "users.User",
         blank=True,
         related_name="invited_events",
+    )
+    club = models.ForeignKey(
+        "community.Club",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="events",
     )
     tags = models.ManyToManyField(
         "community.EventTag",

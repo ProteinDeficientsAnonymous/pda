@@ -225,6 +225,17 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Tag.NameAlreadyExists:
       return 'a tag with that name already exists';
 
+    case Code.Event.ClubRequired:
+      return 'pick which club this event is for';
+
+    // Club
+    case Code.Club.NotFound:
+      return 'club not found';
+    case Code.Club.NameRequired:
+      return 'enter a club name';
+    case Code.Club.NameAlreadyExists:
+      return 'a club with that name already exists';
+
     // Reserve
     case Code.Reserve.NotFound:
       return 'reserve entry not found';

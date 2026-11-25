@@ -33,6 +33,7 @@ from community.models.choices import (
     SurveyVisibility,
     is_official_or_club,
 )
+from community.models.club import Club
 from community.models.cohost_invite import EventCoHostInvite
 from community.models.comment import EventComment, EventCommentReaction, ReactionEmoji
 from community.models.content import (
@@ -150,6 +151,7 @@ __all__ = [
     "EventSlugAlias",
     "EventRSVP",
     "EventTag",
+    "Club",
     "event_lookup_q",
     "parse_event_ref",
     "JoinFormQuestion",

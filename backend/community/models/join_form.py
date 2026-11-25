@@ -55,6 +55,9 @@ class JoinRequest(models.Model):
         related_name="join_requests",
     )
     custom_answers = models.JSONField(default=dict, blank=True)
+    interested_clubs = models.ManyToManyField(
+        "community.Club", blank=True, related_name="interested_join_requests"
+    )
     submitted_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
         max_length=20,

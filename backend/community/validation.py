@@ -65,6 +65,7 @@ class Code:
         SLUG_INVALID = "event.slug_invalid"
         SLUG_TAKEN = "event.slug_taken"
         INVALID_EVENT_FORMAT = "event.invalid_event_format"
+        CLUB_REQUIRED = "event.club_required"
         PAYPAL_OFFICIAL_ONLY = "event.paypal_official_only"
 
     class Poll:
@@ -85,6 +86,11 @@ class Code:
         NOT_FOUND = "tag.not_found"
         NAME_REQUIRED = "tag.name_required"
         NAME_ALREADY_EXISTS = "tag.name_already_exists"
+
+    class Club:
+        NOT_FOUND = "club.not_found"
+        NAME_REQUIRED = "club.name_required"
+        NAME_ALREADY_EXISTS = "club.name_already_exists"
 
     class Reserve:
         NOT_FOUND = "reserve.not_found"
