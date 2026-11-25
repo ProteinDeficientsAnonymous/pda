@@ -29,6 +29,37 @@ export function useClubs() {
   });
 }
 
+export interface ClubInput {
+  name: string;
+  requirements: string;
+}
+
+export function useCreateClub() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ClubInput): Promise<Club> => {
+      const { data } = await apiClient.post<WireClub>('/api/community/clubs/', input);
+      return clubFromWire(data);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: clubKeys.all });
+    },
+  });
+}
+
+export function useUpdateClub(clubId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ClubInput): Promise<Club> => {
+      const { data } = await apiClient.patch<WireClub>(`/api/community/clubs/${clubId}/`, input);
+      return clubFromWire(data);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: clubKeys.all });
+    },
+  });
+}
+
 export function useDeleteClub() {
   const qc = useQueryClient();
   return useMutation({

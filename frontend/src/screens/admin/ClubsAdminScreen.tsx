@@ -7,9 +7,13 @@ import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { ClubDialog } from './ClubDialog';
+
 export default function ClubsAdminScreen() {
   const { data = [], isPending, isError } = useClubs();
   const del = useDeleteClub();
+  const [editing, setEditing] = useState<Club | null>(null);
+  const [creating, setCreating] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const { confirm, element: confirmElement } = useConfirm();
 
@@ -34,7 +38,16 @@ export default function ClubsAdminScreen() {
 
   return (
     <ContentContainer>
-      <h1 className="mb-6 text-2xl font-medium tracking-tight">clubs</h1>
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-medium tracking-tight">clubs</h1>
+        <Button
+          onClick={() => {
+            setCreating(true);
+          }}
+        >
+          add club
+        </Button>
+      </header>
       <p className="text-foreground-tertiary mb-6 text-sm">
         applicants pick the clubs they want to join on /join. requirements are shown next to each
         club.
@@ -63,6 +76,15 @@ export default function ClubsAdminScreen() {
               <div className="flex shrink-0 gap-1">
                 <Button
                   variant="ghost"
+                  aria-label={`edit ${c.name}`}
+                  onClick={() => {
+                    setEditing(c);
+                  }}
+                >
+                  edit
+                </Button>
+                <Button
+                  variant="ghost"
                   aria-label={`delete ${c.name}`}
                   onClick={() => {
                     void askDelete(c);
@@ -75,6 +97,20 @@ export default function ClubsAdminScreen() {
           ))}
         </ul>
       )}
+
+      <ClubDialog
+        open={creating}
+        onClose={() => {
+          setCreating(false);
+        }}
+      />
+      <ClubDialog
+        open={editing !== null}
+        onClose={() => {
+          setEditing(null);
+        }}
+        existing={editing ?? undefined}
+      />
 
       {confirmElement}
     </ContentContainer>
