@@ -1,5 +1,5 @@
 import pytest
-from community.models import JoinRequest, JoinRequestStatus
+from community.models import JoinFormQuestion, JoinFormQuestionType, JoinRequest, JoinRequestStatus
 from django.core import mail
 from notifications.models import Notification, NotificationType
 from users.models import MembershipStatus, User
@@ -497,3 +497,28 @@ class TestJoinRequestSubmission:
         )
         assert resp.status_code == 429
         assert resp.json()["detail"][0]["code"] == "rate.limited"
+
+
+@pytest.mark.django_db
+def test_join_form_lists_questions_as_editable(api_client):
+    q = JoinFormQuestion.objects.create(
+        label="pick one",
+        field_type=JoinFormQuestionType.SELECT,
+        options=["a", "b"],
+        required=True,
+        display_order=99,
+    )
+
+    response = api_client.get("/api/community/join-form/")
+
+    assert response.status_code == 200
+    listed = next(item for item in response.json() if item["id"] == str(q.id))
+    assert listed == {
+        "id": str(q.id),
+        "label": "pick one",
+        "field_type": "select",
+        "options": ["a", "b"],
+        "required": True,
+        "display_order": 99,
+        "managed": False,
+    }
