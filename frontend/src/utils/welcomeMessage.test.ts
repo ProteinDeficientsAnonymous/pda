@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  buildEventSection,
   buildSmsHref,
   buildWelcomeMessage,
   buildWhatsAppHref,
@@ -131,5 +132,47 @@ describe('buildWhatsAppHref', () => {
 
   it('omits the text param entirely when no body is given', () => {
     expect(buildWhatsAppHref('+1 (202) 555-1234')).toBe('https://wa.me/12025551234');
+  });
+});
+
+describe('event sections', () => {
+  const event = {
+    id: 'e1',
+    slug: 'book-club',
+    title: 'December Book Club',
+    startDatetime: new Date(2026, 11, 10, 18, 30),
+  };
+  const vars = { name: 'Sam', senderName: 'Vetter', whatsappLink: '' };
+
+  it('builds a lead-in, title with date, and event link', () => {
+    expect(buildEventSection("here's a club event:", event)).toBe(
+      `here's a club event:\nDecember Book Club — thu dec 10, 6:30 pm\n${window.location.origin}/events/book-club`,
+    );
+  });
+
+  it('links by id when the event has no slug', () => {
+    expect(buildEventSection('lead', { ...event, slug: '' })).toContain('/events/e1');
+  });
+
+  it('is empty without an event', () => {
+    expect(buildEventSection('lead', null)).toBe('');
+  });
+
+  it('fills both event placeholders', () => {
+    const out = renderWelcomeMessage('hi\n\n${NEXT_OFFICIAL_EVENT}\n\n${CLUB_EVENT}', {
+      ...vars,
+      nextOfficialEvent: 'official section',
+      clubEvent: 'club section',
+    });
+    expect(out).toBe('hi\n\nofficial section\n\nclub section');
+  });
+
+  it('drops empty sections without leaving blank lines', () => {
+    const out = renderWelcomeMessage('hi\n\n${NEXT_OFFICIAL_EVENT}\n\n${CLUB_EVENT}\n\nbye', {
+      ...vars,
+      clubEvent: 'club section',
+    });
+    expect(out).toBe('hi\n\nclub section\n\nbye');
+    expect(renderWelcomeMessage('hi\n\n${CLUB_EVENT}', vars)).toBe('hi');
   });
 });

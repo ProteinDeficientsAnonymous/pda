@@ -7,8 +7,10 @@ import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { LocationField } from '@/components/ui/LocationField';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
+import { EventType } from '@/models/event';
 import { PollCreateDialog } from '@/screens/events/poll/PollCreateDialog';
 
+import { EventFormClub } from './EventFormClub';
 import { EventFormType } from './EventFormType';
 
 interface Props {
@@ -71,6 +73,9 @@ export function EventFormBasics({
         canTagOfficial={canTagOfficial}
         canTagClub={canTagClub}
       />
+      {values.eventType === EventType.Club ? (
+        <EventFormClub value={values.clubId} onChange={onChange} error={errors.clubId} />
+      ) : null}
 
       {timeLocked ? (
         <p className="text-sm text-neutral-600">

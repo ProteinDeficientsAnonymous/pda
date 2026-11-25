@@ -111,6 +111,9 @@ export default function EventDetailScreen() {
           {event.title}
         </h1>
         <EventBadge event={event} />
+        {event.club ? (
+          <span className="text-foreground-secondary text-sm">{event.club.name}</span>
+        ) : null}
         {canManageRsvps || showSpeech ? (
           <div className="ml-auto">
             <EventDetailKebabMenu

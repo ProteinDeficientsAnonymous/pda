@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
 from community.field_limits import FieldLimit
+from community.join_requests.clubs_question import build_clubs_question
 from community.models import JoinFormQuestion, JoinFormQuestionType
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
@@ -51,10 +52,20 @@ def _question_out(q: JoinFormQuestion) -> JoinFormQuestionOut:
     )
 
 
+def _form_out() -> list[JoinFormQuestionOut]:
+    questions = list(JoinFormQuestion.objects.all())
+    out = [_question_out(q) for q in questions]
+    if built := build_clubs_question():
+        clubs_question = _question_out(built[0])
+        clubs_question.managed = True
+        clubs_question.display_order = max((q.display_order for q in questions), default=-1) + 1
+        out.append(clubs_question)
+    return out
+
+
 @router.get("/join-form/", response={200: list[JoinFormQuestionOut]}, auth=None)
 def get_join_form(request):
-    questions = JoinFormQuestion.objects.all()
-    return Status(200, [_question_out(q) for q in questions])
+    return Status(200, _form_out())
 
 
 @router.post(
@@ -122,8 +133,7 @@ def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
         ["display_order"],
     )
     audit_log(logging.INFO, "join_form_questions_reordered", request)
-    questions = JoinFormQuestion.objects.all()
-    return Status(200, [_question_out(q) for q in questions])
+    return Status(200, _form_out())
 
 
 @router.patch(

@@ -1,4 +1,5 @@
 import type { EventFormValues } from '@/api/eventWrites';
+import { EventType } from '@/models/event';
 import { DESCRIPTION_MAX_LENGTH } from '@/screens/events/form/EventFormDetails';
 import { eventSlugError } from '@/screens/events/form/eventSlug';
 
@@ -18,6 +19,8 @@ export function validateEventForm(
     const slugError = eventSlugError(values.slug);
     if (slugError) errors.slug = slugError;
   }
+
+  if (values.eventType === EventType.Club && !values.clubId) errors.clubId = 'pick a club';
 
   if (values.description.length > DESCRIPTION_MAX_LENGTH) errors.description = 'too long';
   if (values.location.length > 300) errors.location = 'under 300 chars';
