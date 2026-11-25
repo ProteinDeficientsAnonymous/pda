@@ -1,3 +1,13 @@
+# [0.284.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.283.0...v0.284.0) (2026-11-25)
+
+
+### Features
+
+* **clubs:** add and edit clubs in the admin screen ([#2671](https://github.com/ProteinDeficientsAnonymous/pda/issues/2671)) ([0c43e8b](https://github.com/ProteinDeficientsAnonymous/pda/commit/0c43e8be3fffab9db900c47b3e4b6e67e86b7e3c))
+* **clubs:** admin screen listing and deleting clubs ([#2670](https://github.com/ProteinDeficientsAnonymous/pda/issues/2670)) ([4730b3b](https://github.com/ProteinDeficientsAnonymous/pda/commit/4730b3bd466fd840d8f2f176c10c490fd065b697))
+* **clubs:** join-form admin shows the clubs question read-only ([#2669](https://github.com/ProteinDeficientsAnonymous/pda/issues/2669)) ([273a493](https://github.com/ProteinDeficientsAnonymous/pda/commit/273a493a5d8a9025ce59117380f360e939c9a05b))
+* **join:** built-in clubs question on the join form, built from the club list ([#2664](https://github.com/ProteinDeficientsAnonymous/pda/issues/2664)) ([836edef](https://github.com/ProteinDeficientsAnonymous/pda/commit/836edefdbcec89d9e3d6090f7410975acf599b14))
+
 # [0.283.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.282.0...v0.283.0) (2026-11-25)
 
 
