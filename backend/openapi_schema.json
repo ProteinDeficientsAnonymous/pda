@@ -1321,6 +1321,49 @@
         "title": "ChecklistTickIn",
         "type": "object"
       },
+      "ClubIn": {
+        "properties": {
+          "name": {
+            "maxLength": 80,
+            "title": "Name",
+            "type": "string"
+          },
+          "requirements": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Requirements",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ClubIn",
+        "type": "object"
+      },
+      "ClubOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "requirements": {
+            "title": "Requirements",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "requirements"
+        ],
+        "title": "ClubOut",
+        "type": "object"
+      },
       "CommentBodyIn": {
         "properties": {
           "body": {
@@ -11733,6 +11776,214 @@
           }
         },
         "summary": "Check Phone",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/clubs/": {
+      "get": {
+        "operationId": "community_clubs_api_list_clubs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClubOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "List Clubs",
+        "tags": [
+          "community"
+        ]
+      },
+      "post": {
+        "operationId": "community_clubs_api_create_club",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClubIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClubOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Club",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/clubs/{club_id}/": {
+      "delete": {
+        "operationId": "community_clubs_api_delete_club",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "club_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Club Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Delete Club",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community_clubs_api_update_club",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "club_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Club Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClubIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClubOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Club",
         "tags": [
           "community"
         ]

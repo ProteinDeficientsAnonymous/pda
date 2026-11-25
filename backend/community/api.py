@@ -7,6 +7,7 @@ from community._version import router as version_router
 from community.attendance.csv_import import router as attendance_import_router
 from community.attendance.mark import router as attendance_mark_router
 from community.attendance.report import router as attendance_report_router
+from community.clubs.api import router as clubs_router
 from community.cohosts.invites import router as event_cohost_invites_router
 from community.content.docs import router as docs_router
 from community.content.documents import router as docs_documents_router
@@ -95,6 +96,7 @@ router.add_router("", attendance_mark_router)
 router.add_router("", event_feedback_host_router)
 router.add_router("", events_router)
 router.add_router("", event_tags_router)
+router.add_router("", clubs_router)
 router.add_router("", event_description_templates_router)
 router.add_router("", official_event_defaults_router)
 router.add_router("", event_rsvps_router)
