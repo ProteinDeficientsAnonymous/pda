@@ -29,6 +29,25 @@ vi.mock('@/auth/store', () => {
   return { useAuthStore };
 });
 
+describe('club wire encoding', () => {
+  it('sends club_id for club events and drops it otherwise', () => {
+    const club = { ...emptyEventFormValues(), eventType: EventType.Club, clubId: 'c1' };
+    expect(toWireBody(club).club_id).toBe('c1');
+    expect(toWireBody({ ...club, eventType: EventType.Community })).not.toHaveProperty('club_id');
+  });
+
+  it('patches club_id only when provided', () => {
+    expect(toPartialWireBody({ clubId: 'c2' })).toEqual({ club_id: 'c2' });
+    expect(toPartialWireBody({ title: 't' })).not.toHaveProperty('club_id');
+  });
+
+  it('reads the club into the form values', () => {
+    const club = { id: 'c1', name: 'book club', requirements: '' };
+    expect(eventToFormValues(makeEvent({ club })).clubId).toBe('c1');
+    expect(eventToFormValues(makeEvent()).clubId).toBe('');
+  });
+});
+
 describe('eventToFormValues enum validation', () => {
   it('passes through known enum values', () => {
     const form = eventToFormValues(

@@ -208,9 +208,22 @@ export function EventForm({ existing, initial, onCreated }: Props) {
         // omitted (backend rejects those edits).
         // On edit, omit coHostIds so the backend preserves existing invites/co-hosts.
         // An unchanged slug is omitted so legacy slugs that fail today's format still save.
-        const { coHostIds: _c, slug, startDatetime, endDatetime, datetimeTbd, ...rest } = merged;
+        const {
+          coHostIds: _c,
+          slug,
+          clubId,
+          startDatetime,
+          endDatetime,
+          datetimeTbd,
+          ...rest
+        } = merged;
+        // The club is sent only when it changed or the event just became a club event; the server clears it for other types.
+        const clubChanged =
+          merged.eventType === EventType.Club &&
+          (existing.eventType !== EventType.Club || clubId !== (existing.club?.id ?? ''));
         const patchBody: Partial<EventFormValues> = {
           ...rest,
+          ...(clubChanged ? { clubId } : {}),
           ...(timeLocked ? {} : { startDatetime, endDatetime, datetimeTbd }),
           ...(slug === existing.slug ? {} : { slug }),
         };

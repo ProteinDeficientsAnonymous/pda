@@ -16,7 +16,8 @@ export function EventFormType({ values, onChange, canTagOfficial, canTagClub }: 
   if (!canTagOfficial && !canTagClub) return null;
 
   const setType = (type: EventFormValues['eventType']) => {
-    onChange({ eventType: type, ...typeDefaults(type) });
+    const leavingClub = values.eventType === EventType.Club && type !== EventType.Club;
+    onChange({ eventType: type, ...(leavingClub ? { clubId: '' } : {}), ...typeDefaults(type) });
   };
 
   return (
