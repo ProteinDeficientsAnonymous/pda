@@ -1,3 +1,10 @@
+## [0.287.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.287.0...v0.287.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* **join:** list a join request's answers in join-form order ([#2677](https://github.com/ProteinDeficientsAnonymous/pda/issues/2677)) ([00c2aa3](https://github.com/ProteinDeficientsAnonymous/pda/commit/00c2aa3080810189de63af206d6e803f4e8f28bb))
+
 # [0.287.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.286.1...v0.287.0) (2026-11-25)
 
 
