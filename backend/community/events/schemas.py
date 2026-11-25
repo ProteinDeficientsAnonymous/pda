@@ -9,6 +9,7 @@ from pydantic import (
     model_validator,
 )
 
+from community.clubs.api import ClubOut
 from community.events._field_validators import (
     check_max_attendees,
     validate_datetime_has_offset,
@@ -163,6 +164,7 @@ class EventOut(BaseModel):
     pending_cohost_invites: list[PendingCoHostInviteOut] = []
     my_pending_cohost_invite_id: str | None = None
     tags: list[TagOut] = []
+    club: ClubOut | None = None
     rsvp_questions: list[EventRsvpQuestionOut] = []
 
 
@@ -290,6 +292,7 @@ class EventIn(BaseModel):
     )
     co_host_ids: list[str] = []
     tag_ids: list[str] = []
+    club_id: UUID | None = None
     rsvp_questions: list[EventRsvpQuestionIn] = []
     status: str = Field(default=EventStatus.ACTIVE, max_length=FieldLimit.CHOICE)
 
@@ -372,6 +375,7 @@ class EventPatchIn(BaseModel):
     invite_permission: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     co_host_ids: list[str] | None = None
     tag_ids: list[str] | None = None
+    club_id: UUID | None = None
     status: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     notify_attendees: bool | None = None
     force: bool | None = None

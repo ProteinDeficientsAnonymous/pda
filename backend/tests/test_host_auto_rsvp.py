@@ -1,5 +1,6 @@
 import pytest
 from community.models import (
+    Club,
     Event,
     EventCoHostInvite,
     EventRSVP,
@@ -37,6 +38,12 @@ def guest(db) -> User:
     return User.objects.create_user(phone_number="+12025556102", password="x", first_name="Guest")
 
 
+def _club_fields(event_type: str) -> dict:
+    if event_type != EventType.CLUB:
+        return {}
+    return {"club_id": str(Club.objects.get_or_create(name="book club")[0].id)}
+
+
 def _create(api_client, host: User, event_type: str, **overrides) -> Event:
     payload = {
         "title": "Auto RSVP",
@@ -45,6 +52,7 @@ def _create(api_client, host: User, event_type: str, **overrides) -> Event:
         "event_type": event_type,
         "visibility": PageVisibility.PUBLIC,
         "rsvp_enabled": True,
+        **_club_fields(event_type),
         **overrides,
     }
     response = api_client.post(
@@ -156,7 +164,9 @@ class TestAutoRsvpOnTypeSwitch:
         event = _create(api_client, host, EventType.COMMUNITY)
         co_host = User.objects.create_user(phone_number="+12025556101", password="x")
         event.co_hosts.add(co_host)
-        response = _patch(api_client, event, host, {"event_type": event_type})
+        response = _patch(
+            api_client, event, host, {"event_type": event_type, **_club_fields(event_type)}
+        )
         assert response.json()["my_rsvp"] == RSVPStatus.ATTENDING
         assert _rsvp_status(event, host) == RSVPStatus.ATTENDING
         assert _rsvp_status(event, co_host) == RSVPStatus.ATTENDING
@@ -171,7 +181,7 @@ class TestAutoRsvpOnTypeSwitch:
     def test_switching_between_official_and_club_does_not_re_rsvp(self, api_client, host):
         event = _create(api_client, host, EventType.OFFICIAL)
         api_client.delete(f"{EVENTS_URL}{event.id}/rsvp/", **auth_headers_for(host))
-        _patch(api_client, event, host, {"event_type": EventType.CLUB})
+        _patch(api_client, event, host, {"event_type": EventType.CLUB, **_club_fields("club")})
         assert _rsvp_status(event, host) is None
 
     def test_other_edits_do_not_re_rsvp(self, api_client, host):

@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from community.cohosts.helpers import update_co_hosts
 from community.events._field_validators import check_rsvp_deadline
+from community.events.club_field import apply_club_update
 from community.events.helpers import (
     can_edit_event,
     enforce_type_tag_permission,
@@ -173,6 +174,7 @@ def apply_field_updates(request, event: Event, event_id: UUID, updates: dict) ->
     _lock_typed_plus_ones(event, updates)
     _resolve_event_format(event, updates)
     _resolve_accept_paypal(event, updates)
+    apply_club_update(event, updates)
     co_host_ids = updates.pop("co_host_ids", None)
     tag_ids = updates.pop("tag_ids", None)
     changed_fields = list(updates.keys())

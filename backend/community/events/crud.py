@@ -23,6 +23,7 @@ from community.events._update import (
     guard_can_edit_event,
     promote_if_spots_opened,
 )
+from community.events.club_field import resolve_event_club
 from community.events.helpers import (
     broadcast_capacity_change,
     build_guest_list,
@@ -121,7 +122,7 @@ def _get_visible_event(request, event_id: str):
     ref = parse_event_ref(event_id)
     try:
         event = (
-            Event.objects.select_related("created_by")
+            Event.objects.select_related("created_by", "club")
             .prefetch_related("co_hosts", "tags", "rsvp_questions", "poll")
             .annotate(**list_count_annotations())
             .get(ref.as_q())
@@ -239,6 +240,7 @@ def create_event(request, payload: EventIn):
     for question in payload.rsvp_questions:
         validate_event_rsvp_question(question)
     reject_non_member_cohosts(payload.co_host_ids)
+    club = resolve_event_club(payload.event_type, payload.club_id)
 
     event = Event.objects.create(
         title=payload.title,
@@ -263,6 +265,7 @@ def create_event(request, payload: EventIn):
         max_attendees=payload.max_attendees,
         rsvp_deadline=payload.rsvp_deadline,
         event_type=payload.event_type,
+        club=club,
         event_format=event_format,
         visibility=payload.visibility,
         invite_permission=payload.invite_permission,
@@ -323,7 +326,7 @@ def _announce_rsvp_changes(
 def update_event(request, event_id: UUID, payload: EventPatchIn):
     try:
         event = (
-            Event.objects.select_related("created_by")
+            Event.objects.select_related("created_by", "club")
             .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags", "rsvp_questions")
             .get(id=event_id)
         )
