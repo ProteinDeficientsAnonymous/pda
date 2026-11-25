@@ -4,7 +4,13 @@ import uuid
 
 import pytest
 from community.join_requests import manage
-from community.models import JoinRequest, JoinRequestEvent, JoinRequestStatus
+from community.models import (
+    JoinFormQuestion,
+    JoinFormQuestionType,
+    JoinRequest,
+    JoinRequestEvent,
+    JoinRequestStatus,
+)
 from community.validation import Code
 from django.utils import timezone
 from users.models import User
@@ -418,3 +424,28 @@ class TestApprovalCarriesConsent:
         assert archived.archived_at is None
         assert archived.guidelines_consent_at is not None
         assert archived.sms_consent_at is not None
+
+
+@pytest.mark.django_db
+def test_join_form_lists_questions_as_editable(api_client):
+    q = JoinFormQuestion.objects.create(
+        label="pick one",
+        field_type=JoinFormQuestionType.SELECT,
+        options=["a", "b"],
+        required=True,
+        display_order=99,
+    )
+
+    response = api_client.get("/api/community/join-form/")
+
+    assert response.status_code == 200
+    listed = next(item for item in response.json() if item["id"] == str(q.id))
+    assert listed == {
+        "id": str(q.id),
+        "label": "pick one",
+        "field_type": "select",
+        "options": ["a", "b"],
+        "required": True,
+        "display_order": 99,
+        "managed": False,
+    }
