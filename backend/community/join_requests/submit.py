@@ -31,6 +31,7 @@ from community.join_requests.clubs_question import (
 )
 from community.models import (
     OPEN_JOIN_REQUEST_STATUSES,
+    Club,
     JoinFormQuestion,
     JoinRequest,
     JoinRequestStatus,
@@ -126,6 +127,25 @@ def _build_custom_answers(
             continue
         result[q_id] = {"label": q.label, "answer": answer}
     return result
+
+
+def _form_questions() -> tuple[dict[str, JoinFormQuestion], list[Club] | None]:
+    """return(tuple): questions by id, plus the clubs behind the built-in clubs question (or None)."""
+    questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
+    built = build_clubs_question()
+    if built is None:
+        return questions, None
+    questions[CLUBS_QUESTION_ID], clubs = built
+    return questions, clubs
+
+
+def _set_interested_clubs(
+    join_request: JoinRequest, clubs: list[Club] | None, answers: dict
+) -> None:
+    if clubs and CLUBS_QUESTION_ID in answers:
+        join_request.interested_clubs.set(
+            clubs_for_answer(clubs, answers[CLUBS_QUESTION_ID]["answer"])
+        )
 
 
 def _answer_line(label: str, answer: ChoiceAnswer) -> str:
@@ -260,10 +280,7 @@ def submit_join_request(request, payload: JoinRequestIn):
     normalized_email = payload.email.strip().lower()
     matched_user, email_claimed = _resolve_submission_user(validated_phone, normalized_email)
 
-    questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
-    clubs_question = build_clubs_question()
-    if clubs_question:
-        questions[CLUBS_QUESTION_ID] = clubs_question[0]
+    questions, clubs = _form_questions()
     custom_answers = _build_custom_answers(payload.answers, questions)
 
     now = timezone.now()
@@ -289,9 +306,7 @@ def submit_join_request(request, payload: JoinRequestIn):
                 matched_user.email = normalized_email
                 matched_user.save(update_fields=["email"])
             join_request.save()
-            if clubs_question and CLUBS_QUESTION_ID in custom_answers:
-                chosen = custom_answers[CLUBS_QUESTION_ID]["answer"]
-                join_request.interested_clubs.set(clubs_for_answer(clubs_question[1], chosen))
+            _set_interested_clubs(join_request, clubs, custom_answers)
     except IntegrityError:
         # A concurrent submission won the open-request unique constraint.
         _raise_if_open_request(validated_phone)
