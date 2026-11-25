@@ -1,3 +1,10 @@
+# [0.286.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.285.0...v0.286.0) (2026-11-25)
+
+
+### Features
+
+* **mcp:** tools to list and manage clubs ([#2674](https://github.com/ProteinDeficientsAnonymous/pda/issues/2674)) ([fce0a86](https://github.com/ProteinDeficientsAnonymous/pda/commit/fce0a862547597b904b14b66a60e7a3fbad649e7))
+
 # [0.285.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.284.0...v0.285.0) (2026-11-25)
 
 
