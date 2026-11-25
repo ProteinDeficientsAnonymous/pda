@@ -30,13 +30,31 @@ FULL_SUITE_SKIP = (
     "serially as its baseline, which does not fit this job. Map the path to a bundle, or run "
     "`python3 scripts/run_mutation.py <files> --tests <tests>` locally."
 )
+MUTATION_DB_TEMPLATE = "test_pda_mutation"
+BUILD_DB_TEMPLATE = """
+import sys
+import django
+django.setup()
+from django.db import connection
+if connection.vendor == "postgresql":
+    with connection._nodb_cursor() as cursor:
+        cursor.execute("SELECT datname FROM pg_database WHERE datname LIKE %s", [sys.argv[1] + "\\_%"])
+        for (stale,) in cursor.fetchall():
+            cursor.execute(f'DROP DATABASE IF EXISTS "{stale}"')
+    connection.settings_dict["TEST"]["NAME"] = sys.argv[1]
+    connection.creation.create_test_db(verbosity=0, autoclobber=True, serialize=False)
+    print("built")
+"""
 SCOPE_NOTE = "mutmut 3 skips decorated functions (ninja endpoints, `@property`, validators); those are not covered."
 
 
 class MutmutFailed(Exception):
-    def __init__(self, message: str, output: str = "") -> None:
+    def __init__(
+        self, message: str, output: str = "", source: str = "The unmutated baseline, rerun"
+    ) -> None:
         super().__init__(message)
         self.output = output
+        self.source = source
 
 
 def changed_backend_files(base: str) -> list[str]:
@@ -109,7 +127,25 @@ def _mutmut(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def baseline_tail(tests: list[str]) -> str:
+def mutation_env() -> dict[str, str]:
+    """Migrate one template DB up front; without it every mutant's pytest session rebuilds the test DB from migrations."""
+    proc = subprocess.run(
+        ["uv", "run", "python", "-c", BUILD_DB_TEMPLATE, MUTATION_DB_TEMPLATE],
+        cwd=BACKEND,
+        env={**os.environ, "DJANGO_SETTINGS_MODULE": "config.settings"},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        tail = "\n".join((proc.stderr or "").splitlines()[-BASELINE_TAIL:])
+        raise MutmutFailed("migrating the template test database failed", tail, "Its stderr")
+    if "built" not in (proc.stdout or ""):
+        return dict(os.environ)
+    return {**os.environ, "PDA_MUTATION_DB_TEMPLATE": MUTATION_DB_TEMPLATE}
+
+
+def baseline_tail(tests: list[str], env: dict[str, str]) -> str:
     """Rerun the unmutated tests in mutants/: mutmut runs its baseline in a forked child and drops the output."""
     mutants = BACKEND / "mutants"
     if not mutants.is_dir():
@@ -117,7 +153,7 @@ def baseline_tail(tests: list[str]) -> str:
     proc = subprocess.run(
         [*PYTEST, *PYTEST_ARGS, *tests],
         cwd=mutants,
-        env={**os.environ, "MUTANT_UNDER_TEST": ""},
+        env={**env, "MUTANT_UNDER_TEST": ""},
         capture_output=True,
         text=True,
         check=False,
@@ -146,10 +182,11 @@ def run_mutmut(targets: list[str], tests: list[str]) -> tuple[list[str], dict[st
     shutil.rmtree(BACKEND / "mutants", ignore_errors=True)
     CONFIG.write_text(render_config(BACKEND, targets, tests))
     try:
+        env = mutation_env()
         # mutmut exits 0 with survivors; non-zero means its clean baseline run or setup broke
-        run = subprocess.run([*MUTMUT, "run"], cwd=BACKEND, check=False)
+        run = subprocess.run([*MUTMUT, "run"], cwd=BACKEND, env=env, check=False)
         if run.returncode != 0:
-            raise MutmutFailed(f"mutmut run exited {run.returncode}", baseline_tail(tests))
+            raise MutmutFailed(f"mutmut run exited {run.returncode}", baseline_tail(tests, env))
         survivors = survivor_ids(_mutmut("results").stdout)
         # `mutmut show` needs the config too, so collect diffs before it is removed
         diffs = {m: _mutmut("show", m).stdout.strip() for m in survivors[:MAX_SHOWN]}
@@ -186,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
     except MutmutFailed as exc:
         text = f"### Mutation testing: could not run\n{exc}. No mutants were tested."
         if exc.output:
-            text += f"\nThe unmutated baseline, rerun (last {BASELINE_TAIL} lines):\n```\n{exc.output}\n```"
+            text += f"\n{exc.source} (last {BASELINE_TAIL} lines):\n```\n{exc.output}\n```"
         _write(text)
         if os.environ.get("GITHUB_ACTIONS") == "true":
             print(f"::error::mutation testing could not run: {exc}")

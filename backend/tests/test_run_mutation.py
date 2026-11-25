@@ -36,6 +36,10 @@ def _done(stdout: str) -> subprocess.CompletedProcess[str]:
     return subprocess.CompletedProcess([], 0, stdout=stdout, stderr="")
 
 
+def _builds_template(mod, cmd: list[str]) -> bool:
+    return cmd[-1] == mod.MUTATION_DB_TEMPLATE
+
+
 @pytest.mark.unit
 def test_changed_backend_files_skips_tests_and_migrations(mod, monkeypatch):
     out = "backend/community/views.py\nbackend/tests/test_x.py\nbackend/users/migrations/0001.py\nbackend/a.txt\n"
@@ -112,7 +116,11 @@ def test_run_mutmut_writes_then_removes_config_and_collects_diffs(mod, monkeypat
 def test_failed_mutmut_run_fails_the_step_instead_of_passing(mod, monkeypatch, backend, capsys):
     monkeypatch.setattr(mod, "BACKEND", backend)
     monkeypatch.setattr(mod, "CONFIG", backend / "setup.cfg")
-    monkeypatch.setattr(mod.subprocess, "run", lambda cmd, **k: subprocess.CompletedProcess(cmd, 1))
+    monkeypatch.setattr(
+        mod.subprocess,
+        "run",
+        lambda cmd, **k: subprocess.CompletedProcess(cmd, 0 if _builds_template(mod, cmd) else 1),
+    )
     monkeypatch.setattr(mod, "_mutmut", lambda *a: pytest.fail("results must not be read"))
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
     assert mod.main(["users/a.py", "--tests", "tests/"]) == 1
@@ -142,6 +150,8 @@ def test_failed_baseline_is_rerun_unmutated_and_its_failures_shown(
 
     def fake_run(cmd, **kwargs):
         calls.append((cmd, kwargs))
+        if _builds_template(mod, cmd):
+            return _done("built\n")
         if cmd[-1] == "run":
             (backend / "mutants").mkdir()
             return subprocess.CompletedProcess(cmd, 1)
@@ -153,11 +163,12 @@ def test_failed_baseline_is_rerun_unmutated_and_its_failures_shown(
     assert mod.main(["users/a.py", "--tests", "tests/test_x.py"]) == 1
     out = capsys.readouterr().out
     assert "FAILED tests/test_x.py::test_y" in out
-    rerun, kwargs = calls[1]
+    rerun, kwargs = calls[-1]
     assert rerun[-1] == "tests/test_x.py"
     assert "addopts=" in rerun
     assert kwargs["cwd"] == backend / "mutants"
     assert kwargs["env"]["MUTANT_UNDER_TEST"] == ""
+    assert kwargs["env"]["PDA_MUTATION_DB_TEMPLATE"] == mod.MUTATION_DB_TEMPLATE
     assert not (backend / "mutants").exists()
 
 
@@ -202,3 +213,47 @@ def test_no_survivors_passes_when_enforced(mod, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "no surviving mutants" in out
     assert "skips decorated functions" in out
+
+
+@pytest.mark.unit
+def test_postgres_mutants_clone_a_premigrated_template(mod, monkeypatch, backend):
+    monkeypatch.setattr(mod, "BACKEND", backend)
+    monkeypatch.setattr(mod, "CONFIG", backend / "setup.cfg")
+    monkeypatch.setattr(mod, "_mutmut", lambda *a: _done(""))
+    envs: list[dict] = []
+
+    def fake_run(cmd, **kwargs):
+        if _builds_template(mod, cmd):
+            assert kwargs["env"]["DJANGO_SETTINGS_MODULE"] == "config.settings"
+            return _done("built\n")
+        envs.append(kwargs["env"])
+        return _done("")
+
+    monkeypatch.setattr(mod.subprocess, "run", fake_run)
+    mod.run_mutmut(["users/a.py"], ["tests/"])
+    assert [e["PDA_MUTATION_DB_TEMPLATE"] for e in envs] == [mod.MUTATION_DB_TEMPLATE]
+
+
+@pytest.mark.unit
+def test_non_postgres_mutants_run_without_a_template(mod, monkeypatch, backend):
+    monkeypatch.delenv("PDA_MUTATION_DB_TEMPLATE", raising=False)
+    monkeypatch.setattr(mod, "BACKEND", backend)
+    monkeypatch.setattr(mod.subprocess, "run", lambda cmd, **k: _done(""))
+    assert "PDA_MUTATION_DB_TEMPLATE" not in mod.mutation_env()
+
+
+@pytest.mark.unit
+def test_failed_template_build_reports_instead_of_mutating(mod, monkeypatch, backend, capsys):
+    monkeypatch.setattr(mod, "BACKEND", backend)
+    monkeypatch.setattr(mod, "CONFIG", backend / "setup.cfg")
+
+    def fake_run(cmd, **kwargs):
+        assert _builds_template(mod, cmd), "mutmut must not start"
+        return subprocess.CompletedProcess(cmd, 1, stdout="", stderr="migration 0042 broke\n")
+
+    monkeypatch.setattr(mod.subprocess, "run", fake_run)
+    assert mod.main(["users/a.py", "--tests", "tests/"]) == 1
+    out = capsys.readouterr().out
+    assert "migrating the template test database failed" in out
+    assert "migration 0042 broke" in out
+    assert not (backend / "setup.cfg").exists()
