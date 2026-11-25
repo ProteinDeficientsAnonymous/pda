@@ -20,6 +20,14 @@ export function TentativeApprovalMessageEditorDialog({ open, onClose, template }
         { name: 'SENDER_NAME' },
         { name: 'MAGIC_LINK', hint: 'their one-time sign in link' },
         { name: 'WHATSAPP_LINK' },
+        {
+          name: 'NEXT_OFFICIAL_EVENT',
+          hint: '"here\'s the next official event:" plus the event; blank if none',
+        },
+        {
+          name: 'CLUB_EVENT',
+          hint: 'a club event they picked on the join form, 7+ days out; blank if none',
+        },
       ]}
       ariaLabel="tentative approval message body"
       template={template}
