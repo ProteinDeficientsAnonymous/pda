@@ -294,3 +294,14 @@ describe('messagesFromFieldErrors', () => {
     expect(out).toBe('enter a valid url');
   });
 });
+
+describe('club messages', () => {
+  it.each([
+    [Code.Event.ClubRequired, 'pick which club this event is for'],
+    [Code.Club.NotFound, 'club not found'],
+    [Code.Club.NameRequired, 'enter a club name'],
+    [Code.Club.NameAlreadyExists, 'a club with that name already exists'],
+  ])('%s', (code, message) => {
+    expect(messageForCode({ code, field: null })).toBe(message);
+  });
+});

@@ -256,6 +256,7 @@ class TestEventManagement:
         non_model_fields = {
             "co_host_ids",
             "tag_ids",
+            "club_id",
             "status",
             "notify_attendees",
             "force",
