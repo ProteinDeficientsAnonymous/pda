@@ -9,6 +9,7 @@ from community.models import Event, EventRSVP, EventTag, JoinRequest
 from community.models.content import FAQ, CommunityGuidelines, HomePage
 from community.models.join_form import JoinFormQuestion
 
+from ._seed_clubs import seed_clubs
 from ._seed_data import (
     PASSWORD,
     SEED_EVENT_RSVP_QUESTIONS,
@@ -53,6 +54,7 @@ class Command(BaseCommand):
         self._seed_non_members()
         questions = self._seed_join_form_questions()
         self._seed_event_tags()
+        seed_clubs(self.stdout)
         events = self._seed_events(admin_user)
         rsvp_questions = self._seed_event_rsvp_questions(events)
         self._seed_rsvps(events, rsvp_questions)

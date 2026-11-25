@@ -16,6 +16,7 @@ from users.roles import Role
 from community.dev_tools.seed_guard import is_seed_allowed
 from community.models import Event, EventComment, EventType, JoinRequest, RSVPStatus
 
+from ._seed_clubs import seed_clubs
 from ._seed_join_requests import seed_join_form_questions, seed_join_requests
 from ._seed_shared import (
     apply_rsvp,
@@ -94,6 +95,7 @@ class Command(BaseCommand):
                 self.stdout, admin, {e.title: e for e in events}, perm_users + cond_users
             )
             questions = seed_join_form_questions(self.stdout)
+            seed_clubs(self.stdout)
             join_requests = seed_join_requests(self.stdout, admin, questions)
         self._print_summary(
             {
