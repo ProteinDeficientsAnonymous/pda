@@ -1,5 +1,6 @@
 from typing import Any
 
+from community.clubs.api import list_clubs
 from community.events.schemas import EventIn, EventPatchIn
 from community.events.tags import list_event_tags
 from community.models import EventFormat, EventType, PageVisibility, is_official_or_club
@@ -39,6 +40,9 @@ class EventFields(BaseModel):
         None, description="official events only: walk or restaurant"
     )
     tags: list[str] = Field(default_factory=list, description="existing tag names, e.g. side quest")
+    club: str | None = Field(
+        None, description="club events only, and required for them: a club name from list_clubs"
+    )
     whatsapp_link: str = Field("", description="whatsapp group or community invite link")
     partiful_link: str = Field("", description="partiful event link")
     other_link: str = Field("", description="any other link for the event")
@@ -52,6 +56,17 @@ async def _tags(names: list[str], user: User) -> dict[str, str]:
         raise ToolError(f"unknown tags: {', '.join(unknown)}. valid tags: {valid}")
     picked = [by_name[name.strip().lower()] for name in names]
     return {tag["name"]: tag["id"] for tag in picked}
+
+
+async def _club_id(name: str | None, user: User) -> str | None:
+    if name is None:
+        return None
+    clubs = await call_view(list_clubs, user)
+    match = next((c for c in clubs if c["name"].lower() == name.strip().lower()), None)
+    if match is None:
+        valid = ", ".join(c["name"] for c in clubs) or "none"
+        raise ToolError(f"unknown club: {name}. valid clubs: {valid}")
+    return match["id"]
 
 
 def no_default(schema: dict[str, Any]) -> None:
@@ -72,16 +87,19 @@ EventChanges = create_model(
 
 
 async def to_event_in(fields: EventFields, user: User, **extra: Any) -> EventIn:
-    data = fields.model_dump(mode="json", exclude={"tags"})
+    data = fields.model_dump(mode="json", exclude={"tags", "club"})
     tag_ids = list((await _tags(fields.tags, user)).values())
-    return build(EventIn, {**data, "tag_ids": tag_ids, **extra})
+    club_id = await _club_id(fields.club, user)
+    return build(EventIn, {**data, "tag_ids": tag_ids, "club_id": club_id, **extra})
 
 
 async def to_event_patch(
     changes: dict[str, Any], user: User, **extra: Any
 ) -> tuple[EventPatchIn, dict[str, Any]]:
     """return(tuple): the patch, and the changes with tags and price as stored."""
-    data = {key: value for key, value in changes.items() if key != "tags"}
+    data = {key: value for key, value in changes.items() if key not in ("tags", "club")}
+    if "club" in changes:
+        data["club_id"] = await _club_id(changes["club"], user)
     if "tags" in changes:
         tags = await _tags(changes["tags"], user)
         data["tag_ids"] = list(tags.values())
@@ -93,10 +111,11 @@ async def to_event_patch(
 
 
 def event_summary(event: dict[str, Any]) -> dict[str, Any]:
-    summary = {key: event[key] for key in EventFields.model_fields if key != "tags"}
+    summary = {key: event[key] for key in EventFields.model_fields if key not in ("tags", "club")}
     summary["start_datetime"] = local_time(event["start_datetime"])
     summary["end_datetime"] = local_time(event["end_datetime"])
     summary["tags"] = sorted(tag["name"] for tag in event["tags"])
+    summary["club"] = event["club"]["name"] if event.get("club") else None
     url = f"{BASE_URL}/events/{event['slug'] or event['id']}"
     return {"id": event["id"], "status": event["status"], "url": url, **summary}
 
