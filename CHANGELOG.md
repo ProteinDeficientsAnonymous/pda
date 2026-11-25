@@ -1,3 +1,10 @@
+# [0.285.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.284.0...v0.285.0) (2026-11-25)
+
+
+### Features
+
+* **clubs:** seed the six clubs in dev and staging ([#2673](https://github.com/ProteinDeficientsAnonymous/pda/issues/2673)) ([e258fd6](https://github.com/ProteinDeficientsAnonymous/pda/commit/e258fd69a15d090f3f42545a816d6390a1ea25c8))
+
 # [0.284.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.283.0...v0.284.0) (2026-11-25)
 
 
