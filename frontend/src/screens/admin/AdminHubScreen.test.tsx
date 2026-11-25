@@ -69,4 +69,12 @@ describe('AdminHubScreen', () => {
     renderHub();
     expect(screen.queryByText('event planning')).not.toBeInTheDocument();
   });
+
+  it('shows the clubs tile for manage_events', () => {
+    setAuthed(makeUserWithPermissions([Permission.ManageEvents]), 'tok-abc');
+
+    renderHub();
+
+    expect(screen.getByText('clubs')).toBeInTheDocument();
+  });
 });

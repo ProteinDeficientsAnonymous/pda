@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
 import type { components } from './types.gen';
@@ -25,6 +25,18 @@ export function useClubs() {
     queryFn: async (): Promise<Club[]> => {
       const { data } = await apiClient.get<WireClub[]>('/api/community/clubs/');
       return data.map(clubFromWire);
+    },
+  });
+}
+
+export function useDeleteClub() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (clubId: string): Promise<void> => {
+      await apiClient.delete(`/api/community/clubs/${clubId}/`);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: clubKeys.all });
     },
   });
 }
