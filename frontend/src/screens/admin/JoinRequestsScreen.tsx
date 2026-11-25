@@ -59,6 +59,7 @@ export default function JoinRequestsScreen() {
     magicLinkToken: string;
   } | null>(null);
   const [tentativeMessageFor, setTentativeMessageFor] = useState<{
+    joinRequestId: string;
     fullName: string;
     firstName: string;
     phoneNumber: string;
@@ -113,6 +114,7 @@ export default function JoinRequestsScreen() {
         });
       } else if (decision === JoinRequestStatus.TENTATIVE) {
         setTentativeMessageFor({
+          joinRequestId: request.id,
           fullName: result.fullName,
           firstName: result.firstName,
           phoneNumber: result.phoneNumber,
@@ -254,6 +256,7 @@ export default function JoinRequestsScreen() {
           firstName={tentativeMessageFor.firstName}
           phoneNumber={tentativeMessageFor.phoneNumber}
           magicLinkToken={tentativeMessageFor.magicLinkToken}
+          joinRequestId={tentativeMessageFor.joinRequestId}
         />
       ) : null}
       {memberPromotionMessageFor ? (

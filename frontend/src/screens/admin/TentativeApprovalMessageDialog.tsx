@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { useTentativeApprovalMessage, useWhatsAppLink } from '@/api/content';
+import { useJoinRequestSuggestedEvents } from '@/api/joinSuggestedEvents';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -8,6 +9,7 @@ import { SendLink } from '@/components/ui/SendLink';
 import { hasPermission, Permission } from '@/models/permissions';
 import { formatPhone } from '@/utils/formatPhone';
 import {
+  buildEventSection,
   buildMagicLinkUrl,
   buildSmsHref,
   buildWhatsAppHref,
@@ -23,10 +25,11 @@ interface Props {
   firstName: string;
   phoneNumber: string;
   magicLinkToken: string | null;
+  joinRequestId: string;
 }
 
 const DEFAULT_TENTATIVE_MESSAGE =
-  "hi ${FIRST_NAME} 🌱 you're tentatively in! sign in here: ${MAGIC_LINK} — come to an event in person and we'll get you fully approved.";
+  "hi ${FIRST_NAME} 🌱 you're tentatively in! sign in here: ${MAGIC_LINK} — come to an event in person and we'll get you fully approved.\n\n${NEXT_OFFICIAL_EVENT}\n\n${CLUB_EVENT}";
 
 export function TentativeApprovalMessageDialog({
   open,
@@ -35,11 +38,13 @@ export function TentativeApprovalMessageDialog({
   firstName,
   phoneNumber,
   magicLinkToken,
+  joinRequestId,
 }: Props) {
   const [editorOpen, setEditorOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
   const templateQ = useTentativeApprovalMessage();
   const whatsappLinkQ = useWhatsAppLink();
+  const eventsQ = useJoinRequestSuggestedEvents(joinRequestId);
 
   const senderName = currentUser?.firstName ?? '';
   const body = templateQ.data?.body.trim() ? templateQ.data.body : DEFAULT_TENTATIVE_MESSAGE;
@@ -48,10 +53,19 @@ export function TentativeApprovalMessageDialog({
     senderName,
     magicLink: magicLinkToken ? buildMagicLinkUrl(magicLinkToken) : '',
     whatsappLink: whatsappLinkQ.data?.link ?? '',
+    nextOfficialEvent: buildEventSection(
+      "here's the next official event:",
+      eventsQ.data?.nextOfficialEvent ?? null,
+    ),
+    clubEvent: buildEventSection(
+      "here's a club event we think you'd love:",
+      eventsQ.data?.clubEvent ?? null,
+    ),
   });
   const smsHref = buildSmsHref(phoneNumber, message);
   const whatsappHref = buildWhatsAppHref(phoneNumber, message);
-  const sendButtonsDisabled = templateQ.isPending;
+  // A failed events fetch just leaves the sections out rather than blocking the send.
+  const sendButtonsDisabled = templateQ.isPending || eventsQ.isPending;
   const canEditTemplate = hasPermission(currentUser, Permission.ApproveJoinRequests);
 
   return (
