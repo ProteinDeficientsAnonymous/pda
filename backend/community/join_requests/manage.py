@@ -26,6 +26,7 @@ from community.join_requests._history import (
     previous_rejection_out,
 )
 from community.join_requests._rejection import send_join_rejection
+from community.join_requests.answer_order import in_form_order, question_order
 from community.join_requests.approval import (
     applicant_user,
     provision_approved_user,
@@ -234,10 +235,12 @@ def _approving_event_fields(jr: JoinRequest) -> dict[str, str | None]:
     return {"approved_via_event_id": str(event.id), "approved_via_event_title": event.title}
 
 
-def join_request_out(jr: JoinRequest, lookups: PhoneLookups | None = None) -> JoinRequestOut:
+def join_request_out(
+    jr: JoinRequest, lookups: PhoneLookups | None = None, order: dict[str, int] | None = None
+) -> JoinRequestOut:
     answers = [
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
-        for qid, data in (jr.custom_answers or {}).items()
+        for qid, data in in_form_order(jr.custom_answers or {}, order or question_order())
     ]
     history = phone_history(jr, lookups or phone_lookups([jr]))
     user = jr.user or history.phone_user
@@ -326,7 +329,8 @@ def list_join_requests(request):
     join_requests = list(join_requests)
     lookups = phone_lookups(join_requests)
     rows = [jr for jr in join_requests if not _superseded_by_pause(jr, lookups)]
-    return Status(200, [join_request_out(jr, lookups) for jr in rows])
+    order = question_order()
+    return Status(200, [join_request_out(jr, lookups, order) for jr in rows])
 
 
 def _apply_decision_fields(
