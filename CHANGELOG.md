@@ -1,3 +1,14 @@
+# [0.281.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.280.0...v0.281.0) (2026-11-25)
+
+
+### Features
+
+* **clubs:** club events say which club they are for ([#2662](https://github.com/ProteinDeficientsAnonymous/pda/issues/2662)) ([fd83b53](https://github.com/ProteinDeficientsAnonymous/pda/commit/fd83b5367ad6b0d89f0e78d319512f7e4010855e))
+* **clubs:** club model, event club and join-request club interests ([#2660](https://github.com/ProteinDeficientsAnonymous/pda/issues/2660)) ([f977f8b](https://github.com/ProteinDeficientsAnonymous/pda/commit/f977f8b75c47dfddd094b4c3311adbc5c3c8ae11))
+* **clubs:** endpoints to list and manage clubs ([#2661](https://github.com/ProteinDeficientsAnonymous/pda/issues/2661)) ([cbeed09](https://github.com/ProteinDeficientsAnonymous/pda/commit/cbeed090f15ce2369ad4267303f91712ba46c927))
+* **join:** managed flag on join-form questions, useClubs hook ([#2663](https://github.com/ProteinDeficientsAnonymous/pda/issues/2663)) ([0eaef01](https://github.com/ProteinDeficientsAnonymous/pda/commit/0eaef018a714bd7404f34f6045a8924c55972864))
+* **join:** suggested next official event for a tentative applicant ([#2665](https://github.com/ProteinDeficientsAnonymous/pda/issues/2665)) ([1ee96a4](https://github.com/ProteinDeficientsAnonymous/pda/commit/1ee96a4495107900e7360704049683866ae530cb))
+
 # [0.280.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.279.0...v0.280.0) (2026-11-23)
 
 
