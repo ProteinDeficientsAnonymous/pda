@@ -6454,6 +6454,11 @@ export interface components {
         /** SuggestedEventsOut */
         SuggestedEventsOut: {
             club_event: components["schemas"]["SuggestedEventOut"] | null;
+            /**
+             * Club Event From Picked Club
+             * @default false
+             */
+            club_event_from_picked_club: boolean;
             next_official_event: components["schemas"]["SuggestedEventOut"] | null;
         };
         /** SurveyAnswersIn */

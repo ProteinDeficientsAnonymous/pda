@@ -16,6 +16,7 @@ export interface SuggestedEvent {
 export interface SuggestedEvents {
   nextOfficialEvent: SuggestedEvent | null;
   clubEvent: SuggestedEvent | null;
+  clubEventFromPickedClub: boolean;
 }
 
 function mapEvent(w: WireSuggestedEvent | null): SuggestedEvent | null {
@@ -35,6 +36,7 @@ export function useJoinRequestSuggestedEvents(joinRequestId: string) {
       return {
         nextOfficialEvent: mapEvent(data.next_official_event),
         clubEvent: mapEvent(data.club_event),
+        clubEventFromPickedClub: data.club_event_from_picked_club,
       };
     },
   });

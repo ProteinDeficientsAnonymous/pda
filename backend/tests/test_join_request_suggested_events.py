@@ -88,7 +88,11 @@ class TestNextOfficialEvent:
     def test_nothing_upcoming(self, api_client, vettor_headers, book):
         body = _get(api_client, vettor_headers, _join_request(book))
 
-        assert body == {"next_official_event": None, "club_event": None}
+        assert body == {
+            "next_official_event": None,
+            "club_event": None,
+            "club_event_from_picked_club": False,
+        }
 
 
 @pytest.mark.django_db
@@ -100,6 +104,7 @@ class TestClubEvent:
         body = _get(api_client, vettor_headers, _join_request(book))
 
         assert body["club_event"]["id"] == str(picked.id)
+        assert body["club_event_from_picked_club"] is True
 
     def test_two_picked_clubs_gives_the_soonest_of_either(
         self, api_client, vettor_headers, book, movie
@@ -125,10 +130,45 @@ class TestClubEvent:
 
         assert _get(api_client, vettor_headers, _join_request(book))["club_event"] is None
 
-    def test_none_when_no_clubs_picked(self, api_client, vettor_headers, book):
-        _event("book night", EventType.CLUB, 10, club=book)
+    def test_falls_back_to_an_open_club_when_none_picked(self, api_client, vettor_headers, book):
+        fallback = _event("book night", EventType.CLUB, 10, club=book)
 
-        assert _get(api_client, vettor_headers, _join_request())["club_event"] is None
+        body = _get(api_client, vettor_headers, _join_request())
+
+        assert body["club_event"]["id"] == str(fallback.id)
+        assert body["club_event_from_picked_club"] is False
+
+    def test_falls_back_when_picked_club_has_nothing_upcoming(
+        self, api_client, vettor_headers, book, movie
+    ):
+        _event("book night, too soon", EventType.CLUB, 3, club=book)
+        fallback = _event("movie night", EventType.CLUB, 10, club=movie)
+
+        body = _get(api_client, vettor_headers, _join_request(book))
+
+        assert body["club_event"]["id"] == str(fallback.id)
+        assert body["club_event_from_picked_club"] is False
+
+    def test_fallback_skips_clubs_with_requirements_and_unassigned_events(
+        self, api_client, vettor_headers, movie
+    ):
+        dogs = Club.objects.create(name="doggie meetup club", requirements="dog parents")
+        _event("pup picnic", EventType.CLUB, 8, club=dogs)
+        _event("old club event", EventType.CLUB, 9)
+        open_club = _event("movie night", EventType.CLUB, 12, club=movie)
+
+        body = _get(api_client, vettor_headers, _join_request())
+
+        assert body["club_event"]["id"] == str(open_club.id)
+
+    def test_picked_club_with_requirements_is_suggested(self, api_client, vettor_headers):
+        dogs = Club.objects.create(name="doggie meetup club", requirements="dog parents")
+        picnic = _event("pup picnic", EventType.CLUB, 8, club=dogs)
+
+        body = _get(api_client, vettor_headers, _join_request(dogs))
+
+        assert body["club_event"]["id"] == str(picnic.id)
+        assert body["club_event_from_picked_club"] is True
 
     def test_skips_cancelled_draft_invite_only_and_tbd_events(
         self, api_client, vettor_headers, book

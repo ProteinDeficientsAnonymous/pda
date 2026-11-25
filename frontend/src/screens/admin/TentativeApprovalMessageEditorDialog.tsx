@@ -26,7 +26,7 @@ export function TentativeApprovalMessageEditorDialog({ open, onClose, template }
         },
         {
           name: 'CLUB_EVENT',
-          hint: 'a club event they picked on the join form, 7+ days out; blank if none',
+          hint: 'a club event 7+ days out from a club they picked, else from a club open to anyone; blank if none',
         },
       ]}
       ariaLabel="tentative approval message body"

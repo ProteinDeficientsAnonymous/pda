@@ -8361,6 +8361,11 @@
               }
             ]
           },
+          "club_event_from_picked_club": {
+            "default": false,
+            "title": "Club Event From Picked Club",
+            "type": "boolean"
+          },
           "next_official_event": {
             "anyOf": [
               {

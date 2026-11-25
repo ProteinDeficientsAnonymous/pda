@@ -36,6 +36,7 @@ const suggestedEvents = vi.hoisted(() => ({
       startDatetime: Date;
     },
     clubEvent: null as null | { id: string; slug: string; title: string; startDatetime: Date },
+    clubEventFromPickedClub: false,
   },
 }));
 
@@ -55,7 +56,11 @@ function makeUser(overrides?: Partial<User>): User {
 }
 
 beforeEach(() => {
-  suggestedEvents.data = { nextOfficialEvent: null, clubEvent: null };
+  suggestedEvents.data = {
+    nextOfficialEvent: null,
+    clubEvent: null,
+    clubEventFromPickedClub: false,
+  };
   useAuthStore.setState({ status: 'idle', user: null, accessToken: null });
 });
 
@@ -136,11 +141,28 @@ describe('TentativeApprovalMessageDialog', () => {
         title: 'Book Club',
         startDatetime: new Date(2026, 11, 10, 18, 30),
       },
+      clubEventFromPickedClub: true,
     };
     renderDialog(makeUser());
     expect(screen.getByText(/here's the next official event:/)).toHaveTextContent(
       `here's the next official event: Park Walk — sat dec 19, 11:00 am ${window.location.origin}/events/walk`,
     );
     expect(screen.getByText(/here's a club event we think you'd love:/)).toBeInTheDocument();
+  });
+
+  it('uses softer wording for a club they did not pick', () => {
+    suggestedEvents.data = {
+      nextOfficialEvent: null,
+      clubEvent: {
+        id: 'c1',
+        slug: 'movie-night',
+        title: 'Movie Night',
+        startDatetime: new Date(2026, 11, 10, 18, 30),
+      },
+      clubEventFromPickedClub: false,
+    };
+    renderDialog(makeUser());
+    expect(screen.getByText(/here's a club event coming up:/)).toBeInTheDocument();
+    expect(screen.queryByText(/we think you'd love/)).toBeNull();
   });
 });
