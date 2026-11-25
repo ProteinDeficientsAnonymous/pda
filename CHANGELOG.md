@@ -1,3 +1,10 @@
+## [0.286.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.286.0...v0.286.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* **join:** style checkbox questions and separate the consents ([#2675](https://github.com/ProteinDeficientsAnonymous/pda/issues/2675)) ([a48454c](https://github.com/ProteinDeficientsAnonymous/pda/commit/a48454c8917ed7261b26757009ebe0f6ce851ecd))
+
 # [0.286.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.285.0...v0.286.0) (2026-11-25)
 
 
