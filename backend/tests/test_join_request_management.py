@@ -4,6 +4,7 @@ import uuid
 
 import pytest
 from community.join_requests import manage
+from community.join_requests.clubs_question import CLUBS_QUESTION_ID
 from community.models import (
     JoinFormQuestion,
     JoinFormQuestionType,
@@ -449,3 +450,25 @@ def test_join_form_lists_questions_as_editable(api_client):
         "display_order": 99,
         "managed": False,
     }
+
+
+@pytest.mark.django_db
+def test_list_answers_follow_join_form_order(api_client, vettor_headers):
+    JoinFormQuestion.objects.all().delete()
+    first = JoinFormQuestion.objects.create(label="first", display_order=0)
+    second = JoinFormQuestion.objects.create(label="second", display_order=1)
+    JoinRequest.objects.create(
+        first_name="Sprout",
+        phone_number="+16505557777",
+        custom_answers={
+            CLUBS_QUESTION_ID: {"label": "clubs", "answer": ["book club"]},
+            "deleted-question": {"label": "old", "answer": "x"},
+            str(second.id): {"label": "second", "answer": "b"},
+            str(first.id): {"label": "first", "answer": "a"},
+        },
+    )
+
+    response = api_client.get("/api/community/join-requests/", **vettor_headers)
+
+    labels = [a["label"] for a in response.json()[0]["answers"]]
+    assert labels == ["first", "second", "clubs", "old"]
