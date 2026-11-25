@@ -5116,6 +5116,11 @@
             "title": "Label",
             "type": "string"
           },
+          "managed": {
+            "default": false,
+            "title": "Managed",
+            "type": "boolean"
+          },
           "options": {
             "default": [],
             "items": {

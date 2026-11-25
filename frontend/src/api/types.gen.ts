@@ -5184,6 +5184,11 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Managed
+             * @default false
+             */
+            managed: boolean;
+            /**
              * Options
              * @default []
              */

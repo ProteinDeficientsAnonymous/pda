@@ -25,6 +25,8 @@ class JoinFormQuestionOut(BaseModel):
     options: list[str] = []
     required: bool
     display_order: int
+    # Built-in questions (the clubs question) are not editable in the join-form admin.
+    managed: bool = False
 
 
 class JoinFormQuestionIn(BaseModel):
