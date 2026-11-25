@@ -7,6 +7,7 @@ import { queryWrapper } from '@/test/render';
 import {
   AlreadyHasAccountError,
   PendingJoinRequestError,
+  useJoinQuestions,
   useJoinRequests,
   useSubmitJoinRequest,
 } from './join';
@@ -26,6 +27,55 @@ function makeAxiosError(status: number, data: Record<string, unknown> = {}): Err
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+// ---------------------------------------------------------------------------
+// useJoinQuestions
+// ---------------------------------------------------------------------------
+
+describe('useJoinQuestions', () => {
+  it('maps questions, defaults optional fields, and sorts by display order', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'q2',
+          label: 'which clubs?',
+          field_type: 'checkbox',
+          options: ['book club'],
+          required: true,
+          display_order: 2,
+          managed: true,
+        },
+        { id: 'q1', label: 'why join?', field_type: 'text', display_order: 1 },
+      ],
+    });
+
+    const { result } = renderHook(() => useJoinQuestions(), { wrapper: queryWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(mockedGet).toHaveBeenCalledWith('/api/community/join-form/');
+    expect(result.current.data).toEqual([
+      {
+        id: 'q1',
+        label: 'why join?',
+        fieldType: 'text',
+        options: [],
+        required: false,
+        displayOrder: 1,
+        managed: false,
+      },
+      {
+        id: 'q2',
+        label: 'which clubs?',
+        fieldType: 'checkbox',
+        options: ['book club'],
+        required: true,
+        displayOrder: 2,
+        managed: true,
+      },
+    ]);
+  });
 });
 
 // ---------------------------------------------------------------------------
