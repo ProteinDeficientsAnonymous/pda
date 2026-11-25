@@ -175,14 +175,15 @@ function RadioGroup({
 }) {
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-foreground text-sm font-medium">
+      <legend className="text-foreground mb-1 text-sm font-medium">
         {label}
         {labelSuffix ? <LabelSuffix>{labelSuffix}</LabelSuffix> : null}
       </legend>
       {options.map((o) => (
-        <label key={o} className="flex items-center gap-2 text-sm">
+        <label key={o} className="text-foreground flex cursor-pointer items-center gap-2 text-sm">
           <input
             type="radio"
+            className="accent-brand-600 h-4 w-4 shrink-0 cursor-pointer"
             name={label}
             value={o}
             checked={value === o}
@@ -222,14 +223,15 @@ function CheckboxGroup({
   }
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-foreground text-sm font-medium">
+      <legend className="text-foreground mb-1 text-sm font-medium">
         {label}
         {labelSuffix ? <LabelSuffix>{labelSuffix}</LabelSuffix> : null}
       </legend>
       {options.map((o) => (
-        <label key={o} className="flex items-center gap-2 text-sm">
+        <label key={o} className="text-foreground flex cursor-pointer items-center gap-2 text-sm">
           <input
             type="checkbox"
+            className="accent-brand-600 h-4 w-4 shrink-0 cursor-pointer rounded"
             checked={value.includes(o)}
             disabled={disabled}
             onChange={() => {
