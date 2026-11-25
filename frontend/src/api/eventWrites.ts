@@ -34,6 +34,7 @@ export interface EventFormValues {
   endDatetime: string | null;
   datetimeTbd: boolean;
   eventType: 'community' | 'official' | 'club';
+  clubId: string; // '' = none; only meaningful for club events
   visibility: 'public' | 'members_only' | 'invite_only';
   invitePermission: 'all_members' | 'co_hosts_only';
   rsvpEnabled: boolean;
@@ -76,6 +77,7 @@ const FIELD_TO_WIRE: WireFieldMap = {
   slug: ['slug', (v) => v],
   description: ['description', (v) => v],
   eventType: ['event_type', (v) => v],
+  clubId: ['club_id', (v) => v || null],
   eventFormat: ['event_format', (v) => v],
   visibility: ['visibility', (v) => v],
   location: ['location', (v) => v],
@@ -130,6 +132,7 @@ export function toWireBody(values: EventFormValues): WireBody {
     body[encoded[0]] = encoded[1];
   }
   nullFormatUnlessOfficial(body, values.eventType);
+  if (values.eventType !== EventTypeEnum.Club) delete body.club_id;
   return body;
 }
 
@@ -326,6 +329,7 @@ export function emptyEventFormValues(): EventFormValues {
     endDatetime: null,
     datetimeTbd: false,
     eventType: 'community',
+    clubId: '',
     visibility: 'members_only',
     invitePermission: 'all_members',
     rsvpEnabled: true,
@@ -389,6 +393,7 @@ export function eventToFormValues(e: Event): EventFormValues {
     endDatetime: e.endDatetime ? e.endDatetime.toISOString() : null,
     datetimeTbd: e.datetimeTbd,
     eventType,
+    clubId: e.club?.id ?? '',
     visibility,
     invitePermission: coerceEnum(
       e.invitePermission,

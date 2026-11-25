@@ -91,6 +91,20 @@ describe('EventDetailScreen', () => {
     expect(screen.getByRole('heading', { name: /test event/i })).toBeInTheDocument();
   });
 
+  it('shows the club name on a club event', () => {
+    mockUseEvent.mockReturnValue({
+      data: {
+        ...BASE_EVENT,
+        eventType: EventType.Club,
+        club: { id: 'c1', name: 'book club', requirements: '' },
+      },
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    renderScreen();
+    expect(screen.getByText('book club')).toBeInTheDocument();
+  });
+
   it('shows location for authenticated member', () => {
     setAuthed(AUTHED_USER);
     renderScreen();
