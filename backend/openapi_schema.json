@@ -8237,6 +8237,65 @@
         "title": "SseTicketOut",
         "type": "object"
       },
+      "SuggestedEventOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "start_datetime": {
+            "format": "date-time",
+            "title": "Start Datetime",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "start_datetime"
+        ],
+        "title": "SuggestedEventOut",
+        "type": "object"
+      },
+      "SuggestedEventsOut": {
+        "properties": {
+          "club_event": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuggestedEventOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next_official_event": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuggestedEventOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "next_official_event",
+          "club_event"
+        ],
+        "title": "SuggestedEventsOut",
+        "type": "object"
+      },
       "SurveyAnswersIn": {
         "properties": {
           "answers": {
@@ -17623,6 +17682,64 @@
           }
         ],
         "summary": "Resend Magic Link",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/join-requests/{id}/suggested-events/": {
+      "get": {
+        "operationId": "community_join_requests_suggested_events_join_request_suggested_events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestedEventsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Join Request Suggested Events",
         "tags": [
           "community"
         ]

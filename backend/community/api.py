@@ -35,6 +35,7 @@ from community.join_requests.form import router as join_form_router
 from community.join_requests.manage import router as join_requests_router
 from community.join_requests.resend import router as join_request_resend_router
 from community.join_requests.submit import router as join_request_submit_router
+from community.join_requests.suggested_events import router as join_request_suggested_events_router
 from community.join_requests.unreject import router as join_request_unreject_router
 from community.message_templates.member_promotion_email import (
     router as member_promotion_email_router,
@@ -84,6 +85,7 @@ router.add_router("", reserve_manage_router)
 router.add_router("", join_form_router)
 router.add_router("", join_requests_router)
 router.add_router("", join_request_submit_router)
+router.add_router("", join_request_suggested_events_router)
 router.add_router("", join_request_resend_router)
 router.add_router("", join_request_unreject_router)
 router.add_router("", login_link_router)
