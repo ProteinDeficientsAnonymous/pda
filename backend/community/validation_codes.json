@@ -299,6 +299,11 @@
         "params": []
       },
       {
+        "name": "CLUB_REQUIRED",
+        "value": "event.club_required",
+        "params": []
+      },
+      {
         "name": "PAYPAL_OFFICIAL_ONLY",
         "value": "event.paypal_official_only",
         "params": []
@@ -382,6 +387,23 @@
       {
         "name": "NAME_ALREADY_EXISTS",
         "value": "tag.name_already_exists",
+        "params": []
+      }
+    ],
+    "Club": [
+      {
+        "name": "NOT_FOUND",
+        "value": "club.not_found",
+        "params": []
+      },
+      {
+        "name": "NAME_REQUIRED",
+        "value": "club.name_required",
+        "params": []
+      },
+      {
+        "name": "NAME_ALREADY_EXISTS",
+        "value": "club.name_already_exists",
         "params": []
       }
     ],

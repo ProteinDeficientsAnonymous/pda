@@ -5,6 +5,7 @@ from django.db import models
 
 
 class AuditTargetType(models.TextChoices):
+    CLUB = "club", "Club"
     DOC_FOLDER = "doc_folder", "Doc folder"
     DOCUMENT = "document", "Document"
     EDITABLE_PAGE = "editable_page", "Editable page"

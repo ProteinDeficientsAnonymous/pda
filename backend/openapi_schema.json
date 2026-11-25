@@ -702,6 +702,7 @@
       },
       "AuditTargetType": {
         "enum": [
+          "club",
           "doc_folder",
           "document",
           "editable_page",

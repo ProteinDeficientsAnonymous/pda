@@ -63,6 +63,7 @@ export const Code = {
     SlugInvalid: 'event.slug_invalid',
     SlugTaken: 'event.slug_taken',
     InvalidEventFormat: 'event.invalid_event_format',
+    ClubRequired: 'event.club_required',
     PaypalOfficialOnly: 'event.paypal_official_only',
   },
   Poll: {
@@ -83,6 +84,11 @@ export const Code = {
     NotFound: 'tag.not_found',
     NameRequired: 'tag.name_required',
     NameAlreadyExists: 'tag.name_already_exists',
+  },
+  Club: {
+    NotFound: 'club.not_found',
+    NameRequired: 'club.name_required',
+    NameAlreadyExists: 'club.name_already_exists',
   },
   Reserve: {
     NotFound: 'reserve.not_found',
@@ -398,6 +404,7 @@ export type ValidationCode =
   | 'event.slug_invalid'
   | 'event.slug_taken'
   | 'event.invalid_event_format'
+  | 'event.club_required'
   | 'event.paypal_official_only'
   | 'poll.not_found'
   | 'poll.options_required'
@@ -414,6 +421,9 @@ export type ValidationCode =
   | 'tag.not_found'
   | 'tag.name_required'
   | 'tag.name_already_exists'
+  | 'club.not_found'
+  | 'club.name_required'
+  | 'club.name_already_exists'
   | 'reserve.not_found'
   | 'comment.not_found'
   | 'comment.reply_depth_exceeded'
@@ -653,6 +663,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.slug_invalid': [],
   'event.slug_taken': [],
   'event.invalid_event_format': [],
+  'event.club_required': [],
   'event.paypal_official_only': [],
   'poll.not_found': [],
   'poll.options_required': [],
@@ -669,6 +680,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'tag.not_found': [],
   'tag.name_required': [],
   'tag.name_already_exists': [],
+  'club.not_found': [],
+  'club.name_required': [],
+  'club.name_already_exists': [],
   'reserve.not_found': [],
   'comment.not_found': [],
   'comment.reply_depth_exceeded': [],
