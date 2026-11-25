@@ -1,7 +1,7 @@
 """Events to suggest in the message a vetter sends a tentatively-approved applicant."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
@@ -25,6 +25,9 @@ from community.validation import Code, raise_validation
 
 router = Router()
 
+# Gives a new applicant time to sign in and plan before the club event.
+CLUB_EVENT_LEAD_TIME = timedelta(days=7)
+
 
 class SuggestedEventOut(BaseModel):
     id: str
@@ -35,6 +38,7 @@ class SuggestedEventOut(BaseModel):
 
 class SuggestedEventsOut(BaseModel):
     next_official_event: SuggestedEventOut | None
+    club_event: SuggestedEventOut | None
 
 
 def _event_out(event: Event | None) -> SuggestedEventOut | None:
@@ -61,6 +65,14 @@ def _upcoming(event_type: str, starts_after: datetime) -> QuerySet[Event]:
     )
 
 
+def suggest_club_event(join_request: JoinRequest, now: datetime) -> Event | None:
+    return (
+        _upcoming(EventType.CLUB, now + CLUB_EVENT_LEAD_TIME)
+        .filter(club__in=join_request.interested_clubs.all())
+        .first()
+    )
+
+
 @router.get(
     "/join-requests/{id}/suggested-events/",
     response={200: SuggestedEventsOut, 403: ErrorOut, 404: ErrorOut},
@@ -83,7 +95,8 @@ def join_request_suggested_events(request, id: UUID):
             ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="join_request_suggested_events")
-    if not JoinRequest.objects.filter(id=id).exists():
+    join_request = JoinRequest.objects.filter(id=id).first()
+    if join_request is None:
         raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
     now = timezone.now()
     return Status(
@@ -92,5 +105,6 @@ def join_request_suggested_events(request, id: UUID):
             next_official_event=_event_out(
                 _upcoming(EventType.OFFICIAL, now).filter(rsvp_enabled=True).first()
             ),
+            club_event=_event_out(suggest_club_event(join_request, now)),
         ),
     )

@@ -8351,6 +8351,16 @@
       },
       "SuggestedEventsOut": {
         "properties": {
+          "club_event": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuggestedEventOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "next_official_event": {
             "anyOf": [
               {
@@ -8363,7 +8373,8 @@
           }
         },
         "required": [
-          "next_official_event"
+          "next_official_event",
+          "club_event"
         ],
         "title": "SuggestedEventsOut",
         "type": "object"
