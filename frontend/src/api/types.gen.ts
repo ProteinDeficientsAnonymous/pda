@@ -1830,6 +1830,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/join-requests/{id}/suggested-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Join Request Suggested Events */
+        get: operations["community_join_requests_suggested_events_join_request_suggested_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/join-requests/{id}/unreject/": {
         parameters: {
             query?: never;
@@ -6419,6 +6436,25 @@ export interface components {
         SseTicketOut: {
             /** Ticket */
             ticket: string;
+        };
+        /** SuggestedEventOut */
+        SuggestedEventOut: {
+            /** Id */
+            id: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Start Datetime
+             * Format: date-time
+             */
+            start_datetime: string;
+            /** Title */
+            title: string;
+        };
+        /** SuggestedEventsOut */
+        SuggestedEventsOut: {
+            club_event: components["schemas"]["SuggestedEventOut"] | null;
+            next_official_event: components["schemas"]["SuggestedEventOut"] | null;
         };
         /** SurveyAnswersIn */
         SurveyAnswersIn: {
@@ -12565,6 +12601,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_join_requests_suggested_events_join_request_suggested_events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestedEventsOut"];
                 };
             };
             /** @description Forbidden */
