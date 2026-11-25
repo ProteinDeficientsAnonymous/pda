@@ -36,21 +36,23 @@ export function buildEventSection(lead: string, event: MessageEvent | null): str
 }
 
 export function renderWelcomeMessage(template: string, vars: WelcomeMessageVars): string {
-  return (
-    template
-      .replaceAll('${FIRST_NAME}', vars.name)
-      .replaceAll('${SENDER_NAME}', vars.senderName)
-      .replaceAll('${MAGIC_LINK}', vars.magicLink ?? '')
-      // Retired placeholder — swallow it so a template saved before it was
-      // dropped doesn't send the literal ${RSVP_LINK} text.
-      .replaceAll('${RSVP_LINK}', '')
-      .replaceAll('${WHATSAPP_LINK}', vars.whatsappLink)
-      .replaceAll('${NEXT_OFFICIAL_EVENT}', vars.nextOfficialEvent ?? '')
-      .replaceAll('${CLUB_EVENT}', vars.clubEvent ?? '')
-      // An empty event section would otherwise leave a run of blank lines behind.
-      .replace(/\n{3,}/g, '\n\n')
-      .replace(/\n+$/, '')
-  );
+  const rendered = template
+    .replaceAll('${FIRST_NAME}', vars.name)
+    .replaceAll('${SENDER_NAME}', vars.senderName)
+    .replaceAll('${MAGIC_LINK}', vars.magicLink ?? '')
+    // Retired placeholder — swallow it so a template saved before it was
+    // dropped doesn't send the literal ${RSVP_LINK} text.
+    .replaceAll('${RSVP_LINK}', '')
+    .replaceAll('${WHATSAPP_LINK}', vars.whatsappLink)
+    // Replacer functions keep `$&` / `$$` in event titles literal.
+    .replaceAll('${NEXT_OFFICIAL_EVENT}', () => vars.nextOfficialEvent ?? '')
+    .replaceAll('${CLUB_EVENT}', () => vars.clubEvent ?? '');
+  const droppedEventSection =
+    (template.includes('${NEXT_OFFICIAL_EVENT}') && !vars.nextOfficialEvent) ||
+    (template.includes('${CLUB_EVENT}') && !vars.clubEvent);
+  if (!droppedEventSection) return rendered;
+  // An empty event section would otherwise leave a run of blank lines behind.
+  return rendered.replace(/\n{3,}/g, '\n\n').replace(/\n+$/, '');
 }
 
 export function buildSmsHref(phoneNumber: string, body?: string): string {

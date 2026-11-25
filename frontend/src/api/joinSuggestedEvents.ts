@@ -26,6 +26,8 @@ function mapEvent(w: WireSuggestedEvent | null): SuggestedEvent | null {
 export function useJoinRequestSuggestedEvents(joinRequestId: string) {
   return useQuery({
     queryKey: ['join-requests', joinRequestId, 'suggested-events'],
+    // Events are optional; fail fast so the send buttons don't wait out retries.
+    retry: false,
     queryFn: async (): Promise<SuggestedEvents> => {
       const { data } = await apiClient.get<WireSuggestedEvents>(
         `/api/community/join-requests/${joinRequestId}/suggested-events/`,
