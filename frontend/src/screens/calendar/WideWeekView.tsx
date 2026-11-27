@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { useToday } from '@/hooks/useToday';
 import { eventClass, type Event as PdaEvent } from '@/models/event';
 import { cn } from '@/utils/cn';
+import { formatEventTime } from '@/utils/datetime';
 
 interface Props {
   date: Date;
@@ -152,7 +153,7 @@ function DayEvents({ events, onSelectEvent, onOverflow }: DayEventsProps) {
 }
 
 function EventChip({ event, onSelect }: { event: PdaEvent; onSelect: (event: PdaEvent) => void }) {
-  const time = event.startDatetime ? lower(event.startDatetime, 'h:mmaaa') : '';
+  const time = event.startDatetime ? formatEventTime(event.startDatetime, 'h:mmaaa') : '';
   return (
     <button
       type="button"

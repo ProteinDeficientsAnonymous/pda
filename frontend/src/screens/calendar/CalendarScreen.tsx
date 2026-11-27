@@ -16,6 +16,7 @@ import {
 } from '@/models/event';
 
 import { AgendaList } from './AgendaList';
+import { formatAgendaTime, formatEventTimeRange } from './calendarFormats';
 import { makeLocalizer } from './calendarLocalizer';
 import { calendarRangeFor, parseDate, parseView } from './calendarParams';
 import { CalendarToolbar } from './CalendarToolbar';
@@ -45,9 +46,8 @@ const FORMATS = {
   agendaHeaderFormat: ({ start, end }: { start: Date; end: Date }) =>
     `${lower(start, 'MMM d')} – ${lower(end, 'MMM d')}`,
   agendaDateFormat: (d: Date) => lower(d, 'EEE MMM d'),
-  agendaTimeFormat: (d: Date) => lower(d, 'h:mmaaa'),
-  eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) =>
-    `${lower(start, 'h:mmaaa')} – ${lower(end, 'h:mmaaa')}`,
+  agendaTimeFormat: formatAgendaTime,
+  eventTimeRangeFormat: formatEventTimeRange,
 };
 
 const MESSAGES = {

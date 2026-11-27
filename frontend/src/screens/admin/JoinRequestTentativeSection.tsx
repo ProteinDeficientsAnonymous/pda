@@ -1,8 +1,8 @@
-import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 
 import type { JoinRequestRsvpEvent, JoinRequestSummary } from '@/api/join';
 import { Button } from '@/components/ui/Button';
+import { EVENT_TZ_LABEL, formatEventTime } from '@/utils/datetime';
 
 export function TentativeActions({
   request,
@@ -46,7 +46,7 @@ function RsvpEventList({ events }: { events: JoinRequestRsvpEvent[] }) {
           <li key={e.eventId} className="text-foreground-secondary text-xs">
             {e.title}
             {e.startDatetime
-              ? ` · ${format(new Date(e.startDatetime), 'MMM d, h:mm a').toLowerCase()}`
+              ? ` · ${formatEventTime(new Date(e.startDatetime), 'MMM d, h:mm a')} ${EVENT_TZ_LABEL}`
               : ''}
           </li>
         ))}
