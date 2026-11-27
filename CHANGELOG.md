@@ -1,3 +1,12 @@
+## [0.299.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.299.0...v0.299.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* **blast:** audit stuck sends, clean mcp input errors, typed status ([7296cbc](https://github.com/ProteinDeficientsAnonymous/pda/commit/7296cbc6ca9becee93ab9ffdfaf75bcae88e8141))
+* **blast:** show stale sends as unknown and drop relative links ([a2a68d8](https://github.com/ProteinDeficientsAnonymous/pda/commit/a2a68d8e6b68e685e4cc2f6903bd7cb60df33df1))
+* member email blast follow-ups ([#2699](https://github.com/ProteinDeficientsAnonymous/pda/issues/2699)) ([2639e1c](https://github.com/ProteinDeficientsAnonymous/pda/commit/2639e1c50aa0100878f86ec367bd296d58996b16))
+
 # [0.299.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.298.0...v0.299.0) (2026-11-27)
 
 
