@@ -34,6 +34,7 @@ from community.models.choices import (
     is_official_or_club,
 )
 from community.models.club import Club
+from community.models.club_event_reminder import ClubEventReminder, ClubReminderStage
 from community.models.cohost_invite import EventCoHostInvite
 from community.models.comment import EventComment, EventCommentReaction, ReactionEmoji
 from community.models.content import (
@@ -152,6 +153,8 @@ __all__ = [
     "EventRSVP",
     "EventTag",
     "Club",
+    "ClubEventReminder",
+    "ClubReminderStage",
     "event_lookup_q",
     "parse_event_ref",
     "JoinFormQuestion",
