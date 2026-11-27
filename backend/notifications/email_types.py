@@ -62,3 +62,7 @@ def validate_recipient(to: str) -> None:
 @runtime_checkable
 class EmailSender(Protocol):
     def send(self, to: str, subject: str, html: str, text: str) -> SendResult: ...
+
+    def send_batch(
+        self, recipients: list[str], subject: str, html: str, text: str
+    ) -> BatchSendResult: ...
