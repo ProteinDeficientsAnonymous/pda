@@ -23,6 +23,7 @@ function renderBasics(overrides: Partial<EventFormValues> = {}, onChange = vi.fn
         errors={{}}
         canTagOfficial={false}
         canTagClub={false}
+        allowedClubIds={null}
       />,
     ),
   };
@@ -57,6 +58,7 @@ describe('EventFormBasics poll button gating', () => {
         errors={{}}
         canTagOfficial={false}
         canTagClub={false}
+        allowedClubIds={null}
         timeLocked
       />,
     );

@@ -89,7 +89,13 @@ export function EventForm({ existing, initial, onCreated }: Props) {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const canTagOfficial = hasPermission(user, Permission.TagOfficialEvent);
-  const canTagClub = hasPermission(user, Permission.TagClubEvent);
+  const canTagAnyClub = hasPermission(user, Permission.TagClubEvent);
+  const repClubIds = user?.repClubIds ?? [];
+  const canTagClub = canTagAnyClub || repClubIds.length > 0;
+  const existingClubId = existing?.club?.id;
+  const allowedClubIds = canTagAnyClub
+    ? null
+    : [...repClubIds, ...(existingClubId ? [existingClubId] : [])];
   const formRef = useRef<HTMLFormElement | null>(null);
 
   const [values, setValues] = useState<EventFormValues>(() => {
@@ -369,6 +375,7 @@ export function EventForm({ existing, initial, onCreated }: Props) {
           errors={errors}
           canTagOfficial={canTagOfficial}
           canTagClub={canTagClub}
+          allowedClubIds={allowedClubIds}
           timeLocked={!!existing?.hasPoll && !existing.startDatetime}
           existingEventId={existing?.id}
           existingHasPoll={!!existing?.hasPoll}

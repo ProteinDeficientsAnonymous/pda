@@ -19,6 +19,7 @@ interface Props {
   errors: Partial<Record<keyof EventFormValues, string>>;
   canTagOfficial: boolean;
   canTagClub: boolean;
+  allowedClubIds: readonly string[] | null;
   timeLocked?: boolean;
   existingEventId?: string | undefined;
   existingHasPoll?: boolean;
@@ -32,6 +33,7 @@ export function EventFormBasics({
   errors,
   canTagOfficial,
   canTagClub,
+  allowedClubIds,
   timeLocked = false,
   existingEventId,
   existingHasPoll = false,
@@ -74,7 +76,12 @@ export function EventFormBasics({
         canTagClub={canTagClub}
       />
       {values.eventType === EventType.Club ? (
-        <EventFormClub value={values.clubId} onChange={onChange} error={errors.clubId} />
+        <EventFormClub
+          value={values.clubId}
+          onChange={onChange}
+          error={errors.clubId}
+          allowedClubIds={allowedClubIds}
+        />
       ) : null}
 
       {timeLocked ? (
