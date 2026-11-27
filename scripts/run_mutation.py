@@ -67,13 +67,10 @@ def changed_backend_files(base: str) -> list[str]:
 
 
 def _is_mutation_target(path: str) -> bool:
-    # Management commands and seed data are slow to test (each mutant re-runs whole
-    # seed commands) and rarely hide logic worth a mutation run.
-    if not path.endswith(".py"):
-        return False
-    if any(part in path for part in ("/tests/", "/migrations/", "/management/commands/")):
-        return False
-    return not Path(path).name.lstrip("_").startswith("seed")
+    # Management commands (incl. seed data) are slow to test: each mutant re-runs whole commands.
+    return path.endswith(".py") and not any(
+        part in path for part in ("/tests/", "/migrations/", "/management/commands/")
+    )
 
 
 def affected_tests(base: str) -> list[str] | None:
