@@ -69,6 +69,9 @@ export function RichEditor({
         'aria-label': placeholder ?? 'editor',
       },
     },
+    onCreate: ({ editor: e }) => {
+      onHtmlChange?.(e.getHTML());
+    },
     onUpdate: ({ editor: e }) => {
       onChange(JSON.stringify(e.getJSON()));
       onHtmlChange?.(e.getHTML());
