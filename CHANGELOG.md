@@ -1,3 +1,18 @@
+# [0.298.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.297.0...v0.298.0) (2026-11-27)
+
+
+### Bug Fixes
+
+* accurate email blast test-send and partial-send messages ([#2696](https://github.com/ProteinDeficientsAnonymous/pda/issues/2696)) ([ea74014](https://github.com/ProteinDeficientsAnonymous/pda/commit/ea740146b71accc3317e2267b4f878330236cafe))
+* **blast:** accurate test-send and partial-send result copy ([c890cca](https://github.com/ProteinDeficientsAnonymous/pda/commit/c890ccad3af4166153ceb52d97fb1764a5621fd6))
+* **mcp:** report whether the test blast was accepted ([700995d](https://github.com/ProteinDeficientsAnonymous/pda/commit/700995da7aa70135069b1121bab52b51418e0857))
+
+
+### Features
+
+* **mcp:** send_member_email_blast tool with confirm token ([6f3c869](https://github.com/ProteinDeficientsAnonymous/pda/commit/6f3c869e52ea8d0c335a62f3c177416994cd29cb))
+* send_member_email_blast mcp tool ([#2693](https://github.com/ProteinDeficientsAnonymous/pda/issues/2693)) ([0c7871a](https://github.com/ProteinDeficientsAnonymous/pda/commit/0c7871a69198df57e45922f2acdf3e7a52a080ba))
+
 # [0.297.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.296.0...v0.297.0) (2026-11-27)
 
 
