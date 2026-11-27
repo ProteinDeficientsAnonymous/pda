@@ -305,3 +305,13 @@ describe('club messages', () => {
     expect(messageForCode({ code, field: null })).toBe(message);
   });
 });
+
+describe('blast messages', () => {
+  it.each([
+    [Code.Notification.BlastNoRecipients, 'no members have an email to send to'],
+    [Code.Notification.BlastDuplicate, 'this was already sent in the last 15 minutes'],
+    [Code.Notification.BlastNoOwnEmail, 'add an email to your profile to send yourself a test'],
+  ])('%s', (code, message) => {
+    expect(messageForCode({ code, field: null })).toBe(message);
+  });
+});
