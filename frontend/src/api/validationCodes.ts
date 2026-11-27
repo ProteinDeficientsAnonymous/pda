@@ -235,6 +235,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'enter a club name';
     case Code.Club.NameAlreadyExists:
       return 'a club with that name already exists';
+    case Code.Club.RepNotEligible:
+      return 'only members can be club reps';
 
     // Reserve
     case Code.Reserve.NotFound:
