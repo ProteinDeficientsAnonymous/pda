@@ -24,7 +24,15 @@ class ConsoleSender:
     def send_batch(
         self, recipients: list[str], subject: str, html: str, text: str
     ) -> BatchSendResult:
+        result = BatchSendResult()
         for recipient in recipients:
-            validate_recipient(recipient)
-            logger.info("EMAIL to=%s subject=%s", mask_recipient(recipient), subject)
-        return BatchSendResult(accepted=len(recipients))
+            masked = mask_recipient(recipient)
+            try:
+                validate_recipient(recipient)
+            except ValueError:
+                logger.warning("EMAIL invalid_recipient to=%s subject=%s", masked, subject)
+                result = result + BatchSendResult(failed=1)
+                continue
+            logger.info("EMAIL to=%s subject=%s", masked, subject)
+            result = result + BatchSendResult(accepted=1)
+        return result

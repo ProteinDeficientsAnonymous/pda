@@ -47,9 +47,18 @@ def test_console_batch_logs_masked_recipient(caplog):
     assert "sha256:" in caplog.text
 
 
-def test_console_batch_rejects_invalid_recipient():
-    with pytest.raises(ValueError):
-        ConsoleSender().send_batch(["not-an-email"], "s", "h", "t")
+def test_console_batch_counts_invalid_recipient_failed():
+    result = ConsoleSender().send_batch(["a@example.com", "not-an-email"], "s", "h", "t")
+    assert result == BatchSendResult(accepted=1, failed=1)
+
+
+def test_routing_batch_counts_invalid_failed_and_sends_rest():
+    router, provider = _router()
+    result = router.send_batch(
+        ["bad name@staging.example", "not-an-email", "a@example.com"], "s", "h", "t"
+    )
+    assert provider.send_batch.call_args.args[0] == ["a@example.com"]
+    assert result == BatchSendResult(accepted=1, failed=2)
 
 
 def test_resend_batch_not_supported():

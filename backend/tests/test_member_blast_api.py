@@ -82,8 +82,19 @@ def test_send_duplicate_returns_400_code(api_client, headers, sender):
     assert_error_code(response, Code.Notification.BLAST_DUPLICATE)
 
 
+def test_send_audits_unknown_blast_when_provider_raises(
+    api_client, headers, sender, django_capture_on_commit_callbacks
+):
+    sender.side_effect = RuntimeError("provider down")
+    with django_capture_on_commit_callbacks(execute=True), pytest.raises(RuntimeError):
+        api_client.post(URL, BODY, content_type="application/json", **headers)
+    entry = AuditLogEntry.objects.get(action="member_email_blast_sent")
+    assert entry.details["status"] == "unknown"
+
+
 def test_list_returns_recent_blasts_newest_first(api_client, admin, headers):
-    for subject in ("first", "second"):
-        MemberEmailBlast.objects.create(sender=admin, subject=subject, body_html="x")
+    for s in ("first", "second"):
+        MemberEmailBlast.objects.create(sender=admin, subject=s, body_html="x", recipient_count=5)
     response = api_client.get(URL, **headers)
     assert [b["subject"] for b in response.json()] == ["second", "first"]
+    assert response.json()[0]["sent_count"] == 0
