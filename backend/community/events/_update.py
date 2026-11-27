@@ -6,10 +6,10 @@ from django.utils import timezone
 
 from community.cohosts.helpers import update_co_hosts
 from community.events._field_validators import check_rsvp_deadline
+from community.events._type_tag import enforce_type_tag_permission
 from community.events.club_field import apply_club_update
 from community.events.helpers import (
     can_edit_event,
-    enforce_type_tag_permission,
     is_invalid_typed_visibility,
     set_event_tags,
     validated_event_format,
