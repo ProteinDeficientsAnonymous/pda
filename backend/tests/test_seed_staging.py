@@ -45,6 +45,8 @@ from users.models import MEMBER_STATUSES, MembershipStatus, PublicRsvpToken, Use
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._users import make_user
+
 
 def test_password_meets_validators():
     assert len(PASSWORD) >= 8
@@ -180,6 +182,17 @@ def test_seed_staging_events_span_past_current_future():
     assert len(events) >= 8
     assert any(e.start_datetime < now - timedelta(hours=1) for e in events)
     assert any(e.start_datetime > now + timedelta(hours=1) for e in events)
+
+
+@pytest.mark.django_db
+def test_seed_staging_survives_a_permission_inserted_mid_list():
+    first, second = PermissionKey.values[:2]
+    make_user(phone_number=perm_phone(0), email=perm_email(second))
+    call_command("seed_staging")
+    for key in (first, second):
+        user = User.objects.get(email=perm_email(key))
+        assert f"perm: {key}" in set(user.roles.values_list("name", flat=True))
+    assert User.objects.get(email=perm_email(second)).phone_number == perm_phone(0)
 
 
 @pytest.mark.django_db
