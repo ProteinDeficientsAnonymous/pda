@@ -16,6 +16,7 @@ export const Permission = {
   TagClubEvent: 'tag_club_event',
   ManageDocuments: 'manage_documents',
   ImportPayments: 'import_payments',
+  SendEmailBlast: 'send_email_blast',
 } as const;
 
 export type PermissionKey = (typeof Permission)[keyof typeof Permission];
