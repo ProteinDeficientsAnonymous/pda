@@ -57,7 +57,7 @@ def test_build_event_update_lists_official_then_clubs_by_date():
         "You're also welcome"
     ) in update.text
     assert update.text.count("Picnic") == 1
-    assert update.text.endswith("using the 🐛 button!")
+    assert update.text.endswith("using the 🐞 button!")
     assert update.clubs_without_events == ["Doggie Meetup Club"]
 
 
