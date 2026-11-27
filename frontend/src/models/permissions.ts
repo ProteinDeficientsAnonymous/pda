@@ -14,6 +14,7 @@ export const Permission = {
   ViewEventPlanning: 'view_event_planning',
   TagOfficialEvent: 'tag_official_event',
   TagClubEvent: 'tag_club_event',
+  SendEventUpdates: 'send_event_updates',
   ManageDocuments: 'manage_documents',
   ImportPayments: 'import_payments',
 } as const;
