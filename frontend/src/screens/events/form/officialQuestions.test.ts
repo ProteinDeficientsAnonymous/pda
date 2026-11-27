@@ -75,4 +75,10 @@ describe('officialExtras', () => {
     expect(off.values).toEqual({});
     expect(off.questions(withOfficial([custom], true))).toEqual([custom]);
   });
+
+  it('clears the untouched official cash app when the event stops being official', () => {
+    expect(officialExtras(defaults, false, '$pdanyc').values).toEqual({ cashappLink: '' });
+    expect(officialExtras(defaults, false, ' $PDANYC ').values).toEqual({ cashappLink: '' });
+    expect(officialExtras(defaults, false, '$mine').values).toEqual({});
+  });
 });
