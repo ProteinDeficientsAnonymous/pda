@@ -36,9 +36,8 @@ def test_recipients_are_members_with_email():
 
 def test_member_without_email_is_skipped():
     make_user(membership_status=MembershipStatus.ACTIVE_MEMBER, email="")
-    User.objects.filter(pk=make_user(membership_status=MembershipStatus.ACTIVE_MEMBER).pk).update(
-        email=None
-    )
+    user = make_user(membership_status=MembershipStatus.ACTIVE_MEMBER)
+    User.objects.filter(pk=user.pk).update(email=None)
     assert collect_recipients() == ([], 2)
 
 
@@ -60,10 +59,10 @@ def test_body_is_sanitized_and_links_absolute():
 
 
 def test_render_wraps_body_and_footer():
-    rendered = render_blast("s", '<p>hi <a href="https://x.org/a">link</a></p>')
+    rendered = render_blast("s", '<p>hi <a href="https://x.org/a">link</a></p><ul><li>a</li></ul>')
     assert "<p>hi " in rendered.html
     assert "because you're a pda member" in rendered.html
-    assert "hi link (https://x.org/a)" in rendered.text
+    assert "hi link (https://x.org/a)\na\n" in rendered.text
 
 
 def test_render_sanitizes_raw_input():
@@ -126,6 +125,13 @@ def test_send_failed_allows_resend(admin, two_members, sender_mock):
     assert _send(admin).status == MemberEmailBlastStatus.SENT
 
 
+def test_partly_failed_send_blocks_resend(admin, two_members, sender_mock):
+    sender_mock.return_value = BatchSendResult(accepted=1, failed=1)
+    assert _send(admin).status == MemberEmailBlastStatus.FAILED
+    _assert_refused(Code.Notification.BLAST_DUPLICATE, admin)
+    sender_mock.assert_called_once()
+
+
 def test_send_exception_marks_unknown(admin, two_members, sender_mock):
     sender_mock.side_effect = RuntimeError("boom")
     with pytest.raises(RuntimeError):
@@ -134,6 +140,13 @@ def test_send_exception_marks_unknown(admin, two_members, sender_mock):
     assert blast.status == MemberEmailBlastStatus.UNKNOWN
     assert blast.unknown_count == blast.recipient_count == 2
     assert blast.finished_at is not None
+
+
+def test_send_exception_survives_finalize_failure(admin, two_members, sender_mock):
+    sender_mock.side_effect = RuntimeError("boom")
+    with patch("notifications.member_blasts.service._finalize", side_effect=OSError):
+        with pytest.raises(RuntimeError):
+            _send(admin)
 
 
 def test_duplicate_within_window_is_refused(admin, two_members, sender_mock):

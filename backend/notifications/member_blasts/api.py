@@ -112,15 +112,15 @@ def send_test(request, payload: BlastIn):
 def send_blast(request, payload: BlastIn):
     _require_permission(request, "send_blast")
     started = timezone.now()
+    blast = None
     try:
         blast = send_member_blast(
             sender=request.auth, subject=payload.subject, body_html=payload.body_html
         )
     finally:
-        # A provider raise still leaves an UNKNOWN row; emails may have gone out, so audit it.
-        new = MemberEmailBlast.objects.filter(sender=request.auth, created_at__gte=started)
-        if blast := new.first():
-            out = _blast_out(blast)
+        mine = MemberEmailBlast.objects.filter(sender=request.auth, created_at__gte=started)
+        if audited := blast or mine.filter(status=MemberEmailBlastStatus.UNKNOWN).first():
+            out = _blast_out(audited)
             audit_log(
                 logging.INFO,
                 "member_email_blast_sent",
@@ -137,7 +137,7 @@ def send_blast(request, payload: BlastIn):
                     },
                 ),
             )
-    return Status(200, _blast_out(blast))
+    return Status(200, out)
 
 
 @router.get("", response={200: list[BlastOut], **_ERRORS}, auth=gated_jwt)
