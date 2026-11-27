@@ -23,7 +23,10 @@ const UNCERTAIN =
 
 const RESULT_COPY: Record<string, (r: MemberBlast) => string> = {
   unknown: () => "brevo didn't confirm delivery — check brevo before resending",
-  failed: () => 'nothing was sent — try again',
+  failed: (r) =>
+    r.sent_count > 0
+      ? `sent to ${String(r.sent_count)} members, ${String(r.failed_count)} failed — don't resend without checking brevo`
+      : 'nothing was sent — try again',
 };
 
 function sendErrorMessage(err: unknown): string {
@@ -96,9 +99,10 @@ export default function MemberEmailBlastScreen() {
     setPreview(await run(() => previewMut.mutateAsync(payload), "couldn't load preview"));
   }
   async function onTest() {
-    if (await run(() => testMut.mutateAsync(payload), "couldn't send test")) {
-      toast.success('test sent to your email');
-    }
+    const r = await run(() => testMut.mutateAsync(payload), "couldn't send test");
+    if (!r) return;
+    if (r.sent) toast.success('test sent to your email');
+    else setError("brevo didn't accept the test — nothing was sent");
   }
 
   return (
