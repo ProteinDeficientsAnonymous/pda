@@ -119,7 +119,7 @@ def send_blast(request, payload: BlastIn):
         )
     finally:
         mine = MemberEmailBlast.objects.filter(sender=request.auth, created_at__gte=started)
-        if audited := blast or mine.order_by("created_at").first():
+        if audited := blast or mine.filter(status=MemberEmailBlastStatus.UNKNOWN).first():
             out = _blast_out(audited)
             audit_log(
                 logging.INFO,
