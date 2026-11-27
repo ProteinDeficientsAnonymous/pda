@@ -22,7 +22,9 @@ class Migration(migrations.Migration):
             model_name="user",
             constraint=models.UniqueConstraint(
                 django.db.models.functions.text.Lower("email"),
-                condition=models.Q(("email__isnull", False), models.Q(("email", ""), _negated=True)),
+                condition=models.Q(
+                    ("email__isnull", False), models.Q(("email", ""), _negated=True)
+                ),
                 name="unique_non_blank_email_ci",
             ),
         ),
