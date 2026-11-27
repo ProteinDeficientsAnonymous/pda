@@ -1,9 +1,16 @@
-import { addMinutes, format, startOfDay } from 'date-fns';
+import { addMinutes } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
 import { useEffect, useRef, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 
 import { useToday } from '@/hooks/useToday';
+import {
+  COMMUNITY_TZ_NAME,
+  EVENT_TZ_LABEL,
+  formatEventTime,
+  startOfEventDay,
+  toEventZone,
+} from '@/utils/datetime';
 
 interface Props {
   label: string;
@@ -28,13 +35,13 @@ function clampAfter(iso: string, minDate: Date | null | undefined): string {
 function isoToDate(iso: string | null): Date | undefined {
   if (!iso) return undefined;
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? undefined : d;
+  return isNaN(d.getTime()) ? undefined : toEventZone(d);
 }
 
 function dateToIso(date: Date, hours: number, minutes: number): string {
-  const copy = new Date(date);
-  copy.setHours(hours, minutes, 0, 0);
-  return copy.toISOString();
+  const et = toEventZone(date);
+  et.setHours(hours, minutes, 0, 0);
+  return new Date(et.getTime()).toISOString();
 }
 
 export function DateTimePicker({
@@ -51,11 +58,11 @@ export function DateTimePicker({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selectedDate = isoToDate(value);
-  const baseDate = selectedDate ?? defaultDate;
+  const baseDate = selectedDate ?? (defaultDate ? toEventZone(defaultDate) : undefined);
   // Start-of-today so "today" itself is still selectable.
-  const todayStart = useToday();
+  const todayStart = startOfEventDay(useToday());
   const dayMatcher = minDate
-    ? { before: startOfDay(minDate) }
+    ? { before: startOfEventDay(minDate) }
     : disablePast
       ? { before: todayStart }
       : undefined;
@@ -90,7 +97,7 @@ export function DateTimePicker({
     ? (() => {
         const d = new Date(value);
         if (isNaN(d.getTime())) return '';
-        return format(d, 'EEEE, MMMM d · h:mmaaa').toLowerCase();
+        return `${formatEventTime(d, 'EEEE, MMMM d · h:mmaaa')} ${EVENT_TZ_LABEL}`;
       })()
     : '';
 
@@ -135,11 +142,12 @@ export function DateTimePicker({
             }}
             defaultMonth={selectedDate ?? baseDate ?? todayStart}
             locale={enUS}
+            timeZone={COMMUNITY_TZ_NAME}
             disabled={dayMatcher}
           />
           <div className="border-border mt-2 flex items-center gap-2 border-t pt-2">
             <label htmlFor="dt-time" className="text-muted text-xs">
-              time
+              time ({EVENT_TZ_LABEL})
             </label>
             <input
               id="dt-time"

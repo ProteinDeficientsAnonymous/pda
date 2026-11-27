@@ -1,4 +1,3 @@
-import { format, isSameDay } from 'date-fns';
 import { useMemo, useState } from 'react';
 
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
@@ -12,6 +11,7 @@ import {
 import { EventBadge } from '@/screens/events/EventBadge';
 import { EventCardBadges } from '@/screens/events/EventCardBadges';
 import { cn } from '@/utils/cn';
+import { EVENT_TZ_LABEL, formatEventTime, isSameEventDay } from '@/utils/datetime';
 
 type TypeFilter =
   | 'all'
@@ -31,17 +31,14 @@ interface Props {
   onSelectEvent: (event: PdaEvent) => void;
 }
 
-const lower = (d: Date, f: string) => format(d, f).toLowerCase();
-
 function buildWhenLabel(event: PdaEvent): string {
   const start = event.startDatetime;
   if (!start) return '';
-  const startDate = lower(start, 'EEE, MMM d');
-  const startTime = lower(start, 'h:mmaaa');
+  const startDate = formatEventTime(start, 'EEE, MMM d');
+  const startTime = formatEventTime(start, 'h:mmaaa');
   const end = event.endDatetime;
-  if (!end) return `${startDate} · ${startTime}`;
-  if (isSameDay(start, end)) return `${startDate} · ${startTime}`;
-  const endDate = lower(end, 'EEE, MMM d');
+  if (!end || isSameEventDay(start, end)) return `${startDate} · ${startTime} ${EVENT_TZ_LABEL}`;
+  const endDate = formatEventTime(end, 'EEE, MMM d');
   return `${startDate} – ${endDate}`;
 }
 

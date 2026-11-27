@@ -277,6 +277,9 @@ export const Code = {
   },
   Notification: {
     NotFound: 'notification.not_found',
+    BlastNoRecipients: 'notification.blast_no_recipients',
+    BlastDuplicate: 'notification.blast_duplicate',
+    BlastNoOwnEmail: 'notification.blast_no_own_email',
   },
   CoHostInvite: {
     NotFound: 'cohost_invite.not_found',
@@ -561,6 +564,9 @@ export type ValidationCode =
   | 'feedback.not_configured'
   | 'feedback.creation_failed'
   | 'notification.not_found'
+  | 'notification.blast_no_recipients'
+  | 'notification.blast_duplicate'
+  | 'notification.blast_no_own_email'
   | 'cohost_invite.not_found'
   | 'cohost_invite.not_pending'
   | 'cohost_invite.not_invitee'
@@ -821,6 +827,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'feedback.not_configured': [],
   'feedback.creation_failed': [],
   'notification.not_found': [],
+  'notification.blast_no_recipients': [],
+  'notification.blast_duplicate': [],
+  'notification.blast_no_own_email': [],
   'cohost_invite.not_found': [],
   'cohost_invite.not_pending': [],
   'cohost_invite.not_invitee': [],

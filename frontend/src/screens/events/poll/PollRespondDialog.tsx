@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 import { extractPollError, useFreshMyVotes, useVotePoll } from '@/api/eventPolls';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { ALL_VOTE_CHOICES, type EventPoll, VoteChoice } from '@/models/eventPoll';
 import { cn } from '@/utils/cn';
+import { EVENT_TZ_LABEL, formatEventTime } from '@/utils/datetime';
 
 import { sortOptionsChrono } from './pollHelpers';
 
@@ -50,7 +50,7 @@ export function PollRespondDialog({ open, onClose, poll }: Props) {
                 className="border-border bg-surface flex flex-col gap-2 rounded-md border p-3"
               >
                 <span className="text-sm font-medium">
-                  {format(opt.datetime, 'EEE MMM d · h:mm a').toLowerCase()}
+                  {formatEventTime(opt.datetime, 'EEE MMM d · h:mm a')} {EVENT_TZ_LABEL}
                 </span>
                 <div className="flex gap-2">
                   {ALL_VOTE_CHOICES.map((c) => (

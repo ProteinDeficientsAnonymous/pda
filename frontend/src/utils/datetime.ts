@@ -1,6 +1,48 @@
-import { format, isSameDay } from 'date-fns';
+import { tz, TZDate } from '@date-fns/tz';
+import { format, isSameDay, startOfDay } from 'date-fns';
 
 import type { Birthday, Veganniversary } from '@/models/user';
+
+// Events happen in nyc, so show their times there no matter where the viewer is (#2679).
+export const COMMUNITY_TZ_NAME = 'America/New_York';
+const COMMUNITY_TZ = tz(COMMUNITY_TZ_NAME);
+export const EVENT_TZ_LABEL = 'et';
+
+export function formatEventTime(date: Date, pattern: string): string {
+  return format(date, pattern, { in: COMMUNITY_TZ }).toLowerCase();
+}
+
+export function toEventZone(date: Date): TZDate {
+  return new TZDate(date.getTime(), COMMUNITY_TZ_NAME);
+}
+
+export function startOfEventDay(date: Date): Date {
+  return startOfDay(date, { in: COMMUNITY_TZ });
+}
+
+export function parseEventDay(raw: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (!m) return null;
+  const day = new TZDate(Number(m[1]), Number(m[2]) - 1, Number(m[3]), COMMUNITY_TZ_NAME);
+  return isNaN(day.getTime()) ? null : day;
+}
+
+// react-big-calendar only lays out in the browser zone, so hand it et wall-clock times.
+export function toEventWallClock(date: Date): Date {
+  const et = toEventZone(date);
+  return new Date(
+    et.getFullYear(),
+    et.getMonth(),
+    et.getDate(),
+    et.getHours(),
+    et.getMinutes(),
+    et.getSeconds(),
+  );
+}
+
+export function isSameEventDay(a: Date, b: Date): boolean {
+  return isSameDay(a, b, { in: COMMUNITY_TZ });
+}
 
 export function formatEventDateTime(
   start: Date | null,
@@ -8,12 +50,12 @@ export function formatEventDateTime(
   datetimeTbd = false,
 ): string {
   if (datetimeTbd || !start) return 'date & time tbd';
-  const startStr = format(start, 'EEE MMM d, h:mm a').toLowerCase();
-  if (!end) return startStr;
-  if (isSameDay(start, end)) {
-    return `${startStr} – ${format(end, 'h:mm a').toLowerCase()}`;
+  const startStr = formatEventTime(start, 'EEE MMM d, h:mm a');
+  if (!end) return `${startStr} ${EVENT_TZ_LABEL}`;
+  if (isSameEventDay(start, end)) {
+    return `${startStr} – ${formatEventTime(end, 'h:mm a')} ${EVENT_TZ_LABEL}`;
   }
-  return `${startStr} → ${format(end, 'EEE MMM d, h:mm a').toLowerCase()}`;
+  return `${startStr} → ${formatEventTime(end, 'EEE MMM d, h:mm a')} ${EVENT_TZ_LABEL}`;
 }
 
 export function formatDayHeader(date: Date): string {

@@ -145,3 +145,36 @@ class SseTicket(models.Model):
             event=event,
             expires_at=timezone.now() + _SSE_TICKET_TTL,
         )
+
+
+class MemberEmailBlastStatus(models.TextChoices):
+    SENDING = "sending", "Sending"
+    SENT = "sent", "Sent"
+    FAILED = "failed", "Failed"
+    UNKNOWN = "unknown", "Unknown"
+
+
+class MemberEmailBlast(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    sender = models.ForeignKey(
+        "users.User",
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="member_email_blasts",
+    )
+    subject = models.CharField(max_length=150)
+    body_html = models.TextField()
+    status = models.CharField(
+        max_length=16,
+        choices=MemberEmailBlastStatus.choices,
+        default=MemberEmailBlastStatus.SENDING,
+    )
+    recipient_count = models.PositiveIntegerField(default=0)
+    skipped_count = models.PositiveIntegerField(default=0)
+    failed_count = models.PositiveIntegerField(default=0)
+    unknown_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["created_at"])]

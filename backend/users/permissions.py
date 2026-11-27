@@ -17,5 +17,7 @@ class PermissionKey(models.TextChoices):
     VIEW_EVENT_PLANNING = "view_event_planning", "View event planning"
     TAG_OFFICIAL_EVENT = "tag_official_event", "Tag official event"
     TAG_CLUB_EVENT = "tag_club_event", "Tag club event"
+    SEND_EVENT_UPDATES = "send_event_updates", "Send event updates"
     MANAGE_DOCUMENTS = "manage_documents", "Manage documents"
     IMPORT_PAYMENTS = "import_payments", "Import payments"
+    SEND_EMAIL_BLAST = "send_email_blast", "Send email blasts to all members"
