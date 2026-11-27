@@ -26,8 +26,8 @@ async def send_member_email_blast(
     user = await current_user()
     payload = BlastIn(subject=subject, body_html=body_html)
     if send_test_to_me:
-        await call_view(send_test, user, payload=payload)
-        return {"test_sent_to": "you"}
+        result = await call_view(send_test, user, payload=payload)
+        return {"test_sent_to": "you", "sent": result["sent"]}
     preview = await call_view(preview_blast, user, payload=payload)
     bound = Confirmed(user.pk, "member_blast", "send", [subject, preview["html"]], None)
     if confirm_token is None:

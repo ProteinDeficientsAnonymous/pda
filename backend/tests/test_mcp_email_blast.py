@@ -57,7 +57,17 @@ def test_token_bound_to_body(admin, send_batch):
 
 
 def test_send_test_to_me(admin, send_batch):
-    assert run_tool(admin, TOOL, **BODY, send_test_to_me=True) == {"test_sent_to": "you"}
+    assert run_tool(admin, TOOL, **BODY, send_test_to_me=True) == {
+        "test_sent_to": "you",
+        "sent": True,
+    }
+    assert send_batch.call_args.args[0] == [admin.email]
+
+
+def test_send_test_reports_provider_reject(admin, send_batch):
+    send_batch.return_value = BatchSendResult(accepted=0)
+
+    assert run_tool(admin, TOOL, **BODY, send_test_to_me=True)["sent"] is False
 
 
 def test_confirm_without_permission_fails(admin, send_batch):
