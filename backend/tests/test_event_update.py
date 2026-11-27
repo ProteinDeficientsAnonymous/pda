@@ -42,17 +42,21 @@ def test_build_event_update_lists_official_then_clubs_by_date():
     party = _event("Holiday Party", 3)
     film = _club_event("Raise the Red Lantern", 1, movies)
     novel = _club_event("Homegoing", 5, books)
+    orphan = _club_event("Pupsgiving", 6, None)
+    _event("Picnic", 7, club=movies)
     update = build_event_update(NOW)
     assert update.text.startswith(
         "EVENT UPDATE\n\nOfficial PDA events:\n\n"
-        f"11/17 Holiday Party\n{BASE}/events/{party.slug}\n\nNote: money"
+        f"11/17 Holiday Party\n{BASE}/events/{party.slug}\n\n11/21 Picnic"
     )
     assert (
         "CLUBS!\n\n"
         f"Movie Club\n11/15 Raise the Red Lantern\n{BASE}/events/{film.slug}\n\n"
         f"Book Club\n11/19 Homegoing\n{BASE}/events/{novel.slug}\n\n"
+        f"11/20 Pupsgiving\n{BASE}/events/{orphan.slug}\n\n"
         "You're also welcome"
     ) in update.text
+    assert update.text.count("Picnic") == 1
     assert update.text.endswith("using the ? button!")
     assert update.clubs_without_events == ["Doggie Meetup Club"]
 
