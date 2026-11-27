@@ -7,6 +7,7 @@ from notifications.email_sender import EmailStream, get_email_sender
 from notifications.event_update_email import send_event_update_email
 from users.models import HAS_EMAIL, User
 from users.permissions import PermissionKey
+from users.roles import Role
 
 from community.scheduled.event_update import build_event_update, is_event_update_day
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     help = (
-        "On the 14th and the last day of the month, email members with send_event_updates "
+        "On the 14th and the last day of the month, email members whose role lists send_event_updates "
         "the official and club event update to copy and paste, plus clubs with no events."
     )
 
@@ -34,8 +35,12 @@ class Command(BaseCommand):
             return
 
         sender = get_email_sender(EmailStream.TRANSACTIONAL)
-        recipients = User.objects.with_permission(PermissionKey.SEND_EVENT_UPDATES).filter(
-            HAS_EMAIL, is_active=True, archived_at__isnull=True
+        # Only roles that list the key; admins don't get this unless a role grants it.
+        role_ids = Role.ids_granting_explicitly(PermissionKey.SEND_EVENT_UPDATES)
+        recipients = (
+            User.objects.members()
+            .filter(HAS_EMAIL, roles__id__in=role_ids, is_active=True, archived_at__isnull=True)
+            .distinct()
         )
         sent = failed = 0
         for user in recipients:

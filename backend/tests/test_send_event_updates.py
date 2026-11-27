@@ -6,6 +6,7 @@ from community.models import Club, Event, EventType
 from django.core.management import call_command
 from django.utils import timezone
 from users.permissions import PermissionKey
+from users.roles import Role
 
 from tests._users import make_user
 
@@ -16,7 +17,7 @@ NOW = timezone.make_aware(datetime(2026, 11, 14, 12, 0))
 
 def test_command_emails_permission_holders_on_update_days(fake_email_sender, monkeypatch):
     poster = make_user(PermissionKey.SEND_EVENT_UPDATES, first_name="Sam")
-    make_user()
+    make_user().roles.add(Role.objects.get(name="admin", is_default=True))
     Club.objects.create(name="Book Club")
     start = NOW + timedelta(days=3)
     Event.objects.create(title="Holiday Party", start_datetime=start, event_type=EventType.OFFICIAL)
