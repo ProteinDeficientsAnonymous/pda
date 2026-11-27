@@ -172,6 +172,7 @@ class User(AbstractUser):
     weekly_digest_opt_out = models.BooleanField(default=False)
     monthly_digest_opt_out = models.BooleanField(default=False)
     monthly_digest_sent_on = models.DateField(null=True, blank=True)
+    event_update_sent_on = models.DateField(null=True, blank=True)
     whatsapp_reminder_opt_out = models.BooleanField(default=False)
     attendance_nudge_opt_out = models.BooleanField(default=False)
     host_digest_opt_out = models.BooleanField(default=False)

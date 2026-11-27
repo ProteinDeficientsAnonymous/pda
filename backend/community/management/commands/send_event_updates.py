@@ -9,7 +9,11 @@ from users.models import HAS_EMAIL, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
-from community.scheduled.event_update import build_event_update, is_event_update_day
+from community.scheduled.event_update import (
+    EventUpdate,
+    build_event_update,
+    is_event_update_day,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +34,8 @@ class Command(BaseCommand):
             self.stdout.write(update.text)
             self.stdout.write(f"\nclubs without events: {', '.join(update.clubs_without_events)}")
             return
-        if not is_event_update_day(timezone.localtime(now, settings.COMMUNITY_TZ).date()):
+        today = timezone.localtime(now, settings.COMMUNITY_TZ).date()
+        if not is_event_update_day(today):
             self.stdout.write(self.style.SUCCESS("Not an event update day; sent 0."))
             return
 
@@ -40,10 +45,23 @@ class Command(BaseCommand):
         recipients = (
             User.objects.members()
             .filter(HAS_EMAIL, roles__id__in=role_ids, is_active=True, archived_at__isnull=True)
+            # A cron re-run on the same day retries only the failures.
+            .exclude(event_update_sent_on=today)
             .distinct()
         )
         sent = failed = 0
         for user in recipients:
+            if self._send_one(sender, user, update):
+                User.objects.filter(pk=user.pk).update(event_update_sent_on=today)
+                sent += 1
+            else:
+                failed += 1
+        logger.info("send_event_updates: sent %d, %d failed", sent, failed)
+        style = self.style.WARNING if failed else self.style.SUCCESS
+        self.stdout.write(style(f"Sent {sent} event update(s); {failed} failed."))
+
+    def _send_one(self, sender, user: User, update: EventUpdate) -> bool:
+        try:
             result = send_event_update_email(
                 sender=sender,
                 to=user.email,
@@ -51,7 +69,7 @@ class Command(BaseCommand):
                 text=update.text,
                 clubs_without_events=update.clubs_without_events,
             )
-            sent, failed = (sent + 1, failed) if result.success else (sent, failed + 1)
-        logger.info("send_event_updates: sent %d, %d failed", sent, failed)
-        style = self.style.WARNING if failed else self.style.SUCCESS
-        self.stdout.write(style(f"Sent {sent} event update(s); {failed} failed."))
+        except Exception:
+            logger.exception("send_event_updates: user %s failed", user.pk)
+            return False
+        return result.success
