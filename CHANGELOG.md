@@ -1,3 +1,10 @@
+# [0.291.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.290.0...v0.291.0) (2026-11-27)
+
+
+### Features
+
+* **events:** always show event times in eastern time ([#2697](https://github.com/ProteinDeficientsAnonymous/pda/issues/2697)) ([048661d](https://github.com/ProteinDeficientsAnonymous/pda/commit/048661db8c9d1d2513bd8d9b3e1d8de87629473c))
+
 # [0.290.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.289.0...v0.290.0) (2026-11-27)
 
 
