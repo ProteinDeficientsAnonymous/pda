@@ -240,6 +240,7 @@ describe('EventFormBasics queued poll dates', () => {
         errors={{}}
         canTagOfficial={false}
         canTagClub={false}
+        allowedClubIds={null}
         bufferedPollOptions={[et(2030, 5, 15, 19, 0), et(2030, 5, 14, 18, 30)]}
       />,
     );

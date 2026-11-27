@@ -143,14 +143,30 @@ class Command(BaseCommand):
         member_role = default_role("member")
         now = timezone.now()
         for index, key in enumerate(PermissionKey.values):
-            defaults = onboarded_member_defaults(f"perm: {key}", perm_email(key), now)
-            user, created = get_or_create_seed_user(
-                perm_phone(index), PASSWORD, defaults, [roles[key]]
-            )
-            user.roles.add(member_role)
+            user = User.objects.filter(email=perm_email(key)).first()
+            created = user is None
+            if user is None:
+                defaults = onboarded_member_defaults(f"perm: {key}", perm_email(key), now)
+                user, _ = get_or_create_seed_user(
+                    self._free_perm_phone(index), PASSWORD, defaults, [roles[key]]
+                )
+            user.roles.add(roles[key], member_role)
             users.append(user)
             self.stdout.write(f"  {'created' if created else 'exists'} user: {user.full_name}")
         return users
+
+    def _free_perm_phone(self, preferred: int) -> str:
+        # Keyed by email, not list position: a permission inserted mid-list must not
+        # hand an existing seeded user's phone to a different permission.
+        taken = set(
+            User.objects.filter(phone_number__startswith=perm_phone(0)[:-2]).values_list(
+                "phone_number", flat=True
+            )
+        )
+        for index in [preferred, *range(100)]:
+            if perm_phone(index) not in taken:
+                return perm_phone(index)
+        raise CommandError("no free seeded permission phone numbers left")
 
     def _apply_condition_user_fields(self, user, combo, index, now) -> None:
         has_email, guidelines_done, sms_done = combo
