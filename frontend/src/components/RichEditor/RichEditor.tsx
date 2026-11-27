@@ -16,6 +16,7 @@ interface Props {
   /** ProseMirror JSON as a string. Empty string → start blank. */
   value: string;
   onChange: (value: string) => void;
+  onHtmlChange?: (html: string) => void;
   placeholder?: string | undefined;
   className?: string | undefined;
   disabled?: boolean;
@@ -35,6 +36,7 @@ function parseValue(value: string): JSONContent | null {
 export function RichEditor({
   value,
   onChange,
+  onHtmlChange,
   placeholder,
   className,
   disabled,
@@ -69,6 +71,7 @@ export function RichEditor({
     },
     onUpdate: ({ editor: e }) => {
       onChange(JSON.stringify(e.getJSON()));
+      onHtmlChange?.(e.getHTML());
     },
   });
 
