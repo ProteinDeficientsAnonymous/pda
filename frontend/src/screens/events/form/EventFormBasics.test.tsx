@@ -228,3 +228,20 @@ describe('EventFormBasics start change keeps a valid end', () => {
     expect(patch.endDatetime).toBeUndefined();
   });
 });
+
+describe('EventFormBasics queued poll dates', () => {
+  it('lists queued dates in et', () => {
+    render(
+      <EventFormBasics
+        values={values({ datetimeTbd: true })}
+        onChange={vi.fn()}
+        errors={{}}
+        canTagOfficial={false}
+        canTagClub={false}
+        bufferedPollOptions={[et(2030, 5, 15, 19, 0), et(2030, 5, 14, 18, 30)]}
+      />,
+    );
+    const items = screen.getAllByRole('listitem').map((li) => li.textContent);
+    expect(items).toEqual(['fri jun 14 · 6:30 pm et', 'sat jun 15 · 7:00 pm et']);
+  });
+});
