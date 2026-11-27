@@ -74,6 +74,7 @@ interface WireUser {
   profile_photo_url?: string;
   photo_updated_at?: string | null;
   roles: WireRole[];
+  rep_club_ids?: string[];
 }
 
 interface TokenOut {
@@ -146,6 +147,7 @@ function mapUser(u: WireUser): User {
     profilePhotoUrl: u.profile_photo_url ?? '',
     photoUpdatedAt: u.photo_updated_at ?? null,
     roles: u.roles.map(mapRole),
+    repClubIds: u.rep_club_ids ?? [],
   };
 }
 

@@ -28,6 +28,7 @@ vi.mock('@/api/eventTags', () => ({ useEventTags: () => ({ data: [], isPending: 
 vi.mock('./EventFormPhoto', () => ({ EventFormPhoto: () => null }));
 
 import { EventForm } from './EventForm';
+import { EventFormClub } from './EventFormClub';
 
 const clubs: Club[] = [
   { id: 'c1', name: 'book club', requirements: '' },
@@ -108,6 +109,58 @@ describe('EventForm club dropdown', () => {
     await userEvent.click(screen.getByRole('button', { name: 'publish' }));
     expect(await screen.findByText('pick a club')).toBeInTheDocument();
     expect(createEvent).not.toHaveBeenCalled();
+  });
+
+  describe('allowedClubIds', () => {
+    const renderClub = (allowedClubIds: string[] | null) => {
+      useClubs.mockReturnValue({ data: clubs, isPending: false, isError: false });
+      renderWithProviders(
+        <EventFormClub
+          value=""
+          onChange={vi.fn()}
+          error={undefined}
+          allowedClubIds={allowedClubIds}
+        />,
+      );
+    };
+
+    it('disables clubs the user does not rep', () => {
+      renderClub(['c1']);
+      expect(screen.getByRole('option', { name: 'run club' })).toBeDisabled();
+      expect(screen.getByRole('option', { name: 'book club' })).toBeEnabled();
+    });
+
+    it('disables nothing when every club is allowed', () => {
+      renderClub(null);
+      expect(screen.getByRole('option', { name: 'run club' })).toBeEnabled();
+      expect(screen.getByRole('option', { name: 'book club' })).toBeEnabled();
+    });
+  });
+
+  describe('as a club rep', () => {
+    it('shows the club type and greys out other clubs', async () => {
+      useAuthStore.setState({ user: makeUser({ repClubIds: ['c1'] }), status: 'authed' });
+      useClubs.mockReturnValue({ data: clubs, isPending: false, isError: false });
+      renderWithProviders(<EventForm initial={{ title: 'x', startDatetime: start }} />);
+      await userEvent.click(clubToggle());
+      expect(screen.getByRole('option', { name: 'run club' })).toBeDisabled();
+      expect(screen.getByRole('option', { name: 'book club' })).toBeEnabled();
+    });
+
+    it('keeps the current club selectable when editing a co-hosted club event', () => {
+      useAuthStore.setState({ user: makeUser({ repClubIds: ['c2'] }), status: 'authed' });
+      useClubs.mockReturnValue({ data: clubs, isPending: false, isError: false });
+      const existing = makeEvent({
+        id: 'e2',
+        slug: 'e2',
+        eventType: EventType.Club,
+        club: clubs[0] ?? null,
+        startDatetime: new Date(start),
+      });
+      renderWithProviders(<EventForm existing={existing} />);
+      expect(screen.getByLabelText('which club?')).toHaveValue('c1');
+      expect(screen.getByRole('option', { name: 'book club' })).toBeEnabled();
+    });
   });
 
   describe('editing', () => {
