@@ -1,6 +1,19 @@
+import { tz } from '@date-fns/tz';
 import { format, isSameDay } from 'date-fns';
 
 import type { Birthday, Veganniversary } from '@/models/user';
+
+// Events happen in nyc, so show their times there no matter where the viewer is (#2679).
+const COMMUNITY_TZ = tz('America/New_York');
+export const EVENT_TZ_LABEL = 'et';
+
+export function formatEventTime(date: Date, pattern: string): string {
+  return format(date, pattern, { in: COMMUNITY_TZ }).toLowerCase();
+}
+
+export function isSameEventDay(a: Date, b: Date): boolean {
+  return isSameDay(a, b, { in: COMMUNITY_TZ });
+}
 
 export function formatEventDateTime(
   start: Date | null,
@@ -8,12 +21,12 @@ export function formatEventDateTime(
   datetimeTbd = false,
 ): string {
   if (datetimeTbd || !start) return 'date & time tbd';
-  const startStr = format(start, 'EEE MMM d, h:mm a').toLowerCase();
-  if (!end) return startStr;
-  if (isSameDay(start, end)) {
-    return `${startStr} – ${format(end, 'h:mm a').toLowerCase()}`;
+  const startStr = formatEventTime(start, 'EEE MMM d, h:mm a');
+  if (!end) return `${startStr} ${EVENT_TZ_LABEL}`;
+  if (isSameEventDay(start, end)) {
+    return `${startStr} – ${formatEventTime(end, 'h:mm a')} ${EVENT_TZ_LABEL}`;
   }
-  return `${startStr} → ${format(end, 'EEE MMM d, h:mm a').toLowerCase()}`;
+  return `${startStr} → ${formatEventTime(end, 'EEE MMM d, h:mm a')} ${EVENT_TZ_LABEL}`;
 }
 
 export function formatDayHeader(date: Date): string {

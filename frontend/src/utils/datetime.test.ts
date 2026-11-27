@@ -4,7 +4,9 @@ import {
   formatBirthday,
   formatDayHeader,
   formatEventDateTime,
+  formatEventTime,
   formatVeganniversary,
+  isSameEventDay,
   MONTH_OPTIONS,
   parseIsoDate,
 } from './datetime';
@@ -44,38 +46,41 @@ describe('formatVeganniversary', () => {
 
 describe('formatEventDateTime', () => {
   it('returns "date & time tbd" when datetimeTbd is true', () => {
-    const start = new Date('2026-04-15T18:00:00');
+    const start = new Date('2026-04-15T22:00:00Z');
     expect(formatEventDateTime(start, null, true)).toBe('date & time tbd');
   });
 
-  it('returns start string only when end is null', () => {
-    const start = new Date('2026-04-15T18:00:00');
-    const result = formatEventDateTime(start, null);
-    expect(result).toMatch(/apr 15/);
-    expect(result).not.toContain('→');
-    expect(result).not.toContain('–');
+  it('formats in eastern time regardless of the viewer zone', () => {
+    expect(formatEventDateTime(new Date('2026-04-15T19:00:00Z'), null)).toBe(
+      'wed apr 15, 3:00 pm et',
+    );
   });
 
   it('uses en-dash and end time only for same-day events', () => {
-    const start = new Date('2026-04-15T18:00:00');
-    const end = new Date('2026-04-15T21:00:00');
-    const result = formatEventDateTime(start, end);
-    expect(result).toContain('–');
-    expect(result).not.toContain('→');
-    // End portion is just time, not a full date
-    const parts = result.split('–');
-    expect(parts[1]!.trim()).toMatch(/^\d+:\d{2} [ap]m$/);
+    const start = new Date('2026-04-15T19:00:00Z');
+    const end = new Date('2026-04-16T00:00:00Z');
+    expect(formatEventDateTime(start, end)).toBe('wed apr 15, 3:00 pm – 8:00 pm et');
   });
 
   it('uses arrow and full date for multi-day events', () => {
-    const start = new Date('2026-04-15T18:00:00');
-    const end = new Date('2026-04-16T12:00:00');
-    const result = formatEventDateTime(start, end);
-    expect(result).toContain('→');
-    expect(result).not.toContain('–');
-    const parts = result.split('→');
-    expect(parts[0]).toMatch(/apr 15/);
-    expect(parts[1]).toMatch(/apr 16/);
+    const start = new Date('2026-04-15T22:00:00Z');
+    const end = new Date('2026-04-16T16:00:00Z');
+    expect(formatEventDateTime(start, end)).toBe('wed apr 15, 6:00 pm → thu apr 16, 12:00 pm et');
+  });
+});
+
+describe('isSameEventDay', () => {
+  it('compares calendar days in eastern time', () => {
+    // 11pm et and 1am et the next day are the same utc day
+    expect(isSameEventDay(new Date('2026-04-16T03:00:00Z'), new Date('2026-04-16T05:00:00Z'))).toBe(
+      false,
+    );
+  });
+});
+
+describe('formatEventTime', () => {
+  it('lowercases eastern-time output', () => {
+    expect(formatEventTime(new Date('2026-07-04T13:05:00Z'), 'EEE h:mmaaa')).toBe('sat 9:05am');
   });
 });
 
