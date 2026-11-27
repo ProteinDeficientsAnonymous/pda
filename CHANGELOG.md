@@ -1,3 +1,10 @@
+# [0.299.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.298.0...v0.299.0) (2026-11-27)
+
+
+### Features
+
+* **events:** show club requirements in the event update ([#2714](https://github.com/ProteinDeficientsAnonymous/pda/issues/2714)) ([734fbc4](https://github.com/ProteinDeficientsAnonymous/pda/commit/734fbc4727dc5bea77632f636083d548d376b705))
+
 # [0.298.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.297.0...v0.298.0) (2026-11-27)
 
 
