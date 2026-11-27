@@ -145,7 +145,8 @@ async def upcoming_events(
     days: Annotated[int, Field(ge=1, le=90, description="how many days ahead to include")] = 14,
 ) -> str:
     params = EventListQuery(upcoming=True, end=timezone.now() + timedelta(days=days))
-    events = await call_view(list_events_view, await current_user(), params=params)
+    listed = await call_view(list_events_view, await current_user(), params=params)
+    events = [e for e in listed if not e["datetime_tbd"]]
     if not events:
         return f"no upcoming events in the next {days} days"
     clubs = await sync_to_async(_club_names)([e["id"] for e in events])
