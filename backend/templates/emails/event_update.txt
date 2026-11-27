@@ -1,0 +1,14 @@
+{% autoescape off %}hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+{% if clubs_without_events %}
+these clubs have no events coming up — remind them to get theirs on the calendar:
+{% for name in clubs_without_events %}- {{ name }}
+{% endfor %}{% endif %}
+here's the event update, ready to copy and paste:
+
+----------
+{{ update_text }}
+----------
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}{% endautoescape %}

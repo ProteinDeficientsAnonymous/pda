@@ -453,7 +453,7 @@ describe('JoinRequestsScreen tentative section', () => {
     renderScreen();
     await userEvent.click(screen.getByRole('radio', { name: 'tentative' }));
 
-    expect(screen.getByText(/Potluck/)).toBeInTheDocument();
+    expect(screen.getByText('Potluck · mar 1, 1:00 pm et')).toBeInTheDocument();
     expect(screen.getByText(/Movie Night/)).toBeInTheDocument();
   });
 

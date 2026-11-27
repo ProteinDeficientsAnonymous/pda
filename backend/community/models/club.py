@@ -15,6 +15,7 @@ class Club(models.Model):
     name = models.CharField(max_length=CLUB_NAME_MAX, unique=True)
     # Who can join, shown next to the name on the join form, e.g. "must be dog parent // guardian".
     requirements = models.CharField(max_length=CLUB_REQUIREMENTS_MAX, blank=True, default="")
+    reps = models.ManyToManyField("users.User", blank=True, related_name="rep_clubs")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

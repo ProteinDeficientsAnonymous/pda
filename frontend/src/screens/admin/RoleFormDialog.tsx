@@ -29,6 +29,7 @@ const PERMISSION_LABELS: Record<string, string> = {
   [Permission.ViewEventPlanning]: 'view event planning',
   [Permission.TagOfficialEvent]: 'tag official events',
   [Permission.TagClubEvent]: 'tag club events',
+  [Permission.SendEventUpdates]: 'send event updates',
   [Permission.ManageDocuments]: 'manage documents',
   [Permission.ImportPayments]: 'import payments',
   [Permission.SendEmailBlast]: 'send email blasts to all members',

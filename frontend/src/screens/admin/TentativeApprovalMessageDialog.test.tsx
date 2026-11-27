@@ -133,19 +133,19 @@ describe('TentativeApprovalMessageDialog', () => {
         id: 'o1',
         slug: 'walk',
         title: 'Park Walk',
-        startDatetime: new Date(2026, 11, 19, 11, 0),
+        startDatetime: new Date('2026-12-19T16:00:00Z'),
       },
       clubEvent: {
         id: 'c1',
         slug: 'book-club',
         title: 'Book Club',
-        startDatetime: new Date(2026, 11, 10, 18, 30),
+        startDatetime: new Date('2026-12-10T23:30:00Z'),
       },
       clubEventFromPickedClub: true,
     };
     renderDialog(makeUser());
     expect(screen.getByText(/here's the next official event:/)).toHaveTextContent(
-      `here's the next official event: Park Walk — sat dec 19, 11:00 am ${window.location.origin}/events/walk`,
+      `here's the next official event: Park Walk — sat dec 19, 11:00 am et ${window.location.origin}/events/walk`,
     );
     expect(screen.getByText(/here's a club event we think you'd love:/)).toBeInTheDocument();
   });
@@ -157,7 +157,7 @@ describe('TentativeApprovalMessageDialog', () => {
         id: 'c1',
         slug: 'movie-night',
         title: 'Movie Night',
-        startDatetime: new Date(2026, 11, 10, 18, 30),
+        startDatetime: new Date('2026-12-10T23:30:00Z'),
       },
       clubEventFromPickedClub: false,
     };

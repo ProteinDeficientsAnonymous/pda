@@ -520,6 +520,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/clubs/reps/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Club Reps */
+        get: operations["community_clubs_api_list_club_reps"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/clubs/{club_id}/": {
         parameters: {
             query?: never;
@@ -536,6 +553,23 @@ export interface paths {
         head?: never;
         /** Update Club */
         patch: operations["community_clubs_api_update_club"];
+        trace?: never;
+    };
+    "/api/community/clubs/{club_id}/reps/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Club Reps */
+        put: operations["community_clubs_api_set_club_reps"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/community/dev/test-events/": {
@@ -3530,6 +3564,27 @@ export interface components {
             name: string;
             /** Requirements */
             requirements: string;
+        };
+        /** ClubRepOut */
+        ClubRepOut: {
+            /** Full Name */
+            full_name: string;
+            /** Id */
+            id: string;
+            /** Phone Number */
+            phone_number: string;
+        };
+        /** ClubRepsIn */
+        ClubRepsIn: {
+            /** User Ids */
+            user_ids: string[];
+        };
+        /** ClubRepsOut */
+        ClubRepsOut: {
+            /** Club Id */
+            club_id: string;
+            /** Reps */
+            reps: components["schemas"]["ClubRepOut"][];
         };
         /** CommentBodyIn */
         CommentBodyIn: {
@@ -8484,6 +8539,35 @@ export interface operations {
             };
         };
     };
+    community_clubs_api_list_club_reps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubRepsOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community_clubs_api_delete_club: {
         parameters: {
             query?: never;
@@ -8544,6 +8628,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClubOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_clubs_api_set_club_reps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubRepsIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubRepsOut"];
                 };
             };
             /** @description Bad Request */

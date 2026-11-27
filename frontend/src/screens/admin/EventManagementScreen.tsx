@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -13,6 +12,7 @@ import { type Event, eventPath, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 import { TagManagerDialog } from '@/screens/events/TagManagerDialog';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+import { EVENT_TZ_LABEL, formatEventTime } from '@/utils/datetime';
 
 type Bucket = 'upcoming' | 'past' | 'drafts' | 'cancelled';
 type Sort = 'date' | 'title' | 'type';
@@ -172,7 +172,7 @@ function EventRow({ event }: { event: Event }) {
         <p className="text-muted truncate text-xs">
           {event.datetimeTbd || !event.startDatetime
             ? 'tbd'
-            : format(event.startDatetime, 'EEE MMM d, h:mm a').toLowerCase()}
+            : `${formatEventTime(event.startDatetime, 'EEE MMM d, h:mm a')} ${EVENT_TZ_LABEL}`}
           {event.location ? ` · ${event.location}` : ''}
         </p>
       </div>

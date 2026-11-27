@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -13,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { Dialog } from '@/components/ui/Dialog';
 import type { EventPoll, EventPollOption } from '@/models/eventPoll';
+import { EVENT_TZ_LABEL, formatEventTime } from '@/utils/datetime';
 
 import { sortOptionsChrono } from './pollHelpers';
 
@@ -193,7 +193,7 @@ function OptionRow({
     return (
       <li className="border-border bg-surface flex items-center justify-between gap-2 rounded-md border p-2">
         <span className="text-sm">
-          {format(option.datetime, 'EEE MMM d · h:mm a').toLowerCase()}
+          {formatEventTime(option.datetime, 'EEE MMM d · h:mm a')} {EVENT_TZ_LABEL}
         </span>
         <div className="flex gap-1">
           <Button
