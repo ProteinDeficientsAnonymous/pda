@@ -1,8 +1,10 @@
+import { addDays } from 'date-fns';
+
 import { eventClass, isOfficialOrClub, type Event as PdaEvent } from '@/models/event';
 import { EventBadge } from '@/screens/events/EventBadge';
 import { EventCardBadges } from '@/screens/events/EventCardBadges';
 import { cn } from '@/utils/cn';
-import { EVENT_TZ_LABEL, formatEventTime, isSameEventDay } from '@/utils/datetime';
+import { EVENT_TZ_LABEL, formatEventTime, isSameEventDay, startOfEventDay } from '@/utils/datetime';
 
 interface Props {
   date: Date;
@@ -22,10 +24,8 @@ function buildTimeRange(event: PdaEvent): string {
 }
 
 function eventsForDay(events: PdaEvent[], day: Date): PdaEvent[] {
-  const dayStart = new Date(day);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(dayStart);
-  dayEnd.setDate(dayEnd.getDate() + 1);
+  const dayStart = startOfEventDay(day);
+  const dayEnd = addDays(dayStart, 1);
   return events
     .filter((e) => {
       if (!e.startDatetime) return false;

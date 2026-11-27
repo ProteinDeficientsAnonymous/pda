@@ -1,10 +1,10 @@
-import { addDays, format, isSameDay, startOfWeek } from 'date-fns';
+import { addDays, format, startOfWeek } from 'date-fns';
 import { useLayoutEffect, useRef, useState } from 'react';
 
-import { useToday } from '@/hooks/useToday';
+import { useEventToday } from '@/hooks/useToday';
 import { eventClass, type Event as PdaEvent } from '@/models/event';
 import { cn } from '@/utils/cn';
-import { formatEventTime } from '@/utils/datetime';
+import { formatEventTime, isSameEventDay } from '@/utils/datetime';
 
 interface Props {
   date: Date;
@@ -19,7 +19,7 @@ const lower = (d: Date, f: string) => format(d, f).toLowerCase();
 export function WideWeekView({ date, weekStartsOn, events, onSelectEvent, onSelectDay }: Props) {
   const weekStart = startOfWeek(date, { weekStartsOn });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  const today = useToday();
+  const today = useEventToday();
 
   return (
     <div
@@ -32,7 +32,7 @@ export function WideWeekView({ date, weekStartsOn, events, onSelectEvent, onSele
           key={day.toISOString()}
           day={day}
           isLast={idx === 6}
-          isToday={isSameDay(day, today)}
+          isToday={isSameEventDay(day, today)}
           events={eventsForDay(events, day)}
           onSelectEvent={onSelectEvent}
           onSelectDay={onSelectDay}
@@ -44,7 +44,7 @@ export function WideWeekView({ date, weekStartsOn, events, onSelectEvent, onSele
 
 function eventsForDay(events: PdaEvent[], day: Date): PdaEvent[] {
   return events
-    .filter((e) => e.startDatetime && isSameDay(e.startDatetime, day))
+    .filter((e) => e.startDatetime && isSameEventDay(e.startDatetime, day))
     .sort((a, b) => {
       const at = a.startDatetime?.getTime() ?? 0;
       const bt = b.startDatetime?.getTime() ?? 0;

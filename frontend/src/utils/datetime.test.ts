@@ -8,15 +8,15 @@ import {
   formatVeganniversary,
   isSameEventDay,
   MONTH_OPTIONS,
+  parseEventDay,
   parseIsoDate,
+  toEventWallClock,
 } from './datetime';
 
 describe('parseIsoDate', () => {
   it('parses ISO 8601 string', () => {
     const result = parseIsoDate('2026-04-15T18:00:00Z');
-    expect(result.getFullYear()).toBe(2026);
-    expect(result.getMonth()).toBe(3);
-    expect(result.getDate()).toBe(15);
+    expect(result.getTime()).toBe(Date.UTC(2026, 3, 15, 18));
   });
 });
 
@@ -99,5 +99,23 @@ describe('MONTH_OPTIONS', () => {
     expect(MONTH_OPTIONS).toHaveLength(12);
     expect(MONTH_OPTIONS[0]).toEqual({ value: '1', label: 'january' });
     expect(MONTH_OPTIONS[11]).toEqual({ value: '12', label: 'december' });
+  });
+});
+
+describe('parseEventDay', () => {
+  it('reads a yyyy-mm-dd date as et midnight', () => {
+    expect(parseEventDay('2026-08-12')?.getTime()).toBe(Date.parse('2026-08-12T04:00:00Z'));
+  });
+
+  it('rejects other shapes', () => {
+    expect(parseEventDay('2026-8-12')).toBeNull();
+    expect(parseEventDay('nope')).toBeNull();
+  });
+});
+
+describe('toEventWallClock', () => {
+  it('copies the et wall-clock time into a browser-zone date', () => {
+    const wall = toEventWallClock(new Date('2026-08-13T03:30:00Z'));
+    expect([wall.getDate(), wall.getHours(), wall.getMinutes()]).toEqual([12, 23, 30]);
   });
 });
