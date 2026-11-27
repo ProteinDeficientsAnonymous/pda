@@ -121,6 +121,22 @@ class TestApplyOfficialDefaults:
         assert body["cashapp_link"] == "https://cash.app/$host"
         assert _labels(body) == ["allergies?"]
 
+    def test_switching_away_from_official_clears_default_cashapp(self, api_client, planner):
+        body = _create(api_client, planner, event_type=EventType.OFFICIAL)
+        assert body["cashapp_link"] == OFFICIAL_CASHAPP_LINK
+        body = _patch(api_client, planner, body["id"], event_type=EventType.COMMUNITY)
+        assert body["cashapp_link"] == ""
+
+    def test_switching_away_from_official_keeps_custom_cashapp(self, api_client, planner):
+        event_id = _create(
+            api_client,
+            planner,
+            event_type=EventType.OFFICIAL,
+            cashapp_link="https://cash.app/$host",
+        )["id"]
+        body = _patch(api_client, planner, event_id, event_type=EventType.COMMUNITY)
+        assert body["cashapp_link"] == "https://cash.app/$host"
+
     def test_editing_an_existing_official_event_adds_nothing(self, api_client, planner):
         event = Event.objects.create(
             title="Old official",

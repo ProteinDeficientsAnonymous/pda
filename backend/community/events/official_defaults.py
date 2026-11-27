@@ -50,9 +50,18 @@ OFFICIAL_RSVP_QUESTIONS = [
 ]
 
 
+def _is_default_cashapp(link: str) -> bool:
+    return link.strip().lower() == OFFICIAL_CASHAPP_LINK.lower()
+
+
 def apply_official_defaults(event: Event, *, was_official: bool = False) -> None:
-    """Fill the cash app link and rsvp questions of an event that just became official, if it has none."""
-    if was_official or event.event_type != EventType.OFFICIAL:
+    """Fill official defaults on becoming official; clear the untouched cash app default on leaving it."""
+    if event.event_type != EventType.OFFICIAL:
+        if was_official and _is_default_cashapp(event.cashapp_link):
+            event.cashapp_link = ""
+            event.save(update_fields=["cashapp_link"])
+        return
+    if was_official:
         return
     if not event.cashapp_link:
         event.cashapp_link = OFFICIAL_CASHAPP_LINK
