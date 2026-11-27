@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+{% if stage == "early" and not week_style %}next month's club events get shared in the whatsapp on the 15th. post {{ club_name|lower }}'s {{ month_label }} events by then so they make the list — they're due by {{ deadline_label }} at the latest.{% elif week_style %}{{ club_name|lower }}'s {{ month_label }} events are due by {{ deadline_label }}.{% else %}{{ club_name|lower }}'s {{ month_label }} events are due today.{% endif %}
+
+post an event:
+
+{{ create_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}

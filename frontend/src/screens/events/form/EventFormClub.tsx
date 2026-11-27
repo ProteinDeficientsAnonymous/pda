@@ -6,9 +6,10 @@ interface Props {
   value: string;
   onChange: (patch: Partial<EventFormValues>) => void;
   error: string | undefined;
+  allowedClubIds: readonly string[] | null;
 }
 
-export function EventFormClub({ value, onChange, error }: Props) {
+export function EventFormClub({ value, onChange, error, allowedClubIds }: Props) {
   const { data: clubs, isPending, isError } = useClubs();
 
   const errorLine = error ? <p className="text-destructive text-xs">{error}</p> : null;
@@ -32,7 +33,11 @@ export function EventFormClub({ value, onChange, error }: Props) {
       }}
       options={[
         { value: '', label: 'pick a club' },
-        ...clubs.map((c) => ({ value: c.id, label: c.name })),
+        ...clubs.map((c) => ({
+          value: c.id,
+          label: c.name,
+          disabled: allowedClubIds !== null && !allowedClubIds.includes(c.id),
+        })),
       ]}
       error={error}
     />

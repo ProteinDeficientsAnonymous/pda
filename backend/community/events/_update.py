@@ -6,10 +6,10 @@ from django.utils import timezone
 
 from community.cohosts.helpers import update_co_hosts
 from community.events._field_validators import check_rsvp_deadline
+from community.events._type_tag import enforce_type_tag_permission
 from community.events.club_field import apply_club_update
 from community.events.helpers import (
     can_edit_event,
-    enforce_type_tag_permission,
     is_invalid_typed_visibility,
     set_event_tags,
     validated_event_format,
@@ -35,9 +35,15 @@ def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: boo
 
 def _validate_update_payload(request, event: Event, event_id, updates: dict) -> None:
     """Validate PATCH payload fields. Raises ValidationException on failure."""
-    if "event_type" in updates:
-        enforce_type_tag_permission(request, updates["event_type"], "update_event", event_id)
     effective_type = updates.get("event_type", event.event_type)
+    if "event_type" in updates or "club_id" in updates:
+        enforce_type_tag_permission(
+            request,
+            effective_type,
+            "update_event",
+            event_id,
+            club_id=updates.get("club_id", event.club_id),
+        )
     effective_visibility = updates.get("visibility", event.visibility)
     if is_invalid_typed_visibility(effective_type, effective_visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)

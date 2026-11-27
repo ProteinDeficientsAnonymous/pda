@@ -182,6 +182,13 @@ class UserOut(BaseModel):
     attended_count: int = 0
     date_joined: datetime
     roles: list[RoleOut]
+    rep_club_ids: list[str] = []
+
+    @classmethod
+    def for_self(cls, user: User) -> "UserOut":
+        out = cls.from_user(user)
+        out.rep_club_ids = sorted(str(pk) for pk in user.rep_clubs.values_list("pk", flat=True))
+        return out
 
     @classmethod
     def from_user(cls, user: User) -> "UserOut":

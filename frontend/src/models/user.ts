@@ -98,6 +98,7 @@ export interface User {
   profilePhotoUrl: string;
   photoUpdatedAt: string | null;
   roles: Role[];
+  repClubIds: string[];
 }
 
 /**

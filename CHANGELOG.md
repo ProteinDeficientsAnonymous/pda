@@ -1,3 +1,36 @@
+# [0.301.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.300.0...v0.301.0) (2026-11-27)
+
+
+### Features
+
+* **clubs:** email reps when next month has no club event ([35bb8fd](https://github.com/ProteinDeficientsAnonymous/pda/commit/35bb8fda07c4f244cbcdd51883e232b861522bfa))
+* **clubs:** email reps when next month has no club event ([#2712](https://github.com/ProteinDeficientsAnonymous/pda/issues/2712)) ([9f1ba94](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f1ba94d3211e397378cd00ed02841bf8d1559db))
+
+# [0.300.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.299.1...v0.300.0) (2026-11-27)
+
+
+### Bug Fixes
+
+* **clubs:** message for club.rep_not_eligible ([9f4c49a](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f4c49ac558208ac2939a9efd2b6b20198555b31))
+* **events:** move the type-tag check out of helpers, count the rep_club_ids query ([da0ad45](https://github.com/ProteinDeficientsAnonymous/pda/commit/da0ad45e1e26f8cdce0aa606990addb5fae7e365))
+* **events:** unknown club id is not found, not forbidden ([686cfe2](https://github.com/ProteinDeficientsAnonymous/pda/commit/686cfe220ba1acd04ffc4c2ad930090c3e6512a7))
+
+
+### Features
+
+* **clubs:** assign reps to clubs ([e1d56bf](https://github.com/ProteinDeficientsAnonymous/pda/commit/e1d56bfaa5f0203ff64c71d623988cbdeb31198e))
+* **clubs:** club event reminder email ([ad3d221](https://github.com/ProteinDeficientsAnonymous/pda/commit/ad3d2210011174207b165402f9ee335bf7a5d611))
+* **clubs:** club event reminder email ([#2711](https://github.com/ProteinDeficientsAnonymous/pda/issues/2711)) ([325dfc5](https://github.com/ProteinDeficientsAnonymous/pda/commit/325dfc53537349dfa9c95ca41ab97adfd83fcbe6))
+* **clubs:** club event reminder schedule ([cc08d8d](https://github.com/ProteinDeficientsAnonymous/pda/commit/cc08d8d47104c64c7586fe47c029599172542edd))
+* **clubs:** club event reminder schedule ([#2710](https://github.com/ProteinDeficientsAnonymous/pda/issues/2710)) ([e8aacc3](https://github.com/ProteinDeficientsAnonymous/pda/commit/e8aacc357065e81af9632b9fa28a4c8d27cb26d0))
+* **clubs:** club rep hooks ([e6a3b2b](https://github.com/ProteinDeficientsAnonymous/pda/commit/e6a3b2b28bcf712c51b0a47cf79e4bc11e0fde68))
+* **clubs:** pick club reps on the clubs admin page ([d36adf3](https://github.com/ProteinDeficientsAnonymous/pda/commit/d36adf346b716618ca09a5ae98a33928f648f64d))
+* **events:** only a rep's own clubs are pickable ([0d25c14](https://github.com/ProteinDeficientsAnonymous/pda/commit/0d25c1432a818f8c2d0f580191fc332d2a494bf6))
+* **events:** only a rep's own clubs are pickable ([#2709](https://github.com/ProteinDeficientsAnonymous/pda/issues/2709)) ([cf7674d](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf7674d0ced04b3adac68d62f03fd925824d5f1e))
+* **events:** reps post club events only for their clubs ([e0ce71e](https://github.com/ProteinDeficientsAnonymous/pda/commit/e0ce71e73dc99109571b6df85ba853803ccd0036))
+* **events:** reps post club events only for their clubs ([#2708](https://github.com/ProteinDeficientsAnonymous/pda/issues/2708)) ([2e19ff1](https://github.com/ProteinDeficientsAnonymous/pda/commit/2e19ff186c0a62d1defca5d759bd4d9cd3e01c47))
+* **mcp:** list and set club reps ([b5b508b](https://github.com/ProteinDeficientsAnonymous/pda/commit/b5b508b52f863605889e983e73768441ef72d724))
+
 ## [0.299.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.299.0...v0.299.1) (2026-11-27)
 
 
