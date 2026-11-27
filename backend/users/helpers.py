@@ -21,6 +21,7 @@ from users.models import (
     User,
     status_change_stamp,
 )
+from users.email_utils import normalize_email
 from users.phone import ADMIN_ENTERED_PHONE_REGION, validate_phone
 from users.roles import Role
 
@@ -152,18 +153,6 @@ def visible_display_name(target: User, viewer: User | None) -> str:
     if name:
         return name
     return target.phone_number if target.show_phone else "member"
-
-
-def normalize_email(raw: str | None) -> str | None:
-    """Lowercase + strip an email. Returns None for blank input.
-
-    Centralized so server-side enforcement is consistent across endpoints.
-    Frontend should NOT rely on this — normalize there too.
-    """
-    if not raw:
-        return None
-    cleaned = raw.strip().lower()
-    return cleaned or None
 
 
 def check_and_set_email(
