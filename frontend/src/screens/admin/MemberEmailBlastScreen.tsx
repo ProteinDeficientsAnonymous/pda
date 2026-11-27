@@ -53,7 +53,7 @@ export default function MemberEmailBlastScreen() {
   useEffect(() => {
     setPreview(null);
   }, [subject, html]);
-  const ready = payload.subject !== '' && html !== '';
+  const ready = payload.subject !== '' && html.replace(/<(?!img)[^>]*>/g, '').trim() !== '';
 
   async function run<T>(fn: () => Promise<T>, fallback: string): Promise<T | null> {
     setError(null);
