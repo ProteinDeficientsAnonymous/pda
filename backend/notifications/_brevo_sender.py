@@ -192,8 +192,8 @@ class BrevoSender:
                 )
             except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
                 error = type(exc).__name__
-            except httpx.HTTPError as exc:
-                # The request may have reached Brevo, so acceptance is unknowable.
+            except Exception as exc:
+                # The request may have reached Brevo; returning keeps earlier chunks' totals.
                 return self._batch_outcome("unknown", size, masked_first, type(exc).__name__)
             else:
                 code = response.status_code
