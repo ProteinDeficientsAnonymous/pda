@@ -6,7 +6,12 @@ import time
 import httpx
 from django.conf import settings
 
-from notifications.email_types import SendResult, mask_recipient, validate_recipient
+from notifications.email_types import (
+    BatchSendResult,
+    SendResult,
+    mask_recipient,
+    validate_recipient,
+)
 
 logger = logging.getLogger("notifications.brevo_sender")
 
@@ -20,6 +25,8 @@ _MAX_ATTEMPTS = 3
 _BACKOFF_BASE_SECONDS = 0.5
 
 _RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
+
+_BATCH_CHUNK_SIZE = 1000
 
 
 class _RetryableBrevoError(Exception):
@@ -64,12 +71,15 @@ class BrevoSender:
             },
         )
 
-    def _payload(self, to: str, subject: str, html: str, text: str) -> dict:
+    def _sender(self) -> dict[str, str]:
         sender: dict[str, str] = {"email": settings.BREVO_FROM_EMAIL}
         if settings.BREVO_FROM_NAME:
             sender["name"] = settings.BREVO_FROM_NAME
+        return sender
+
+    def _payload(self, to: str, subject: str, html: str, text: str) -> dict:
         return {
-            "sender": sender,
+            "sender": self._sender(),
             "to": [{"email": to}],
             "subject": subject,
             "htmlContent": html,
@@ -143,3 +153,52 @@ class BrevoSender:
             exc_info=last_error,
         )
         return SendResult(success=False, error=str(last_error))
+
+    def send_batch(
+        self, recipients: list[str], subject: str, html: str, text: str
+    ) -> BatchSendResult:
+        result = BatchSendResult()
+        for start in range(0, len(recipients), _BATCH_CHUNK_SIZE):
+            chunk = recipients[start : start + _BATCH_CHUNK_SIZE]
+            result = result + self._send_chunk(chunk, subject, html, text)
+        return result
+
+    def _send_chunk(self, chunk: list[str], subject: str, html: str, text: str) -> BatchSendResult:
+        payload = {
+            "sender": self._sender(),
+            "subject": subject,
+            "htmlContent": html,
+            "textContent": text,
+            "messageVersions": [{"to": [{"email": e}]} for e in chunk],
+        }
+        size = len(chunk)
+        masked_first = mask_recipient(chunk[0])
+        for attempt in range(1, _MAX_ATTEMPTS + 1):
+            try:
+                response = self._client.post(_API_URL, json=payload)
+            except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+                error = type(exc).__name__
+            except httpx.HTTPError as exc:
+                # The request may have reached Brevo, so acceptance is unknowable.
+                return self._batch_outcome("unknown", size, masked_first, type(exc).__name__)
+            else:
+                code = response.status_code
+                if code < 400:
+                    logger.info(
+                        "brevo_batch_send_success size=%d masked_first=%s", size, masked_first
+                    )
+                    return BatchSendResult(accepted=size)
+                error = f"http {code} code={_response_code(response)}"
+                if code >= 500:
+                    return self._batch_outcome("unknown", size, masked_first, error)
+                if code != 429:
+                    return self._batch_outcome("failed", size, masked_first, error)
+            if attempt < _MAX_ATTEMPTS:
+                time.sleep(_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1)))
+        return self._batch_outcome("failed", size, masked_first, error)
+
+    @staticmethod
+    def _batch_outcome(kind: str, size: int, masked_first: str, error: str) -> BatchSendResult:
+        event = "brevo_batch_send_failure" if kind == "failed" else "brevo_batch_send_unknown"
+        logger.warning("%s size=%d masked_first=%s error=%s", event, size, masked_first, error)
+        return BatchSendResult(**{kind: size})
