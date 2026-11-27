@@ -14,6 +14,7 @@ import {
   eventPath,
   type Event as PdaEvent,
 } from '@/models/event';
+import { startOfEventDay, toEventWallClock } from '@/utils/datetime';
 
 import { AgendaList } from './AgendaList';
 import { formatAgendaTime, formatEventTimeRange } from './calendarFormats';
@@ -31,7 +32,13 @@ function toBigCalEvent(e: PdaEvent): BigCalEvent | null {
   // TBD events have no date — skip them on the calendar.
   if (!e.startDatetime) return null;
   const end = e.endDatetime ?? new Date(e.startDatetime.getTime() + DEFAULT_EVENT_DURATION_MS);
-  return { id: e.id, title: e.title, start: e.startDatetime, end, resource: e };
+  return {
+    id: e.id,
+    title: e.title,
+    start: toEventWallClock(e.startDatetime),
+    end: toEventWallClock(end),
+    resource: e,
+  };
 }
 
 const lower = (d: Date, f: string) => dfFormat(d, f).toLowerCase();
@@ -215,7 +222,8 @@ export default function CalendarScreen() {
             endAccessor="end"
             view={view}
             onView={setView}
-            date={date}
+            date={toEventWallClock(date)}
+            getNow={() => toEventWallClock(new Date())}
             onNavigate={setDate}
             views={['month', 'week', 'day', 'agenda']}
             popup
@@ -259,7 +267,7 @@ function DayToolbar({ date, onNavigate }: DayToolbarProps) {
     <div className="relative mb-2 flex items-center px-1">
       <TodayIconButton
         onClick={() => {
-          onNavigate(new Date());
+          onNavigate(startOfEventDay(new Date()));
         }}
       />
       <div className="pointer-events-none absolute inset-x-0 flex items-center justify-center">
@@ -298,7 +306,7 @@ function NarrowWeekToolbar({ date, weekStartsOn, onNavigate }: NarrowWeekToolbar
     <div className="relative mb-2 flex items-center px-1">
       <TodayIconButton
         onClick={() => {
-          onNavigate(new Date());
+          onNavigate(startOfEventDay(new Date()));
         }}
       />
       <div className="pointer-events-none absolute inset-x-0 flex items-center justify-center">

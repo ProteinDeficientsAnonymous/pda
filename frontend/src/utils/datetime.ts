@@ -20,6 +20,26 @@ export function startOfEventDay(date: Date): Date {
   return startOfDay(date, { in: COMMUNITY_TZ });
 }
 
+export function parseEventDay(raw: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (!m) return null;
+  const day = new TZDate(Number(m[1]), Number(m[2]) - 1, Number(m[3]), COMMUNITY_TZ_NAME);
+  return isNaN(day.getTime()) ? null : day;
+}
+
+// react-big-calendar only lays out in the browser zone, so hand it et wall-clock times.
+export function toEventWallClock(date: Date): Date {
+  const et = toEventZone(date);
+  return new Date(
+    et.getFullYear(),
+    et.getMonth(),
+    et.getDate(),
+    et.getHours(),
+    et.getMinutes(),
+    et.getSeconds(),
+  );
+}
+
 export function isSameEventDay(a: Date, b: Date): boolean {
   return isSameDay(a, b, { in: COMMUNITY_TZ });
 }

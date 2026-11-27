@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useToday } from './useToday';
+import { useEventToday, useToday } from './useToday';
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -27,5 +27,13 @@ describe('useToday', () => {
     rerender();
 
     expect(result.current).toBe(first);
+  });
+});
+
+describe('useEventToday', () => {
+  it('returns et midnight even when the browser date has rolled over', () => {
+    vi.setSystemTime(new Date('2026-10-08T02:00:00Z'));
+    const { result } = renderHook(() => useEventToday());
+    expect(result.current.getTime()).toBe(Date.parse('2026-10-07T04:00:00Z'));
   });
 });
