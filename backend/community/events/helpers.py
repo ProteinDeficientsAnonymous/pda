@@ -20,6 +20,7 @@ from community.cohosts.invite_helpers import get_my_pending_invite
 from community.events.price import price_text
 from community.events.schemas import CancellationOut, EventOut, RSVPGuestOut, TagOut
 from community.models import (
+    Club,
     Event,
     EventFormat,
     EventRSVP,
@@ -482,6 +483,8 @@ def enforce_type_tag_permission(
         and request.auth.rep_clubs.filter(pk=club_id).exists()
     ):
         return
+    if event_type == EventType.CLUB and club_id and not Club.objects.filter(pk=club_id).exists():
+        raise_validation(Code.Club.NOT_FOUND, field="club_id")
     details = {"endpoint": endpoint, "required_permission": required}
     if event_id is not None:
         audit_log(
