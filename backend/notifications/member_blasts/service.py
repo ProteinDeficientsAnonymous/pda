@@ -22,7 +22,12 @@ logger = logging.getLogger("pda.notifications.member_blasts")
 
 DUPLICATE_WINDOW = timedelta(minutes=15)
 
-_RELATIVE_URL_ATTR = re.compile(r'\b(href|src)="/(?!/)')
+_ANCHOR = re.compile(r'<a\b((?:[^>"]|"[^"]*")*)>(.*?)</a>', re.DOTALL)
+_IMG = re.compile(r'<img\b((?:[^>"]|"[^"]*")*)>')
+_HREF_ATTR = re.compile(r'\bhref="([^"]*)"')
+_SRC_ATTR = re.compile(r'\bsrc="([^"]*)"')
+_ABSOLUTE_URL = re.compile(r"(?:https?|mailto):", re.IGNORECASE)
+_BARE_DOMAIN = re.compile(r"[^\s/?#:]+\.[^\s/?#:]+(?:[/?#]\S*)?")
 _LINK = re.compile(r'<a\b[^>]*?href="([^"]*)"[^>]*>(.*?)</a>', re.DOTALL)
 _BLOCK_END = re.compile(r"<br\s*/?>|</(?:p|li|h[1-6]|blockquote)>")
 
@@ -48,9 +53,40 @@ def collect_recipients() -> tuple[list[str], int]:
     return emails, skipped
 
 
+def _absolute_url(url: str, base: str) -> str | None:
+    if _ABSOLUTE_URL.match(url):
+        return url
+    if url.startswith("/"):
+        return base + url
+    if _BARE_DOMAIN.fullmatch(url):
+        return f"https://{url}"
+    return None
+
+
+def _rewrite_attrs(attrs: str, pattern: re.Pattern[str], name: str, base: str) -> str | None:
+    """return(str | None): attrs with the URL made absolute, or None if it cannot be resolved."""
+    match = pattern.search(attrs)
+    if not match:
+        return attrs
+    url = _absolute_url(match.group(1), base)
+    if url is None:
+        return None
+    return attrs[: match.start()] + f'{name}="{url}"' + attrs[match.end() :]
+
+
 def clean_body(body_html: str) -> str:
     base = settings.FRONTEND_BASE_URL.rstrip("/")
-    return _RELATIVE_URL_ATTR.sub(rf'\1="{base}/', sanitize_content_html(body_html))
+
+    def fix_anchor(m: re.Match[str]) -> str:
+        attrs = _rewrite_attrs(m.group(1), _HREF_ATTR, "href", base)
+        return m.group(2) if attrs is None else f"<a{attrs}>{m.group(2)}</a>"
+
+    def fix_img(m: re.Match[str]) -> str:
+        attrs = _rewrite_attrs(m.group(1), _SRC_ATTR, "src", base)
+        return "" if attrs is None else f"<img{attrs}>"
+
+    cleaned = sanitize_content_html(body_html)
+    return _IMG.sub(fix_img, _ANCHOR.sub(fix_anchor, cleaned))
 
 
 def render_blast(subject: str, body_html: str) -> RenderedBlast:

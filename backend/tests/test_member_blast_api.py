@@ -1,8 +1,10 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
 from audit.models import AuditLogEntry
 from community.validation import Code
+from django.utils import timezone
 from notifications.email_types import BatchSendResult
 from notifications.models import MemberEmailBlast
 from users.models import MembershipStatus
@@ -98,6 +100,17 @@ def test_list_returns_recent_blasts_newest_first(api_client, admin, headers):
     response = api_client.get(URL, **headers)
     assert [b["subject"] for b in response.json()] == ["second", "first"]
     assert response.json()[0]["sent_count"] == 0
+
+
+@pytest.mark.parametrize(("age_minutes", "expected"), [(6, "unknown"), (1, "sending")])
+def test_list_shows_stale_sending_as_unknown(api_client, admin, headers, age_minutes, expected):
+    blast = MemberEmailBlast.objects.create(sender=admin, subject="s", body_html="x", recipient_count=5)
+    MemberEmailBlast.objects.filter(pk=blast.pk).update(
+        created_at=timezone.now() - timedelta(minutes=age_minutes)
+    )
+    assert api_client.get(URL, **headers).json()[0]["status"] == expected
+    blast.refresh_from_db()
+    assert blast.status == "sending"
 
 
 def test_send_audits_stuck_sending_blast_when_finalize_also_raises(
