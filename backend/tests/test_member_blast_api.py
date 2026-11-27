@@ -93,10 +93,8 @@ def test_send_audits_unknown_blast_when_provider_raises(
 
 
 def test_list_returns_recent_blasts_newest_first(api_client, admin, headers):
-    for subject in ("first", "second"):
-        MemberEmailBlast.objects.create(
-            sender=admin, subject=subject, body_html="x", recipient_count=5
-        )
+    for s in ("first", "second"):
+        MemberEmailBlast.objects.create(sender=admin, subject=s, body_html="x", recipient_count=5)
     response = api_client.get(URL, **headers)
     assert [b["subject"] for b in response.json()] == ["second", "first"]
     assert response.json()[0]["sent_count"] == 0

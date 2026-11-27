@@ -116,34 +116,28 @@ def send_blast(request, payload: BlastIn):
         blast = send_member_blast(
             sender=request.auth, subject=payload.subject, body_html=payload.body_html
         )
-    except Exception:
-        # A provider raise leaves an UNKNOWN row; emails may have gone out, so audit it.
-        failed = MemberEmailBlast.objects.filter(sender=request.auth, created_at__gte=started)
-        if blast := failed.first():
-            _audit_sent(request, _blast_out(blast), logging.WARNING)
-        raise
-    out = _blast_out(blast)
-    _audit_sent(request, out, logging.INFO)
-    return Status(200, out)
-
-
-def _audit_sent(request, out: BlastOut, level: int) -> None:
-    audit_log(
-        level,
-        "member_email_blast_sent",
-        request,
-        target=AuditTarget(
-            type=AuditTargetType.MEMBER_EMAIL_BLAST,
-            id=out.id,
-            details={
-                "status": out.status,
-                "sent_count": out.sent_count,
-                "failed_count": out.failed_count,
-                "unknown_count": out.unknown_count,
-                "skipped_count": out.skipped_count,
-            },
-        ),
-    )
+    finally:
+        # A provider raise still leaves an UNKNOWN row; emails may have gone out, so audit it.
+        new = MemberEmailBlast.objects.filter(sender=request.auth, created_at__gte=started)
+        if blast := new.first():
+            out = _blast_out(blast)
+            audit_log(
+                logging.INFO,
+                "member_email_blast_sent",
+                request,
+                target=AuditTarget(
+                    type=AuditTargetType.MEMBER_EMAIL_BLAST,
+                    id=out.id,
+                    details={
+                        "status": out.status,
+                        "sent_count": out.sent_count,
+                        "failed_count": out.failed_count,
+                        "unknown_count": out.unknown_count,
+                        "skipped_count": out.skipped_count,
+                    },
+                ),
+            )
+    return Status(200, _blast_out(blast))
 
 
 @router.get("", response={200: list[BlastOut], **_ERRORS}, auth=gated_jwt)
