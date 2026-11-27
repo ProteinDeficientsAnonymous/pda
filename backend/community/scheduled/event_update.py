@@ -17,7 +17,7 @@ SIGN_OFF = (
     "invite you to add them to the PDA calendar so people can easily find them!\n"
     "{calendar_url}\n\n"
     "We'll also be continuously improving the pda website so please leave feedback using the "
-    "? button!"
+    "🐛 button!"
 )
 
 
