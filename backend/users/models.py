@@ -11,8 +11,8 @@ from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from users.email_utils import normalize_email
 from users._transitions import transition_membership
+from users.email_utils import normalize_email
 from users.membership import (
     ALLOWED_MEMBERSHIP_TRANSITIONS,
     FULL_MEMBER_STATUSES,

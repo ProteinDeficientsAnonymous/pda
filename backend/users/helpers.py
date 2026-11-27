@@ -13,6 +13,7 @@ from django.conf import settings
 from django.db.models import prefetch_related_objects
 from django.utils import timezone
 
+from users.email_utils import normalize_email
 from users.models import (
     MagicLoginToken,
     MagicLoginTokenSource,
@@ -21,7 +22,6 @@ from users.models import (
     User,
     status_change_stamp,
 )
-from users.email_utils import normalize_email
 from users.phone import ADMIN_ENTERED_PHONE_REGION, validate_phone
 from users.roles import Role
 
