@@ -115,6 +115,10 @@ def _group_name(event: dict[str, Any], clubs: dict[str, str | None]) -> str:
     return clubs.get(event["id"]) or EventType(event["event_type"]).label
 
 
+def _starts_after(event: dict[str, Any], now: datetime) -> bool:
+    return datetime.fromisoformat(event["start_datetime"]) >= now
+
+
 def _event_lines(event: dict[str, Any]) -> list[str]:
     day = datetime.fromisoformat(event["start_datetime"]).astimezone(settings.COMMUNITY_TZ)
     where = f" @ {event['location']}" if event["location"] else ""
@@ -144,9 +148,10 @@ def _club_names(event_ids: list[str]) -> dict[str, str | None]:
 async def upcoming_events(
     days: Annotated[int, Field(ge=1, le=90, description="how many days ahead to include")] = 14,
 ) -> str:
-    params = EventListQuery(upcoming=True, end=timezone.now() + timedelta(days=days))
+    now = timezone.now()
+    params = EventListQuery(upcoming=True, end=now + timedelta(days=days))
     listed = await call_view(list_events_view, await current_user(), params=params)
-    events = [e for e in listed if not e["datetime_tbd"]]
+    events = [e for e in listed if not e["datetime_tbd"] and _starts_after(e, now)]
     if not events:
         return f"no upcoming events in the next {days} days"
     clubs = await sync_to_async(_club_names)([e["id"] for e in events])
