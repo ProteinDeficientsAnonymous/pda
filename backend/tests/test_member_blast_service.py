@@ -143,6 +143,13 @@ def test_send_exception_marks_unknown(admin, two_members, sender_mock):
     assert blast.finished_at is not None
 
 
+def test_send_exception_survives_finalize_failure(admin, two_members, sender_mock):
+    sender_mock.side_effect = RuntimeError("boom")
+    with patch("notifications.member_blasts.service._finalize", side_effect=OSError):
+        with pytest.raises(RuntimeError):
+            _send(admin)
+
+
 def test_duplicate_within_window_is_refused(admin, two_members, sender_mock):
     _send(admin)
     _assert_refused(Code.Notification.BLAST_DUPLICATE, admin)

@@ -98,8 +98,10 @@ def send_member_blast(*, sender: User, subject: str, body_html: str) -> MemberEm
         )
     except Exception:
         logger.error("member_blast_send_exception blast_id=%s", blast.id, exc_info=True)
-        result = BatchSendResult(unknown=len(recipients))
-        _finalize(blast, result)
+        try:
+            _finalize(blast, BatchSendResult(unknown=len(recipients)))
+        except Exception:
+            logger.error("member_blast_finalize_exception blast_id=%s", blast.id, exc_info=True)
         raise
     _finalize(blast, result)
     return blast
