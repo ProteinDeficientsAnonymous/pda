@@ -20,7 +20,7 @@ function useBlastMutation<T>(path: string, action: string, onSuccess?: () => voi
       const { data } = await apiClient.post<T>(path, payload);
       return data;
     },
-    onSuccess,
+    ...(onSuccess ? { onSuccess } : {}),
     onError: (err) => {
       void reportError(err, ROUTE, { action });
     },
