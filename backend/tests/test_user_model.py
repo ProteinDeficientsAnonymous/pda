@@ -89,6 +89,30 @@ class TestUserEmailField:
                 phone_number="+12025550102", first_name="b", email="dup@example.com"
             )
 
+    def test_save_lowercases_email(self):
+        user = User.objects.create_user(
+            phone_number="+12025550101", first_name="a", email=" Foo@X.org "
+        )
+        user.refresh_from_db()
+        assert user.email == "foo@x.org"
+
+    def test_save_keeps_blank_and_none(self):
+        blank = User.objects.create_user(phone_number="+12025550101", first_name="a", email="")
+        none = User.objects.create_user(phone_number="+12025550102", first_name="b", email=None)
+        assert blank.email == ""
+        assert none.email is None
+
+    def test_emails_differing_by_case_rejected_at_db(self):
+        User.objects.create_user(phone_number="+12025550101", first_name="a", email="a@x.org")
+        other = User.objects.create_user(phone_number="+12025550102", first_name="b", email=None)
+        with pytest.raises(IntegrityError):
+            User.objects.filter(pk=other.pk).update(email="A@X.org")
+
+    def test_emails_differing_by_case_rejected_on_save(self):
+        User.objects.create_user(phone_number="+12025550101", first_name="a", email="a@x.org")
+        with pytest.raises(IntegrityError):
+            User.objects.create_user(phone_number="+12025550102", first_name="b", email="A@X.org")
+
 
 @pytest.mark.django_db
 class TestCheckAndSetEmail:

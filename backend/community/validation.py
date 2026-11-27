@@ -287,6 +287,9 @@ class Code:
 
     class Notification:
         NOT_FOUND = "notification.not_found"
+        BLAST_NO_RECIPIENTS = "notification.blast_no_recipients"
+        BLAST_DUPLICATE = "notification.blast_duplicate"
+        BLAST_NO_OWN_EMAIL = "notification.blast_no_own_email"
 
     class CoHostInvite:
         NOT_FOUND = "cohost_invite.not_found"

@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -7,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import type { Event } from '@/models/event';
 import type { EventPoll } from '@/models/eventPoll';
+import { EVENT_TZ_LABEL, formatEventTime } from '@/utils/datetime';
 
 import { pickFinalizeDefault, sortOptionsChrono } from './pollHelpers';
 
@@ -94,7 +94,7 @@ export function PollFinalizeDialog({ open, onClose, event, poll }: Props) {
                   </span>
                   <div className="flex flex-1 flex-col">
                     <span className="text-sm font-medium">
-                      {format(opt.datetime, 'EEE MMM d · h:mm a').toLowerCase()}
+                      {formatEventTime(opt.datetime, 'EEE MMM d · h:mm a')} {EVENT_TZ_LABEL}
                     </span>
                     <span className="text-foreground-tertiary text-xs">
                       {opt.yesCount} yes · {opt.maybeCount} maybe · {opt.noCount} no

@@ -20,7 +20,7 @@ describe('DateTimePicker accessibility', () => {
 
     await user.click(screen.getByRole('button', { name: /pick a date & time/i }));
 
-    const timeInput = screen.getByLabelText(/^time$/i);
+    const timeInput = screen.getByLabelText(/^time \(et\)$/i);
     expect(timeInput).toBeInTheDocument();
     expect(timeInput.tagName).toBe('INPUT');
   });

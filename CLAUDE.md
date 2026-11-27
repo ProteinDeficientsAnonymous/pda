@@ -39,7 +39,7 @@ make agent-lint       # Run ruff (lint + format; minimal output)
 make agent-typecheck  # Run ty type checker (minimal output)
 make agent-complexity # Run cognitive complexity check (minimal output)
 make agent-check-private-modules # Fail on cross-package _module or cross-module _symbol imports
-make agent-ci         # Full pre-commit check (minimal output — prefer this in agents)
+make agent-ci         # Full check suite (minimal output) — CI runs it; don't run it locally
 make diff-coverage    # Tests + coverage; fail if lines changed vs origin/main are <80% covered
 make agent-frontend-test      # Run Vitest suite (minimal output)
 make agent-frontend-lint      # oxlint + oxfmt check (cheap pre-push)
@@ -76,7 +76,7 @@ User states and transitions (public rsvper → member → paused/archived): see 
 
 ## Standards
 
-**Agents:** Run the full **`make agent-ci`** suite once as a **pre-PR gate** — before opening/updating a PR or claiming work complete — not on every commit (GitHub re-runs CI on every push). While iterating, run the cheap `make agent-*` steps for what you touched: **`make agent-frontend-lint`** (oxlint + oxfmt) and/or **`make agent-lint`** (ruff) before pushes, plus typecheck + relevant tests.
+**Agents:** Don't run `make agent-*` checks or test suites while iterating. That includes `make agent-ci` and bare `pytest`/`vitest`. GitHub CI runs the full suite on every push. When you need to verify a change, run only the test files for the code you changed (e.g. `uv run pytest backend/tests/test_foo.py`, `pnpm vitest run src/foo.test.tsx`).
 
 ### response style
 Be succinct — short, direct answers. Don't restate the task or summarize what you just did unless asked.

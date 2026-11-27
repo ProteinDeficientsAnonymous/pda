@@ -1,8 +1,8 @@
-import { format } from 'date-fns';
 import { useState } from 'react';
 
 import type { EventPollOption } from '@/models/eventPoll';
 import { cn } from '@/utils/cn';
+import { EVENT_TZ_LABEL, formatEventTime } from '@/utils/datetime';
 
 import { PollVoterPopover } from './PollVoterPopover';
 
@@ -15,9 +15,9 @@ interface Props {
 export function PollOptionCard({ option, isWinner, isFinalized }: Props) {
   const [open, setOpen] = useState(false);
 
-  const dayOfWeek = format(option.datetime, 'EEE').toLowerCase();
-  const monthDay = format(option.datetime, 'MMM d').toLowerCase();
-  const time = format(option.datetime, 'h:mm a').toLowerCase();
+  const dayOfWeek = formatEventTime(option.datetime, 'EEE');
+  const monthDay = formatEventTime(option.datetime, 'MMM d');
+  const time = `${formatEventTime(option.datetime, 'h:mm a')} ${EVENT_TZ_LABEL}`;
 
   const fade = isFinalized && !isWinner;
 
