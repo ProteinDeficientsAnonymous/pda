@@ -1,3 +1,12 @@
+## [0.301.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.301.0...v0.301.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* **events:** pass allowedClubIds in queued poll dates test ([780c801](https://github.com/ProteinDeficientsAnonymous/pda/commit/780c8015ff8733d26a1511ae7cf9c6cf399397db))
+* **seed:** key staging permission users by email, not list position ([33222ec](https://github.com/ProteinDeficientsAnonymous/pda/commit/33222ec060169adca2280e8fa3ae274d10296684))
+* staging seed survives permissions added mid-list ([#2715](https://github.com/ProteinDeficientsAnonymous/pda/issues/2715)) ([1b2308b](https://github.com/ProteinDeficientsAnonymous/pda/commit/1b2308b24bef4c6ef1180d6403e5f29f905bb27c))
+
 # [0.301.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.300.0...v0.301.0) (2026-11-27)
 
 
