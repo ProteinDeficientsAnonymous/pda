@@ -51,3 +51,10 @@ def test_render_wraps_body_and_footer():
     assert "<p>hi " in rendered.html
     assert "because you're a pda member" in rendered.html
     assert "hi link (https://x.org/a)" in rendered.text
+
+
+def test_render_sanitizes_raw_input():
+    rendered = render_blast("s", '<p onclick="x">hi</p><script>a</script>')
+    for out in (rendered.html, rendered.text):
+        assert "onclick" not in out
+        assert "<script>" not in out

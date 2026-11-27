@@ -4,11 +4,11 @@ from typing import NamedTuple
 
 from community.content.html_sanitize import sanitize_content_html
 from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.core.validators import validate_email
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from users.models import User
+
+from notifications.email_types import validate_recipient
 
 _RELATIVE_URL_ATTR = re.compile(r'\b(href|src)="/(?!/)')
 _LINK = re.compile(r'<a\b[^>]*?href="([^"]*)"[^>]*>(.*?)</a>', re.DOTALL)
@@ -27,8 +27,8 @@ def collect_recipients() -> tuple[list[str], int]:
             skipped += 1
             continue
         try:
-            validate_email(email)
-        except ValidationError:
+            validate_recipient(email)
+        except ValueError:
             skipped += 1
             continue
         emails.append(email)
@@ -41,6 +41,7 @@ def clean_body(body_html: str) -> str:
 
 
 def render_blast(subject: str, body_html: str) -> RenderedBlast:
+    body_html = clean_body(body_html)
     with_urls = _LINK.sub(lambda m: f"{m.group(2)} ({m.group(1)})", body_html)
     body_text = html_lib.unescape(strip_tags(with_urls)).strip()
     context = {"subject": subject, "body_html": body_html, "body_text": body_text}
