@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { type FeedbackType, useSubmitFeedback } from '@/api/feedback';
 import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
+import { BugIcon } from '@/components/BugIcon';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
@@ -123,9 +124,9 @@ export function FeedbackButton() {
           width: '3rem',
           height: '3rem',
         }}
-        className="bg-brand-600 hover:bg-brand-700 focus-visible:ring-brand-200 text-brand-on flex items-center justify-center rounded-full text-xl font-semibold shadow-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
+        className="bg-brand-600 hover:bg-brand-700 focus-visible:ring-brand-200 text-brand-on flex items-center justify-center rounded-full shadow-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
-        ?
+        <BugIcon className="h-6 w-6" />
       </button>
       {open ? (
         <div
