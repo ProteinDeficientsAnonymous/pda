@@ -185,31 +185,36 @@ class BrevoSender:
         }
         size = len(chunk)
         masked_first = mask_recipient(chunk[0])
+        kind, error = "retry", ""
         for attempt in range(1, _MAX_ATTEMPTS + 1):
-            try:
-                response = self._client.post(
-                    _API_URL, json=payload, timeout=_BATCH_REQUEST_TIMEOUT_SECONDS
-                )
-            except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
-                error = type(exc).__name__
-            except Exception as exc:
-                # The request may have reached Brevo; returning keeps earlier chunks' totals.
-                return self._batch_outcome("unknown", size, masked_first, type(exc).__name__)
-            else:
-                code = response.status_code
-                if code < 400:
-                    logger.info(
-                        "brevo_batch_send_success size=%d masked_first=%s", size, masked_first
-                    )
-                    return BatchSendResult(accepted=size)
-                error = f"http {code} code={_response_code(response)}"
-                if code >= 500:
-                    return self._batch_outcome("unknown", size, masked_first, error)
-                if code != 429:
-                    return self._batch_outcome("failed", size, masked_first, error)
+            kind, error = self._classify_batch_attempt(payload)
+            if kind != "retry":
+                break
             if attempt < _MAX_ATTEMPTS:
                 time.sleep(_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1)))
-        return self._batch_outcome("failed", size, masked_first, error)
+        if kind == "accepted":
+            logger.info("brevo_batch_send_success size=%d masked_first=%s", size, masked_first)
+            return BatchSendResult(accepted=size)
+        return self._batch_outcome("failed" if kind == "retry" else kind, size, masked_first, error)
+
+    def _classify_batch_attempt(self, payload: dict) -> tuple[str, str]:
+        """Return (accepted | retry | failed | unknown, error) for one POST."""
+        try:
+            response = self._client.post(
+                _API_URL, json=payload, timeout=_BATCH_REQUEST_TIMEOUT_SECONDS
+            )
+        except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+            return "retry", type(exc).__name__
+        except Exception as exc:
+            # The request may have reached Brevo, so acceptance is unknowable.
+            return "unknown", type(exc).__name__
+        code = response.status_code
+        if code < 400:
+            return "accepted", ""
+        error = f"http {code} code={_response_code(response)}"
+        if code == 429:
+            return "retry", error
+        return ("unknown" if code >= 500 else "failed"), error
 
     @staticmethod
     def _batch_outcome(kind: str, size: int, masked_first: str, error: str) -> BatchSendResult:
