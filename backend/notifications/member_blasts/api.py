@@ -6,6 +6,7 @@ from community.validation import Code, raise_validation
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
+from django.utils import timezone
 from ninja import Router, Schema
 from ninja.responses import Status
 from pydantic import Field
@@ -17,7 +18,7 @@ from notifications.member_blasts.service import (
     send_member_blast,
     send_test_blast,
 )
-from notifications.models import MemberEmailBlast
+from notifications.models import MemberEmailBlast, MemberEmailBlastStatus
 
 router = Router()
 
@@ -53,10 +54,11 @@ class BlastOut(Schema):
 
 
 def _blast_out(blast: MemberEmailBlast) -> BlastOut:
+    sent = blast.recipient_count - blast.failed_count - blast.unknown_count
     return BlastOut(
         id=str(blast.id),
         status=blast.status,
-        sent_count=blast.recipient_count - blast.failed_count - blast.unknown_count,
+        sent_count=0 if blast.status == MemberEmailBlastStatus.SENDING else sent,
         failed_count=blast.failed_count,
         unknown_count=blast.unknown_count,
         skipped_count=blast.skipped_count,
@@ -109,12 +111,25 @@ def send_test(request, payload: BlastIn):
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="3/h")
 def send_blast(request, payload: BlastIn):
     _require_permission(request, "send_blast")
-    blast = send_member_blast(
-        sender=request.auth, subject=payload.subject, body_html=payload.body_html
-    )
+    started = timezone.now()
+    try:
+        blast = send_member_blast(
+            sender=request.auth, subject=payload.subject, body_html=payload.body_html
+        )
+    except Exception:
+        # A provider raise leaves an UNKNOWN row; emails may have gone out, so audit it.
+        failed = MemberEmailBlast.objects.filter(sender=request.auth, created_at__gte=started)
+        if blast := failed.first():
+            _audit_sent(request, _blast_out(blast), logging.WARNING)
+        raise
     out = _blast_out(blast)
+    _audit_sent(request, out, logging.INFO)
+    return Status(200, out)
+
+
+def _audit_sent(request, out: BlastOut, level: int) -> None:
     audit_log(
-        logging.INFO,
+        level,
         "member_email_blast_sent",
         request,
         target=AuditTarget(
@@ -129,7 +144,6 @@ def send_blast(request, payload: BlastIn):
             },
         ),
     )
-    return Status(200, out)
 
 
 @router.get("", response={200: list[BlastOut], **_ERRORS}, auth=gated_jwt)
