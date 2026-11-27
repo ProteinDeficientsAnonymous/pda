@@ -23,9 +23,8 @@ def test_recipients_are_members_with_email():
 
 def test_member_without_email_is_skipped():
     make_user(membership_status=MembershipStatus.ACTIVE_MEMBER, email="")
-    User.objects.filter(pk=make_user(membership_status=MembershipStatus.ACTIVE_MEMBER).pk).update(
-        email=None
-    )
+    user = make_user(membership_status=MembershipStatus.ACTIVE_MEMBER)
+    User.objects.filter(pk=user.pk).update(email=None)
     assert collect_recipients() == ([], 2)
 
 
@@ -47,10 +46,10 @@ def test_body_is_sanitized_and_links_absolute():
 
 
 def test_render_wraps_body_and_footer():
-    rendered = render_blast("s", '<p>hi <a href="https://x.org/a">link</a></p>')
+    rendered = render_blast("s", '<p>hi <a href="https://x.org/a">link</a></p><ul><li>a</li></ul>')
     assert "<p>hi " in rendered.html
     assert "because you're a pda member" in rendered.html
-    assert "hi link (https://x.org/a)" in rendered.text
+    assert "hi link (https://x.org/a)\na\n" in rendered.text
 
 
 def test_render_sanitizes_raw_input():
