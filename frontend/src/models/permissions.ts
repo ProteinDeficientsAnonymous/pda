@@ -17,6 +17,7 @@ export const Permission = {
   SendEventUpdates: 'send_event_updates',
   ManageDocuments: 'manage_documents',
   ImportPayments: 'import_payments',
+  SendEmailBlast: 'send_email_blast',
 } as const;
 
 export type PermissionKey = (typeof Permission)[keyof typeof Permission];

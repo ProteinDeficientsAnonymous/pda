@@ -32,6 +32,7 @@ const PERMISSION_LABELS: Record<string, string> = {
   [Permission.SendEventUpdates]: 'send event updates',
   [Permission.ManageDocuments]: 'manage documents',
   [Permission.ImportPayments]: 'import payments',
+  [Permission.SendEmailBlast]: 'send email blasts to all members',
 };
 
 export function RoleFormDialog({ open, onClose, initialRole: role }: Props) {

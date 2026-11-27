@@ -611,6 +611,12 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "couldn't submit feedback — try again";
     case Code.Notification.NotFound:
       return 'notification not found';
+    case Code.Notification.BlastNoRecipients:
+      return 'no members have an email to send to';
+    case Code.Notification.BlastDuplicate:
+      return 'this was already sent in the last 15 minutes';
+    case Code.Notification.BlastNoOwnEmail:
+      return 'add an email to your profile to send yourself a test';
     case Code.CoHostInvite.NotFound:
       return 'invite not found';
     case Code.CoHostInvite.NotPending:

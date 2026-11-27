@@ -20,3 +20,4 @@ class PermissionKey(models.TextChoices):
     SEND_EVENT_UPDATES = "send_event_updates", "Send event updates"
     MANAGE_DOCUMENTS = "manage_documents", "Manage documents"
     IMPORT_PAYMENTS = "import_payments", "Import payments"
+    SEND_EMAIL_BLAST = "send_email_blast", "Send email blasts to all members"
