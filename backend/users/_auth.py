@@ -134,7 +134,7 @@ def me(request):
     user = request.auth
     if user.is_guidelines_paused:
         raise_validation(Code.Auth.ACCOUNT_GUIDELINES_PAUSED, status_code=403)
-    return Status(200, UserOut.from_user(user))
+    return Status(200, UserOut.for_self(user))
 
 
 # Fields copied straight from payload to user with no extra validation.
@@ -251,7 +251,7 @@ def update_me(request, payload: MePatchIn):
                 type=AuditTargetType.USER, id=str(user.pk), details={"fields_changed": changed}
             ),
         )
-    return Status(200, UserOut.from_user(user))
+    return Status(200, UserOut.for_self(user))
 
 
 @router.post("/me/photo/", response={200: UserOut, 400: ErrorOut, 429: ErrorOut}, auth=gated_jwt)
@@ -283,7 +283,7 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
         request,
         target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
-    return Status(200, UserOut.from_user(user))
+    return Status(200, UserOut.for_self(user))
 
 
 @router.delete("/me/photo/", response={200: UserOut}, auth=gated_jwt)
@@ -300,7 +300,7 @@ def delete_photo(request):
         request,
         target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
-    return Status(200, UserOut.from_user(user))
+    return Status(200, UserOut.for_self(user))
 
 
 @router.post(
@@ -344,7 +344,7 @@ def complete_onboarding(request, payload: OnboardingIn):
         request,
         target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
-    return Status(200, UserOut.from_user(user))
+    return Status(200, UserOut.for_self(user))
 
 
 @router.post("/accept-consents/", response={200: UserOut}, auth=gated_jwt)
@@ -365,7 +365,7 @@ def accept_consents(request, payload: AcceptConsentsIn):
             details={"consent_types": [str(c) for c in payload.consent_types]},
         ),
     )
-    return Status(200, UserOut.from_user(user))
+    return Status(200, UserOut.for_self(user))
 
 
 @router.post("/change-password/", response={200: ErrorOut, 400: ErrorOut}, auth=gated_jwt)

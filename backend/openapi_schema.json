@@ -9753,6 +9753,14 @@
             "title": "Pronouns",
             "type": "string"
           },
+          "rep_club_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Rep Club Ids",
+            "type": "array"
+          },
           "restored_at": {
             "anyOf": [
               {

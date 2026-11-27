@@ -18,6 +18,7 @@ from users.helpers import visible_display_name
 from community.cohosts.invite_helpers import reject_non_member_cohosts
 from community.events._field_validators import check_rsvp_deadline
 from community.events._transitions import handle_status_update, set_event_participants
+from community.events._type_tag import enforce_type_tag_permission
 from community.events._update import (
     apply_field_updates,
     guard_can_edit_event,
@@ -27,7 +28,6 @@ from community.events.club_field import resolve_event_club
 from community.events.helpers import (
     broadcast_capacity_change,
     build_guest_list,
-    enforce_type_tag_permission,
     event_out,
     event_rsvp_payload,
     invited_payload,
@@ -213,7 +213,9 @@ def create_event(request, payload: EventIn):
     if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
         raise_validation(Code.Event.INVALID_CREATE_STATUS, field="status", status_code=400)
 
-    enforce_type_tag_permission(request, payload.event_type, "create_event")
+    enforce_type_tag_permission(
+        request, payload.event_type, "create_event", club_id=payload.club_id
+    )
 
     if is_invalid_typed_visibility(payload.event_type, payload.visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
