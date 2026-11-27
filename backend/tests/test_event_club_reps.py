@@ -1,7 +1,10 @@
+import uuid
+
 import pytest
 from community.models import Club, Event, EventType, PageVisibility
 from users.permissions import PermissionKey
 
+from tests._asserts import assert_error_code
 from tests._auth import auth_headers_for
 from tests._time import future_iso
 from tests._users import make_user
@@ -70,3 +73,8 @@ class TestRepClubEvents:
 
     def test_non_rep_without_permission_cannot_create_club_event(self, api_client, book):
         assert _create(api_client, make_user(), book).status_code == 403
+
+    def test_unknown_club_is_not_found_even_without_permission(self, api_client, rep):
+        missing = Club(id=uuid.uuid4(), name="gone")
+
+        assert_error_code(_create(api_client, rep, missing), "club.not_found", "club_id")
