@@ -1,3 +1,11 @@
+# [0.289.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.288.0...v0.289.0) (2026-11-27)
+
+
+### Features
+
+* **events:** add send_event_updates permission and event update text ([#2682](https://github.com/ProteinDeficientsAnonymous/pda/issues/2682)) ([b533bec](https://github.com/ProteinDeficientsAnonymous/pda/commit/b533becda4b2d60648ff7361bcf612e75402e416))
+* **events:** email the event update on the 14th and last day of the month ([#2683](https://github.com/ProteinDeficientsAnonymous/pda/issues/2683)) ([f2e4839](https://github.com/ProteinDeficientsAnonymous/pda/commit/f2e4839e2200bbe1b712f46a609112177c578c9d))
+
 # [0.288.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.287.1...v0.288.0) (2026-11-27)
 
 
