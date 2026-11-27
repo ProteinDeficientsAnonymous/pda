@@ -54,6 +54,7 @@ def test_upcoming_events_skips_past_tbd_out_of_window_and_drafts(test_user):
     _event(test_user, "far", 30)
     _event(test_user, "draft", 1, status=EventStatus.DRAFT)
     Event.objects.create(title="tbd", created_by=test_user, datetime_tbd=True)
+    _event(test_user, "tbd dated", 2, datetime_tbd=True)
     assert _text(test_user) == "no upcoming events in the next 14 days"
     assert "far" in _text(test_user, days=31)
 
