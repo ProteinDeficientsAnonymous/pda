@@ -9,6 +9,8 @@ from django.db import IntegrityError, transaction
 from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel, Field
+from users.helpers import visible_name
+from users.models import User
 from users.permissions import PermissionKey
 
 from community.models import Club
@@ -28,6 +30,21 @@ class ClubOut(BaseModel):
 class ClubIn(BaseModel):
     name: str = Field(max_length=CLUB_NAME_MAX)
     requirements: str = Field(default="", max_length=CLUB_REQUIREMENTS_MAX)
+
+
+class ClubRepOut(BaseModel):
+    id: str
+    full_name: str
+    phone_number: str
+
+
+class ClubRepsOut(BaseModel):
+    club_id: str
+    reps: list[ClubRepOut]
+
+
+class ClubRepsIn(BaseModel):
+    user_ids: list[UUID]
 
 
 def club_out(club: Club) -> ClubOut:
@@ -96,6 +113,61 @@ def create_club(request, payload: ClubIn):
     _save_club(club, payload)
     _audit(request, "club_created", club)
     return Status(201, club_out(club))
+
+
+def _reps_out(club: Club, viewer: User) -> ClubRepsOut:
+    reps = [
+        ClubRepOut(
+            id=str(u.id),
+            full_name=visible_name(u, viewer)[1],
+            phone_number=u.phone_number if u.show_phone else "",
+        )
+        for u in club.reps.all()
+    ]
+    return ClubRepsOut(club_id=str(club.id), reps=sorted(reps, key=lambda r: (r.full_name, r.id)))
+
+
+@router.get("/clubs/reps/", response={200: list[ClubRepsOut], 403: ErrorOut}, auth=gated_jwt)
+def list_club_reps(request):
+    _require_manage_clubs(request, "list_club_reps")
+    clubs = Club.objects.prefetch_related("reps")
+    return Status(200, [_reps_out(c, request.auth) for c in clubs])
+
+
+@router.put(
+    "/clubs/{club_id}/reps/",
+    response={200: ClubRepsOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def set_club_reps(request, club_id: UUID, payload: ClubRepsIn):
+    _require_manage_clubs(request, "set_club_reps", target_id=str(club_id))
+    club = _get_club(club_id)
+    ids = set(payload.user_ids)
+    kept = list(club.reps.filter(id__in=ids))
+    added_ids = ids - {u.id for u in kept}
+    added = list(User.objects.members().filter(id__in=added_ids))
+    if len(added) != len(added_ids):
+        raise_validation(Code.Club.REP_NOT_ELIGIBLE, field="user_ids", status_code=400)
+    users = kept + added
+    with transaction.atomic():
+        before = {str(i) for i in club.reps.values_list("id", flat=True)}
+        club.reps.set(users)
+    after = {str(u.id) for u in users}
+    audit_log(
+        logging.INFO,
+        "club_reps_updated",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.CLUB,
+            id=str(club.id),
+            details={
+                "name": club.name,
+                "added": sorted(after - before),
+                "removed": sorted(before - after),
+            },
+        ),
+    )
+    return Status(200, _reps_out(club, request.auth))
 
 
 @router.patch(

@@ -301,6 +301,7 @@ describe('club messages', () => {
     [Code.Club.NotFound, 'club not found'],
     [Code.Club.NameRequired, 'enter a club name'],
     [Code.Club.NameAlreadyExists, 'a club with that name already exists'],
+    [Code.Club.RepNotEligible, 'only members can be club reps'],
   ])('%s', (code, message) => {
     expect(messageForCode({ code, field: null })).toBe(message);
   });
