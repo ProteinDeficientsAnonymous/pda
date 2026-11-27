@@ -126,7 +126,7 @@ export function FeedbackButton() {
         }}
         className="bg-brand-600 hover:bg-brand-700 focus-visible:ring-brand-200 text-brand-on flex items-center justify-center rounded-full shadow-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
-        <BugIcon className="h-6 w-6" />
+        <BugIcon className="h-7 w-7" />
       </button>
       {open ? (
         <div
