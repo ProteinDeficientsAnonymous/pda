@@ -120,7 +120,8 @@ def event_summary(event: dict[str, Any]) -> dict[str, Any]:
     summary["tags"] = sorted(tag["name"] for tag in event["tags"])
     summary["club"] = event["club"]["name"] if event.get("club") else None
     url = f"{BASE_URL}/events/{event['slug'] or event['id']}"
-    return {"id": event["id"], "status": event["status"], "url": url, **summary}
+    flags = {key: True for key in ("is_legacy", "is_partiful_import") if event.get(key)}
+    return {"id": event["id"], "status": event["status"], "url": url, **flags, **summary}
 
 
 def event_diff(event: dict[str, Any], changes: dict[str, Any]) -> dict[str, Any]:

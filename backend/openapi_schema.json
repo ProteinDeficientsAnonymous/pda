@@ -2813,6 +2813,16 @@
             "title": "Invite Permission",
             "type": "string"
           },
+          "is_legacy": {
+            "default": false,
+            "title": "Is Legacy",
+            "type": "boolean"
+          },
+          "is_partiful_import": {
+            "default": false,
+            "title": "Is Partiful Import",
+            "type": "boolean"
+          },
           "latitude": {
             "anyOf": [
               {

@@ -14,7 +14,9 @@ from ninja.responses import Status
 from notifications.service import broadcast_event_created
 from pydantic import BaseModel
 from users.helpers import visible_display_name
+from users.permissions import PermissionKey
 
+from community.attendance.shared import require_permission
 from community.cohosts.invite_helpers import reject_non_member_cohosts
 from community.events._field_validators import check_rsvp_deadline
 from community.events._transitions import handle_status_update, set_event_participants
@@ -198,6 +200,24 @@ def get_event_guests(request, event_id: str):
     return Status(200, _event_guests_out(event, viewer))
 
 
+def _guard_imported(request, payload: EventIn) -> bool:
+    if payload.is_imported:
+        require_permission(
+            request,
+            "create_imported_event",
+            PermissionKey.MANAGE_EVENTS,
+            PermissionKey.MANAGE_USERS,
+        )
+    return payload.is_imported
+
+
+def _announce_created(request, event: Event) -> None:
+    # Backfilled records skip this: no calendar ping, and a host rsvp would count as attendance.
+    auto_rsvp_host(event, request.auth)
+    if event.status == EventStatus.ACTIVE:
+        transaction.on_commit(lambda: broadcast_event_created(event))
+
+
 @router.post(
     "/events/",
     response={201: EventOut, 400: ErrorOut, 403: ErrorOut, 429: ErrorOut},
@@ -216,6 +236,7 @@ def create_event(request, payload: EventIn):
     enforce_type_tag_permission(
         request, payload.event_type, "create_event", club_id=payload.club_id
     )
+    imported = _guard_imported(request, payload)
 
     if is_invalid_typed_visibility(payload.event_type, payload.visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
@@ -234,7 +255,7 @@ def create_event(request, payload: EventIn):
             payload.start_datetime,
             payload.end_datetime,
             payload.datetime_tbd,
-            check_past=True,
+            check_past=not imported,
         )
 
     check_rsvp_deadline(payload.rsvp_deadline, payload.start_datetime, payload.datetime_tbd)
@@ -272,6 +293,8 @@ def create_event(request, payload: EventIn):
         visibility=payload.visibility,
         invite_permission=payload.invite_permission,
         status=payload.status,
+        is_legacy=payload.is_legacy,
+        is_partiful_import=payload.is_partiful_import,
         created_by=request.auth,
     )
     set_event_participants(request, event, payload.co_host_ids)
@@ -291,9 +314,8 @@ def create_event(request, payload: EventIn):
         ]
     )
     apply_official_defaults(event)
-    auto_rsvp_host(event, request.auth)
-    if event.status == EventStatus.ACTIVE:
-        transaction.on_commit(lambda: broadcast_event_created(event))
+    if not imported:
+        _announce_created(request, event)
     audit_log(
         logging.INFO,
         "event_created_draft" if event.is_draft else "event_created",

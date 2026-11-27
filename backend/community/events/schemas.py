@@ -295,6 +295,12 @@ class EventIn(BaseModel):
     club_id: UUID | None = None
     rsvp_questions: list[EventRsvpQuestionIn] = []
     status: str = Field(default=EventStatus.ACTIVE, max_length=FieldLimit.CHOICE)
+    is_legacy: bool = False
+    is_partiful_import: bool = False
+
+    @property
+    def is_imported(self) -> bool:
+        return self.is_legacy or self.is_partiful_import
 
     @model_validator(mode="after")
     def require_start_datetime_unless_tbd(self) -> "EventIn":
