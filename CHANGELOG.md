@@ -1,3 +1,10 @@
+## [0.293.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.293.0...v0.293.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* store user emails lowercase, unique case-insensitively ([#2701](https://github.com/ProteinDeficientsAnonymous/pda/issues/2701)) ([286c199](https://github.com/ProteinDeficientsAnonymous/pda/commit/286c1991dab7b06495657e0df03fa7cdb7adbc3b))
+
 # [0.293.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.292.0...v0.293.0) (2026-11-27)
 
 
