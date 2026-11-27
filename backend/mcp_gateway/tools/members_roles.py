@@ -20,7 +20,7 @@ from mcp_gateway.view_calls import call_view, validation_tool_error
 @pda_tool(
     PermissionKey.MANAGE_ROLES,
     PermissionKey.MANAGE_USERS,
-    description="list pda roles with their ids, to resolve a role name (e.g. club rep) to an id.",
+    description="list pda roles with their ids, to resolve a role name (e.g. event planner) to an id.",
 )
 async def list_roles() -> dict[str, Any]:
     roles = await call_view(list_roles_view, await current_user())

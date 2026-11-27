@@ -405,6 +405,11 @@
         "name": "NAME_ALREADY_EXISTS",
         "value": "club.name_already_exists",
         "params": []
+      },
+      {
+        "name": "REP_NOT_ELIGIBLE",
+        "value": "club.rep_not_eligible",
+        "params": []
       }
     ],
     "Reserve": [

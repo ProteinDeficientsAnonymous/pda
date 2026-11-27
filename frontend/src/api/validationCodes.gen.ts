@@ -89,6 +89,7 @@ export const Code = {
     NotFound: 'club.not_found',
     NameRequired: 'club.name_required',
     NameAlreadyExists: 'club.name_already_exists',
+    RepNotEligible: 'club.rep_not_eligible',
   },
   Reserve: {
     NotFound: 'reserve.not_found',
@@ -424,6 +425,7 @@ export type ValidationCode =
   | 'club.not_found'
   | 'club.name_required'
   | 'club.name_already_exists'
+  | 'club.rep_not_eligible'
   | 'reserve.not_found'
   | 'comment.not_found'
   | 'comment.reply_depth_exceeded'
@@ -683,6 +685,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'club.not_found': [],
   'club.name_required': [],
   'club.name_already_exists': [],
+  'club.rep_not_eligible': [],
   'reserve.not_found': [],
   'comment.not_found': [],
   'comment.reply_depth_exceeded': [],

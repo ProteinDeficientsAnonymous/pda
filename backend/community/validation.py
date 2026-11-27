@@ -91,6 +91,7 @@ class Code:
         NOT_FOUND = "club.not_found"
         NAME_REQUIRED = "club.name_required"
         NAME_ALREADY_EXISTS = "club.name_already_exists"
+        REP_NOT_ELIGIBLE = "club.rep_not_eligible"
 
     class Reserve:
         NOT_FOUND = "reserve.not_found"
