@@ -5,11 +5,20 @@ from notifications.email_types import (
     BatchSendResult,
     EmailSender,
     SendResult,
+    validate_recipient,
 )
 
 
 def is_log_only_test_recipient(to: str) -> bool:
     return to.strip().lower().endswith(f"@{TEST_EMAIL_DOMAIN}")
+
+
+def _is_valid(to: str) -> bool:
+    try:
+        validate_recipient(to)
+    except ValueError:
+        return False
+    return True
 
 
 class RoutingEmailSender:
@@ -27,9 +36,10 @@ class RoutingEmailSender:
     def send_batch(
         self, recipients: list[str], subject: str, html: str, text: str
     ) -> BatchSendResult:
-        test = [r for r in recipients if is_log_only_test_recipient(r)]
-        real = [r for r in recipients if not is_log_only_test_recipient(r)]
-        result = BatchSendResult()
+        valid = [r for r in recipients if _is_valid(r)]
+        test = [r for r in valid if is_log_only_test_recipient(r)]
+        real = [r for r in valid if not is_log_only_test_recipient(r)]
+        result = BatchSendResult(failed=len(recipients) - len(valid))
         if test:
             result = result + self.log_only.send_batch(test, subject, html, text)
         if real:
