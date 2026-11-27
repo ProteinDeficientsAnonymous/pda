@@ -42,6 +42,7 @@ const EventQuestionResponses = lazyWithRetry(
 );
 const EventCheckInReport = lazyWithRetry(() => import('@/screens/events/EventCheckInReportScreen'));
 const EventFeedback = lazyWithRetry(() => import('@/screens/events/EventFeedbackScreen'));
+const MemberEmailBlast = lazyWithRetry(() => import('@/screens/admin/MemberEmailBlastScreen'));
 const EventSpeech = lazyWithRetry(() => import('@/screens/events/EventSpeechScreen'));
 const DayOfGuide = lazyWithRetry(() => import('@/screens/events/DayOfGuideScreen'));
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
@@ -199,6 +200,10 @@ export const router = createBrowserRouter([
               {
                 element: <RequirePermission perm={Permission.EditJoinQuestions} />,
                 children: [{ path: '/admin/join-form', element: el(<JoinFormAdmin />) }],
+              },
+              {
+                element: <RequirePermission perm={Permission.SendEmailBlast} />,
+                children: [{ path: '/admin/email-blast', element: el(<MemberEmailBlast />) }],
               },
               {
                 element: <RequirePermission perm={Permission.EditSpeechTemplate} />,

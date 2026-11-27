@@ -55,6 +55,17 @@ describe('AdminHubScreen', () => {
     expect(screen.queryByText('event speech')).not.toBeInTheDocument();
   });
 
+  it('shows the email blast tile only with the send_email_blast permission', () => {
+    setAuthed(makeUserWithPermissions([Permission.SendEmailBlast]));
+    const { unmount } = renderHub();
+    expect(screen.getByText('email blast')).toBeInTheDocument();
+    unmount();
+
+    setAuthed(makeUser({ roles: [] }));
+    renderHub();
+    expect(screen.queryByText('email blast')).not.toBeInTheDocument();
+  });
+
   it.each([Permission.ViewEventPlanning, Permission.ManageEventPlanning])(
     'shows the event planning tile for a holder of only %s',
     (perm) => {
