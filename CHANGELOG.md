@@ -1,3 +1,22 @@
+# [0.297.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.296.0...v0.297.0) (2026-11-27)
+
+
+### Bug Fixes
+
+* **blast:** clear preview in handlers and drop ref-reading action list (oxlint) ([f0f5770](https://github.com/ProteinDeficientsAnonymous/pda/commit/f0f57709d84b689e2e32fe89824cd84a08b01437))
+* **blast:** satisfy exactOptionalPropertyTypes in blast hooks ([5f10cbe](https://github.com/ProteinDeficientsAnonymous/pda/commit/5f10cbeb003354373eea1d67009a1060b41a5eba))
+* block blast send when editor body is empty markup (round 1) ([8a18ed0](https://github.com/ProteinDeficientsAnonymous/pda/commit/8a18ed0d8d9148084404cb36bf4ad2baf3ddf379))
+* seed onHtmlChange from initial editor content (review round 1) ([2fc16c9](https://github.com/ProteinDeficientsAnonymous/pda/commit/2fc16c94e109d655d7c5c47d548e7593cabda42c))
+
+
+### Features
+
+* admin email blast tile, route, hooks and history list ([#2692](https://github.com/ProteinDeficientsAnonymous/pda/issues/2692)) ([1d2400e](https://github.com/ProteinDeficientsAnonymous/pda/commit/1d2400e6df3b532ec16278861d40eb58c4363caf))
+* **blast:** admin email blast tile, route and api hooks ([db8322a](https://github.com/ProteinDeficientsAnonymous/pda/commit/db8322a00823baf1fb4b8f4dbfc8e4f735ac2c91))
+* **blast:** member email blast compose, preview and send screen ([f6d36a0](https://github.com/ProteinDeficientsAnonymous/pda/commit/f6d36a0b6cdf2f096579c913469c1381723a2e86))
+* **blast:** member email blast history list ([a46935c](https://github.com/ProteinDeficientsAnonymous/pda/commit/a46935cd554d419cdda64c3e2b3ab160f135d25e))
+* member email blast compose, preview and send screen ([#2695](https://github.com/ProteinDeficientsAnonymous/pda/issues/2695)) ([6f1ef57](https://github.com/ProteinDeficientsAnonymous/pda/commit/6f1ef573fbb00033f697780b91ec901c64fa69d2))
+
 # [0.296.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.295.0...v0.296.0) (2026-11-27)
 
 
