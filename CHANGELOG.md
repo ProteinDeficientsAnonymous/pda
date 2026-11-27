@@ -1,3 +1,103 @@
+# [0.296.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.295.0...v0.296.0) (2026-11-27)
+
+
+### Features
+
+* **clubs:** pick club reps on the clubs admin page ([#2707](https://github.com/ProteinDeficientsAnonymous/pda/issues/2707)) ([22ef572](https://github.com/ProteinDeficientsAnonymous/pda/commit/22ef57278d60591f6a8e429ed0d8e53e5fd28a8c))
+
+# [0.295.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.294.0...v0.295.0) (2026-11-27)
+
+
+### Bug Fixes
+
+* address code-review findings (round 1) ([9002414](https://github.com/ProteinDeficientsAnonymous/pda/commit/90024149bf37d6e1c2b133449c0d13521fcba4bb))
+* address code-review findings (round 1) ([d25f9cc](https://github.com/ProteinDeficientsAnonymous/pda/commit/d25f9cc42d72ee5f74edd36c62bf71296c908d7a))
+* address code-review findings (round 1) ([a9ca482](https://github.com/ProteinDeficientsAnonymous/pda/commit/a9ca4827d9b1c6769a2943cd491d5757f6ad6454))
+* address code-review findings (round 2) ([ed5ab81](https://github.com/ProteinDeficientsAnonymous/pda/commit/ed5ab816c8cc8f8f2c57afa4c4068510230493cd))
+* **blast:** add messages for blast error codes ([6ad25d0](https://github.com/ProteinDeficientsAnonymous/pda/commit/6ad25d014daad7977daf5ced58cf1eda39677aa1))
+* **blast:** audit provider-raised blasts and report 0 sent while sending ([8d98f9b](https://github.com/ProteinDeficientsAnonymous/pda/commit/8d98f9bb149d928473a045a6f1854eabcd52a831))
+* **blast:** audit the blast the service returned, re-query only after a raise ([d099d43](https://github.com/ProteinDeficientsAnonymous/pda/commit/d099d431d36894c65272da1235f0c735d327d91b))
+* **blast:** block resend of a partly delivered failed blast ([7decf4c](https://github.com/ProteinDeficientsAnonymous/pda/commit/7decf4c97c47fddb71b7449cd2a06ca556ae31ed))
+* **blast:** fall back only to an unknown blast when auditing a raised send ([1374c5c](https://github.com/ProteinDeficientsAnonymous/pda/commit/1374c5c05c30ce34144ca324f0351f6a11b556f0))
+* **blast:** finalize the blast row when sending raises and assert validation codes ([8854ce0](https://github.com/ProteinDeficientsAnonymous/pda/commit/8854ce033915fef8f48579fd5d207cab7edbe9bc))
+* **blast:** keep the send error when finalizing the row also fails ([1d7d04c](https://github.com/ProteinDeficientsAnonymous/pda/commit/1d7d04cf2a65a4e7f4a350ac8b15479b7cd56df0))
+* **blast:** sanitize in render_blast and reuse validate_recipient ([d4c0cf5](https://github.com/ProteinDeficientsAnonymous/pda/commit/d4c0cf5c65cca7a782889aed10df7e0f3cef1b5e))
+
+
+### Features
+
+* add member email blast audit target type ([#2690](https://github.com/ProteinDeficientsAnonymous/pda/issues/2690)) ([df0825f](https://github.com/ProteinDeficientsAnonymous/pda/commit/df0825fbb42ec2f31c22ddc212c446992ccf2372))
+* **audit:** add member_email_blast audit target type ([9feea27](https://github.com/ProteinDeficientsAnonymous/pda/commit/9feea27dffd91c87f7677c20255f450a828b2509))
+* **blast:** add send_email_blast permission, MemberEmailBlast model and render ([35e556f](https://github.com/ProteinDeficientsAnonymous/pda/commit/35e556f4abdb2ca98744ddadf763e14a40c49db2))
+* **blast:** member email blast endpoints ([c5168dc](https://github.com/ProteinDeficientsAnonymous/pda/commit/c5168dc02c3db972e0b14caa241c874eca11cdab))
+* **blast:** send member blasts with a record-first double-send guard ([dc1e42b](https://github.com/ProteinDeficientsAnonymous/pda/commit/dc1e42b85189c583de22ca25e9b8807cd69e56b3))
+* **clubs:** club rep hooks ([#2706](https://github.com/ProteinDeficientsAnonymous/pda/issues/2706)) ([da2d568](https://github.com/ProteinDeficientsAnonymous/pda/commit/da2d568ca9c1ac21d1c8d9cf9f8b35b3ee45fb3f))
+* **email:** add Brevo batch send via messageVersions ([9bd17c6](https://github.com/ProteinDeficientsAnonymous/pda/commit/9bd17c6da1f5eef469444b2104a4b47afedc4d79))
+* **email:** route batch sends around test-domain recipients ([5bd983f](https://github.com/ProteinDeficientsAnonymous/pda/commit/5bd983fbc07d6755fb755d55451c4f6ff6935960))
+* member email blast endpoints ([#2691](https://github.com/ProteinDeficientsAnonymous/pda/issues/2691)) ([4a2acce](https://github.com/ProteinDeficientsAnonymous/pda/commit/4a2acce914d0649f1c97af14c0f2f820995d8122))
+* send member email blasts with a double-send guard ([#2688](https://github.com/ProteinDeficientsAnonymous/pda/issues/2688)) ([cc5d52e](https://github.com/ProteinDeficientsAnonymous/pda/commit/cc5d52e603b01fdf172f7b34c893eae35ce34d94))
+
+# [0.294.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.293.1...v0.294.0) (2026-11-27)
+
+
+### Features
+
+* **mcp:** list and set club reps ([#2705](https://github.com/ProteinDeficientsAnonymous/pda/issues/2705)) ([4ed4b1e](https://github.com/ProteinDeficientsAnonymous/pda/commit/4ed4b1e67cdcc1ec98520530ed5134b85d833463))
+
+## [0.293.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.293.0...v0.293.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* store user emails lowercase, unique case-insensitively ([#2701](https://github.com/ProteinDeficientsAnonymous/pda/issues/2701)) ([286c199](https://github.com/ProteinDeficientsAnonymous/pda/commit/286c1991dab7b06495657e0df03fa7cdb7adbc3b))
+
+# [0.293.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.292.0...v0.293.0) (2026-11-27)
+
+
+### Features
+
+* add Brevo batch send for bulk email ([#2684](https://github.com/ProteinDeficientsAnonymous/pda/issues/2684)) ([10b248c](https://github.com/ProteinDeficientsAnonymous/pda/commit/10b248cfb71dabeddc1d133a34599a42ab6d25b7))
+* add email blast permission, model and render ([#2687](https://github.com/ProteinDeficientsAnonymous/pda/issues/2687)) ([f7b81a9](https://github.com/ProteinDeficientsAnonymous/pda/commit/f7b81a92c10173d13049c7f6b1cfb834fa809ec5))
+* **clubs:** assign reps to clubs ([#2704](https://github.com/ProteinDeficientsAnonymous/pda/issues/2704)) ([f3b9e82](https://github.com/ProteinDeficientsAnonymous/pda/commit/f3b9e82cc9c22d78110a015f63b856b7aed2b344))
+* route batch email sends around test-domain recipients ([#2685](https://github.com/ProteinDeficientsAnonymous/pda/issues/2685)) ([8b54e9b](https://github.com/ProteinDeficientsAnonymous/pda/commit/8b54e9b67466bbe11dad09bc166d5c02d1e5d035))
+
+# [0.292.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.291.0...v0.292.0) (2026-11-27)
+
+
+### Features
+
+* **calendar:** lay out the calendar grid in eastern time ([#2713](https://github.com/ProteinDeficientsAnonymous/pda/issues/2713)) ([5ce12a0](https://github.com/ProteinDeficientsAnonymous/pda/commit/5ce12a01db606c0cd08e8831825f0aac3b5819c3))
+* **events:** take event form and poll times in eastern time ([#2698](https://github.com/ProteinDeficientsAnonymous/pda/issues/2698)) ([d2d7fff](https://github.com/ProteinDeficientsAnonymous/pda/commit/d2d7fff01ea49da8f6c39e4146d56dd3078333c3))
+
+# [0.291.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.290.0...v0.291.0) (2026-11-27)
+
+
+### Features
+
+* **events:** always show event times in eastern time ([#2697](https://github.com/ProteinDeficientsAnonymous/pda/issues/2697)) ([048661d](https://github.com/ProteinDeficientsAnonymous/pda/commit/048661db8c9d1d2513bd8d9b3e1d8de87629473c))
+
+# [0.290.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.289.0...v0.290.0) (2026-11-27)
+
+
+### Features
+
+* show a beetle icon on the feedback button ([#2686](https://github.com/ProteinDeficientsAnonymous/pda/issues/2686)) ([1b6a8b7](https://github.com/ProteinDeficientsAnonymous/pda/commit/1b6a8b7d074e4579c375ffbe9c8557567432a151))
+
+# [0.289.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.288.0...v0.289.0) (2026-11-27)
+
+
+### Features
+
+* **events:** add send_event_updates permission and event update text ([#2682](https://github.com/ProteinDeficientsAnonymous/pda/issues/2682)) ([b533bec](https://github.com/ProteinDeficientsAnonymous/pda/commit/b533becda4b2d60648ff7361bcf612e75402e416))
+* **events:** email the event update on the 14th and last day of the month ([#2683](https://github.com/ProteinDeficientsAnonymous/pda/issues/2683)) ([f2e4839](https://github.com/ProteinDeficientsAnonymous/pda/commit/f2e4839e2200bbe1b712f46a609112177c578c9d))
+
+# [0.288.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.287.1...v0.288.0) (2026-11-27)
+
+
+### Features
+
+* **mcp:** add upcoming_events tool that prints shareable event text ([#2681](https://github.com/ProteinDeficientsAnonymous/pda/issues/2681)) ([1ea150b](https://github.com/ProteinDeficientsAnonymous/pda/commit/1ea150b731fd80e48bcd181d081df4f43f84c719))
+
 ## [0.287.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.287.0...v0.287.1) (2026-11-25)
 
 

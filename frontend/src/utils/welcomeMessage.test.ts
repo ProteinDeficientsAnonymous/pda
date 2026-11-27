@@ -140,13 +140,13 @@ describe('event sections', () => {
     id: 'e1',
     slug: 'book-club',
     title: 'December Book Club',
-    startDatetime: new Date(2026, 11, 10, 18, 30),
+    startDatetime: new Date('2026-12-10T23:30:00Z'),
   };
   const vars = { name: 'Sam', senderName: 'Vetter', whatsappLink: '' };
 
   it('builds a lead-in, title with date, and event link', () => {
     expect(buildEventSection("here's a club event:", event)).toBe(
-      `here's a club event:\nDecember Book Club — thu dec 10, 6:30 pm\n${window.location.origin}/events/book-club`,
+      `here's a club event:\nDecember Book Club — thu dec 10, 6:30 pm et\n${window.location.origin}/events/book-club`,
     );
   });
 

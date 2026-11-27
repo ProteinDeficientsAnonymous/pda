@@ -2,7 +2,12 @@
 
 import logging
 
-from notifications.email_types import SendResult, validate_recipient
+from notifications.email_types import (
+    BatchSendResult,
+    SendResult,
+    mask_recipient,
+    validate_recipient,
+)
 
 logger = logging.getLogger("notifications.console_sender")
 
@@ -15,3 +20,19 @@ class ConsoleSender:
         logger.info("EMAIL to=%s subject=%s", to, subject)
         logger.info("EMAIL text body:\n%s", text)
         return SendResult(success=True)
+
+    def send_batch(
+        self, recipients: list[str], subject: str, html: str, text: str
+    ) -> BatchSendResult:
+        result = BatchSendResult()
+        for recipient in recipients:
+            masked = mask_recipient(recipient)
+            try:
+                validate_recipient(recipient)
+            except ValueError:
+                logger.warning("EMAIL invalid_recipient to=%s subject=%s", masked, subject)
+                result = result + BatchSendResult(failed=1)
+                continue
+            logger.info("EMAIL to=%s subject=%s", masked, subject)
+            result = result + BatchSendResult(accepted=1)
+        return result

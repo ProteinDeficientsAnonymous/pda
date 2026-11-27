@@ -82,12 +82,12 @@ describe('EventForm enter handling', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'pick a date & time' })[0]!);
 
     act(() => {
-      pressEnter(screen.getByLabelText('time'), form);
+      pressEnter(screen.getByLabelText('time (et)'), form);
     });
 
     expect(onSubmit).not.toHaveBeenCalled();
     expect(createEvent).not.toHaveBeenCalled();
-    expect(screen.queryByLabelText('time')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('time (et)')).not.toBeInTheDocument();
   });
 
   it('enter in a textarea is not blocked so the newline still inserts', () => {

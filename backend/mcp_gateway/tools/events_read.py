@@ -1,12 +1,16 @@
+from collections import defaultdict
+from datetime import datetime, timedelta
 from typing import Annotated, Any
 
 from asgiref.sync import sync_to_async
 from community.events.crud import get_event as get_event_view
+from community.events.crud import list_events as list_events_view
 from community.events.description_templates import get_event_description_templates
-from community.events.listing import hosted_events_q
+from community.events.listing import EventListQuery, hosted_events_q
 from community.events.tags import list_event_tags as list_event_tags_view
-from community.models import Event
+from community.models import Event, EventType
 from community.models.event import is_past_q
+from django.conf import settings
 from django.db.models import BooleanField, Case, F, When
 from django.utils import timezone
 from pydantic import Field
@@ -105,3 +109,56 @@ async def list_event_tags() -> list[dict[str, Any]]:
 async def get_official_event_templates() -> dict[str, Any]:
     templates = await call_view(get_event_description_templates, await current_user())
     return {name: {"text": text, "slots": template_slots(text)} for name, text in templates.items()}
+
+
+def _group_name(event: dict[str, Any], clubs: dict[str, str | None]) -> str:
+    return clubs.get(event["id"]) or EventType(event["event_type"]).label
+
+
+_SHARED_TYPES = (EventType.OFFICIAL, EventType.CLUB)
+
+
+def _is_shareable(event: dict[str, Any], now: datetime) -> bool:
+    """Dated official and club events that haven't started yet."""
+    if event["event_type"] not in _SHARED_TYPES or event["datetime_tbd"]:
+        return False
+    return datetime.fromisoformat(event["start_datetime"]) >= now
+
+
+def _event_lines(event: dict[str, Any]) -> list[str]:
+    day = datetime.fromisoformat(event["start_datetime"]).astimezone(settings.COMMUNITY_TZ)
+    where = f" @ {event['location']}" if event["location"] else ""
+    return [f"{day.month}/{day.day} {event['title']}{where}", _event_url(event)]
+
+
+def format_upcoming(events: list[dict[str, Any]], clubs: dict[str, str | None]) -> str:
+    """One block per club, or 'Official', in date order: a header, then date lines + urls."""
+    groups: dict[str, list[str]] = defaultdict(list)
+    for event in events:
+        groups[_group_name(event, clubs)].extend(_event_lines(event))
+    return "\n\n".join("\n".join([name, *lines]) for name, lines in groups.items())
+
+
+def _club_names(event_ids: list[str]) -> dict[str, str | None]:
+    rows = Event.objects.filter(id__in=event_ids).values_list("id", "club__name")
+    return {str(event_id): name for event_id, name in rows}
+
+
+@pda_tool(
+    description=(
+        "list upcoming dated official and club events as ready-to-share text, grouped by club "
+        "(official events under 'Official'): a group name, then 'm/d title @ location' and the "
+        "event's link. print the text as is."
+    )
+)
+async def upcoming_events(
+    days: Annotated[int, Field(ge=1, le=90, description="how many days ahead to include")] = 14,
+) -> str:
+    now = timezone.now()
+    params = EventListQuery(upcoming=True, end=now + timedelta(days=days))
+    listed = await call_view(list_events_view, await current_user(), params=params)
+    events = [e for e in listed if _is_shareable(e, now)]
+    if not events:
+        return f"no upcoming events in the next {days} days"
+    clubs = await sync_to_async(_club_names)([e["id"] for e in events])
+    return format_upcoming(events, clubs)

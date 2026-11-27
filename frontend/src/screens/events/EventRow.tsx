@@ -1,8 +1,8 @@
-import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 
 import type { Event } from '@/models/event';
 import { eventPath, EventStatus, EventType } from '@/models/event';
+import { EVENT_TZ_LABEL, formatEventTime } from '@/utils/datetime';
 
 import { EventCardBadges } from './EventCardBadges';
 
@@ -17,7 +17,7 @@ export function EventRow({ event }: { event: Event }) {
         <p className="text-foreground-tertiary truncate text-xs">
           {event.datetimeTbd || !event.startDatetime
             ? 'tbd'
-            : format(event.startDatetime, 'EEE MMM d, h:mm a').toLowerCase()}
+            : `${formatEventTime(event.startDatetime, 'EEE MMM d, h:mm a')} ${EVENT_TZ_LABEL}`}
           {event.location ? ` · ${event.location}` : ''}
         </p>
         <EventCardBadges event={event} variant="row" className="mt-1.5" />

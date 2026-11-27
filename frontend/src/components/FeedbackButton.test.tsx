@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -64,11 +64,11 @@ beforeEach(() => {
 });
 
 describe('FeedbackButton', () => {
-  it('renders the floating ? button with an accessible label for authed users', () => {
+  it('renders the floating bug button with an accessible label for authed users', () => {
     renderButton();
     const btn = screen.getByRole('button', { name: /send feedback/i });
     expect(btn).toBeInTheDocument();
-    expect(btn).toHaveTextContent('?');
+    expect(within(btn).getByTestId('bug-icon')).toBeInTheDocument();
   });
 
   it('is hidden when the user is not authenticated and has no rsvp token', () => {

@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { describe, expect, it } from 'vitest';
 
 import { renderAnswer } from './renderAnswer';
@@ -22,10 +21,11 @@ describe('renderAnswer', () => {
     expect(renderAnswer({ label: 'q', answer: { a: '1', b: '2' } })).toBe('a: 1\nb: 2');
   });
 
-  it('formats datetime poll keys as readable local times', () => {
+  it('formats datetime poll keys in et', () => {
     const iso = '2026-11-07T16:00:00.000Z';
-    const expected = format(new Date(iso), 'MMM d, yyyy h:mm a').toLowerCase();
-    expect(renderAnswer({ label: 'q', answer: { [iso]: 'yes' } })).toBe(`${expected}: yes`);
+    expect(renderAnswer({ label: 'q', answer: { [iso]: 'yes' } })).toBe(
+      'nov 7, 2026 11:00 am et: yes',
+    );
   });
 
   it('stringifies other answer shapes', () => {
