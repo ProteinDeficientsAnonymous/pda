@@ -38,9 +38,13 @@ def _entry(event: Event) -> str:
     return f"{day.month}/{day.day} {event.title}\n{url}"
 
 
+def _club_heading(club: Club) -> str:
+    return f"{club.name} ({club.requirements})" if club.requirements else club.name
+
+
 def _club_entry(event: Event) -> str:
     # A deleted club leaves its events as club events with no club; list them without a name.
-    return f"{event.club.name}\n{_entry(event)}" if event.club else _entry(event)
+    return f"{_club_heading(event.club)}\n{_entry(event)}" if event.club else _entry(event)
 
 
 def _upcoming(now: datetime) -> list[Event]:
