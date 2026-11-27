@@ -1,3 +1,10 @@
+# [0.290.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.289.0...v0.290.0) (2026-11-27)
+
+
+### Features
+
+* show a beetle icon on the feedback button ([#2686](https://github.com/ProteinDeficientsAnonymous/pda/issues/2686)) ([1b6a8b7](https://github.com/ProteinDeficientsAnonymous/pda/commit/1b6a8b7d074e4579c375ffbe9c8557567432a151))
+
 # [0.289.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.288.0...v0.289.0) (2026-11-27)
 
 
