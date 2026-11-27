@@ -1,3 +1,10 @@
+# [0.296.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.295.0...v0.296.0) (2026-11-27)
+
+
+### Features
+
+* **clubs:** pick club reps on the clubs admin page ([#2707](https://github.com/ProteinDeficientsAnonymous/pda/issues/2707)) ([22ef572](https://github.com/ProteinDeficientsAnonymous/pda/commit/22ef57278d60591f6a8e429ed0d8e53e5fd28a8c))
+
 # [0.295.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.294.0...v0.295.0) (2026-11-27)
 
 
