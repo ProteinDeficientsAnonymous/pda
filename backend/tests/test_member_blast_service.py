@@ -126,6 +126,13 @@ def test_send_failed_allows_resend(admin, two_members, sender_mock):
     assert _send(admin).status == MemberEmailBlastStatus.SENT
 
 
+def test_partly_failed_send_blocks_resend(admin, two_members, sender_mock):
+    sender_mock.return_value = BatchSendResult(accepted=1, failed=1)
+    assert _send(admin).status == MemberEmailBlastStatus.FAILED
+    _assert_refused(Code.Notification.BLAST_DUPLICATE, admin)
+    sender_mock.assert_called_once()
+
+
 def test_send_exception_marks_unknown(admin, two_members, sender_mock):
     sender_mock.side_effect = RuntimeError("boom")
     with pytest.raises(RuntimeError):

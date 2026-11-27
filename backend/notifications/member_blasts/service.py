@@ -8,6 +8,7 @@ from community.content.html_sanitize import sanitize_content_html
 from community.validation import Code, raise_validation
 from django.conf import settings
 from django.db import transaction
+from django.db.models import F, Q
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
@@ -67,15 +68,18 @@ def send_member_blast(*, sender: User, subject: str, body_html: str) -> MemberEm
     rendered = render_blast(subject, body_html)
     with transaction.atomic():
         User.objects.select_for_update().get(pk=sender.pk)
-        if MemberEmailBlast.objects.filter(
-            subject=subject,
-            body_html=body_html,
-            created_at__gte=timezone.now() - DUPLICATE_WINDOW,
+        reached_someone = Q(
             status__in=[
                 MemberEmailBlastStatus.SENDING,
                 MemberEmailBlastStatus.SENT,
                 MemberEmailBlastStatus.UNKNOWN,
-            ],
+            ]
+        ) | Q(status=MemberEmailBlastStatus.FAILED, failed_count__lt=F("recipient_count"))
+        if MemberEmailBlast.objects.filter(
+            reached_someone,
+            subject=subject,
+            body_html=body_html,
+            created_at__gte=timezone.now() - DUPLICATE_WINDOW,
         ).exists():
             raise_validation(Code.Notification.BLAST_DUPLICATE, status_code=400)
         recipients, skipped = collect_recipients()
