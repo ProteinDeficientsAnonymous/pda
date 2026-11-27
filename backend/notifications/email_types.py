@@ -21,6 +21,19 @@ class SendResult(BaseModel):
     error: str | None = None
 
 
+class BatchSendResult(BaseModel):
+    accepted: int = 0
+    failed: int = 0
+    unknown: int = 0
+
+    def __add__(self, other: "BatchSendResult") -> "BatchSendResult":
+        return BatchSendResult(
+            accepted=self.accepted + other.accepted,
+            failed=self.failed + other.failed,
+            unknown=self.unknown + other.unknown,
+        )
+
+
 def mask_recipient(to: str) -> str:
     """Return a non-reversible, low-cardinality token for log correlation.
 
@@ -49,3 +62,7 @@ def validate_recipient(to: str) -> None:
 @runtime_checkable
 class EmailSender(Protocol):
     def send(self, to: str, subject: str, html: str, text: str) -> SendResult: ...
+
+    def send_batch(
+        self, recipients: list[str], subject: str, html: str, text: str
+    ) -> BatchSendResult: ...

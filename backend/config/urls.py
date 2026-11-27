@@ -4,6 +4,7 @@ from django.urls import path, re_path
 from mcp_gateway.api import router as connect_router
 from ninja import NinjaAPI
 from notifications.api import router as notifications_router
+from notifications.member_blasts.api import router as member_blasts_router
 from notifications.sse import notification_stream
 from users.api import router as auth_router
 
@@ -18,6 +19,7 @@ api.add_router("/audit/", audit_router, tags=["audit"])
 api.add_router("/auth/", auth_router, tags=["auth"])
 api.add_router("/community/", community_router, tags=["community"])
 api.add_router("/connect/", connect_router, tags=["connect"])
+api.add_router("/notifications/email-blasts/", member_blasts_router, tags=["notifications"])
 api.add_router("/notifications/", notifications_router, tags=["notifications"])
 
 urlpatterns = [

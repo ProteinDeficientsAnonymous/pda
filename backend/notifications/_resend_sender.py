@@ -8,7 +8,12 @@ import resend
 from django.conf import settings
 from resend.exceptions import RateLimitError, ResendError
 
-from notifications.email_types import SendResult, mask_recipient, validate_recipient
+from notifications.email_types import (
+    BatchSendResult,
+    SendResult,
+    mask_recipient,
+    validate_recipient,
+)
 
 logger = logging.getLogger("notifications.resend_sender")
 
@@ -143,3 +148,8 @@ class ResendSender:
             exc_info=last_error,
         )
         return SendResult(success=False, error=str(last_error))
+
+    def send_batch(
+        self, recipients: list[str], subject: str, html: str, text: str
+    ) -> BatchSendResult:
+        raise NotImplementedError("bulk stream only")

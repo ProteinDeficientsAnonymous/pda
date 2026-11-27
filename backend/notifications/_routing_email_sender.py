@@ -1,6 +1,11 @@
 """Route sends by recipient: test-domain → log_only, otherwise → provider."""
 
-from notifications.email_types import TEST_EMAIL_DOMAIN, EmailSender, SendResult
+from notifications.email_types import (
+    TEST_EMAIL_DOMAIN,
+    BatchSendResult,
+    EmailSender,
+    SendResult,
+)
 
 
 def is_log_only_test_recipient(to: str) -> bool:
@@ -18,3 +23,15 @@ class RoutingEmailSender:
         if is_log_only_test_recipient(to):
             return self.log_only.send(to=to, subject=subject, html=html, text=text)
         return self.provider.send(to=to, subject=subject, html=html, text=text)
+
+    def send_batch(
+        self, recipients: list[str], subject: str, html: str, text: str
+    ) -> BatchSendResult:
+        test = [r for r in recipients if is_log_only_test_recipient(r)]
+        real = [r for r in recipients if not is_log_only_test_recipient(r)]
+        result = BatchSendResult()
+        if test:
+            result = result + self.log_only.send_batch(test, subject, html, text)
+        if real:
+            result = result + self.provider.send_batch(real, subject, html, text)
+        return result

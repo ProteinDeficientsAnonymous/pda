@@ -1,6 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { format } from 'date-fns';
 import { Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -84,7 +83,7 @@ describe('SurveyResponsesScreen', () => {
     expect(screen.getByText('vanilla,choc')).toBeInTheDocument();
     expect(
       screen.getByRole('cell', {
-        name: `${format(new Date('2030-01-01T18:00:00+00:00'), 'MMM d, yyyy h:mm a').toLowerCase()}: yes`,
+        name: 'jan 1, 2030 1:00 pm et: yes',
       }),
     ).toBeInTheDocument();
 

@@ -1,7 +1,7 @@
-import { isValid, parseISO } from 'date-fns';
 import type { View } from 'react-big-calendar';
 
 import { type CalendarRange, monthRange, upcomingRange } from '@/api/calendarEvents';
+import { parseEventDay, startOfEventDay } from '@/utils/datetime';
 
 const VIEWS: View[] = ['month', 'week', 'day', 'agenda'];
 
@@ -10,9 +10,7 @@ export function parseView(raw: string | null): View {
 }
 
 export function parseDate(raw: string | null): Date {
-  if (!raw) return new Date();
-  const parsed = parseISO(raw);
-  return isValid(parsed) ? parsed : new Date();
+  return (raw ? parseEventDay(raw) : null) ?? startOfEventDay(new Date());
 }
 
 // The list view shows everything upcoming; the grid views show the month around `date`.

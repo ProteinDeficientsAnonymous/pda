@@ -2956,6 +2956,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notifications/email-blasts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Blasts */
+        get: operations["notifications_member_blasts_api_list_blasts"];
+        put?: never;
+        /** Send Blast */
+        post: operations["notifications_member_blasts_api_send_blast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/email-blasts/preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Blast */
+        post: operations["notifications_member_blasts_api_preview_blast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/email-blasts/test/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send Test */
+        post: operations["notifications_member_blasts_api_send_test"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notifications/read-all/": {
         parameters: {
             query?: never;
@@ -3304,7 +3356,7 @@ export interface components {
          * AuditTargetType
          * @enum {string}
          */
-        AuditTargetType: "club" | "doc_folder" | "document" | "editable_page" | "event" | "event_poll" | "event_tag" | "faq" | "feature_flag" | "guidelines" | "homepage" | "join_form_question" | "join_request" | "mcp_connection" | "member_promotion_email" | "member_promotion_message" | "member_restored_email" | "rejection_email" | "reserve_entry" | "role" | "slot_assignment" | "speech_template" | "survey" | "survey_question" | "tentative_approval_message" | "user" | "welcome_template" | "whatsapp_link";
+        AuditTargetType: "club" | "doc_folder" | "document" | "editable_page" | "event" | "event_poll" | "event_tag" | "faq" | "feature_flag" | "guidelines" | "homepage" | "join_form_question" | "join_request" | "mcp_connection" | "member_email_blast" | "member_promotion_email" | "member_promotion_message" | "member_restored_email" | "rejection_email" | "reserve_entry" | "role" | "slot_assignment" | "speech_template" | "survey" | "survey_question" | "tentative_approval_message" | "user" | "welcome_template" | "whatsapp_link";
         /** AvailabilityIn */
         AvailabilityIn: {
             biannual_interest: components["schemas"]["BiannualInterest"];
@@ -3347,6 +3399,53 @@ export interface components {
             month: number;
             /** Year */
             year?: number | null;
+        };
+        /** BlastIn */
+        BlastIn: {
+            /** Body Html */
+            body_html: string;
+            /** Subject */
+            subject: string;
+        };
+        /** BlastOut */
+        BlastOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Failed Count */
+            failed_count: number;
+            /** Id */
+            id: string;
+            /** Sender Id */
+            sender_id: string | null;
+            /** Sent Count */
+            sent_count: number;
+            /** Skipped Count */
+            skipped_count: number;
+            /** Status */
+            status: string;
+            /** Subject */
+            subject: string;
+            /** Unknown Count */
+            unknown_count: number;
+        };
+        /** BlastPreviewOut */
+        BlastPreviewOut: {
+            /** Html */
+            html: string;
+            /** Recipient Count */
+            recipient_count: number;
+            /** Skipped Count */
+            skipped_count: number;
+            /** Text */
+            text: string;
+        };
+        /** BlastTestOut */
+        BlastTestOut: {
+            /** Sent */
+            sent: boolean;
         };
         /** BulkPaymentVerifyIn */
         BulkPaymentVerifyIn: {
@@ -15818,6 +15917,206 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationOut"][];
+                };
+            };
+        };
+    };
+    notifications_member_blasts_api_list_blasts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlastOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    notifications_member_blasts_api_send_blast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlastIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlastOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    notifications_member_blasts_api_preview_blast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlastIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlastPreviewOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    notifications_member_blasts_api_send_test: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlastIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlastTestOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };

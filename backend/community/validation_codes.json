@@ -1199,6 +1199,21 @@
         "name": "NOT_FOUND",
         "value": "notification.not_found",
         "params": []
+      },
+      {
+        "name": "BLAST_NO_RECIPIENTS",
+        "value": "notification.blast_no_recipients",
+        "params": []
+      },
+      {
+        "name": "BLAST_DUPLICATE",
+        "value": "notification.blast_duplicate",
+        "params": []
+      },
+      {
+        "name": "BLAST_NO_OWN_EMAIL",
+        "value": "notification.blast_no_own_email",
+        "params": []
       }
     ],
     "CoHostInvite": [

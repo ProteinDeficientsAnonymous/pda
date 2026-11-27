@@ -16,6 +16,7 @@ from notifications.email_sender import (
     get_email_sender,
     reset_email_sender_cache,
 )
+from notifications.email_types import BatchSendResult
 from resend.exceptions import RateLimitError, ResendError, ValidationError
 
 
@@ -43,6 +44,11 @@ class TestEmailSenderProtocol:
         class FakeSender:
             def send(self, to: str, subject: str, html: str, text: str) -> SendResult:
                 return SendResult(success=True)
+
+            def send_batch(
+                self, recipients: list[str], subject: str, html: str, text: str
+            ) -> BatchSendResult:
+                return BatchSendResult(accepted=len(recipients))
 
         assert isinstance(FakeSender(), EmailSender)
 
