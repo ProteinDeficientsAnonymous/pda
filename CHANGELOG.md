@@ -1,3 +1,13 @@
+# [0.293.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.292.0...v0.293.0) (2026-11-27)
+
+
+### Features
+
+* add Brevo batch send for bulk email ([#2684](https://github.com/ProteinDeficientsAnonymous/pda/issues/2684)) ([10b248c](https://github.com/ProteinDeficientsAnonymous/pda/commit/10b248cfb71dabeddc1d133a34599a42ab6d25b7))
+* add email blast permission, model and render ([#2687](https://github.com/ProteinDeficientsAnonymous/pda/issues/2687)) ([f7b81a9](https://github.com/ProteinDeficientsAnonymous/pda/commit/f7b81a92c10173d13049c7f6b1cfb834fa809ec5))
+* **clubs:** assign reps to clubs ([#2704](https://github.com/ProteinDeficientsAnonymous/pda/issues/2704)) ([f3b9e82](https://github.com/ProteinDeficientsAnonymous/pda/commit/f3b9e82cc9c22d78110a015f63b856b7aed2b344))
+* route batch email sends around test-domain recipients ([#2685](https://github.com/ProteinDeficientsAnonymous/pda/issues/2685)) ([8b54e9b](https://github.com/ProteinDeficientsAnonymous/pda/commit/8b54e9b67466bbe11dad09bc166d5c02d1e5d035))
+
 # [0.292.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.291.0...v0.292.0) (2026-11-27)
 
 
