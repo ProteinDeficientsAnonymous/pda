@@ -7023,6 +7023,11 @@ export interface components {
              * @default
              */
             pronouns: string;
+            /**
+             * Rep Club Ids
+             * @default []
+             */
+            rep_club_ids: string[];
             /** Restored At */
             restored_at?: string | null;
             /** Roles */

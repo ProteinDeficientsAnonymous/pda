@@ -469,10 +469,18 @@ def validated_event_format(event_format: str | None, event_type: str) -> str:
     return event_format or ""
 
 
-def enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
-    """Raise 403 if the event type requires a tag permission the user lacks."""
+def enforce_type_tag_permission(
+    request, event_type: str, endpoint: str, event_id=None, *, club_id: UUID | None = None
+) -> None:
+    """Raise 403 if the event type requires a tag permission the user lacks (club reps pass for their own club)."""
     required = _TYPE_TAG_PERMISSIONS.get(event_type)
     if required is None or request.auth.has_permission(required):
+        return
+    if (
+        event_type == EventType.CLUB
+        and club_id is not None
+        and request.auth.rep_clubs.filter(pk=club_id).exists()
+    ):
         return
     details = {"endpoint": endpoint, "required_permission": required}
     if event_id is not None:

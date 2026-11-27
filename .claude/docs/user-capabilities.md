@@ -73,6 +73,8 @@ Granted through roles; only members can hold roles. The admin role has every per
 | `manage_documents` | read and edit internal docs |
 | `import_payments` | import and verify cash app payments |
 
+Club reps (assigned on `/admin/clubs`) can create and retag club events for their own clubs without `tag_club_event`, and get monthly reminder emails.
+
 Source of truth: `backend/users/permissions.py` (`PermissionKey`), mirrored in `frontend/src/models/permissions.ts`.
 
 ## Open questions

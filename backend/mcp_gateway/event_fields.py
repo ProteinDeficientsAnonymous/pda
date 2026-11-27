@@ -34,7 +34,10 @@ class EventFields(BaseModel):
     max_attendees: int | None = Field(None, description="capacity; leave empty for unlimited")
     allow_plus_ones: bool = Field(False, description="not allowed on official or club events")
     rsvp_enabled: bool = Field(False, description="let members rsvp on the site")
-    event_type: EventType = Field(EventType.COMMUNITY, description="official/club need permission")
+    event_type: EventType = Field(
+        EventType.COMMUNITY,
+        description="official needs tag_official_event; club needs tag_club_event or being a rep of that club",
+    )
     visibility: PageVisibility = Field(PageVisibility.PUBLIC, description="official/club: public")
     event_format: EventFormat | None = Field(
         None, description="official events only: walk or restaurant"

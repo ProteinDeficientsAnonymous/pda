@@ -213,7 +213,9 @@ def create_event(request, payload: EventIn):
     if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
         raise_validation(Code.Event.INVALID_CREATE_STATUS, field="status", status_code=400)
 
-    enforce_type_tag_permission(request, payload.event_type, "create_event")
+    enforce_type_tag_permission(
+        request, payload.event_type, "create_event", club_id=payload.club_id
+    )
 
     if is_invalid_typed_visibility(payload.event_type, payload.visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
