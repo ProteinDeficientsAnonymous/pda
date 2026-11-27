@@ -2,8 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
 import type { components } from './types.gen';
+import type { MemberSearchResult } from './userSearch';
 
 type WireClub = components['schemas']['ClubOut'];
+type WireClubReps = components['schemas']['ClubRepsOut'];
+type WireClubRep = components['schemas']['ClubRepOut'];
 
 export interface Club {
   id: string;
@@ -65,6 +68,43 @@ export function useDeleteClub() {
   return useMutation({
     mutationFn: async (clubId: string): Promise<void> => {
       await apiClient.delete(`/api/community/clubs/${clubId}/`);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: clubKeys.all });
+    },
+  });
+}
+
+function repFromWire(r: WireClubRep): MemberSearchResult {
+  return { id: r.id, fullName: r.full_name, phoneNumber: r.phone_number };
+}
+
+export function useClubReps() {
+  return useQuery({
+    queryKey: [...clubKeys.all, 'reps'] as const,
+    queryFn: async (): Promise<Map<string, MemberSearchResult[]>> => {
+      const { data } = await apiClient.get<WireClubReps[]>('/api/community/clubs/reps/');
+      return new Map(data.map((c) => [c.club_id, c.reps.map(repFromWire)]));
+    },
+  });
+}
+
+/** `forClubId` overrides `clubId` for a club created in the same save, before the hook can re-render. */
+export function useSetClubReps(clubId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      userIds,
+      forClubId,
+    }: {
+      userIds: string[];
+      forClubId?: string;
+    }): Promise<MemberSearchResult[]> => {
+      const { data } = await apiClient.put<WireClubReps>(
+        `/api/community/clubs/${forClubId ?? clubId}/reps/`,
+        { user_ids: userIds },
+      );
+      return data.reps.map(repFromWire);
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: clubKeys.all });
