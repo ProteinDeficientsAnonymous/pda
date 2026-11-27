@@ -104,7 +104,9 @@ def test_list_returns_recent_blasts_newest_first(api_client, admin, headers):
 
 @pytest.mark.parametrize(("age_minutes", "expected"), [(6, "unknown"), (1, "sending")])
 def test_list_shows_stale_sending_as_unknown(api_client, admin, headers, age_minutes, expected):
-    blast = MemberEmailBlast.objects.create(sender=admin, subject="s", body_html="x", recipient_count=5)
+    blast = MemberEmailBlast.objects.create(
+        sender=admin, subject="s", body_html="x", recipient_count=5
+    )
     MemberEmailBlast.objects.filter(pk=blast.pk).update(
         created_at=timezone.now() - timedelta(minutes=age_minutes)
     )

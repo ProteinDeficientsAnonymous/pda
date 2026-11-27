@@ -131,9 +131,12 @@ def send_blast(request, payload: BlastIn):
         )
     finally:
         mine = MemberEmailBlast.objects.filter(sender=request.auth, created_at__gte=started)
-        if audited := blast or mine.filter(
-            status__in=[MemberEmailBlastStatus.UNKNOWN, MemberEmailBlastStatus.SENDING]
-        ).first():
+        if (
+            audited := blast
+            or mine.filter(
+                status__in=[MemberEmailBlastStatus.UNKNOWN, MemberEmailBlastStatus.SENDING]
+            ).first()
+        ):
             out = _blast_out(audited)
             audit_log(
                 logging.INFO,
