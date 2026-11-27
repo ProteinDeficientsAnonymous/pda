@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr, getApiStatus, hasErrorCode } from '@/api/apiErrors';
@@ -53,9 +53,10 @@ export default function MemberEmailBlastScreen() {
   const history = useMemberBlasts();
   const { confirm, element } = useConfirm();
   const payload = { subject: subject.trim(), body_html: html };
-  useEffect(() => {
+  const onHtmlChange = (next: string) => {
+    setHtml(next);
     setPreview(null);
-  }, [subject, html]);
+  };
   const ready = payload.subject !== '' && html.replace(/<(?!img)[^>]*>/g, '').trim() !== '';
 
   async function run<T>(fn: () => Promise<T>, fallback: string): Promise<T | null> {
@@ -94,19 +95,15 @@ export default function MemberEmailBlastScreen() {
     }
   }
 
-  const onPreview = async () =>
+  async function onPreview() {
     setPreview(await run(() => previewMut.mutateAsync(payload), "couldn't load preview"));
-  const onTest = async () => {
+  }
+  async function onTest() {
     const r = await run(() => testMut.mutateAsync(payload), "couldn't send test");
     if (!r) return;
     if (r.sent) toast.success('test sent to your email');
     else setError("brevo didn't accept the test — nothing was sent");
-  };
-  const actions: [string, () => Promise<void>, boolean][] = [
-    ['preview', onPreview, previewMut.isPending],
-    ['send test to me', onTest, testMut.isPending],
-    ['send to all members', onSend, sending || sendMut.isPending],
-  ];
+  }
 
   return (
     <ContentContainer>
@@ -117,20 +114,32 @@ export default function MemberEmailBlastScreen() {
           value={subject}
           onChange={(e) => {
             setSubject(e.target.value);
+            setPreview(null);
           }}
         />
-        <RichEditor value={json} onChange={setJson} onHtmlChange={setHtml} />
+        <RichEditor value={json} onChange={setJson} onHtmlChange={onHtmlChange} />
         <div className="flex flex-wrap gap-2">
-          {actions.map(([label, go, busy], i) => (
-            <Button
-              key={label}
-              variant={i === 2 ? 'primary' : 'ghost'}
-              onClick={() => void go()}
-              disabled={!ready || busy}
-            >
-              {label}
-            </Button>
-          ))}
+          <Button
+            variant="ghost"
+            onClick={() => void onPreview()}
+            disabled={!ready || previewMut.isPending}
+          >
+            preview
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => void onTest()}
+            disabled={!ready || testMut.isPending}
+          >
+            send test to me
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => void onSend()}
+            disabled={!ready || sending || sendMut.isPending}
+          >
+            send to all members
+          </Button>
         </div>
         {error ? (
           <p role="alert" className="text-sm text-red-600">
