@@ -110,6 +110,7 @@ def test_calendar_feed_does_not_scale_with_invite_only_events(
 
 @pytest.mark.django_db
 def test_me_reuses_authenticated_user(api_client, auth_headers, django_assert_num_queries):
-    with django_assert_num_queries(2):
+    # The third query is rep_club_ids; the user itself is never refetched.
+    with django_assert_num_queries(3):
         response = api_client.get("/api/auth/me/", **auth_headers)
     assert response.status_code == 200
