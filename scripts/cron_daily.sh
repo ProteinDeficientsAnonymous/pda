@@ -16,5 +16,6 @@ timeout 300 uv run --no-dev python manage.py send_rsvp_reminders || status=1
 timeout 300 uv run --no-dev python manage.py send_rsvp_deadline_reminders || status=1
 timeout 300 uv run --no-dev python manage.py send_planning_reminders || status=1
 timeout 300 uv run --no-dev python manage.py send_event_updates || status=1
+timeout 300 uv run --no-dev python manage.py send_club_event_reminders || status=1
 
 exit $status
