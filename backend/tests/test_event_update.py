@@ -69,3 +69,18 @@ def test_build_event_update_skips_hidden_and_out_of_window_events():
     _event("far", 40)
     update = build_event_update(NOW)
     assert update.text.startswith("EVENT UPDATE\n\nYou're also welcome")
+
+
+def test_build_event_update_shows_club_requirements():
+    dogs = Club.objects.create(
+        name="Doggie Meetup Club", requirements="must be dog parent // guardian"
+    )
+    books = Club.objects.create(name="Book Club")
+    walk = _club_event("Deck the Paws!", 2, dogs)
+    _club_event("December Book Club", 3, books)
+    update = build_event_update(NOW)
+    assert (
+        f"Doggie Meetup Club (must be dog parent // guardian)\n11/16 Deck the Paws!\n"
+        f"{BASE}/events/{walk.slug}"
+    ) in update.text
+    assert "Book Club\n11/17 December Book Club" in update.text
