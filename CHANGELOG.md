@@ -1,3 +1,11 @@
+# [0.301.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.300.0...v0.301.0) (2026-11-27)
+
+
+### Features
+
+* **clubs:** email reps when next month has no club event ([35bb8fd](https://github.com/ProteinDeficientsAnonymous/pda/commit/35bb8fda07c4f244cbcdd51883e232b861522bfa))
+* **clubs:** email reps when next month has no club event ([#2712](https://github.com/ProteinDeficientsAnonymous/pda/issues/2712)) ([9f1ba94](https://github.com/ProteinDeficientsAnonymous/pda/commit/9f1ba94d3211e397378cd00ed02841bf8d1559db))
+
 # [0.300.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.299.1...v0.300.0) (2026-11-27)
 
 
