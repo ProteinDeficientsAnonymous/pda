@@ -3304,7 +3304,7 @@ export interface components {
          * AuditTargetType
          * @enum {string}
          */
-        AuditTargetType: "club" | "doc_folder" | "document" | "editable_page" | "event" | "event_poll" | "event_tag" | "faq" | "feature_flag" | "guidelines" | "homepage" | "join_form_question" | "join_request" | "mcp_connection" | "member_promotion_email" | "member_promotion_message" | "member_restored_email" | "rejection_email" | "reserve_entry" | "role" | "slot_assignment" | "speech_template" | "survey" | "survey_question" | "tentative_approval_message" | "user" | "welcome_template" | "whatsapp_link";
+        AuditTargetType: "club" | "doc_folder" | "document" | "editable_page" | "event" | "event_poll" | "event_tag" | "faq" | "feature_flag" | "guidelines" | "homepage" | "join_form_question" | "join_request" | "mcp_connection" | "member_email_blast" | "member_promotion_email" | "member_promotion_message" | "member_restored_email" | "rejection_email" | "reserve_entry" | "role" | "slot_assignment" | "speech_template" | "survey" | "survey_question" | "tentative_approval_message" | "user" | "welcome_template" | "whatsapp_link";
         /** AvailabilityIn */
         AvailabilityIn: {
             biannual_interest: components["schemas"]["BiannualInterest"];
