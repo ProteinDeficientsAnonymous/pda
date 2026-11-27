@@ -1,14 +1,23 @@
-import { tz } from '@date-fns/tz';
-import { format, isSameDay } from 'date-fns';
+import { tz, TZDate } from '@date-fns/tz';
+import { format, isSameDay, startOfDay } from 'date-fns';
 
 import type { Birthday, Veganniversary } from '@/models/user';
 
 // Events happen in nyc, so show their times there no matter where the viewer is (#2679).
-const COMMUNITY_TZ = tz('America/New_York');
+export const COMMUNITY_TZ_NAME = 'America/New_York';
+const COMMUNITY_TZ = tz(COMMUNITY_TZ_NAME);
 export const EVENT_TZ_LABEL = 'et';
 
 export function formatEventTime(date: Date, pattern: string): string {
   return format(date, pattern, { in: COMMUNITY_TZ }).toLowerCase();
+}
+
+export function toEventZone(date: Date): TZDate {
+  return new TZDate(date.getTime(), COMMUNITY_TZ_NAME);
+}
+
+export function startOfEventDay(date: Date): Date {
+  return startOfDay(date, { in: COMMUNITY_TZ });
 }
 
 export function isSameEventDay(a: Date, b: Date): boolean {
