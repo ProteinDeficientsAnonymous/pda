@@ -1,3 +1,11 @@
+# [0.292.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.291.0...v0.292.0) (2026-11-27)
+
+
+### Features
+
+* **calendar:** lay out the calendar grid in eastern time ([#2713](https://github.com/ProteinDeficientsAnonymous/pda/issues/2713)) ([5ce12a0](https://github.com/ProteinDeficientsAnonymous/pda/commit/5ce12a01db606c0cd08e8831825f0aac3b5819c3))
+* **events:** take event form and poll times in eastern time ([#2698](https://github.com/ProteinDeficientsAnonymous/pda/issues/2698)) ([d2d7fff](https://github.com/ProteinDeficientsAnonymous/pda/commit/d2d7fff01ea49da8f6c39e4146d56dd3078333c3))
+
 # [0.291.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.290.0...v0.291.0) (2026-11-27)
 
 
