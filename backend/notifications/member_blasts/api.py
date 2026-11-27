@@ -43,7 +43,7 @@ class BlastTestOut(Schema):
 
 class BlastOut(Schema):
     id: str
-    status: str
+    status: MemberEmailBlastStatus
     sent_count: int
     failed_count: int
     unknown_count: int
@@ -119,7 +119,9 @@ def send_blast(request, payload: BlastIn):
         )
     finally:
         mine = MemberEmailBlast.objects.filter(sender=request.auth, created_at__gte=started)
-        if audited := blast or mine.filter(status=MemberEmailBlastStatus.UNKNOWN).first():
+        if audited := blast or mine.filter(
+            status__in=[MemberEmailBlastStatus.UNKNOWN, MemberEmailBlastStatus.SENDING]
+        ).first():
             out = _blast_out(audited)
             audit_log(
                 logging.INFO,

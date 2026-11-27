@@ -98,3 +98,27 @@ def test_list_returns_recent_blasts_newest_first(api_client, admin, headers):
     response = api_client.get(URL, **headers)
     assert [b["subject"] for b in response.json()] == ["second", "first"]
     assert response.json()[0]["sent_count"] == 0
+
+
+def test_send_audits_stuck_sending_blast_when_finalize_also_raises(
+    api_client, headers, sender, django_capture_on_commit_callbacks
+):
+    sender.side_effect = RuntimeError("provider down")
+    with (
+        patch("notifications.member_blasts.service._finalize", side_effect=RuntimeError("db")),
+        django_capture_on_commit_callbacks(execute=True),
+        pytest.raises(RuntimeError),
+    ):
+        api_client.post(URL, BODY, content_type="application/json", **headers)
+    blast = MemberEmailBlast.objects.get()
+    entry = AuditLogEntry.objects.get(action="member_email_blast_sent")
+    assert entry.target_id == str(blast.id)
+    assert entry.details["status"] == "sending"
+
+
+def test_send_returns_unknown_status(api_client, headers, sender):
+    sender.return_value = BatchSendResult(unknown=2)
+    response = api_client.post(URL, BODY, content_type="application/json", **headers)
+    assert response.status_code == 200
+    assert response.json()["status"] == "unknown"
+    assert response.json()["unknown_count"] == 2
