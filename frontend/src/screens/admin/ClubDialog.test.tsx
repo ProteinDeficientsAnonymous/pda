@@ -10,6 +10,12 @@ let createPending = false;
 vi.mock('@/api/clubs', () => ({
   useCreateClub: () => ({ mutateAsync: create, isPending: createPending }),
   useUpdateClub: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useClubReps: () => ({ data: new Map(), isPending: false, isError: false }),
+  useSetClubReps: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+vi.mock('@/api/userSearch', () => ({
+  useUserSearch: () => ({ data: [] }),
 }));
 
 beforeEach(() => {
