@@ -338,3 +338,32 @@ class TestBrevoSendBatch:
             result = BrevoSender().send_batch([], "s", "h", "t")
         mock_post.assert_not_called()
         assert result == BatchSendResult()
+
+    def test_batch_invalid_recipients_are_failed_and_not_sent(self, brevo_settings):
+        with patch.object(httpx.Client, "post", return_value=_response(201)) as mock_post:
+            result = BrevoSender().send_batch(
+                ["a@example.com", "bob@", "x@example.com\nBcc: y@example.com"], "s", "h", "t"
+            )
+        assert mock_post.call_args.kwargs["json"]["messageVersions"] == [
+            {"to": [{"email": "a@example.com"}]}
+        ]
+        assert result == BatchSendResult(accepted=1, failed=2)
+
+    def test_batch_all_invalid_makes_no_call(self, brevo_settings):
+        with patch.object(httpx.Client, "post") as mock_post:
+            result = BrevoSender().send_batch(["bob@"], "s", "h", "t")
+        mock_post.assert_not_called()
+        assert result == BatchSendResult(failed=1)
+
+    def test_batch_uses_longer_timeout(self, brevo_settings):
+        with patch.object(httpx.Client, "post", return_value=_response(201)) as mock_post:
+            BrevoSender().send_batch(["a@example.com"], "s", "h", "t")
+        assert mock_post.call_args.kwargs["timeout"] == _brevo_sender._BATCH_REQUEST_TIMEOUT_SECONDS
+
+    def test_batch_unexpected_error_keeps_earlier_chunk_totals(self, brevo_settings):
+        with patch.object(
+            httpx.Client, "post", side_effect=[_response(201), RuntimeError("boom")]
+        ) as mock_post:
+            result = BrevoSender().send_batch(_emails(1001), "s", "h", "t")
+        assert mock_post.call_count == 2
+        assert result == BatchSendResult(accepted=1000, unknown=1)
