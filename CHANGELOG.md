@@ -1,3 +1,10 @@
+# [0.294.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.293.1...v0.294.0) (2026-11-27)
+
+
+### Features
+
+* **mcp:** list and set club reps ([#2705](https://github.com/ProteinDeficientsAnonymous/pda/issues/2705)) ([4ed4b1e](https://github.com/ProteinDeficientsAnonymous/pda/commit/4ed4b1e67cdcc1ec98520530ed5134b85d833463))
+
 ## [0.293.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.293.0...v0.293.1) (2026-11-27)
 
 
