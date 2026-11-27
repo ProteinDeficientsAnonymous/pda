@@ -1,3 +1,10 @@
+# [0.288.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.287.1...v0.288.0) (2026-11-27)
+
+
+### Features
+
+* **mcp:** add upcoming_events tool that prints shareable event text ([#2681](https://github.com/ProteinDeficientsAnonymous/pda/issues/2681)) ([1ea150b](https://github.com/ProteinDeficientsAnonymous/pda/commit/1ea150b731fd80e48bcd181d081df4f43f84c719))
+
 ## [0.287.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.287.0...v0.287.1) (2026-11-25)
 
 
