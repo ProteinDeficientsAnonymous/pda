@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import type { Club } from '@/api/clubs';
-import { useClubs, useDeleteClub } from '@/api/clubs';
+import { useClubReps, useClubs, useDeleteClub } from '@/api/clubs';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
@@ -11,6 +11,7 @@ import { ClubDialog } from './ClubDialog';
 
 export default function ClubsAdminScreen() {
   const { data = [], isPending, isError } = useClubs();
+  const { data: reps } = useClubReps();
   const del = useDeleteClub();
   const [editing, setEditing] = useState<Club | null>(null);
   const [creating, setCreating] = useState(false);
@@ -72,6 +73,9 @@ export default function ClubsAdminScreen() {
                 {c.requirements ? (
                   <p className="text-muted text-xs break-words">{c.requirements}</p>
                 ) : null}
+                {reps ? (
+                  <p className="text-muted text-xs break-words">{repLine(reps.get(c.id) ?? [])}</p>
+                ) : null}
               </div>
               <div className="flex shrink-0 gap-1">
                 <Button
@@ -115,4 +119,9 @@ export default function ClubsAdminScreen() {
       {confirmElement}
     </ContentContainer>
   );
+}
+
+function repLine(reps: { fullName: string }[]): string {
+  if (reps.length === 0) return 'no reps yet';
+  return `reps: ${reps.map((r) => r.fullName.toLowerCase()).join(', ')}`;
 }
