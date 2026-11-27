@@ -108,6 +108,18 @@ def _named_reps(reps: list[dict[str, Any]]) -> list[dict[str, str]]:
     return [{"id": r["id"], "name": r["full_name"]} for r in reps]
 
 
+async def _resulting_reps(
+    current: list[dict[str, str]], added: list[User], remove_ids: list[UUID], viewer: User
+) -> list[dict[str, str]]:
+    new = [r for r in current if UUID(r["id"]) not in remove_ids]
+    known = {r["id"] for r in new}
+    for member in added:
+        if str(member.pk) not in known:
+            name = (await sync_to_async(visible_name)(member, viewer))[1]
+            new.append({"id": str(member.pk), "name": name})
+    return new
+
+
 @pda_tool(
     PermissionKey.MANAGE_EVENTS,
     description=(
@@ -144,12 +156,7 @@ async def set_club_reps(
         {"reps": []},
     )
     current = _named_reps(entry["reps"])
-    new = [r for r in current if UUID(r["id"]) not in remove_ids]
-    known = {r["id"] for r in new}
-    for member in added.values():
-        if str(member.pk) not in known:
-            name = (await sync_to_async(visible_name)(member, user))[1]
-            new.append({"id": str(member.pk), "name": name})
+    new = await _resulting_reps(current, list(added.values()), remove_ids, user)
     current_ids, new_ids = {r["id"] for r in current}, {r["id"] for r in new}
     if new_ids == current_ids:
         raise ToolError(f"{club['name']} already has exactly those reps; nothing to do")

@@ -18,6 +18,7 @@ from users.helpers import visible_display_name
 from community.cohosts.invite_helpers import reject_non_member_cohosts
 from community.events._field_validators import check_rsvp_deadline
 from community.events._transitions import handle_status_update, set_event_participants
+from community.events._type_tag import enforce_type_tag_permission
 from community.events._update import (
     apply_field_updates,
     guard_can_edit_event,
@@ -27,7 +28,6 @@ from community.events.club_field import resolve_event_club
 from community.events.helpers import (
     broadcast_capacity_change,
     build_guest_list,
-    enforce_type_tag_permission,
     event_out,
     event_rsvp_payload,
     invited_payload,
