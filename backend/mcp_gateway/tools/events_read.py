@@ -115,7 +115,13 @@ def _group_name(event: dict[str, Any], clubs: dict[str, str | None]) -> str:
     return clubs.get(event["id"]) or EventType(event["event_type"]).label
 
 
-def _starts_after(event: dict[str, Any], now: datetime) -> bool:
+_SHARED_TYPES = (EventType.OFFICIAL, EventType.CLUB)
+
+
+def _is_shareable(event: dict[str, Any], now: datetime) -> bool:
+    """Dated official and club events that haven't started yet."""
+    if event["event_type"] not in _SHARED_TYPES or event["datetime_tbd"]:
+        return False
     return datetime.fromisoformat(event["start_datetime"]) >= now
 
 
@@ -126,7 +132,7 @@ def _event_lines(event: dict[str, Any]) -> list[str]:
 
 
 def format_upcoming(events: list[dict[str, Any]], clubs: dict[str, str | None]) -> str:
-    """One block per club (else event type) in date order: a header, then a date line + url."""
+    """One block per club, or 'Official', in date order: a header, then date lines + urls."""
     groups: dict[str, list[str]] = defaultdict(list)
     for event in events:
         groups[_group_name(event, clubs)].extend(_event_lines(event))
@@ -140,9 +146,9 @@ def _club_names(event_ids: list[str]) -> dict[str, str | None]:
 
 @pda_tool(
     description=(
-        "list upcoming dated events you can see, grouped by club (or official / community), "
-        "as ready-to-share text: a group name, then 'm/d title @ location' and the event's link. "
-        "print the text as is."
+        "list upcoming dated official and club events as ready-to-share text, grouped by club "
+        "(official events under 'Official'): a group name, then 'm/d title @ location' and the "
+        "event's link. print the text as is."
     )
 )
 async def upcoming_events(
@@ -151,7 +157,7 @@ async def upcoming_events(
     now = timezone.now()
     params = EventListQuery(upcoming=True, end=now + timedelta(days=days))
     listed = await call_view(list_events_view, await current_user(), params=params)
-    events = [e for e in listed if not e["datetime_tbd"] and _starts_after(e, now)]
+    events = [e for e in listed if _is_shareable(e, now)]
     if not events:
         return f"no upcoming events in the next {days} days"
     clubs = await sync_to_async(_club_names)([e["id"] for e in events])
