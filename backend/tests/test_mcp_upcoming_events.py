@@ -49,8 +49,9 @@ def test_upcoming_events_groups_by_club_in_date_order(test_user):
     )
 
 
-def test_upcoming_events_skips_past_tbd_out_of_window_and_drafts(test_user):
+def test_upcoming_events_skips_past_underway_tbd_out_of_window_and_drafts(test_user):
     _event(test_user, "past", -3)
+    _event(test_user, "underway", -1, end_datetime=timezone.now() + timedelta(days=1))
     _event(test_user, "far", 30)
     _event(test_user, "draft", 1, status=EventStatus.DRAFT)
     Event.objects.create(title="tbd", created_by=test_user, datetime_tbd=True)

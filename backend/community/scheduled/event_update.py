@@ -38,6 +38,11 @@ def _entry(event: Event) -> str:
     return f"{day.month}/{day.day} {event.title}\n{url}"
 
 
+def _club_entry(event: Event) -> str:
+    # A deleted club leaves its events as club events with no club; list them without a name.
+    return f"{event.club.name}\n{_entry(event)}" if event.club else _entry(event)
+
+
 def _upcoming(now: datetime) -> list[Event]:
     return list(
         Event.objects.filter(
@@ -56,7 +61,7 @@ def _upcoming(now: datetime) -> list[Event]:
 def build_event_update(now: datetime) -> EventUpdate:
     events = _upcoming(now)
     official = [_entry(e) for e in events if e.event_type == EventType.OFFICIAL]
-    clubs = [f"{e.club.name}\n{_entry(e)}" for e in events if e.club is not None]
+    clubs = [_club_entry(e) for e in events if e.event_type == EventType.CLUB]
     sections = ["EVENT UPDATE"]
     if official:
         sections += ["Official PDA events:", *official, FUNDING_NOTE]
