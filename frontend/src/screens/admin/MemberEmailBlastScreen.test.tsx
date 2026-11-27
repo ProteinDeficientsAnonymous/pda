@@ -111,9 +111,7 @@ describe('MemberEmailBlastScreen', () => {
     send.mockResolvedValue({ status: 'failed', sent_count: 3, failed_count: 2 });
     await confirmSend();
     expect(
-      await screen.findByText(
-        "sent to 3 members, 2 failed — don't resend without checking brevo",
-      ),
+      await screen.findByText("sent to 3 members, 2 failed — don't resend without checking brevo"),
     ).toBeTruthy();
   });
 
