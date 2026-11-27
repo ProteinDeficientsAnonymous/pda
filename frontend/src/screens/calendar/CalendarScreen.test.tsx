@@ -137,6 +137,18 @@ describe('CalendarScreen', () => {
     });
   });
 
+  it('"go to today" picks the et date, not the browser date', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-08T02:00:00Z'));
+    const user = userEvent.setup();
+    renderCalendar('/calendar?view=day&date=2026-03-01');
+
+    await user.click(screen.getByRole('button', { name: /go to today/i }));
+
+    expect(currentSearch).toBe('?view=day&date=2026-10-07');
+    vi.useRealTimers();
+  });
+
   it('restores the navigated-to day on a fresh mount at that URL (e.g. browser back)', async () => {
     const tomorrow = addDays(new Date(), 1);
     const expectedLabel = format(tomorrow, 'EEEE, MMM d').toLowerCase();

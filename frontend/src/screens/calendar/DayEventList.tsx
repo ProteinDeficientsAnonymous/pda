@@ -1,9 +1,10 @@
-import { format, isSameDay } from 'date-fns';
+import { addDays } from 'date-fns';
 
 import { eventClass, isOfficialOrClub, type Event as PdaEvent } from '@/models/event';
 import { EventBadge } from '@/screens/events/EventBadge';
 import { EventCardBadges } from '@/screens/events/EventCardBadges';
 import { cn } from '@/utils/cn';
+import { EVENT_TZ_LABEL, formatEventTime, isSameEventDay, startOfEventDay } from '@/utils/datetime';
 
 interface Props {
   date: Date;
@@ -11,24 +12,20 @@ interface Props {
   onSelectEvent: (event: PdaEvent) => void;
 }
 
-const lower = (d: Date, f: string) => format(d, f).toLowerCase();
-
 function buildTimeRange(event: PdaEvent): string {
   const start = event.startDatetime;
   if (!start) return '';
-  const startTime = lower(start, 'h:mmaaa');
+  const startTime = formatEventTime(start, 'h:mmaaa');
   const end = event.endDatetime;
-  if (!end) return startTime;
-  const endTime = lower(end, 'h:mmaaa');
-  if (isSameDay(start, end)) return `${startTime} – ${endTime}`;
-  return `${lower(start, 'MMM d')} ${startTime} – ${lower(end, 'MMM d')} ${endTime}`;
+  if (!end) return `${startTime} ${EVENT_TZ_LABEL}`;
+  const endTime = formatEventTime(end, 'h:mmaaa');
+  if (isSameEventDay(start, end)) return `${startTime} – ${endTime} ${EVENT_TZ_LABEL}`;
+  return `${formatEventTime(start, 'MMM d')} ${startTime} – ${formatEventTime(end, 'MMM d')} ${endTime} ${EVENT_TZ_LABEL}`;
 }
 
 function eventsForDay(events: PdaEvent[], day: Date): PdaEvent[] {
-  const dayStart = new Date(day);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(dayStart);
-  dayEnd.setDate(dayEnd.getDate() + 1);
+  const dayStart = startOfEventDay(day);
+  const dayEnd = addDays(dayStart, 1);
   return events
     .filter((e) => {
       if (!e.startDatetime) return false;

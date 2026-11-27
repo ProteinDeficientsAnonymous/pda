@@ -1,13 +1,19 @@
+import { TZDate } from '@date-fns/tz';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { addMinutes, format } from 'date-fns';
 import { describe, expect, it, vi } from 'vitest';
 
 import { emptyEventFormValues, type EventFormValues } from '@/api/eventWrites';
+import { toEventZone } from '@/utils/datetime';
 
 import { EventFormBasics } from './EventFormBasics';
 
-const START = new Date(2030, 5, 15, 14, 0); // saturday, june 15 2030 · 2:00pm
-const END = new Date(2030, 6, 20, 9, 15); // saturday, july 20 2030 · 9:15am
+function et(y: number, mo: number, d: number, h = 0, mi = 0): Date {
+  return new Date(new TZDate(y, mo, d, h, mi, 'America/New_York').getTime());
+}
+
+const START = et(2030, 5, 15, 14, 0); // saturday, june 15 2030 · 2:00pm
+const END = et(2030, 6, 20, 9, 15); // saturday, july 20 2030 · 9:15am
 
 function values(overrides: Partial<EventFormValues> = {}): EventFormValues {
   return { ...emptyEventFormValues(), ...overrides };
@@ -89,11 +95,11 @@ describe('EventFormBasics ends picker defaults', () => {
 
     expect(onChange).toHaveBeenCalledTimes(1);
     const patch = onChange.mock.calls[0]![0] as Partial<EventFormValues>;
-    expect(new Date(patch.endDatetime!)).toEqual(new Date(2030, 5, 20, 14, 30));
+    expect(new Date(patch.endDatetime!)).toEqual(et(2030, 5, 20, 14, 30));
   });
 
   it('a late-night start keeps the end after the start', () => {
-    const lateStart = new Date(2030, 5, 15, 23, 45);
+    const lateStart = et(2030, 5, 15, 23, 45);
     const { onChange } = renderBasics({ startDatetime: lateStart.toISOString() });
 
     fireEvent.click(screen.getByRole('button', { name: 'pick a date & time' }));
@@ -109,7 +115,7 @@ describe('EventFormBasics ends picker defaults', () => {
   });
 
   it('a start within 30m of the next month opens that month, matching the time it will save', () => {
-    const lateStart = new Date(2030, 0, 31, 23, 45);
+    const lateStart = et(2030, 0, 31, 23, 45);
     const { onChange } = renderBasics({ startDatetime: lateStart.toISOString() });
 
     fireEvent.click(screen.getByRole('button', { name: 'pick a date & time' }));
@@ -121,7 +127,7 @@ describe('EventFormBasics ends picker defaults', () => {
 
     expect(onChange).toHaveBeenCalledTimes(1);
     const patch = onChange.mock.calls[0]![0] as Partial<EventFormValues>;
-    expect(new Date(patch.endDatetime!)).toEqual(new Date(2030, 1, 1, 10, 0));
+    expect(new Date(patch.endDatetime!)).toEqual(et(2030, 1, 1, 10, 0));
   });
 
   it('typing a time before the start snaps to start + 30m', () => {
@@ -150,7 +156,7 @@ describe('EventFormBasics ends picker defaults', () => {
       endDatetime: END.toISOString(),
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'saturday, july 20 · 9:15am' }));
+    fireEvent.click(screen.getByRole('button', { name: 'saturday, july 20 · 9:15am et' }));
 
     expect(screen.getByText('July 2030')).toBeInTheDocument();
     expect(screen.getByDisplayValue('09:15')).toBeInTheDocument();
@@ -169,14 +175,14 @@ describe('EventFormBasics ends picker defaults', () => {
     fireEvent.click(dayButton(format(new Date(), 'yyyy-MM-dd')));
     expect(onChange).toHaveBeenCalledTimes(1);
     const patch = onChange.mock.calls[0]![0] as Partial<EventFormValues>;
-    const picked = new Date(patch.startDatetime!);
+    const picked = toEventZone(new Date(patch.startDatetime!));
     expect(picked.getHours()).toBe(12);
     expect(picked.getMinutes()).toBe(0);
   });
 });
 
 describe('EventFormBasics start change keeps a valid end', () => {
-  const SAME_DAY_END = new Date(2030, 5, 15, 15, 0); // same day as START · 3:00pm
+  const SAME_DAY_END = et(2030, 5, 15, 15, 0); // same day as START · 3:00pm
 
   // Open the starts picker (start is 14:00) and type a new start time.
   function setStartTime(value: string) {
@@ -194,8 +200,8 @@ describe('EventFormBasics start change keeps a valid end', () => {
 
     expect(onChange).toHaveBeenCalledTimes(1);
     const patch = onChange.mock.calls[0]![0] as Partial<EventFormValues>;
-    expect(new Date(patch.startDatetime!)).toEqual(new Date(2030, 5, 15, 16, 0));
-    expect(new Date(patch.endDatetime!)).toEqual(new Date(2030, 5, 15, 16, 30));
+    expect(new Date(patch.startDatetime!)).toEqual(et(2030, 5, 15, 16, 0));
+    expect(new Date(patch.endDatetime!)).toEqual(et(2030, 5, 15, 16, 30));
   });
 
   it('leaves an end still after the new start untouched', () => {
@@ -209,7 +215,7 @@ describe('EventFormBasics start change keeps a valid end', () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     const patch = onChange.mock.calls[0]![0] as Partial<EventFormValues>;
     expect(Object.keys(patch)).toEqual(['startDatetime']);
-    expect(new Date(patch.startDatetime!)).toEqual(new Date(2030, 5, 15, 14, 30));
+    expect(new Date(patch.startDatetime!)).toEqual(et(2030, 5, 15, 14, 30));
     expect(patch.endDatetime).toBeUndefined();
   });
 
@@ -222,5 +228,22 @@ describe('EventFormBasics start change keeps a valid end', () => {
     const patch = onChange.mock.calls[0]![0] as Partial<EventFormValues>;
     expect(Object.keys(patch)).toEqual(['startDatetime']);
     expect(patch.endDatetime).toBeUndefined();
+  });
+});
+
+describe('EventFormBasics queued poll dates', () => {
+  it('lists queued dates in et', () => {
+    render(
+      <EventFormBasics
+        values={values({ datetimeTbd: true })}
+        onChange={vi.fn()}
+        errors={{}}
+        canTagOfficial={false}
+        canTagClub={false}
+        bufferedPollOptions={[et(2030, 5, 15, 19, 0), et(2030, 5, 14, 18, 30)]}
+      />,
+    );
+    const items = screen.getAllByRole('listitem').map((li) => li.textContent);
+    expect(items).toEqual(['fri jun 14 · 6:30 pm et', 'sat jun 15 · 7:00 pm et']);
   });
 });

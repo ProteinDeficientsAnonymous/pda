@@ -6,11 +6,13 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q, prefetch_related_objects
+from django.db.models.functions import Lower
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
 from users._transitions import transition_membership
+from users.email_utils import normalize_email
 from users.membership import (
     ALLOWED_MEMBERSHIP_TRANSITIONS,
     FULL_MEMBER_STATUSES,
@@ -172,6 +174,7 @@ class User(AbstractUser):
     weekly_digest_opt_out = models.BooleanField(default=False)
     monthly_digest_opt_out = models.BooleanField(default=False)
     monthly_digest_sent_on = models.DateField(null=True, blank=True)
+    event_update_sent_on = models.DateField(null=True, blank=True)
     whatsapp_reminder_opt_out = models.BooleanField(default=False)
     attendance_nudge_opt_out = models.BooleanField(default=False)
     host_digest_opt_out = models.BooleanField(default=False)
@@ -208,9 +211,9 @@ class User(AbstractUser):
         constraints = [
             # Unique email only when set — allows many users with null/blank email.
             models.UniqueConstraint(
-                fields=["email"],
+                Lower("email"),
                 condition=models.Q(email__isnull=False) & ~models.Q(email=""),
-                name="unique_non_blank_email",
+                name="unique_non_blank_email_ci",
             ),
         ]
 
@@ -281,6 +284,8 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         if self.phone_number:
             self.phone_number = normalize_phone_number(self.phone_number)
+        if self.email:
+            self.email = normalize_email(self.email) or ""
         super().save(*args, **kwargs)
 
     def __str__(self):

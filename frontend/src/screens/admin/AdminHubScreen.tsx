@@ -77,6 +77,12 @@ const TILES: Tile[] = [
     perm: Permission.ManageDocuments,
   },
   {
+    to: '/admin/email-blast',
+    label: 'email blast',
+    description: 'email every member at once',
+    perm: Permission.SendEmailBlast,
+  },
+  {
     to: '/admin/planning',
     label: 'event planning',
     description: "availability and who's planning what",

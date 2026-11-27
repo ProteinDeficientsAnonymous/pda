@@ -1,0 +1,9 @@
+{% autoescape off %}{{ subject|lower }}
+
+{{ body_text }}{% endautoescape %}
+
+you're receiving this because you're a pda member.
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}

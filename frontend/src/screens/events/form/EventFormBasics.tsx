@@ -1,4 +1,4 @@
-import { addMinutes, format } from 'date-fns';
+import { addMinutes } from 'date-fns';
 import { useState } from 'react';
 
 import type { EventFormValues } from '@/api/eventWrites';
@@ -9,6 +9,7 @@ import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
 import { EventType } from '@/models/event';
 import { PollCreateDialog } from '@/screens/events/poll/PollCreateDialog';
+import { EVENT_TZ_LABEL, formatEventTime } from '@/utils/datetime';
 
 import { EventFormClub } from './EventFormClub';
 import { EventFormType } from './EventFormType';
@@ -207,7 +208,9 @@ function BufferedPollSummary({
       </p>
       <ul className="text-foreground-secondary flex flex-col gap-0.5 text-xs">
         {sorted.map((d) => (
-          <li key={d.toISOString()}>{format(d, 'EEE MMM d · h:mm a').toLowerCase()}</li>
+          <li key={d.toISOString()}>
+            {formatEventTime(d, 'EEE MMM d · h:mm a')} {EVENT_TZ_LABEL}
+          </li>
         ))}
       </ul>
       <div className="flex gap-2 pt-1">

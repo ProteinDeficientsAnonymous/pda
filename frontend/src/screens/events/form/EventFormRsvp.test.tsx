@@ -1,3 +1,4 @@
+import { TZDate } from '@date-fns/tz';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -6,6 +7,10 @@ import { emptyEventFormValues, type EventFormValues } from '@/api/eventWrites';
 import { EventType } from '@/models/event';
 
 import { EventFormRsvp } from './EventFormRsvp';
+
+function et(y: number, mo: number, d: number, h = 0, mi = 0): Date {
+  return new Date(new TZDate(y, mo, d, h, mi, 'America/New_York').getTime());
+}
 
 function renderRsvp(overrides: Partial<EventFormValues> = {}, onChange = vi.fn()) {
   render(
@@ -122,14 +127,14 @@ describe('rsvp deadline field', () => {
   });
 
   it('saves a picked time as the deadline', () => {
-    const deadline = new Date(2030, 2, 1, 17, 0);
+    const deadline = et(2030, 2, 1, 17, 0);
     const { onChange } = renderRsvp({ rsvpDeadline: deadline.toISOString() });
 
     fireEvent.click(screen.getByRole('button', { name: /march 1/ }));
     fireEvent.change(screen.getByDisplayValue('17:00'), { target: { value: '09:30' } });
 
     expect(onChange).toHaveBeenCalledWith({
-      rsvpDeadline: new Date(2030, 2, 1, 9, 30).toISOString(),
+      rsvpDeadline: et(2030, 2, 1, 9, 30).toISOString(),
     });
   });
 
