@@ -124,7 +124,7 @@ export function FeedbackButton() {
           width: '3rem',
           height: '3rem',
         }}
-        className="bg-brand-600 hover:bg-brand-700 focus-visible:ring-brand-200 text-brand-on flex items-center justify-center rounded-full shadow-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
+        className="bg-brand-600 hover:bg-brand-700 focus-visible:ring-brand-200 text-brand-on dark:bg-brand-100 dark:hover:bg-brand-200 dark:text-brand-600 dark:focus-visible:ring-brand-600 flex items-center justify-center rounded-full shadow-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
         <BugIcon className="h-7 w-7" />
       </button>
