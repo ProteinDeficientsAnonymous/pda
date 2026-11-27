@@ -27,6 +27,8 @@ _BACKOFF_BASE_SECONDS = 0.5
 _RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 
 _BATCH_CHUNK_SIZE = 1000
+# A read timeout makes a whole chunk `unknown`, so give 1000-version posts more headroom.
+_BATCH_REQUEST_TIMEOUT_SECONDS = 30
 
 
 class _RetryableBrevoError(Exception):
@@ -157,9 +159,19 @@ class BrevoSender:
     def send_batch(
         self, recipients: list[str], subject: str, html: str, text: str
     ) -> BatchSendResult:
-        result = BatchSendResult()
-        for start in range(0, len(recipients), _BATCH_CHUNK_SIZE):
-            chunk = recipients[start : start + _BATCH_CHUNK_SIZE]
+        valid = []
+        for to in recipients:
+            try:
+                validate_recipient(to)
+            except ValueError:
+                continue
+            valid.append(to)
+        invalid = len(recipients) - len(valid)
+        if invalid:
+            logger.warning("brevo_batch_send_failure size=%d error=invalid_recipient", invalid)
+        result = BatchSendResult(failed=invalid)
+        for start in range(0, len(valid), _BATCH_CHUNK_SIZE):
+            chunk = valid[start : start + _BATCH_CHUNK_SIZE]
             result = result + self._send_chunk(chunk, subject, html, text)
         return result
 
@@ -175,11 +187,13 @@ class BrevoSender:
         masked_first = mask_recipient(chunk[0])
         for attempt in range(1, _MAX_ATTEMPTS + 1):
             try:
-                response = self._client.post(_API_URL, json=payload)
+                response = self._client.post(
+                    _API_URL, json=payload, timeout=_BATCH_REQUEST_TIMEOUT_SECONDS
+                )
             except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
                 error = type(exc).__name__
-            except httpx.HTTPError as exc:
-                # The request may have reached Brevo, so acceptance is unknowable.
+            except Exception as exc:
+                # The request may have reached Brevo; returning keeps earlier chunks' totals.
                 return self._batch_outcome("unknown", size, masked_first, type(exc).__name__)
             else:
                 code = response.status_code
