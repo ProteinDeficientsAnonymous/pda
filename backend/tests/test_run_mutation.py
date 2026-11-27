@@ -48,6 +48,21 @@ def test_changed_backend_files_skips_tests_and_migrations(mod, monkeypatch):
 
 
 @pytest.mark.unit
+def test_changed_backend_files_skips_management_commands_but_keeps_seed_guard(mod, monkeypatch):
+    out = (
+        "backend/community/views.py\n"
+        "backend/community/management/commands/seed_staging.py\n"
+        "backend/community/management/commands/_seed_staging_data.py\n"
+        "backend/community/dev_tools/seed_guard.py\n"
+    )
+    monkeypatch.setattr(mod.subprocess, "check_output", lambda *a, **k: out)
+    assert mod.changed_backend_files("origin/main") == [
+        "community/views.py",
+        "community/dev_tools/seed_guard.py",
+    ]
+
+
+@pytest.mark.unit
 @pytest.mark.parametrize(
     ("listed", "expected"),
     [

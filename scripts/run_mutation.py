@@ -63,11 +63,14 @@ def changed_backend_files(base: str) -> list[str]:
         cwd=REPO_ROOT,
         text=True,
     )
-    return [
-        raw.removeprefix("backend/")
-        for raw in out.splitlines()
-        if raw.endswith(".py") and "/tests/" not in raw and "/migrations/" not in raw
-    ]
+    return [raw.removeprefix("backend/") for raw in out.splitlines() if _is_mutation_target(raw)]
+
+
+def _is_mutation_target(path: str) -> bool:
+    # Management commands (incl. seed data) are slow to test: each mutant re-runs whole commands.
+    return path.endswith(".py") and not any(
+        part in path for part in ("/tests/", "/migrations/", "/management/commands/")
+    )
 
 
 def affected_tests(base: str) -> list[str] | None:
