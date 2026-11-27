@@ -58,6 +58,43 @@ def test_body_is_sanitized_and_links_absolute():
     assert f'href="{settings.FRONTEND_BASE_URL}/events/1"' in out
 
 
+BASE = settings.FRONTEND_BASE_URL.rstrip("/")
+
+
+@pytest.mark.parametrize(
+    ("href", "expected"),
+    [
+        ("/events/1", f"{BASE}/events/1"),
+        ("pda.org/x", "https://pda.org/x"),
+        ("www.example.com", "https://www.example.com"),
+        ("https://a.org/x", "https://a.org/x"),
+        ("http://a.org", "http://a.org"),
+        ("mailto:a@b.org", "mailto:a@b.org"),
+    ],
+)
+def test_clean_body_resolves_href(href, expected):
+    assert f'href="{expected}"' in clean_body(f'<a href="{href}">t</a>')
+
+
+@pytest.mark.parametrize("href", ["events/1", "?q=1", "#x"])
+def test_clean_body_unwraps_unresolvable_link(href):
+    out = clean_body(f'<p>see <a href="{href}">this <em>one</em></a> now</p>')
+    assert "<a" not in out
+    assert "see this <em>one</em> now" in out
+
+
+@pytest.mark.parametrize(
+    ("src", "expected"),
+    [("/u/a.png", f"{BASE}/u/a.png"), ("cdn.pda.org/a.png", "https://cdn.pda.org/a.png")],
+)
+def test_clean_body_resolves_img_src(src, expected):
+    assert f'src="{expected}"' in clean_body(f'<img src="{src}">')
+
+
+def test_clean_body_drops_unresolvable_img():
+    assert "<img" not in clean_body('<p>a<img src="pics/a.png">b</p>')
+
+
 def test_render_wraps_body_and_footer():
     rendered = render_blast("s", '<p>hi <a href="https://x.org/a">link</a></p><ul><li>a</li></ul>')
     assert "<p>hi " in rendered.html

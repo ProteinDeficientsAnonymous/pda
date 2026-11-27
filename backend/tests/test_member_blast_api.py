@@ -1,8 +1,10 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
 from audit.models import AuditLogEntry
 from community.validation import Code
+from django.utils import timezone
 from notifications.email_types import BatchSendResult
 from notifications.models import MemberEmailBlast
 from users.models import MembershipStatus
@@ -98,3 +100,40 @@ def test_list_returns_recent_blasts_newest_first(api_client, admin, headers):
     response = api_client.get(URL, **headers)
     assert [b["subject"] for b in response.json()] == ["second", "first"]
     assert response.json()[0]["sent_count"] == 0
+
+
+@pytest.mark.parametrize(("age_minutes", "expected"), [(6, "unknown"), (1, "sending")])
+def test_list_shows_stale_sending_as_unknown(api_client, admin, headers, age_minutes, expected):
+    blast = MemberEmailBlast.objects.create(
+        sender=admin, subject="s", body_html="x", recipient_count=5
+    )
+    MemberEmailBlast.objects.filter(pk=blast.pk).update(
+        created_at=timezone.now() - timedelta(minutes=age_minutes)
+    )
+    assert api_client.get(URL, **headers).json()[0]["status"] == expected
+    blast.refresh_from_db()
+    assert blast.status == "sending"
+
+
+def test_send_audits_stuck_sending_blast_when_finalize_also_raises(
+    api_client, headers, sender, django_capture_on_commit_callbacks
+):
+    sender.side_effect = RuntimeError("provider down")
+    with (
+        patch("notifications.member_blasts.service._finalize", side_effect=RuntimeError("db")),
+        django_capture_on_commit_callbacks(execute=True),
+        pytest.raises(RuntimeError),
+    ):
+        api_client.post(URL, BODY, content_type="application/json", **headers)
+    blast = MemberEmailBlast.objects.get()
+    entry = AuditLogEntry.objects.get(action="member_email_blast_sent")
+    assert entry.target_id == str(blast.id)
+    assert entry.details["status"] == "sending"
+
+
+def test_send_returns_unknown_status(api_client, headers, sender):
+    sender.return_value = BatchSendResult(unknown=2)
+    response = api_client.post(URL, BODY, content_type="application/json", **headers)
+    assert response.status_code == 200
+    assert response.json()["status"] == "unknown"
+    assert response.json()["unknown_count"] == 2

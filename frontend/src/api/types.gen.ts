@@ -3424,8 +3424,7 @@ export interface components {
             sent_count: number;
             /** Skipped Count */
             skipped_count: number;
-            /** Status */
-            status: string;
+            status: components["schemas"]["MemberEmailBlastStatus"];
             /** Subject */
             subject: string;
             /** Unknown Count */
@@ -5746,6 +5745,11 @@ export interface components {
              */
             profile_photo_url: string;
         };
+        /**
+         * MemberEmailBlastStatus
+         * @enum {string}
+         */
+        MemberEmailBlastStatus: "sending" | "sent" | "failed" | "unknown";
         /** MemberProfileOut */
         MemberProfileOut: {
             /**

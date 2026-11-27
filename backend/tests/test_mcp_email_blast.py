@@ -76,3 +76,7 @@ def test_confirm_without_permission_fails(admin, send_batch):
 
     assert tool_error(admin, TOOL, **BODY, confirm_token=token)
     send_batch.assert_not_called()
+
+
+def test_empty_subject_is_a_clean_error(admin, send_batch):
+    assert "subject" in tool_error(admin, TOOL, subject="", body_html="<p>hi</p>")

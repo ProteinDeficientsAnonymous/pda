@@ -944,8 +944,7 @@
             "type": "integer"
           },
           "status": {
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/MemberEmailBlastStatus"
           },
           "subject": {
             "title": "Subject",
@@ -6220,6 +6219,16 @@
         ],
         "title": "MemberDirectoryOut",
         "type": "object"
+      },
+      "MemberEmailBlastStatus": {
+        "enum": [
+          "sending",
+          "sent",
+          "failed",
+          "unknown"
+        ],
+        "title": "MemberEmailBlastStatus",
+        "type": "string"
       },
       "MemberProfileOut": {
         "properties": {

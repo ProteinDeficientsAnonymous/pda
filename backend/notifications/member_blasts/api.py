@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
@@ -22,6 +22,8 @@ from notifications.models import MemberEmailBlast, MemberEmailBlastStatus
 
 router = Router()
 
+STALE_SENDING = timedelta(minutes=5)
+
 _ERRORS = {400: ErrorOut, 403: ErrorOut, 429: ErrorOut}
 
 
@@ -43,7 +45,7 @@ class BlastTestOut(Schema):
 
 class BlastOut(Schema):
     id: str
-    status: str
+    status: MemberEmailBlastStatus
     sent_count: int
     failed_count: int
     unknown_count: int
@@ -53,12 +55,22 @@ class BlastOut(Schema):
     created_at: datetime
 
 
+def _display_status(blast: MemberEmailBlast) -> str:
+    if (
+        blast.status == MemberEmailBlastStatus.SENDING
+        and timezone.now() - blast.created_at > STALE_SENDING
+    ):
+        return MemberEmailBlastStatus.UNKNOWN
+    return blast.status
+
+
 def _blast_out(blast: MemberEmailBlast) -> BlastOut:
+    status = _display_status(blast)
     sent = blast.recipient_count - blast.failed_count - blast.unknown_count
     return BlastOut(
         id=str(blast.id),
-        status=blast.status,
-        sent_count=0 if blast.status == MemberEmailBlastStatus.SENDING else sent,
+        status=status,
+        sent_count=0 if status == MemberEmailBlastStatus.SENDING else sent,
         failed_count=blast.failed_count,
         unknown_count=blast.unknown_count,
         skipped_count=blast.skipped_count,
@@ -119,7 +131,12 @@ def send_blast(request, payload: BlastIn):
         )
     finally:
         mine = MemberEmailBlast.objects.filter(sender=request.auth, created_at__gte=started)
-        if audited := blast or mine.filter(status=MemberEmailBlastStatus.UNKNOWN).first():
+        if (
+            audited := blast
+            or mine.filter(
+                status__in=[MemberEmailBlastStatus.UNKNOWN, MemberEmailBlastStatus.SENDING]
+            ).first()
+        ):
             out = _blast_out(audited)
             audit_log(
                 logging.INFO,
