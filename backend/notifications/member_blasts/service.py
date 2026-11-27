@@ -1,4 +1,5 @@
 import html as html_lib
+import logging
 import re
 from datetime import timedelta
 from typing import NamedTuple
@@ -15,6 +16,8 @@ from users.models import User
 from notifications.email_sender import EmailStream, get_email_sender
 from notifications.email_types import BatchSendResult, validate_recipient
 from notifications.models import MemberEmailBlast, MemberEmailBlastStatus
+
+logger = logging.getLogger("pda.notifications.member_blasts")
 
 DUPLICATE_WINDOW = timedelta(minutes=15)
 
@@ -61,6 +64,7 @@ def render_blast(subject: str, body_html: str) -> RenderedBlast:
 
 def send_member_blast(*, sender: User, subject: str, body_html: str) -> MemberEmailBlast:
     body_html = clean_body(body_html)
+    rendered = render_blast(subject, body_html)
     with transaction.atomic():
         User.objects.select_for_update().get(pk=sender.pk)
         if MemberEmailBlast.objects.filter(
@@ -84,10 +88,20 @@ def send_member_blast(*, sender: User, subject: str, body_html: str) -> MemberEm
             recipient_count=len(recipients),
             skipped_count=skipped,
         )
-    rendered = render_blast(subject, body_html)
-    result = get_email_sender(EmailStream.BULK).send_batch(
-        recipients, subject, rendered.html, rendered.text
-    )
+    try:
+        result = get_email_sender(EmailStream.BULK).send_batch(
+            recipients, subject, rendered.html, rendered.text
+        )
+    except Exception:
+        logger.error("member_blast_send_exception blast_id=%s", blast.id, exc_info=True)
+        result = BatchSendResult(unknown=len(recipients))
+        _finalize(blast, result)
+        raise
+    _finalize(blast, result)
+    return blast
+
+
+def _finalize(blast: MemberEmailBlast, result: BatchSendResult) -> None:
     if result.failed == result.unknown == 0:
         blast.status = MemberEmailBlastStatus.SENT
     elif result.unknown:
@@ -98,7 +112,6 @@ def send_member_blast(*, sender: User, subject: str, body_html: str) -> MemberEm
     blast.unknown_count = result.unknown
     blast.finished_at = timezone.now()
     blast.save(update_fields=["status", "failed_count", "unknown_count", "finished_at"])
-    return blast
 
 
 def send_test_blast(*, user: User, subject: str, body_html: str) -> BatchSendResult:

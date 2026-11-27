@@ -2,7 +2,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
-from community.validation import Code
+from community.validation import Code, ValidationException
 from django.conf import settings
 from django.utils import timezone
 from notifications.email_types import BatchSendResult
@@ -94,10 +94,11 @@ def _send(admin, subject="s"):
     return send_member_blast(sender=admin, subject=subject, body_html="<p>hi</p>")
 
 
-def _refused_code(admin):
-    with pytest.raises(Exception) as exc:
-        _send(admin)
-    return str(exc.value)
+def _assert_refused(code, user):
+    with pytest.raises(ValidationException) as exc:
+        _send(user)
+    assert exc.value.code == code
+    assert exc.value.status_code == 400
 
 
 def test_send_records_sent(admin, two_members, sender_mock):
@@ -125,9 +126,19 @@ def test_send_failed_allows_resend(admin, two_members, sender_mock):
     assert _send(admin).status == MemberEmailBlastStatus.SENT
 
 
+def test_send_exception_marks_unknown(admin, two_members, sender_mock):
+    sender_mock.side_effect = RuntimeError("boom")
+    with pytest.raises(RuntimeError):
+        _send(admin)
+    blast = MemberEmailBlast.objects.get()
+    assert blast.status == MemberEmailBlastStatus.UNKNOWN
+    assert blast.unknown_count == blast.recipient_count == 2
+    assert blast.finished_at is not None
+
+
 def test_duplicate_within_window_is_refused(admin, two_members, sender_mock):
     _send(admin)
-    assert Code.Notification.BLAST_DUPLICATE in _refused_code(admin)
+    _assert_refused(Code.Notification.BLAST_DUPLICATE, admin)
     sender_mock.assert_called_once()
 
 
@@ -142,21 +153,22 @@ def test_duplicate_after_window_allowed(admin, two_members, sender_mock):
 
 def test_concurrent_duplicate_is_refused(admin, two_members, sender_mock):
     MemberEmailBlast.objects.create(sender=admin, subject="s", body_html="<p>hi</p>")
-    assert Code.Notification.BLAST_DUPLICATE in _refused_code(admin)
+    _assert_refused(Code.Notification.BLAST_DUPLICATE, admin)
     sender_mock.assert_not_called()
 
 
 def test_no_recipients_raises(sender_mock):
     lone = make_user(membership_status=MembershipStatus.NONE, email="n@x.org")
-    assert Code.Notification.BLAST_NO_RECIPIENTS in _refused_code(lone)
+    _assert_refused(Code.Notification.BLAST_NO_RECIPIENTS, lone)
     sender_mock.assert_not_called()
 
 
 def test_send_test_requires_own_email(sender_mock):
     user = make_user(membership_status=MembershipStatus.ACTIVE_MEMBER, email="")
-    with pytest.raises(Exception) as exc:
+    with pytest.raises(ValidationException) as exc:
         send_test_blast(user=user, subject="s", body_html="<p>hi</p>")
-    assert Code.Notification.BLAST_NO_OWN_EMAIL in str(exc.value)
+    assert exc.value.code == Code.Notification.BLAST_NO_OWN_EMAIL
+    assert exc.value.status_code == 400
     sender_mock.assert_not_called()
 
 
