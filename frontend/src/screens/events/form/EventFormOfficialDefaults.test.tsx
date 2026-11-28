@@ -68,12 +68,13 @@ describe('EventForm official defaults', () => {
     expect(screen.getByLabelText('cash app')).toHaveValue('$pdanyc');
   });
 
-  it('turning official off drops the untouched official questions', async () => {
+  it('turning official off drops the untouched official questions and cash app', async () => {
     renderForm();
     const toggle = screen.getByRole('switch', { name: 'make it an official pda event' });
     await userEvent.click(toggle);
     await userEvent.click(toggle);
     expect(screen.queryByText('paid?')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('cash app')).toHaveValue('');
   });
 
   it('accepts the questions the server added when an edit makes the event official', async () => {

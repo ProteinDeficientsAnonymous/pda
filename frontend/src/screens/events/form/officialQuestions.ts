@@ -1,6 +1,6 @@
 import { newRsvpQuestionId } from '@/api/eventRsvpQuestions';
 import type { OfficialEventDefaults, OfficialRsvpQuestion } from '@/api/officialEventDefaults';
-import { fromCashAppUrl } from '@/utils/paymentHandle';
+import { fromCashAppUrl, toCashAppUrl } from '@/utils/paymentHandle';
 
 import type { RsvpQuestionDraft } from '../rsvpQuestions';
 
@@ -38,17 +38,24 @@ export interface OfficialExtras {
   questions: (questions: RsvpQuestionDraft[]) => RsvpQuestionDraft[];
 }
 
-// The caller applies both; the cash app default only fills an empty field.
+function officialCashappValues(
+  defaultLink: string,
+  official: boolean,
+  currentCashapp: string,
+): OfficialExtras['values'] {
+  if (official) return currentCashapp.trim() ? {} : { cashappLink: fromCashAppUrl(defaultLink) };
+  const isDefault = toCashAppUrl(currentCashapp).toLowerCase() === defaultLink.toLowerCase();
+  return isDefault ? { cashappLink: '' } : {};
+}
+
+// The caller applies both; the cash app default fills an empty field and clears once unofficial.
 export function officialExtras(
   defaults: OfficialEventDefaults,
   official: boolean,
   currentCashapp: string,
 ): OfficialExtras {
   return {
-    values:
-      official && !currentCashapp.trim()
-        ? { cashappLink: fromCashAppUrl(defaults.cashappLink) }
-        : {},
+    values: officialCashappValues(defaults.cashappLink, official, currentCashapp),
     questions: (questions) => withOfficialQuestions(questions, official, defaults.rsvpQuestions),
   };
 }
