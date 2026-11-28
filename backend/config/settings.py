@@ -95,7 +95,16 @@ CACHES = {
     },
 }
 
+JWT_MIN_KEY_BYTES = 32
+_jwt_key_env = os.environ.get("JWT_SIGNING_KEY", "")
+if _jwt_key_env and len(_jwt_key_env.encode()) < JWT_MIN_KEY_BYTES:
+    raise ValueError(f"JWT_SIGNING_KEY must be at least {JWT_MIN_KEY_BYTES} bytes for HS256")
+JWT_SIGNING_KEY = _jwt_key_env or SECRET_KEY
+# Tokens signed with SECRET_KEY before JWT_SIGNING_KEY was set keep verifying until they expire.
+JWT_LEGACY_VERIFYING_KEY = SECRET_KEY if JWT_SIGNING_KEY != SECRET_KEY else None
+
 NINJA_JWT = {
+    "SIGNING_KEY": JWT_SIGNING_KEY,
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "AUTH_HEADER_TYPES": ("Bearer",),
