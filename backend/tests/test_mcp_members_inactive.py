@@ -5,7 +5,6 @@ import pytest
 from community.attendance.analytics import (
     EMPTY_MEMBER_STATS,
     MemberAttendanceStats,
-    is_pause_candidate,
     member_stats_by_user,
 )
 from community.models import (
@@ -115,8 +114,10 @@ def test_attendance_matches_the_analytics_screen(admin):
         row = rows[str(member.id)]
         assert _parse(row["last_qualifying_at"]) == stats.last_qualifying_at
         assert row["qualifying_count_12mo"] == stats.qualifying_count_12mo
-    pause_candidates = {str(m.id) for m in members if is_pause_candidate(stats_by_id[m.pk])}
-    assert member_ids(admin, inactive_for_days=365) == pause_candidates
+    inactive_on_screen = {
+        str(m.id) for m in members if stats_by_id[m.pk].qualifying_count_12mo == 0
+    }
+    assert member_ids(admin, inactive_for_days=365) == inactive_on_screen
 
 
 def test_varied_members_get_the_expected_attendance(admin):
@@ -150,7 +151,7 @@ def test_window_boundary_matches_the_analytics_screen(admin, monkeypatch):
     for member in (on_edge, just_before):
         stats = stats_by_id[member.pk]
         assert rows[str(member.id)]["qualifying_count_12mo"] == stats.qualifying_count_12mo
-        assert is_pause_candidate(stats) == (str(member.id) in inactive)
+        assert (stats.qualifying_count_12mo == 0) == (str(member.id) in inactive)
 
 
 def test_inactive_for_days_counts_never_attended(admin):

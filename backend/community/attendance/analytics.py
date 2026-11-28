@@ -2,7 +2,7 @@
 endpoint and join-request attendance history."""
 
 from collections.abc import Iterable
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import NamedTuple, Self
 from uuid import UUID
 
@@ -100,9 +100,14 @@ def months_since(last_qualifying_at: datetime | None, now: datetime | None = Non
     return delta.days // 30
 
 
-def is_pause_candidate(stats: MemberAttendanceStats) -> bool:
-    """No qualifying attendance in the trailing window (or ever). Same window as the compliant count, so the two never disagree."""
-    return stats.qualifying_count_12mo == 0
+def is_pause_candidate(stats: MemberAttendanceStats, deadline: date, today: date) -> bool:
+    """No qualifying attendance in the window, or under the 2-event minimum past their deadline."""
+    count = stats.qualifying_count_12mo
+    return count == 0 or (count < COMPLIANCE_MIN_COUNT and today >= deadline)
+
+
+def needs_second_event(stats: MemberAttendanceStats, deadline: date, today: date) -> bool:
+    return stats.qualifying_count_12mo == 1 and today < deadline
 
 
 class AttendedEventOut(BaseModel):

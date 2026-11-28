@@ -12,6 +12,7 @@ from community.models import (
     EventType,
     RSVPStatus,
 )
+from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 from users._attendance_pause import apply_attendance_pause
 from users.models import MembershipStatus, User
@@ -282,3 +283,60 @@ class TestMemberAttendanceAnalyticsEndpoint:
         row = next(r for r in response.json()["members"] if r["user_id"] == str(member.pk))
         assert row["qualifying_count_12mo"] == 1
         assert row["last_qualifying_at"] is not None
+
+
+def _attended(host_user, user, days_ago):
+    EventRSVP.objects.create(
+        event=_make_event(host_user, f"club {days_ago}", days_ago=days_ago),
+        user=user,
+        status=RSVPStatus.ATTENDING,
+        attendance=AttendanceStatus.ATTENDED,
+    )
+
+
+def _row(api_client, admin, user):
+    response = api_client.get(MEMBERS_URL, **auth_headers_for(admin))
+    return next(r for r in response.json()["members"] if r["user_id"] == str(user.pk))
+
+
+@pytest.mark.django_db
+class TestTwoEventDeadline:
+    @pytest.fixture
+    def longtime_member(self, member):
+        User.objects.filter(pk=member.pk).update(date_joined=timezone.now() - timedelta(days=900))
+        return member
+
+    def test_one_event_before_deadline_needs_second_event(
+        self, api_client, host_user, longtime_member, events_admin, settings
+    ):
+        settings.ATTENDANCE_CLOCK_FLOOR = (timezone.now() - timedelta(days=30)).date()
+        _attended(host_user, longtime_member, days_ago=5)
+        row = _row(api_client, events_admin, longtime_member)
+        assert (
+            row["deadline"]
+            == (settings.ATTENDANCE_CLOCK_FLOOR + relativedelta(months=12)).isoformat()
+        )
+        assert row["needs_second_event"] is True
+        assert row["is_pause_candidate"] is False
+
+    def test_under_two_past_deadline_is_pause_candidate(
+        self, api_client, host_user, longtime_member, events_admin, settings
+    ):
+        settings.ATTENDANCE_CLOCK_FLOOR = (timezone.now() - timedelta(days=800)).date()
+        _attended(host_user, longtime_member, days_ago=5)
+        _attended(host_user, longtime_member, days_ago=400)
+        row = _row(api_client, events_admin, longtime_member)
+        assert row["qualifying_count_12mo"] == 1
+        assert row["is_pause_candidate"] is True
+        assert row["needs_second_event"] is False
+
+    def test_deadline_runs_from_second_last_event(
+        self, api_client, host_user, longtime_member, events_admin, settings
+    ):
+        settings.ATTENDANCE_CLOCK_FLOOR = (timezone.now() - timedelta(days=800)).date()
+        _attended(host_user, longtime_member, days_ago=5)
+        _attended(host_user, longtime_member, days_ago=60)
+        second_last = (timezone.now() - timedelta(days=60)).date()
+        row = _row(api_client, events_admin, longtime_member)
+        assert row["deadline"] == (second_last + relativedelta(months=12)).isoformat()
+        assert row["is_pause_candidate"] is False

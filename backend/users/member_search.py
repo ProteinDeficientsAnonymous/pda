@@ -57,8 +57,7 @@ class MemberFilters(BaseModel):
         None,
         description="no qualifying event starting on or after n days ago (a future-dated one "
         "counts too), counting members who never attended one. use "
-        f"{QUALIFYING_WINDOW_DAYS} when asked for inactive members without a number: that's the "
-        f"analytics screen's pause-candidate window. {_QUALIFYING}",
+        f"{QUALIFYING_WINDOW_DAYS} when asked for inactive members without a number. {_QUALIFYING}",
     )
     never_attended: bool | None = Field(
         None,
@@ -106,6 +105,16 @@ def with_last_qualifying_at(qs: QuerySet[User]) -> QuerySet[User]:
     """
     latest = qualifying_rsvps().order_by("-event__start_datetime").values("event__start_datetime")
     return qs.annotate(last_qualifying_at=Subquery(latest[:1]))
+
+
+def with_second_last_qualifying_at(qs: QuerySet[User]) -> QuerySet[User]:
+    """Annotate second_last_qualifying_at: start of their 2nd-latest qualifying event, null if none.
+
+    param(qs): users to annotate
+    return(QuerySet[User]): qs with a second_last_qualifying_at datetime
+    """
+    latest = qualifying_rsvps().order_by("-event__start_datetime").values("event__start_datetime")
+    return qs.annotate(second_last_qualifying_at=Subquery(latest[1:2]))
 
 
 def with_qualifying_count(qs: QuerySet[User], now: datetime) -> QuerySet[User]:
