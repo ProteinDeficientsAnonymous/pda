@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
@@ -51,8 +51,15 @@ def anchor_from(
     if last_attended is not None:
         candidates.append(last_attended)
     if grace_until is not None:
-        candidates.append(grace_until - _MILESTONE_OFFSETS[AttendanceMilestone.M12])
+        candidates.append(_grace_anchor(grace_until))
     return max(candidates)
+
+
+def _grace_anchor(grace_until: date) -> date:
+    year = _MILESTONE_OFFSETS[AttendanceMilestone.M12]
+    anchor = grace_until - year
+    # relativedelta clamps Feb 29 to Feb 28, which would land the deadline a day before the grace.
+    return anchor if anchor + year >= grace_until else anchor + timedelta(days=1)
 
 
 def attendance_deadline(
