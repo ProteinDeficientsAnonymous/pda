@@ -166,6 +166,13 @@ class TestAttendanceDeadline:
     def test_new_members_get_twelve_months_from_joining(self):
         assert attendance_deadline(date(2026, 10, 2), None) == date(2027, 10, 2)
 
+    def test_grace_pushes_the_deadline_to_the_grace_date(self):
+        assert attendance_deadline(date(2020, 1, 1), None, date(2028, 6, 1)) == date(2028, 6, 1)
+
+    def test_leap_day_grace_is_not_a_day_early(self):
+        # no anchor + 12mo lands on Feb 29, so the nearest deadline that isn't early is Mar 1
+        assert attendance_deadline(date(2020, 1, 1), None, date(2028, 2, 29)) == date(2028, 3, 1)
+
 
 class TestMilestoneDueDate:
     def test_m10_is_10_months_after_anchor(self):

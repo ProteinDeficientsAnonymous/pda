@@ -1,6 +1,6 @@
 hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
-a friendly nudge: we'd love to see you at an official or club event by {{ deadline }}, so you stay at 2 in the last 12 months.
+a friendly nudge: we'd love to see you at an event or two by {{ deadline }}, so you're at 2 official or club events in the last 12 months.
 
 here's what's on the calendar.
 
