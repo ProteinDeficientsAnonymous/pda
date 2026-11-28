@@ -122,3 +122,73 @@ async def archive_member(
     await use_confirm_token(confirm_token, bound)
     await call_view(delete_user, user, user_id=str(member.pk))
     return {"member": summary, "archived": True, **impact}
+
+
+MAX_BULK_PAUSE = 50
+
+
+@pda_tool(
+    PermissionKey.MANAGE_USERS,
+    description=(
+        "attendance-pause several members at once (the monthly pass), same effect per member "
+        f"as set_attendance_pause. up to {MAX_BULK_PAUSE} member ids. members already "
+        "attendance-paused are listed under skipped and left alone. the first call changes "
+        "nothing and returns each member with the events affected (role and outcome) and one "
+        "confirm_token for the whole batch: show all of it, get an explicit yes, then call "
+        "again with the same member_ids and the token. a member whose pause fails is listed "
+        "under failed with the reason; the rest still go through."
+    ),
+)
+async def set_attendance_pauses(
+    member_ids: Annotated[
+        list[UUID],
+        Field(
+            min_length=1,
+            max_length=MAX_BULK_PAUSE,
+            description="the members' ids, from find_members",
+        ),
+    ],
+    confirm_token: ConfirmToken = None,
+) -> dict[str, Any]:
+    user = await current_user()
+    if user.pk in member_ids:
+        raise ToolError("you can't attendance-pause yourself; drop your own id")
+    members = [await _member(member_id) for member_id in dict.fromkeys(member_ids)]
+    skipped = [_summary(m) for m in members if m.is_attendance_paused]
+    batch = []
+    for member in members:
+        if member.is_attendance_paused:
+            continue
+        preview = await call_view(attendance_pause_preview, user, user_id=member.pk)
+        batch.append({"member": _summary(member), "events": preview["events"]})
+    if not batch:
+        raise ToolError("everyone listed is already attendance-paused; nothing to do")
+    bound = Confirmed(
+        user.pk,
+        target_id=",".join(sorted(b["member"]["id"] for b in batch)),
+        action="set_attendance_pauses",
+        changes=True,
+        state=batch,
+    )
+    if confirm_token is None:
+        return {"to_pause": batch, "skipped": skipped, "confirm_token": issue_confirm_token(bound)}
+
+    await use_confirm_token(confirm_token, bound)
+    paused, failed = [], []
+    for item in batch:
+        try:
+            await call_view(
+                update_user,
+                user,
+                user_id=item["member"]["id"],
+                payload=UserPatchIn(attendance_paused=True),
+            )
+        except ToolError as exc:
+            failed.append({**item["member"], "error": str(exc)})
+            continue
+        paused.append(item)
+    return {"paused": paused, "failed": failed, "skipped": skipped}
+
+
+def _summary(member: User) -> dict[str, str]:
+    return {"id": str(member.pk), "name": member.full_name}
