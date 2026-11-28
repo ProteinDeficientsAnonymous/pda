@@ -1,3 +1,10 @@
+# [0.303.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.302.0...v0.303.0) (2026-11-28)
+
+
+### Features
+
+* **mcp:** archive_member tool ([#2719](https://github.com/ProteinDeficientsAnonymous/pda/issues/2719)) ([095bd45](https://github.com/ProteinDeficientsAnonymous/pda/commit/095bd4557efb9e4b63f410d620ce6bbde93bcbe0))
+
 # [0.302.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.301.1...v0.302.0) (2026-11-28)
 
 
