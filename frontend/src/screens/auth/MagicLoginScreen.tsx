@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/Button';
 import { postAuthRedirect } from '@/models/user';
 
 import { AuthLayout } from './AuthLayout';
+import { ExpiredLinkNewLink } from './ExpiredLinkNewLink';
 import { ExpiredLinkPhoneForm } from './ExpiredLinkPhoneForm';
 import { safeRedirect } from './redirect';
 
-type State = 'pending' | 'expired' | 'cross_user' | 'blocked' | 'rejected';
+type State = 'pending' | 'expired' | 'expired_no_password' | 'cross_user' | 'blocked' | 'rejected';
 
 export default function MagicLoginScreen() {
   const { token } = useParams();
@@ -47,6 +48,11 @@ export default function MagicLoginScreen() {
         void navigate(safeRedirect(params.get('redirect')), { replace: true });
       })
       .catch((err: unknown) => {
+        // the backend sends this code only when the link's account has no password
+        if (hasErrorCode(err, Code.Auth.MagicLinkAlreadyUsed)) {
+          setState('expired_no_password');
+          return;
+        }
         if (hasErrorCode(err, Code.Auth.AccountRejected)) {
           setState('rejected');
           return;
@@ -116,6 +122,14 @@ export default function MagicLoginScreen() {
         >
           back to calendar
         </Button>
+      </AuthLayout>
+    );
+  }
+
+  if (state === 'expired_no_password') {
+    return (
+      <AuthLayout title="link expired" subtitle="this login link didn't work">
+        <ExpiredLinkNewLink />
       </AuthLayout>
     );
   }

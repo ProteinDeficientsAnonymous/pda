@@ -72,13 +72,23 @@ describe('MagicLoginScreen', () => {
   });
 
   it('should send an expired link to the password step with the entered phone', async () => {
-    magicLoginMock.mockRejectedValueOnce(apiError(400, Code.Auth.MagicLinkAlreadyUsed));
+    magicLoginMock.mockRejectedValueOnce(apiError(400, Code.Auth.MagicLinkExpiredHasPassword));
     renderAt('tok-expired');
     fireEvent.change(await screen.findByLabelText(/phone number/i), {
       target: { value: '+12025550101' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'continue' }));
     expect(await screen.findByText('login page +12025550101')).toBeInTheDocument();
+  });
+
+  it('should offer a new link instead of the phone prompt when there is no password', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(400, Code.Auth.MagicLinkAlreadyUsed));
+    renderAt('tok-no-pw');
+    expect(
+      await screen.findByText("you haven't set a password yet — grab a fresh link below"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'send me a new link' })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/phone number/i)).toBeNull();
   });
 
   it('should reject an invalid phone on the expired-link screen', async () => {
