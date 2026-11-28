@@ -1,3 +1,10 @@
+# [0.306.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.305.1...v0.306.0) (2026-11-28)
+
+
+### Features
+
+* **planning:** due planned events the day before the 1st-of-month announcement ([#2730](https://github.com/ProteinDeficientsAnonymous/pda/issues/2730)) ([97244a1](https://github.com/ProteinDeficientsAnonymous/pda/commit/97244a16559f120ffa8f535404f7bfcb07db363e))
+
 ## [0.305.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.305.0...v0.305.1) (2026-11-28)
 
 
