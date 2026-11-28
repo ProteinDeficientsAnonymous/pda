@@ -9,17 +9,10 @@ import { Button } from '@/components/ui/Button';
 import { postAuthRedirect } from '@/models/user';
 
 import { AuthLayout } from './AuthLayout';
+import { ExpiredLinkPhoneForm } from './ExpiredLinkPhoneForm';
 import { safeRedirect } from './redirect';
-import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
 
-type State =
-  | 'pending'
-  | 'expired'
-  | 'expired_no_password'
-  | 'expired_has_password'
-  | 'cross_user'
-  | 'blocked'
-  | 'rejected';
+type State = 'pending' | 'expired' | 'cross_user' | 'blocked' | 'rejected';
 
 export default function MagicLoginScreen() {
   const { token } = useParams();
@@ -28,7 +21,6 @@ export default function MagicLoginScreen() {
   const [params] = useSearchParams();
   const [state, setState] = useState<State>('pending');
   const [blockedMessage, setBlockedMessage] = useState('');
-  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   // Magic-login tokens are single-use. Guard against StrictMode double-fire
   // and any re-mount from upstream (e.g. AuthBoot) so we only spend the
   // token once per component lifetime.
@@ -55,14 +47,6 @@ export default function MagicLoginScreen() {
         void navigate(safeRedirect(params.get('redirect')), { replace: true });
       })
       .catch((err: unknown) => {
-        if (hasErrorCode(err, Code.Auth.MagicLinkExpiredHasPassword)) {
-          setState('expired_has_password');
-          return;
-        }
-        if (hasErrorCode(err, Code.Auth.MagicLinkAlreadyUsed)) {
-          setState('expired_no_password');
-          return;
-        }
         if (hasErrorCode(err, Code.Auth.AccountRejected)) {
           setState('rejected');
           return;
@@ -136,73 +120,10 @@ export default function MagicLoginScreen() {
     );
   }
 
-  if (state === 'expired_has_password') {
+  if (state === 'expired') {
     return (
-      <AuthLayout
-        title="link expired"
-        subtitle="you already used your magic link and created a password"
-      >
-        <Button
-          fullWidth
-          className="mt-4"
-          onClick={() => {
-            void navigate('/login', { replace: true });
-          }}
-        >
-          sign in with your password
-        </Button>
-        <p className="text-foreground-tertiary mt-4 text-sm">
-          forgot it?{' '}
-          <button
-            type="button"
-            className="text-brand-700 hover:text-brand-900"
-            onClick={() => {
-              setLinkDialogOpen(true);
-            }}
-          >
-            send me a new link
-          </button>
-        </p>
-        <RequestLoginLinkDialog
-          open={linkDialogOpen}
-          onClose={() => {
-            setLinkDialogOpen(false);
-          }}
-        />
-      </AuthLayout>
-    );
-  }
-
-  if (state === 'expired' || state === 'expired_no_password') {
-    return (
-      <AuthLayout title="link expired" subtitle="this login link didn't work">
-        <p className="text-foreground-tertiary text-sm">
-          {state === 'expired_no_password' ? (
-            'grab a fresh one below'
-          ) : (
-            <>
-              grab a fresh one below, or{' '}
-              <a href="/login" className="text-brand-700 hover:text-brand-900">
-                sign in with your password
-              </a>
-            </>
-          )}
-        </p>
-        <Button
-          fullWidth
-          className="mt-4"
-          onClick={() => {
-            setLinkDialogOpen(true);
-          }}
-        >
-          send me a new link
-        </Button>
-        <RequestLoginLinkDialog
-          open={linkDialogOpen}
-          onClose={() => {
-            setLinkDialogOpen(false);
-          }}
-        />
+      <AuthLayout title="link expired" subtitle="pop in your number to sign in">
+        <ExpiredLinkPhoneForm />
       </AuthLayout>
     );
   }

@@ -54,29 +54,6 @@ class TestMagicLogin:
         response = api_client.get(f"/api/auth/magic-login/{magic.token}/")
         assert response.status_code == 400
 
-    def test_expired_link_for_user_with_password_returns_has_password_code(
-        self, api_client, test_user
-    ):
-        assert test_user.has_usable_password()
-        magic = MagicLoginToken.objects.create(
-            user=test_user, expires_at=timezone.now() - timedelta(minutes=1)
-        )
-        response = api_client.get(f"/api/auth/magic-login/{magic.token}/")
-        assert response.status_code == 400
-        assert_error_code(response, Code.Auth.MAGIC_LINK_EXPIRED_HAS_PASSWORD)
-
-    def test_expired_link_for_user_without_password_returns_already_used(
-        self, api_client, test_user
-    ):
-        test_user.set_unusable_password()
-        test_user.save(update_fields=["password"])
-        magic = MagicLoginToken.objects.create(
-            user=test_user, expires_at=timezone.now() - timedelta(minutes=1)
-        )
-        response = api_client.get(f"/api/auth/magic-login/{magic.token}/")
-        assert response.status_code == 400
-        assert_error_code(response, Code.Auth.MAGIC_LINK_ALREADY_USED)
-
     def test_magic_login_paused_user_returns_403(self, api_client, test_user):
         test_user.save(update_fields=test_user.apply_guidelines_pause(by=None))
         magic = MagicLoginToken.create_for_user(test_user)
@@ -143,7 +120,7 @@ class TestMagicLogin:
         assert first.status_code == 200
         second = api_client.get(f"/api/auth/magic-login/{magic.token}/")
         assert second.status_code == 400
-        assert_error_code(second, Code.Auth.MAGIC_LINK_EXPIRED_HAS_PASSWORD)
+        assert_error_code(second, Code.Auth.MAGIC_LINK_ALREADY_USED)
 
     def test_magic_login_rate_limited(self, api_client, test_user):
 

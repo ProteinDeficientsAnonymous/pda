@@ -305,8 +305,6 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'this login link is invalid or has expired';
     case Code.Auth.MagicLinkAlreadyUsed:
       return 'this login link has already been used';
-    case Code.Auth.MagicLinkExpiredHasPassword:
-      return 'this login link has expired — sign in with your password';
     case Code.Auth.AlreadySignedInAsDifferentUser:
       return "you're signed in as a different user — log out first";
     case Code.Auth.RefreshTokenInvalid:
