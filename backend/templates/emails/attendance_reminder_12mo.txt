@@ -1,8 +1,8 @@
 hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
-it's been 12 months since you've made it to a qualifying club or official event. an admin will be reviewing your membership status, which may mean pausing it for now.
+as of {{ deadline }} you're under 2 official or club events in the last 12 months, so an admin will review your membership. that may mean an attendance pause for now.
 
-if you'd like to stay active, the easiest way is to come to something soon. if you want to talk it through first, reach out to an admin directly — we're happy to help you get back in the swing of things.
+if you'd like to stay active, come to something soon. if you want to talk it through first, reach out to an admin — we're happy to help.
 
 {{ calendar_url }}
 

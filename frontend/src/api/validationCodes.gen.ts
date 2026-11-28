@@ -177,6 +177,7 @@ export const Code = {
     RoleIdsNotFound: 'user.role_ids_not_found',
     InvalidBirthday: 'user.invalid_birthday',
     InvalidVeganniversary: 'user.invalid_veganniversary',
+    GraceNotInFuture: 'user.attendance_grace_not_in_future',
   },
   Survey: {
     NotFound: 'survey.not_found',
@@ -492,6 +493,7 @@ export type ValidationCode =
   | 'user.role_ids_not_found'
   | 'user.invalid_birthday'
   | 'user.invalid_veganniversary'
+  | 'user.attendance_grace_not_in_future'
   | 'survey.not_found'
   | 'survey.closed'
   | 'survey.slug_already_exists'
@@ -755,6 +757,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'user.role_ids_not_found': [],
   'user.invalid_birthday': [],
   'user.invalid_veganniversary': [],
+  'user.attendance_grace_not_in_future': [],
   'survey.not_found': [],
   'survey.closed': [],
   'survey.slug_already_exists': [],

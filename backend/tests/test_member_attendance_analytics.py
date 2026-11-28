@@ -340,3 +340,58 @@ class TestTwoEventDeadline:
         row = _row(api_client, events_admin, longtime_member)
         assert row["deadline"] == (second_last + relativedelta(months=12)).isoformat()
         assert row["is_pause_candidate"] is False
+
+
+@pytest.mark.django_db
+class TestExtendAttendanceGrace:
+    def _url(self, user):
+        return f"{MEMBERS_URL}{user.pk}/grace/"
+
+    def test_pushes_the_deadline_out(self, api_client, member):
+        admin = make_user(PermissionKey.MANAGE_USERS)
+        grace = (timezone.now() + timedelta(days=800)).date()
+
+        response = api_client.post(
+            self._url(member),
+            {"grace_until": grace.isoformat()},
+            content_type="application/json",
+            **auth_headers_for(admin),
+        )
+
+        assert response.status_code == 200
+        assert response.json()["deadline"] == grace.isoformat()
+        assert response.json()["grace_until"] == grace.isoformat()
+        member.refresh_from_db()
+        assert member.attendance_grace_until == grace
+
+    def test_grace_clears_a_pause_candidate(
+        self, api_client, host_user, member, events_admin, settings
+    ):
+        settings.ATTENDANCE_CLOCK_FLOOR = (timezone.now() - timedelta(days=800)).date()
+        User.objects.filter(pk=member.pk).update(date_joined=timezone.now() - timedelta(days=900))
+        _attended(host_user, member, days_ago=5)
+        User.objects.filter(pk=member.pk).update(
+            attendance_grace_until=(timezone.now() + timedelta(days=30)).date()
+        )
+        row = _row(api_client, events_admin, member)
+        assert row["is_pause_candidate"] is False
+        assert row["needs_second_event"] is True
+
+    def test_needs_manage_users(self, api_client, member, events_admin):
+        response = api_client.post(
+            self._url(member),
+            {"grace_until": "2099-01-01"},
+            content_type="application/json",
+            **auth_headers_for(events_admin),
+        )
+        assert response.status_code == 403
+
+    def test_refuses_a_date_that_is_not_in_the_future(self, api_client, member):
+        admin = make_user(PermissionKey.MANAGE_USERS)
+        response = api_client.post(
+            self._url(member),
+            {"grace_until": timezone.now().date().isoformat()},
+            content_type="application/json",
+            **auth_headers_for(admin),
+        )
+        assert response.status_code == 422

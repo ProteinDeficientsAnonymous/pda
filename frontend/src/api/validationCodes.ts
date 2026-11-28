@@ -395,6 +395,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "that's not a valid birthday";
     case Code.User.InvalidVeganniversary:
       return "that's not a valid veganniversary";
+    case Code.User.GraceNotInFuture:
+      return 'pick a date after today';
 
     // Survey
     case Code.Survey.NotFound:

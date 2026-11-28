@@ -43,19 +43,24 @@ def last_qualifying_attendance_date(user: User) -> date | None:
     return latest.date() if latest else None
 
 
-def anchor_from(date_joined: date, last_attended: date | None) -> date:
-    """anchor = max(last qualifying attendance, ATTENDANCE_CLOCK_FLOOR, date_joined)."""
+def anchor_from(
+    date_joined: date, last_attended: date | None, grace_until: date | None = None
+) -> date:
+    """anchor = max(last qualifying attendance, ATTENDANCE_CLOCK_FLOOR, date_joined, grace - 12mo)."""
     candidates = [settings.ATTENDANCE_CLOCK_FLOOR, date_joined]
     if last_attended is not None:
         candidates.append(last_attended)
+    if grace_until is not None:
+        candidates.append(grace_until - _MILESTONE_OFFSETS[AttendanceMilestone.M12])
     return max(candidates)
 
 
-def attendance_deadline(date_joined: date, second_last_attended: date | None) -> date:
+def attendance_deadline(
+    date_joined: date, second_last_attended: date | None, grace_until: date | None = None
+) -> date:
     """Day the member falls under 2 counting events if they don't come again, floored like the clock."""
-    return (
-        anchor_from(date_joined, second_last_attended) + _MILESTONE_OFFSETS[AttendanceMilestone.M12]
-    )
+    anchor = anchor_from(date_joined, second_last_attended, grace_until)
+    return anchor + _MILESTONE_OFFSETS[AttendanceMilestone.M12]
 
 
 def compute_anchor(user: User, today: date) -> date:

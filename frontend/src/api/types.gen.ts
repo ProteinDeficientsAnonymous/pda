@@ -876,6 +876,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/attendance-analytics/members/{user_id}/grace/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Extend Attendance Grace
+         * @description Push one member's 2-event deadline out to grace_until.
+         */
+        post: operations["community_attendance_report_extend_attendance_grace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/attendance-import/commit/": {
         parameters: {
             query?: never;
@@ -3143,6 +3163,14 @@ export interface components {
          * @enum {string}
          */
         AssignmentStatus: "draft" | "proposed" | "committed" | "declined" | "withdrawn";
+        /** AttendanceGraceIn */
+        AttendanceGraceIn: {
+            /**
+             * Grace Until
+             * Format: date
+             */
+            grace_until: string;
+        };
         /** AttendanceImportCommitIn */
         AttendanceImportCommitIn: {
             /** Event Date */
@@ -5702,6 +5730,8 @@ export interface components {
             didnt_go_count: number;
             /** Full Name */
             full_name: string;
+            /** Grace Until */
+            grace_until?: string | null;
             /** Is Attendance Paused */
             is_attendance_paused: boolean;
             /** Is Guidelines Paused */
@@ -9725,6 +9755,59 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community_attendance_report_extend_attendance_grace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttendanceGraceIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberAttendanceRowOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
