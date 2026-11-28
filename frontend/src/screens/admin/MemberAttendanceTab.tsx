@@ -17,14 +17,20 @@ import { formatPhone } from '@/utils/formatPhone';
 
 import { usePauseConfirm } from './usePauseConfirm';
 
-type Filter = 'all' | 'at-risk';
+type Filter = 'all' | 'at-risk' | 'needs-second-event';
+
+const FILTERS: Record<Filter, (m: MemberAttendanceRow) => boolean> = {
+  all: () => true,
+  'at-risk': (m) => m.isPauseCandidate,
+  'needs-second-event': (m) => m.needsSecondEvent,
+};
 
 export function MemberAttendanceTab() {
   const { data = [], isPending, isError } = useMemberAttendanceAnalytics();
   const [filter, setFilter] = useState<Filter>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filtered = filter === 'at-risk' ? data.filter((m) => m.isPauseCandidate) : data;
+  const filtered = data.filter(FILTERS[filter]);
   const visible = useMemo(
     () => filtered.filter((m) => m.fullName.toLowerCase().includes(searchQuery.toLowerCase())),
     [filtered, searchQuery],
@@ -65,6 +71,14 @@ export function MemberAttendanceTab() {
           }}
         >
           at risk
+        </FilterButton>
+        <FilterButton
+          active={filter === 'needs-second-event'}
+          onClick={() => {
+            setFilter('needs-second-event');
+          }}
+        >
+          needs 2nd event
         </FilterButton>
       </div>
 
@@ -120,6 +134,7 @@ function complianceBadge(row: MemberAttendanceRow): {
 } {
   if (row.isPauseCandidate) return { tone: 'warning', label: 'pause candidate' };
   if (row.compliant) return { tone: 'success', label: 'compliant' };
+  if (row.needsSecondEvent) return { tone: 'neutral', label: 'needs 2nd event' };
   return { tone: 'neutral', label: 'not yet compliant' };
 }
 
@@ -153,6 +168,11 @@ function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
       </div>
 
       <p className="text-muted mt-2 text-xs">{lastQualifyingLine(row)}</p>
+      {paused ? null : (
+        <p className="text-muted text-xs">
+          2-event deadline: {format(row.deadline, 'MMM d, yyyy').toLowerCase()}
+        </p>
+      )}
 
       <div className="mt-2 flex flex-wrap gap-1 text-xs">
         <Stat label="qualifying (12mo)" value={row.qualifyingCount12mo} />

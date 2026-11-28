@@ -48,6 +48,8 @@ function makeMemberRow(overrides: Partial<MemberAttendanceRow> = {}): MemberAtte
     cancelCount: 0,
     monthsSinceLastQualifying: 2,
     isPauseCandidate: false,
+    deadline: new Date(2027, 2, 1),
+    needsSecondEvent: false,
     ...overrides,
   };
 }
@@ -113,6 +115,28 @@ describe('MemberAttendanceTab', () => {
     render(<MemberAttendanceTab />);
     expect(screen.getByText('pause candidate')).toBeInTheDocument();
     expect(screen.getByText(/never attended a qualifying event/)).toBeInTheDocument();
+  });
+
+  it('filters to members who need a 2nd event, with their deadline', async () => {
+    mockRows([
+      makeMemberRow({ userId: 'u1', fullName: 'Compliant Member' }),
+      makeMemberRow({
+        userId: 'u2',
+        fullName: 'One Event',
+        compliant: false,
+        qualifyingCount12mo: 1,
+        needsSecondEvent: true,
+        deadline: new Date(2027, 6, 4),
+      }),
+    ]);
+    const user = userEvent.setup();
+    render(<MemberAttendanceTab />);
+
+    await user.click(screen.getByRole('button', { name: 'needs 2nd event' }));
+
+    expect(screen.queryByText('compliant member')).not.toBeInTheDocument();
+    expect(screen.getByText('one event')).toBeInTheDocument();
+    expect(screen.getByText('2-event deadline: jul 4, 2027')).toBeInTheDocument();
   });
 
   it('filters to at-risk members only', async () => {

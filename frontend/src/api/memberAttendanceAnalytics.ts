@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { parseISO } from 'date-fns';
 
 import { apiClient } from './client';
 
@@ -16,6 +17,8 @@ export interface MemberAttendanceRow {
   cancelCount: number;
   monthsSinceLastQualifying: number | null;
   isPauseCandidate: boolean;
+  deadline: Date;
+  needsSecondEvent: boolean;
 }
 
 interface WireRow {
@@ -32,6 +35,8 @@ interface WireRow {
   cancel_count: number;
   months_since_last_qualifying: number | null;
   is_pause_candidate: boolean;
+  deadline: string;
+  needs_second_event: boolean;
 }
 
 interface WireResponse {
@@ -53,6 +58,8 @@ function mapRow(w: WireRow): MemberAttendanceRow {
     cancelCount: w.cancel_count,
     monthsSinceLastQualifying: w.months_since_last_qualifying,
     isPauseCandidate: w.is_pause_candidate,
+    deadline: parseISO(w.deadline),
+    needsSecondEvent: w.needs_second_event,
   };
 }
 
