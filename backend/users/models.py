@@ -183,6 +183,7 @@ class User(AbstractUser):
     restored_at = models.DateTimeField(null=True, blank=True)
     unpaused_at = models.DateTimeField(null=True, blank=True)
     attendance_grace_notified_at = models.DateTimeField(null=True, blank=True)
+    attendance_grace_until = models.DateField(null=True, blank=True)
     has_joined_whatsapp = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
     status_before_archive = models.CharField(

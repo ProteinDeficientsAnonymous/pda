@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
@@ -43,19 +43,31 @@ def last_qualifying_attendance_date(user: User) -> date | None:
     return latest.date() if latest else None
 
 
-def anchor_from(date_joined: date, last_attended: date | None) -> date:
-    """anchor = max(last qualifying attendance, ATTENDANCE_CLOCK_FLOOR, date_joined)."""
+def anchor_from(
+    date_joined: date, last_attended: date | None, grace_until: date | None = None
+) -> date:
+    """anchor = max(last qualifying attendance, ATTENDANCE_CLOCK_FLOOR, date_joined, grace - 12mo)."""
     candidates = [settings.ATTENDANCE_CLOCK_FLOOR, date_joined]
     if last_attended is not None:
         candidates.append(last_attended)
+    if grace_until is not None:
+        candidates.append(_grace_anchor(grace_until))
     return max(candidates)
 
 
-def attendance_deadline(date_joined: date, second_last_attended: date | None) -> date:
+def _grace_anchor(grace_until: date) -> date:
+    year = _MILESTONE_OFFSETS[AttendanceMilestone.M12]
+    anchor = grace_until - year
+    # relativedelta clamps Feb 29 to Feb 28, which would land the deadline a day before the grace.
+    return anchor if anchor + year >= grace_until else anchor + timedelta(days=1)
+
+
+def attendance_deadline(
+    date_joined: date, second_last_attended: date | None, grace_until: date | None = None
+) -> date:
     """Day the member falls under 2 counting events if they don't come again, floored like the clock."""
-    return (
-        anchor_from(date_joined, second_last_attended) + _MILESTONE_OFFSETS[AttendanceMilestone.M12]
-    )
+    anchor = anchor_from(date_joined, second_last_attended, grace_until)
+    return anchor + _MILESTONE_OFFSETS[AttendanceMilestone.M12]
 
 
 def compute_anchor(user: User, today: date) -> date:

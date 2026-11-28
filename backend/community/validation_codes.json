@@ -757,6 +757,11 @@
         "name": "INVALID_VEGANNIVERSARY",
         "value": "user.invalid_veganniversary",
         "params": []
+      },
+      {
+        "name": "GRACE_NOT_IN_FUTURE",
+        "value": "user.attendance_grace_not_in_future",
+        "params": []
       }
     ],
     "Survey": [

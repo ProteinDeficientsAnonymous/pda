@@ -157,6 +157,20 @@
         "title": "AssignmentStatus",
         "type": "string"
       },
+      "AttendanceGraceIn": {
+        "properties": {
+          "grace_until": {
+            "format": "date",
+            "title": "Grace Until",
+            "type": "string"
+          }
+        },
+        "required": [
+          "grace_until"
+        ],
+        "title": "AttendanceGraceIn",
+        "type": "object"
+      },
       "AttendanceImportCommitIn": {
         "properties": {
           "event_date": {
@@ -6131,6 +6145,18 @@
           "full_name": {
             "title": "Full Name",
             "type": "string"
+          },
+          "grace_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grace Until"
           },
           "is_attendance_paused": {
             "title": "Is Attendance Paused",
@@ -13743,6 +13769,85 @@
           }
         ],
         "summary": "Member Attendance Analytics",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/attendance-analytics/members/{user_id}/grace/": {
+      "post": {
+        "description": "Push one member's 2-event deadline out to grace_until.",
+        "operationId": "community_attendance_report_extend_attendance_grace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceGraceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberAttendanceRowOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Extend Attendance Grace",
         "tags": [
           "community"
         ]

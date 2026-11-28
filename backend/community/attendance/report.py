@@ -1,7 +1,10 @@
 """Admin-only read models aggregating attendance across events and members."""
 
+import logging
 from datetime import date, datetime
+from uuid import UUID
 
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -116,6 +119,7 @@ class MemberAttendanceRowOut(BaseModel):
     is_pause_candidate: bool = False
     deadline: date
     needs_second_event: bool = False
+    grace_until: date | None = None
 
 
 class MemberAttendanceAnalyticsOut(BaseModel):
@@ -127,7 +131,9 @@ def _member_attendance_row(
 ) -> MemberAttendanceRowOut:
     second_last = user.second_last_qualifying_at
     deadline = attendance_deadline(
-        user.date_joined.date(), second_last.date() if second_last else None
+        user.date_joined.date(),
+        second_last.date() if second_last else None,
+        user.attendance_grace_until,
     )
     active = user.membership_status == MembershipStatus.ACTIVE_MEMBER
     return MemberAttendanceRowOut(
@@ -146,6 +152,7 @@ def _member_attendance_row(
         is_pause_candidate=active and is_pause_candidate(stats, deadline, today),
         deadline=deadline,
         needs_second_event=active and needs_second_event(stats, deadline, today),
+        grace_until=user.attendance_grace_until,
     )
 
 
@@ -172,3 +179,40 @@ def member_attendance_analytics(request):
     ]
     rows.sort(key=lambda r: not r.is_pause_candidate)
     return Status(200, MemberAttendanceAnalyticsOut(members=rows))
+
+
+class AttendanceGraceIn(BaseModel):
+    grace_until: date
+
+
+@router.post(
+    "/events/attendance-analytics/members/{user_id}/grace/",
+    response={200: MemberAttendanceRowOut, 403: ErrorOut, 404: ErrorOut, 422: ErrorOut},
+    auth=gated_jwt,
+)
+def extend_attendance_grace(request, user_id: UUID, payload: AttendanceGraceIn):
+    """Push one member's 2-event deadline out to grace_until."""
+    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
+        raise_validation(Code.Perm.DENIED, status_code=403, action="extend_attendance_grace")
+    today = timezone.now().date()
+    if payload.grace_until <= today:
+        raise_validation(Code.User.GRACE_NOT_IN_FUTURE, "grace_until")
+    users = User.objects.members().filter(archived_at__isnull=True)
+    user = with_second_last_qualifying_at(users).filter(pk=user_id).first()
+    if user is None:
+        raise_validation(Code.User.NOT_FOUND, status_code=404)
+    before = user.attendance_grace_until
+    user.attendance_grace_until = payload.grace_until
+    user.save(update_fields=["attendance_grace_until"])
+    audit_log(
+        logging.INFO,
+        "attendance_grace_extended",
+        request,
+        target=AuditTarget(
+            type=AuditTargetType.USER,
+            id=str(user.pk),
+            details={"from": str(before) if before else None, "to": str(payload.grace_until)},
+        ),
+    )
+    stats = member_stats_by_user(User.objects.filter(pk=user.pk))
+    return Status(200, _member_attendance_row(user, stats.get(user.pk, EMPTY_MEMBER_STATS), today))
