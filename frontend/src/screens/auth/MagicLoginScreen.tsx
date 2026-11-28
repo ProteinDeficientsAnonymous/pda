@@ -127,7 +127,10 @@ export default function MagicLoginScreen() {
 
   if (state === 'expired_has_password') {
     return (
-      <AuthLayout title="link expired" subtitle="you've already got a password — use that instead">
+      <AuthLayout
+        title="link expired"
+        subtitle="you already used your magic link and created a password"
+      >
         <Button
           fullWidth
           className="mt-4"

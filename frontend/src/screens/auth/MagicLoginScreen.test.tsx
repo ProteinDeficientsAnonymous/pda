@@ -70,7 +70,7 @@ describe('MagicLoginScreen', () => {
     magicLoginMock.mockRejectedValueOnce(apiError(400, Code.Auth.MagicLinkExpiredHasPassword));
     renderAt('tok-has-pw');
     expect(
-      await screen.findByText("you've already got a password — use that instead"),
+      await screen.findByText('you already used your magic link and created a password'),
     ).toBeInTheDocument();
     expect(screen.queryByText(/grab a fresh one/i)).toBeNull();
     screen.getByRole('button', { name: 'sign in with your password' }).click();
