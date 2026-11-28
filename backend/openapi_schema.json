@@ -18248,7 +18248,7 @@
     },
     "/api/community/join-requests/{id}/resend-magic-link/": {
       "post": {
-        "description": "Mint a fresh magic-login link for an approved join request whose user\nhas not yet onboarded. Invalidates any prior unused magic tokens for the\nuser so the welcome message in the wild can't be claimed twice. Refuses\non already-logged-in users (use the members screen's password reset\nflow for that).",
+        "description": "Mint a fresh magic-login link for an approved or tentative join request whose user\nhas not yet onboarded. Invalidates any prior unused magic tokens for the\nuser so the welcome message in the wild can't be claimed twice. Refuses\non already-logged-in users (use the members screen's password reset\nflow for that).",
         "operationId": "community_join_requests_resend_resend_magic_link",
         "parameters": [
           {

@@ -8,18 +8,27 @@ export function TentativeActions({
   request,
   busy,
   onApprove,
+  onResend,
 }: {
   request: JoinRequestSummary;
   busy: boolean;
   onApprove: () => void;
+  onResend: () => void;
 }) {
   return (
     <div className="mt-3 flex flex-col gap-3">
       <RsvpEventList events={request.rsvpEvents} />
       <div>
-        <Button onClick={onApprove} disabled={busy}>
-          manually approve
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={onApprove} disabled={busy}>
+            manually approve
+          </Button>
+          {request.onboardedAt === null ? (
+            <Button variant="secondary" onClick={onResend} disabled={busy}>
+              re-send welcome
+            </Button>
+          ) : null}
+        </div>
         <p className="text-muted mt-2 text-xs">
           tentative members can&rsquo;t be rejected — archive them from the{' '}
           {request.userId ? (

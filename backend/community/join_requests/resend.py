@@ -1,4 +1,4 @@
-"""Re-send magic link for an approved join request that hasn't yet onboarded.
+"""Re-send magic link for an approved or tentative join request that hasn't yet onboarded.
 
 Split from ``manage.py`` to keep that file under the 500-line cap.
 """
@@ -14,15 +14,18 @@ from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from users.helpers import create_magic_token
-from users.models import MagicLoginToken, MembershipStatus, User
+from users.models import MagicLoginToken, MembershipStatus
 from users.permissions import PermissionKey
 
+from community.join_requests.approval import applicant_user
 from community.join_requests.manage import ApproveJoinRequestOut
 from community.models import JoinRequest, JoinRequestStatus
 from community.shared import ErrorOut
 from community.validation import Code, raise_validation
 
 router = Router()
+
+_RESENDABLE_STATUSES = frozenset({JoinRequestStatus.APPROVED, JoinRequestStatus.TENTATIVE})
 
 
 @router.post(
@@ -32,7 +35,7 @@ router = Router()
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def resend_magic_link(request, id: UUID):
-    """Mint a fresh magic-login link for an approved join request whose user
+    """Mint a fresh magic-login link for an approved or tentative join request whose user
     has not yet onboarded. Invalidates any prior unused magic tokens for the
     user so the welcome message in the wild can't be claimed twice. Refuses
     on already-logged-in users (use the members screen's password reset
@@ -59,10 +62,10 @@ def resend_magic_link(request, id: UUID):
     except JoinRequest.DoesNotExist:
         raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
 
-    if join_request.status != JoinRequestStatus.APPROVED:
+    if join_request.status not in _RESENDABLE_STATUSES:
         raise_validation(Code.JoinRequest.NOT_APPROVED, status_code=400)
 
-    user = User.objects.filter(phone_number=join_request.phone_number).first()
+    user = applicant_user(join_request)
     if user is None:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if user.archived_at is not None:

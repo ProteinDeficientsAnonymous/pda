@@ -133,6 +133,7 @@ export function JoinRequestCard({
             onApprove={() => {
               onDecide('manually_approved');
             }}
+            onResend={onResend}
           />
         </>
       ) : (
