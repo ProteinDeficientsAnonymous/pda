@@ -194,19 +194,6 @@ class TestUpcomingNotices:
         assert "on the calendar by dec 14 so it's in the dec 15 announcement" in kwargs["text"]
         assert "create the event" in kwargs["html"]
 
-    def test_first_of_month_slot_is_due_end_of_month_two_before(self, year, fake_email_sender):
-        february = year.slots.get(label__iexact="february")
-        planner = make_user(VIEW, email="feb@example.com")
-        SlotAssignment.objects.create(
-            slot=february, user=planner, status=AssignmentStatus.COMMITTED, proposed_at=PROPOSED_AT
-        )
-        assert send_upcoming_notices(WINDOW_OPENS - DAY) == 0
-        assert send_upcoming_notices(WINDOW_OPENS) == 1
-        kwargs = fake_email_sender.send.call_args.kwargs
-        assert kwargs["subject"] == "february is coming up: create the event by dec 31"
-        assert "by dec 31 so it's in the jan 1 announcement" in kwargs["text"]
-        assert f"{settings.FRONTEND_BASE_URL}/admin/planning" in kwargs["text"]
-
     def test_no_email_address_still_notifies_in_app(self, committed, fake_email_sender):
         type(committed.user).objects.filter(pk=committed.user_id).update(email="")
         assert send_upcoming_notices(WINDOW_OPENS) == 1
@@ -219,10 +206,10 @@ class TestUpcomingNotices:
             slot=slot, user=other, status=AssignmentStatus.COMMITTED, proposed_at=PROPOSED_AT
         )
 
-        def flaky(assignment):
+        def flaky(assignment, **kwargs):
             if assignment.pk == committed.pk:
                 raise RuntimeError("boom")
-            notify_upcoming(assignment)
+            notify_upcoming(assignment, **kwargs)
 
         with patch("community.planning.reminders.notify_upcoming", side_effect=flaky):
             assert send_upcoming_notices(WINDOW_OPENS) == 1

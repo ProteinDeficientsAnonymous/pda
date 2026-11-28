@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from uuid import UUID
 
 from django.conf import settings
@@ -8,7 +8,7 @@ from django.db.models import F, Q, QuerySet
 from notifications.planning_email import AvailabilityEmailVariant, PlanningEmailVariant
 from users.models import HAS_EMAIL
 
-from community.models import AssignmentStatus, PlanningYear, SlotAssignment
+from community.models import AssignmentStatus, PlanningSlot, PlanningYear, SlotAssignment
 from community.planning._notify import email_availability, email_planner, notify_upcoming
 from community.planning._planners import planner_users
 
@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 # An hour under the cadence so a daily cron that drifts early still sends, but a rerun doesn't.
 _REMINDER_GAP = timedelta(days=3) - timedelta(hours=1)
 _AVAILABILITY_GAP = timedelta(days=7) - timedelta(hours=1)
+_UPCOMING_DAYS_OF_DUE_MONTH = (1, 15, 21)
+_UPCOMING_DAYS_BEFORE_DUE = (3, 1)
 
 
 def _month_not_started(now: datetime) -> Q:
@@ -102,37 +104,50 @@ def _due_upcoming(now: datetime) -> QuerySet[SlotAssignment]:
     return SlotAssignment.objects.filter(
         _month_not_started(now),
         status=AssignmentStatus.COMMITTED,
-        upcoming_notified_at__isnull=True,
         user__in=planner_users(),
     ).select_related("slot__planning_year", "slot__event", "user")
 
 
-def _in_upcoming_window(assignment: SlotAssignment, now: datetime) -> bool:
-    today = now.astimezone(settings.COMMUNITY_TZ).date()
-    window_opens = assignment.slot.event_due().replace(day=1)
-    return assignment.slot.live_event is None and today >= window_opens
+def upcoming_stage(slot: PlanningSlot, today: date) -> date | None:
+    """return(date | None): the latest notice date on or before today, or None before the first"""
+    due = slot.event_due()
+    stages = {due.replace(day=day) for day in _UPCOMING_DAYS_OF_DUE_MONTH}
+    stages |= {due - timedelta(days=days) for days in _UPCOMING_DAYS_BEFORE_DUE}
+    passed = [day for day in stages if due.replace(day=1) <= day < due and day <= today]
+    return max(passed, default=None)
+
+
+def _not_notified_since(stage: date) -> Q:
+    stage_start = datetime(stage.year, stage.month, stage.day, tzinfo=settings.COMMUNITY_TZ)
+    return Q(upcoming_notified_at__isnull=True) | Q(upcoming_notified_at__lt=stage_start)
 
 
 def send_upcoming_notices(now: datetime) -> int:
-    """Tell committed planners, from the 1st of the month their event is due, that it has none yet.
+    """Nudge committed planners whose slot has no event on the 1st, 15th and 21st of the month
+    it's due and 3 days and 1 day before; a missed run sends only the latest stage.
 
     If the in-app notice raises, the stamp is rolled back (like a failed reminder) and the batch
     continues; a failed email alone keeps the stamp since the in-app notice already landed.
 
     return(int): number of planners notified
     """
+    today = now.astimezone(settings.COMMUNITY_TZ).date()
     sent = 0
     for candidate in list(_due_upcoming(now)):
-        if not _in_upcoming_window(candidate, now):
+        stage = upcoming_stage(candidate.slot, today)
+        if stage is None or candidate.slot.live_event is not None:
             continue
-        claimed = _claim(_due_upcoming(now), candidate.pk, upcoming_notified_at=now)
+        due = _due_upcoming(now).filter(_not_notified_since(stage))
+        claimed = _claim(due, candidate.pk, upcoming_notified_at=now)
         if claimed is None:
             continue
         try:
-            notify_upcoming(claimed)
+            notify_upcoming(claimed, first=claimed.upcoming_notified_at is None)
         except Exception:
             logger.exception("planning_upcoming_notice_failed", extra={"assignment": claimed.pk})
-            SlotAssignment.objects.filter(pk=claimed.pk).update(upcoming_notified_at=None)
+            SlotAssignment.objects.filter(pk=claimed.pk).update(
+                upcoming_notified_at=claimed.upcoming_notified_at
+            )
             continue
         sent += 1
     return sent

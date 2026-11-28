@@ -127,15 +127,20 @@ def notify_confirmed(assignment: SlotAssignment, by: User) -> None:
     transaction.on_commit(lambda: email_planner(user, [slot], PlanningEmailVariant.CONFIRMED))
 
 
-def notify_upcoming(assignment: SlotAssignment) -> None:
-    due = assignment.slot.event_due()
+def notify_upcoming(assignment: SlotAssignment, *, first: bool = True) -> None:
+    label, due = assignment.slot.label, assignment.slot.event_due()
+    message, variant = (
+        (f"{label} is coming up — create the event by", PlanningEmailVariant.UPCOMING)
+        if first
+        else (f"{label} still needs an event — it's due", PlanningEmailVariant.UPCOMING_REMINDER)
+    )
     _notify(
         assignment,
         NotificationType.PLANNING_UPCOMING,
-        f"{assignment.slot.label} is coming up — create the event by {_day_label(due)}",
+        f"{message} {_day_label(due)}",
         assignment.proposed_by,
     )
-    email_planner(assignment.user, [assignment.slot], PlanningEmailVariant.UPCOMING, due=due)
+    email_planner(assignment.user, [assignment.slot], variant, due=due)
 
 
 def notify_withdrawn(assignment: SlotAssignment, by: User) -> None:
