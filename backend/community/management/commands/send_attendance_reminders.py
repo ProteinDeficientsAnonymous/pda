@@ -19,7 +19,11 @@ logger = logging.getLogger(__name__)
 def _anchor(user: User) -> date:
     """Clock runs from the 2nd-latest counting event, so m12 lands when they drop under 2."""
     second_last = user.second_last_qualifying_at
-    return anchor_from(user.date_joined.date(), second_last.date() if second_last else None)
+    return anchor_from(
+        user.date_joined.date(),
+        second_last.date() if second_last else None,
+        user.attendance_grace_until,
+    )
 
 
 def _without_upcoming_rsvp(members):

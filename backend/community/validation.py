@@ -179,6 +179,7 @@ class Code:
         ROLE_IDS_NOT_FOUND = "user.role_ids_not_found"
         INVALID_BIRTHDAY = "user.invalid_birthday"
         INVALID_VEGANNIVERSARY = "user.invalid_veganniversary"
+        GRACE_NOT_IN_FUTURE = "user.attendance_grace_not_in_future"
 
     class Survey:
         NOT_FOUND = "survey.not_found"
