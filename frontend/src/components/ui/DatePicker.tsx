@@ -11,6 +11,7 @@ interface Props {
   onChange: (isoDate: string | null) => void;
   disabled?: boolean;
   error?: string | undefined;
+  minDate?: Date;
 }
 
 function isoToDate(iso: string | null): Date | undefined {
@@ -23,7 +24,7 @@ function dateToIso(date: Date): string {
   return format(date, 'yyyy-MM-dd');
 }
 
-export function DatePicker({ label, value, onChange, disabled, error }: Props) {
+export function DatePicker({ label, value, onChange, disabled, error, minDate }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selectedDate = isoToDate(value);
@@ -89,6 +90,7 @@ export function DatePicker({ label, value, onChange, disabled, error }: Props) {
               setOpen(false);
             }}
             defaultMonth={selectedDate ?? today}
+            disabled={minDate ? { before: minDate } : undefined}
             locale={enUS}
           />
         </div>

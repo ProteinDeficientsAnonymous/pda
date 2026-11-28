@@ -14,6 +14,7 @@ import { MemberAttendanceTab } from './MemberAttendanceTab';
 
 vi.mock('@/api/memberAttendanceAnalytics', () => ({
   useMemberAttendanceAnalytics: vi.fn(),
+  useExtendAttendanceGrace: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
 }));
 
 vi.mock('@/api/attendancePausePreview', () => ({
@@ -50,6 +51,7 @@ function makeMemberRow(overrides: Partial<MemberAttendanceRow> = {}): MemberAtte
     isPauseCandidate: false,
     deadline: new Date(2027, 2, 1),
     needsSecondEvent: false,
+    graceUntil: null,
     ...overrides,
   };
 }

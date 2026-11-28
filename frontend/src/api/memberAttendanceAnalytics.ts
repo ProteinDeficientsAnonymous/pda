@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { parseISO } from 'date-fns';
 
 import { apiClient } from './client';
@@ -19,6 +19,7 @@ export interface MemberAttendanceRow {
   isPauseCandidate: boolean;
   deadline: Date;
   needsSecondEvent: boolean;
+  graceUntil: Date | null;
 }
 
 interface WireRow {
@@ -37,6 +38,7 @@ interface WireRow {
   is_pause_candidate: boolean;
   deadline: string;
   needs_second_event: boolean;
+  grace_until: string | null;
 }
 
 interface WireResponse {
@@ -60,6 +62,7 @@ function mapRow(w: WireRow): MemberAttendanceRow {
     isPauseCandidate: w.is_pause_candidate,
     deadline: parseISO(w.deadline),
     needsSecondEvent: w.needs_second_event,
+    graceUntil: w.grace_until ? parseISO(w.grace_until) : null,
   };
 }
 
@@ -74,5 +77,19 @@ export function useMemberAttendanceAnalytics() {
       );
       return data.members.map(mapRow);
     },
+  });
+}
+
+export function useExtendAttendanceGrace(userId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (graceUntil: string): Promise<MemberAttendanceRow> => {
+      const { data } = await apiClient.post<WireRow>(
+        `/api/community/events/attendance-analytics/members/${userId}/grace/`,
+        { grace_until: graceUntil },
+      );
+      return mapRow(data);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: memberAttendanceAnalyticsKey }),
   });
 }
