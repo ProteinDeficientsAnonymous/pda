@@ -1,3 +1,10 @@
+## [0.305.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.305.0...v0.305.1) (2026-11-28)
+
+
+### Bug Fixes
+
+* **join:** event placeholders render only the event, not a lead-in ([#2729](https://github.com/ProteinDeficientsAnonymous/pda/issues/2729)) ([b07377f](https://github.com/ProteinDeficientsAnonymous/pda/commit/b07377f6bfc3312fa78b0c45ed9abc8c09036546))
+
 # [0.305.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.304.0...v0.305.0) (2026-11-28)
 
 
