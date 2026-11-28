@@ -51,6 +51,13 @@ def anchor_from(date_joined: date, last_attended: date | None) -> date:
     return max(candidates)
 
 
+def attendance_deadline(date_joined: date, second_last_attended: date | None) -> date:
+    """Day the member falls under 2 counting events if they don't come again, floored like the clock."""
+    return (
+        anchor_from(date_joined, second_last_attended) + _MILESTONE_OFFSETS[AttendanceMilestone.M12]
+    )
+
+
 def compute_anchor(user: User, today: date) -> date:
     return anchor_from(user.date_joined.date(), last_qualifying_attendance_date(user))
 

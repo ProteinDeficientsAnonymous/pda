@@ -6118,6 +6118,11 @@
             "title": "Compliant",
             "type": "boolean"
           },
+          "deadline": {
+            "format": "date",
+            "title": "Deadline",
+            "type": "string"
+          },
           "didnt_go_count": {
             "default": 0,
             "title": "Didnt Go Count",
@@ -6163,6 +6168,11 @@
             ],
             "title": "Months Since Last Qualifying"
           },
+          "needs_second_event": {
+            "default": false,
+            "title": "Needs Second Event",
+            "type": "boolean"
+          },
           "phone_number": {
             "title": "Phone Number",
             "type": "string"
@@ -6182,7 +6192,8 @@
           "full_name",
           "phone_number",
           "is_guidelines_paused",
-          "is_attendance_paused"
+          "is_attendance_paused",
+          "deadline"
         ],
         "title": "MemberAttendanceRowOut",
         "type": "object"
@@ -13701,7 +13712,7 @@
     },
     "/api/community/events/attendance-analytics/members/": {
       "get": {
-        "description": "Per-member qualifying-attendance analytics for the admin members tab.\n\nPause candidates (no qualifying attendance in the last 12 months, or\never) sort first so admins triage them without scrolling.",
+        "description": "Per-member qualifying-attendance analytics for the admin members tab.\n\nPause candidates (no qualifying attendance in 12 months, or under 2 past\ntheir deadline) sort first so admins triage them without scrolling.",
         "operationId": "community_attendance_report_member_attendance_analytics",
         "parameters": [],
         "responses": {

@@ -1,12 +1,14 @@
 """Admin-only read models aggregating attendance across events and members."""
 
-from datetime import datetime
+from datetime import date, datetime
 
 from config.auth import gated_jwt
 from django.db.models import Count, Q
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel
+from users.member_search import with_second_last_qualifying_at
 from users.models import MembershipStatus, User
 from users.permissions import PermissionKey
 
@@ -17,7 +19,9 @@ from community.attendance.analytics import (
     is_pause_candidate,
     member_stats_by_user,
     months_since,
+    needs_second_event,
 )
+from community.attendance.clock import attendance_deadline
 from community.events.schemas import AttendanceReportOut, EventAttendanceRowOut
 from community.models import AttendanceStatus, Event, EventType
 from community.rsvps.counts import (
@@ -110,13 +114,22 @@ class MemberAttendanceRowOut(BaseModel):
     cancel_count: int = 0
     months_since_last_qualifying: int | None = None
     is_pause_candidate: bool = False
+    deadline: date
+    needs_second_event: bool = False
 
 
 class MemberAttendanceAnalyticsOut(BaseModel):
     members: list[MemberAttendanceRowOut] = []
 
 
-def _member_attendance_row(user: User, stats: MemberAttendanceStats) -> MemberAttendanceRowOut:
+def _member_attendance_row(
+    user: User, stats: MemberAttendanceStats, today: date
+) -> MemberAttendanceRowOut:
+    second_last = user.second_last_qualifying_at
+    deadline = attendance_deadline(
+        user.date_joined.date(), second_last.date() if second_last else None
+    )
+    active = user.membership_status == MembershipStatus.ACTIVE_MEMBER
     return MemberAttendanceRowOut(
         user_id=str(user.id),
         full_name=user.full_name,
@@ -130,8 +143,9 @@ def _member_attendance_row(user: User, stats: MemberAttendanceStats) -> MemberAt
         didnt_go_count=stats.didnt_go_count,
         cancel_count=stats.cancel_count,
         months_since_last_qualifying=months_since(stats.last_qualifying_at),
-        is_pause_candidate=user.membership_status == MembershipStatus.ACTIVE_MEMBER
-        and is_pause_candidate(stats),
+        is_pause_candidate=active and is_pause_candidate(stats, deadline, today),
+        deadline=deadline,
+        needs_second_event=active and needs_second_event(stats, deadline, today),
     )
 
 
@@ -143,17 +157,18 @@ def _member_attendance_row(user: User, stats: MemberAttendanceStats) -> MemberAt
 def member_attendance_analytics(request):
     """Per-member qualifying-attendance analytics for the admin members tab.
 
-    Pause candidates (no qualifying attendance in the last 12 months, or
-    ever) sort first so admins triage them without scrolling.
+    Pause candidates (no qualifying attendance in 12 months, or under 2 past
+    their deadline) sort first so admins triage them without scrolling.
     """
     if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
         raise_validation(Code.Perm.DENIED, status_code=403, action="member_attendance_analytics")
 
     users = User.objects.members().filter(archived_at__isnull=True)
     stats = member_stats_by_user(users)
+    today = timezone.now().date()
     rows = [
-        _member_attendance_row(u, stats.get(u.pk, EMPTY_MEMBER_STATS))
-        for u in users.order_by("first_name", "last_name")
+        _member_attendance_row(u, stats.get(u.pk, EMPTY_MEMBER_STATS), today)
+        for u in with_second_last_qualifying_at(users).order_by("first_name", "last_name")
     ]
     rows.sort(key=lambda r: not r.is_pause_candidate)
     return Status(200, MemberAttendanceAnalyticsOut(members=rows))

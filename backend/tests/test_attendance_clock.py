@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime
 import pytest
 from community.attendance.analytics import EMPTY_MEMBER_STATS, member_stats_by_user
 from community.attendance.clock import (
+    attendance_deadline,
     compute_anchor,
     last_qualifying_attendance_date,
     latest_due_milestone,
@@ -18,6 +19,7 @@ from community.models import (
     EventStatus,
     EventType,
 )
+from django.conf import settings
 from users.models import User
 
 from tests._users import make_user
@@ -55,7 +57,7 @@ class TestComputeAnchor:
     def test_floor_wins_when_nothing_else_qualifies(self):
         user = _make_user(date_joined=date(2020, 1, 1))
         anchor = compute_anchor(user, today=date(2026, 8, 15))
-        assert anchor == date(2026, 8, 1)
+        assert anchor == settings.ATTENDANCE_CLOCK_FLOOR
 
     def test_date_joined_wins_when_after_floor(self):
         user = _make_user(date_joined=date(2026, 9, 1))
@@ -74,7 +76,7 @@ class TestComputeAnchor:
         event = _make_event(event_type=EventType.COMMUNITY, start=date(2026, 9, 10))
         _attend(user, event)
         anchor = compute_anchor(user, today=date(2026, 12, 1))
-        assert anchor == date(2026, 8, 1)
+        assert anchor == settings.ATTENDANCE_CLOCK_FLOOR
 
     def test_uses_latest_qualifying_attendance(self):
         user = _make_user(date_joined=date(2020, 1, 1))
@@ -92,7 +94,7 @@ class TestComputeAnchor:
             user=user, event=event, status="attending", attendance=AttendanceStatus.DIDNT_GO
         )
         anchor = compute_anchor(user, today=date(2026, 12, 1))
-        assert anchor == date(2026, 8, 1)
+        assert anchor == settings.ATTENDANCE_CLOCK_FLOOR
 
     @pytest.mark.parametrize(
         "status", [EventStatus.CANCELLED, EventStatus.DRAFT, EventStatus.DELETED]
@@ -151,6 +153,18 @@ class TestMatchesMemberAnalytics:
         )
         self._assert_matches_analytics(user)
         assert last_qualifying_attendance_date(user) is None
+
+
+class TestAttendanceDeadline:
+    def test_no_deadline_before_march_2027(self):
+        assert attendance_deadline(date(2020, 1, 1), None) == date(2027, 3, 1)
+        assert attendance_deadline(date(2020, 1, 1), date(2025, 6, 1)) == date(2027, 3, 1)
+
+    def test_twelve_months_after_second_last_event(self):
+        assert attendance_deadline(date(2020, 1, 1), date(2026, 7, 4)) == date(2027, 7, 4)
+
+    def test_new_members_get_twelve_months_from_joining(self):
+        assert attendance_deadline(date(2026, 10, 2), None) == date(2027, 10, 2)
 
 
 class TestMilestoneDueDate:

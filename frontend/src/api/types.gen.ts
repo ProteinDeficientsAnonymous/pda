@@ -864,8 +864,8 @@ export interface paths {
          * Member Attendance Analytics
          * @description Per-member qualifying-attendance analytics for the admin members tab.
          *
-         *     Pause candidates (no qualifying attendance in the last 12 months, or
-         *     ever) sort first so admins triage them without scrolling.
+         *     Pause candidates (no qualifying attendance in 12 months, or under 2 past
+         *     their deadline) sort first so admins triage them without scrolling.
          */
         get: operations["community_attendance_report_member_attendance_analytics"];
         put?: never;
@@ -5691,6 +5691,11 @@ export interface components {
              */
             compliant: boolean;
             /**
+             * Deadline
+             * Format: date
+             */
+            deadline: string;
+            /**
              * Didnt Go Count
              * @default 0
              */
@@ -5710,6 +5715,11 @@ export interface components {
             last_qualifying_at?: string | null;
             /** Months Since Last Qualifying */
             months_since_last_qualifying?: number | null;
+            /**
+             * Needs Second Event
+             * @default false
+             */
+            needs_second_event: boolean;
             /** Phone Number */
             phone_number: string;
             /**

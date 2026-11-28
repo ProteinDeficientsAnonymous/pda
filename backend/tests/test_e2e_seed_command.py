@@ -1,5 +1,5 @@
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 from community.attendance.analytics import (
@@ -237,7 +237,7 @@ def test_e2e_seed_attendance_analytics_compliant_and_at_risk(capsys):
     by_user = member_stats_by_user(members)
     stats = {u.full_name.lower(): by_user.get(u.pk, EMPTY_MEMBER_STATS) for u in members}
     assert is_compliant(stats[out["compliant_name"]])
-    assert is_pause_candidate(stats[out["at_risk_name"]])
+    assert is_pause_candidate(stats[out["at_risk_name"]], date.max, date.min)
     assert out["at_risk_name"] > out["compliant_name"]
 
 
