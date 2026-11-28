@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from uuid import UUID
 
 from django.conf import settings
@@ -45,7 +46,13 @@ def planning_url() -> str:
     return f"{settings.FRONTEND_BASE_URL}/admin/planning"
 
 
-def email_planner(user: User, slots: list[PlanningSlot], variant: PlanningEmailVariant) -> bool:
+def _day_label(day: date) -> str:
+    return f"{day:%b} {day.day}".lower()
+
+
+def email_planner(
+    user: User, slots: list[PlanningSlot], variant: PlanningEmailVariant, *, due: date | None = None
+) -> bool:
     if not user.email:
         return False
     details = PlanningEmailDetails(
@@ -54,6 +61,8 @@ def email_planner(user: User, slots: list[PlanningSlot], variant: PlanningEmailV
         slot_labels=tuple(slot.label for slot in slots),
         planning_url=planning_url(),
         variant=variant,
+        due_label=_day_label(due) if due else "",
+        announce_label=_day_label(due + timedelta(days=1)) if due else "",
     )
     return send_best_effort(
         lambda: send_planning_email(sender=get_email_sender(), details=details),
@@ -119,13 +128,14 @@ def notify_confirmed(assignment: SlotAssignment, by: User) -> None:
 
 
 def notify_upcoming(assignment: SlotAssignment) -> None:
+    due = assignment.slot.event_due()
     _notify(
         assignment,
         NotificationType.PLANNING_UPCOMING,
-        f"{assignment.slot.label} is coming up — time to create the event",
+        f"{assignment.slot.label} is coming up — create the event by {_day_label(due)}",
         assignment.proposed_by,
     )
-    email_planner(assignment.user, [assignment.slot], PlanningEmailVariant.UPCOMING)
+    email_planner(assignment.user, [assignment.slot], PlanningEmailVariant.UPCOMING, due=due)
 
 
 def notify_withdrawn(assignment: SlotAssignment, by: User) -> None:

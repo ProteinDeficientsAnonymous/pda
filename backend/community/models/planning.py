@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from typing import TYPE_CHECKING
 
 from django.db import models, transaction
@@ -16,6 +16,10 @@ if TYPE_CHECKING:
     from django.db.models import Manager
 
     from community.models.event import Event
+
+# Slots before this were announced on the 15th of the prior month; from here on, on the 1st.
+_FIRST_OF_MONTH_ANNOUNCEMENTS_FROM = date(2027, 2, 1)
+_MID_MONTH_DUE_DAY = 14
 
 _MONTHS = (
     "january", "february", "march", "april", "may", "june",
@@ -87,6 +91,13 @@ class PlanningSlot(models.Model):
 
     def month_start(self) -> date:
         return date(self.planning_year.year, self.month, 1)
+
+    def event_due(self) -> date:
+        """return(date): last day to create the event, the day before the announcement it's in"""
+        prior_month_end = self.month_start() - timedelta(days=1)
+        if self.month_start() < _FIRST_OF_MONTH_ANNOUNCEMENTS_FROM:
+            return prior_month_end.replace(day=_MID_MONTH_DUE_DAY)
+        return prior_month_end.replace(day=1) - timedelta(days=1)
 
     def __str__(self) -> str:
         return f"{self.planning_year} {self.label}"

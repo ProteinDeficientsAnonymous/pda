@@ -16,7 +16,7 @@ class PlanningEmailVariant(StrEnum):
 _PLANNING_SUBJECTS = {
     PlanningEmailVariant.PROPOSED: "can you plan {label}?",
     PlanningEmailVariant.REMINDER: "still need an answer: can you plan {label}?",
-    PlanningEmailVariant.UPCOMING: "{label} is coming up",
+    PlanningEmailVariant.UPCOMING: "{label} is coming up: create the event by {due}",
     PlanningEmailVariant.CONFIRMED: "you're planning {label} 🌱",
 }
 
@@ -39,6 +39,8 @@ class PlanningEmailDetails:
     slot_labels: tuple[str, ...]
     planning_url: str
     variant: PlanningEmailVariant
+    due_label: str = ""
+    announce_label: str = ""
 
 
 def send_planning_email(
@@ -52,7 +54,9 @@ def send_planning_email(
     text = render_to_string("emails/planning_slot.txt", context)
     return sender.send(
         to=details.to,
-        subject=_PLANNING_SUBJECTS[details.variant].format(label=summary.lower()),
+        subject=_PLANNING_SUBJECTS[details.variant].format(
+            label=summary.lower(), due=details.due_label
+        ),
         html=html,
         text=text,
     )

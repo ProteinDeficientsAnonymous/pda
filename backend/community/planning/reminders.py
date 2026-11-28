@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 # An hour under the cadence so a daily cron that drifts early still sends, but a rerun doesn't.
 _REMINDER_GAP = timedelta(days=3) - timedelta(hours=1)
-_UPCOMING_LEAD = timedelta(days=42)
 _AVAILABILITY_GAP = timedelta(days=7) - timedelta(hours=1)
 
 
@@ -110,13 +109,12 @@ def _due_upcoming(now: datetime) -> QuerySet[SlotAssignment]:
 
 def _in_upcoming_window(assignment: SlotAssignment, now: datetime) -> bool:
     today = now.astimezone(settings.COMMUNITY_TZ).date()
-    return assignment.slot.live_event is None and (
-        today >= assignment.slot.month_start() - _UPCOMING_LEAD
-    )
+    window_opens = assignment.slot.event_due().replace(day=1)
+    return assignment.slot.live_event is None and today >= window_opens
 
 
 def send_upcoming_notices(now: datetime) -> int:
-    """Tell committed planners their slot is within six weeks of its month and has no event yet.
+    """Tell committed planners, from the 1st of the month their event is due, that it has none yet.
 
     If the in-app notice raises, the stamp is rolled back (like a failed reminder) and the batch
     continues; a failed email alone keeps the stamp since the in-app notice already landed.

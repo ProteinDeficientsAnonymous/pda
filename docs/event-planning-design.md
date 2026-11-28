@@ -60,7 +60,7 @@ Creating a year pre-fills 12 monthly slots and the two biannuals (june anniversa
 
 **Availability reminders.** The same daily job emails every planner who hasn't submitted availability for an opened year, once a week (first one a week after opening), until they submit. It stops on january 1st of that year: by then proposals are out and the grid shows them under "no form". The year is stamped in `availability_reminded_at` under a row lock before sending, so a rerun doesn't double-send; a failed email waits for next week.
 
-**Upcoming notice.** The same daily job sends committed planners one email and in-app notification once the slot is within 6 weeks of the 1st of its month (so a late commit gets it on the next run), stamped in `upcoming_notified_at`, and skipped if the slot already has an event.
+**Upcoming notice.** The same daily job sends committed planners one email and in-app notification from the 1st of the month the event is due (so a late commit gets it on the next run). An event is due the day before the announcement that first shows it: the last day of the month two before the slot (february's by december 31, for the january 1 announcement). Slots before february 2027 used the old mid-month announcement, so january 2027 is due december 14. The notice names both dates, stamped in `upcoming_notified_at`, and skipped if the slot already has an event.
 
 **No email.** Proposals, the availability ask and the upcoming notice always create an in-app notification too; both kinds of reminder are email-only. The grid marks planners with no email so the coordinator knows to chase them directly.
 

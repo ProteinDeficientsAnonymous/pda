@@ -19,7 +19,8 @@ VIEW = PermissionKey.VIEW_EVENT_PLANNING
 DAY = timedelta(days=1)
 PROPOSED_AT = datetime(2026, 12, 1, 15, 0, tzinfo=settings.COMMUNITY_TZ)
 MONTH_START = datetime(2027, 1, 1, tzinfo=settings.COMMUNITY_TZ)
-WINDOW_OPENS = MONTH_START - 42 * DAY
+# january 2027 predates first-of-month announcements: due dec 14, so the window opens dec 1.
+WINDOW_OPENS = datetime(2026, 12, 1, tzinfo=settings.COMMUNITY_TZ)
 
 
 @pytest.fixture
@@ -135,7 +136,7 @@ def committed(slot):
 
 @pytest.mark.django_db
 class TestUpcomingNotices:
-    def test_fires_from_six_weeks_out_not_before(self, committed, fake_email_sender):
+    def test_fires_from_first_of_due_month_not_before(self, committed, fake_email_sender):
         assert send_upcoming_notices(WINDOW_OPENS - timedelta(minutes=1)) == 0
         assert send_upcoming_notices(WINDOW_OPENS) == 1
 
@@ -186,12 +187,24 @@ class TestUpcomingNotices:
         send_upcoming_notices(WINDOW_OPENS)
         notification = Notification.objects.get(recipient=committed.user)
         assert notification.notification_type == NotificationType.PLANNING_UPCOMING
-        assert notification.message == f"{slot.label} is coming up — time to create the event"
+        assert notification.message == f"{slot.label} is coming up — create the event by dec 14"
         kwargs = fake_email_sender.send.call_args.kwargs
         assert kwargs["to"] == "committed@example.com"
-        assert kwargs["subject"] == f"{slot.label} is coming up"
-        assert "create the event" in kwargs["text"]
+        assert kwargs["subject"] == f"{slot.label} is coming up: create the event by dec 14"
+        assert "on the calendar by dec 14 so it's in the dec 15 announcement" in kwargs["text"]
         assert "create the event" in kwargs["html"]
+
+    def test_first_of_month_slot_is_due_end_of_month_two_before(self, year, fake_email_sender):
+        february = year.slots.get(label__iexact="february")
+        planner = make_user(VIEW, email="feb@example.com")
+        SlotAssignment.objects.create(
+            slot=february, user=planner, status=AssignmentStatus.COMMITTED, proposed_at=PROPOSED_AT
+        )
+        assert send_upcoming_notices(WINDOW_OPENS - DAY) == 0
+        assert send_upcoming_notices(WINDOW_OPENS) == 1
+        kwargs = fake_email_sender.send.call_args.kwargs
+        assert kwargs["subject"] == "february is coming up: create the event by dec 31"
+        assert "by dec 31 so it's in the jan 1 announcement" in kwargs["text"]
         assert f"{settings.FRONTEND_BASE_URL}/admin/planning" in kwargs["text"]
 
     def test_no_email_address_still_notifies_in_app(self, committed, fake_email_sender):

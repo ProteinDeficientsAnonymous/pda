@@ -1,6 +1,6 @@
 hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
-{% if variant == "upcoming" %}{{ summary|lower }} is coming up and you're planning it.{% elif variant == "confirmed" %}you're down to plan {{ summary|lower }} 🌱{% elif variant == "reminder" %}just checking in — any chance you could plan {{ summary|lower }}?{% else %}any chance you could plan {{ summary|lower }}? 🌱{% endif %}
+{% if variant == "upcoming" %}{{ summary|lower }} is coming up and you're planning it. have the event on the calendar by {{ due_label }} so it's in the {{ announce_label }} announcement and we have time to post the flyer.{% elif variant == "confirmed" %}you're down to plan {{ summary|lower }} 🌱{% elif variant == "reminder" %}just checking in — any chance you could plan {{ summary|lower }}?{% else %}any chance you could plan {{ summary|lower }}? 🌱{% endif %}
 {% if slot_labels|length > 1 %}
 {% for label in slot_labels %}- {{ label|lower }}
 {% endfor %}{% endif %}

@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from community.models import (
     AssignmentStatus,
@@ -101,3 +103,19 @@ class TestPlanningChecklist:
         SlotChecklistTick.objects.create(slot=year.slots.first(), item=item, done_by=make_user())
         item.delete()
         assert not SlotChecklistTick.objects.exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("year_number", "month", "due"),
+    [
+        (2027, 1, date(2026, 12, 14)),
+        (2027, 2, date(2026, 12, 31)),
+        (2027, 3, date(2027, 1, 31)),
+        (2027, 4, date(2027, 2, 28)),
+        (2028, 1, date(2027, 11, 30)),
+    ],
+)
+def test_event_due_is_day_before_its_announcement(year_number, month, due):
+    slot = PlanningYear.create_with_default_slots(year_number).slots.get(order=month)
+    assert slot.event_due() == due
