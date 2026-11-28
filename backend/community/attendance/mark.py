@@ -10,7 +10,7 @@ from ninja.responses import Status
 from users.models import User
 from users.permissions import PermissionKey
 
-from community.attendance._mark_schemas import AttendanceMarkIn, AttendanceMarkOut
+from community.attendance.mark_schemas import AttendanceMarkIn, AttendanceMarkOut
 from community.attendance.shared import require_permission, upsert_attendance_rsvps
 from community.models import (
     AttendanceStatus,
