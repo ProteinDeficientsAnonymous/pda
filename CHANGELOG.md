@@ -1,3 +1,10 @@
+# [0.302.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.301.1...v0.302.0) (2026-11-28)
+
+
+### Features
+
+* **mcp:** create_event can backfill legacy and partiful events ([#2718](https://github.com/ProteinDeficientsAnonymous/pda/issues/2718)) ([2cfcf57](https://github.com/ProteinDeficientsAnonymous/pda/commit/2cfcf574a90b3bc22564b19cba05158e9b925fe4))
+
 ## [0.301.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.301.0...v0.301.1) (2026-11-27)
 
 
