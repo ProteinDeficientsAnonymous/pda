@@ -10,13 +10,15 @@ class PlanningEmailVariant(StrEnum):
     PROPOSED = "proposed"
     REMINDER = "reminder"
     UPCOMING = "upcoming"
+    UPCOMING_REMINDER = "upcoming_reminder"
     CONFIRMED = "confirmed"
 
 
 _PLANNING_SUBJECTS = {
     PlanningEmailVariant.PROPOSED: "can you plan {label}?",
     PlanningEmailVariant.REMINDER: "still need an answer: can you plan {label}?",
-    PlanningEmailVariant.UPCOMING: "{label} is coming up",
+    PlanningEmailVariant.UPCOMING: "{label} is coming up: create the event by {due}",
+    PlanningEmailVariant.UPCOMING_REMINDER: "{label} still needs an event: it's due {due}",
     PlanningEmailVariant.CONFIRMED: "you're planning {label} 🌱",
 }
 
@@ -39,6 +41,8 @@ class PlanningEmailDetails:
     slot_labels: tuple[str, ...]
     planning_url: str
     variant: PlanningEmailVariant
+    due_label: str = ""
+    announce_label: str = ""
 
 
 def send_planning_email(
@@ -47,12 +51,19 @@ def send_planning_email(
     details: PlanningEmailDetails,
 ) -> SendResult:
     summary = describe_slots(details.slot_labels)
-    context = {**asdict(details), "summary": summary}
+    context = {
+        **asdict(details),
+        "summary": summary,
+        "needs_event": details.variant
+        in (PlanningEmailVariant.UPCOMING, PlanningEmailVariant.UPCOMING_REMINDER),
+    }
     html = render_to_string("emails/planning_slot.html", context)
     text = render_to_string("emails/planning_slot.txt", context)
     return sender.send(
         to=details.to,
-        subject=_PLANNING_SUBJECTS[details.variant].format(label=summary.lower()),
+        subject=_PLANNING_SUBJECTS[details.variant].format(
+            label=summary.lower(), due=details.due_label
+        ),
         html=html,
         text=text,
     )
