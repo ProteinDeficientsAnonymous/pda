@@ -182,6 +182,20 @@ def _make_tentative(user, join_request, by: User) -> list[str]:
     return [*fields, "first_name", "last_name"]
 
 
+def _admitted_user(join_request, *, approving: bool) -> User | None:
+    """The linked user, else the phone match; approval skips a linked member or archived account."""
+    linked = join_request.user
+    if linked is not None and not (approving and linked.membership_status in MEMBER_OR_ARCHIVED):
+        return linked
+    return User.objects.filter(phone_number=join_request.phone_number).first()
+
+
+def applicant_guidelines_paused(join_request, *, approving: bool) -> bool:
+    """Whether the linked user, or the user provisioning would admit, is guidelines-paused."""
+    users = (join_request.user, _admitted_user(join_request, approving=approving))
+    return any(user is not None and user.is_guidelines_paused for user in users)
+
+
 def _apply_tentative_consents(user: User, join_request) -> list[str]:
     changed: list[str] = []
     if join_request.guidelines_consent_at is not None and user.guidelines_consent_at is None:
@@ -252,7 +266,7 @@ def maybe_promote_tentative(user, event, actor) -> JoinRequest | None:
 
     return(JoinRequest | None): the promoted join request, or None when nothing was promoted.
     """
-    # An archived re-applicant can be tentative under a guidelines pause; check-in doesn't lift it.
+    # A tentative applicant can be guidelines-paused; check-in doesn't lift it.
     if (
         not is_official_or_club(event.event_type)
         or user.is_guidelines_paused
@@ -332,7 +346,7 @@ def provision_approved_user(join_request, requesting_user, *, was_tentative: boo
             return Provisioned(None, False)
         return Provisioned(_promote_public_rsvper(linked, join_request, requesting_user), False)
 
-    existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
+    existing_user = _admitted_user(join_request, approving=True)
     if existing_user is None:
         first_name, last_name = _resolve_names(join_request)
         created_user, magic_token = create_user_with_role(

@@ -28,6 +28,7 @@ from community.join_requests._history import (
 from community.join_requests._rejection import send_join_rejection
 from community.join_requests.answer_order import in_form_order, question_order
 from community.join_requests.approval import (
+    applicant_guidelines_paused,
     applicant_user,
     provision_approved_user,
     provision_tentative_user,
@@ -130,6 +131,8 @@ _DECISION_EVENTS = (
     JoinRequestEvent.APPROVE,
     JoinRequestEvent.REJECT,
 )
+
+_ADMITTED_EVENTS = (JoinRequestEvent.MARK_TENTATIVE, JoinRequestEvent.APPROVE)
 
 _DECISION_ACTIONS = {
     JoinRequestEvent.MARK_TENTATIVE: "join_request_tentative",
@@ -345,6 +348,16 @@ def _apply_decision_fields(
     )
 
 
+def _refuse_guidelines_paused(join_request: JoinRequest, *, approving: bool) -> None:
+    # Lock what the check and provisioning read, so a pause can't land between them.
+    users = User.objects.select_for_update().filter(
+        Q(pk=join_request.user_id) | Q(phone_number=join_request.phone_number)
+    )
+    list(users)
+    if applicant_guidelines_paused(join_request, approving=approving):
+        raise_validation(Code.JoinRequest.APPLICANT_GUIDELINES_PAUSED, status_code=400)
+
+
 def _audit_reactivated(request, user: User, join_request: JoinRequest) -> None:
     audit_log(
         logging.WARNING,
@@ -379,7 +392,12 @@ def _apply_status_transition(
 
         before_status = str(join_request.status)
         was_tentative = before_status == JoinRequestStatus.TENTATIVE
-        join_request.save(update_fields=_apply_decision_fields(join_request, payload, actor))
+        update_fields = _apply_decision_fields(join_request, payload, actor)
+        if payload.event in _ADMITTED_EVENTS:
+            _refuse_guidelines_paused(
+                join_request, approving=payload.event == JoinRequestEvent.APPROVE
+            )
+        join_request.save(update_fields=update_fields)
         if payload.event == JoinRequestEvent.MARK_TENTATIVE:
             user, magic_token, reactivated = provision_tentative_user(join_request, actor)
             if reactivated:

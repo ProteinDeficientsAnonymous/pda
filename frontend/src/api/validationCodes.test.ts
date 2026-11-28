@@ -244,6 +244,12 @@ describe('messageForCode', () => {
     );
   });
 
+  it('tells the vetter to lift a guidelines pause before approving', () => {
+    expect(messageForCode({ code: Code.JoinRequest.ApplicantGuidelinesPaused, field: null })).toBe(
+      "they're guidelines-paused — lift the pause before approving them",
+    );
+  });
+
   it('says a tentative request is archived, not rejected', () => {
     expect(
       messageForCode({ code: Code.JoinRequest.TentativeCannotBeRejected, field: null }),
