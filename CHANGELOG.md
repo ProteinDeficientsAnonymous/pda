@@ -1,3 +1,10 @@
+# [0.305.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.304.0...v0.305.0) (2026-11-28)
+
+
+### Features
+
+* **mcp:** record each tool call in the audit log ([#2725](https://github.com/ProteinDeficientsAnonymous/pda/issues/2725)) ([5c96444](https://github.com/ProteinDeficientsAnonymous/pda/commit/5c964448d87bee6da28465ac19b934333cdd4a27))
+
 # [0.304.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.303.0...v0.304.0) (2026-11-28)
 
 
