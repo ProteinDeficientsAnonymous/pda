@@ -3,7 +3,7 @@
 <body style="margin: 0; padding: 24px; background: #f5f5f3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #222;">
   <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 32px;">
     <p style="margin: 0 0 16px;">hi{% if display_name %} {{ display_name|lower }}{% endif %} —</p>
-    <p style="margin: 0 0 24px;">quick note: you have about two weeks left to make it to a qualifying club or official event before your membership comes up for review.</p>
+    <p style="margin: 0 0 24px;">quick note: you have about two weeks, until {{ deadline }}, to get to 2 official or club events in the last 12 months before your membership comes up for review.</p>
     <p style="margin: 0 0 24px;">
       <a href="{{ calendar_url }}" style="display: inline-block; background: #3c6939; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500;">see upcoming events</a>
     </p>

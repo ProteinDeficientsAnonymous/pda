@@ -1,8 +1,8 @@
 hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
-we miss you at club and official events! membership works best when we see each other in person, so we ask everyone to make it to at least 2 qualifying events a year — it's what keeps this community connected.
+thanks for being part of pda! just a heads up about our in-person policy: members come to at least 2 official or club events in any 12 months. to stay on track, we'd love to see you at an event or two by {{ deadline }}.
 
-it's been a while since your last one. no pressure, just a friendly nudge — take a look at what's coming up.
+here's what's coming up. if something's getting in the way, reach out to an admin — we're happy to help.
 
 {{ calendar_url }}
 

@@ -1,6 +1,6 @@
 hi{% if display_name %} {{ display_name|lower }}{% endif %} —
 
-quick note: you have about two weeks left to make it to a qualifying club or official event before your membership comes up for review.
+quick note: you have about two weeks, until {{ deadline }}, to get to 2 official or club events in the last 12 months before your membership comes up for review.
 
 {{ calendar_url }}
 
