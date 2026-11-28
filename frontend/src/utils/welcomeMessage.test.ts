@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  buildEventSection,
   buildSmsHref,
   buildWelcomeMessage,
   buildWhatsAppHref,
+  formatSuggestedEvent,
   renderWelcomeMessage,
 } from './welcomeMessage';
 
@@ -135,7 +135,7 @@ describe('buildWhatsAppHref', () => {
   });
 });
 
-describe('event sections', () => {
+describe('event placeholders', () => {
   const event = {
     id: 'e1',
     slug: 'book-club',
@@ -144,35 +144,38 @@ describe('event sections', () => {
   };
   const vars = { name: 'Sam', senderName: 'Vetter', whatsappLink: '' };
 
-  it('builds a lead-in, title with date, and event link', () => {
-    expect(buildEventSection("here's a club event:", event)).toBe(
-      `here's a club event:\nDecember Book Club — thu dec 10, 6:30 pm et\n${window.location.origin}/events/book-club`,
+  it('formats just the title with date and event link', () => {
+    expect(formatSuggestedEvent(event)).toBe(
+      `December Book Club — thu dec 10, 6:30 pm et\n${window.location.origin}/events/book-club`,
     );
   });
 
   it('links by id when the event has no slug', () => {
-    expect(buildEventSection('lead', { ...event, slug: '' })).toContain('/events/e1');
+    expect(formatSuggestedEvent({ ...event, slug: '' })).toContain('/events/e1');
   });
 
   it('is empty without an event', () => {
-    expect(buildEventSection('lead', null)).toBe('');
+    expect(formatSuggestedEvent(null)).toBe('');
   });
 
-  it('fills both event placeholders', () => {
-    const out = renderWelcomeMessage('hi\n\n${NEXT_OFFICIAL_EVENT}\n\n${CLUB_EVENT}', {
-      ...vars,
-      nextOfficialEvent: 'official section',
-      clubEvent: 'club section',
-    });
-    expect(out).toBe('hi\n\nofficial section\n\nclub section');
+  it("fills both event placeholders under the template's own lead-ins", () => {
+    const out = renderWelcomeMessage(
+      'hi\n\nnext official:\n${NEXT_OFFICIAL_EVENT}\n\nclub:\n${CLUB_EVENT}',
+      { ...vars, nextOfficialEvent: 'official event', clubEvent: 'club event' },
+    );
+    expect(out).toBe('hi\n\nnext official:\nofficial event\n\nclub:\nclub event');
   });
 
-  it('drops empty sections without leaving blank lines', () => {
-    const out = renderWelcomeMessage('hi\n\n${NEXT_OFFICIAL_EVENT}\n\n${CLUB_EVENT}\n\nbye', {
-      ...vars,
-      clubEvent: 'club section',
-    });
-    expect(out).toBe('hi\n\nclub section\n\nbye');
-    expect(renderWelcomeMessage('hi\n\n${CLUB_EVENT}', vars)).toBe('hi');
+  it('drops the whole paragraph of an empty placeholder, lead-in included', () => {
+    const out = renderWelcomeMessage(
+      'hi\n\nnext official:\n${NEXT_OFFICIAL_EVENT}\n\nclub:\n${CLUB_EVENT}\n\nbye',
+      { ...vars, clubEvent: 'club event' },
+    );
+    expect(out).toBe('hi\n\nclub:\nclub event\n\nbye');
+    expect(renderWelcomeMessage('hi\n\nclub:\n${CLUB_EVENT}', vars)).toBe('hi');
+  });
+
+  it('leaves templates without event placeholders untouched', () => {
+    expect(renderWelcomeMessage('hi\n\n\nbye', vars)).toBe('hi\n\n\nbye');
   });
 });

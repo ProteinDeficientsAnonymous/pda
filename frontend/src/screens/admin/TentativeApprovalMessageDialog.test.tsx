@@ -13,7 +13,7 @@ vi.mock('@/api/client');
 vi.mock('@/api/content', () => ({
   useTentativeApprovalMessage: () => ({
     data: {
-      body: 'hi ${FIRST_NAME}, from ${SENDER_NAME} — you are tentatively in. sign in: ${MAGIC_LINK}\n\n${NEXT_OFFICIAL_EVENT}\n\n${CLUB_EVENT}',
+      body: 'hi ${FIRST_NAME}, from ${SENDER_NAME} — you are tentatively in. sign in: ${MAGIC_LINK}\n\nofficial lead:\n${NEXT_OFFICIAL_EVENT}\n\nclub lead:\n${CLUB_EVENT}',
       updatedAt: '2026-01-01',
     },
     isPending: false,
@@ -127,7 +127,7 @@ describe('TentativeApprovalMessageDialog', () => {
     ).toBeInTheDocument();
   });
 
-  it('adds the suggested official and club events to the message', () => {
+  it("adds only the event details under the template's own lead-ins", () => {
     suggestedEvents.data = {
       nextOfficialEvent: {
         id: 'o1',
@@ -144,13 +144,15 @@ describe('TentativeApprovalMessageDialog', () => {
       clubEventFromPickedClub: true,
     };
     renderDialog(makeUser());
-    expect(screen.getByText(/here's the next official event:/)).toHaveTextContent(
-      `here's the next official event: Park Walk — sat dec 19, 11:00 am et ${window.location.origin}/events/walk`,
+    const message = screen.getByText(/official lead:/);
+    expect(message).toHaveTextContent(
+      `official lead: Park Walk — sat dec 19, 11:00 am et ${window.location.origin}/events/walk`,
     );
-    expect(screen.getByText(/here's a club event we think you'd love:/)).toBeInTheDocument();
+    expect(message).toHaveTextContent('club lead: Book Club');
+    expect(screen.queryByText(/here's/)).toBeNull();
   });
 
-  it('uses softer wording for a club they did not pick', () => {
+  it('leaves out the lead-in when there is no event', () => {
     suggestedEvents.data = {
       nextOfficialEvent: null,
       clubEvent: {
@@ -162,7 +164,7 @@ describe('TentativeApprovalMessageDialog', () => {
       clubEventFromPickedClub: false,
     };
     renderDialog(makeUser());
-    expect(screen.getByText(/here's a club event coming up:/)).toBeInTheDocument();
-    expect(screen.queryByText(/we think you'd love/)).toBeNull();
+    expect(screen.getByText(/club lead:/)).toHaveTextContent('club lead: Movie Night');
+    expect(screen.queryByText(/official lead:/)).toBeNull();
   });
 });

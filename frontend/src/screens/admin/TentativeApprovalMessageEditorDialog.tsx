@@ -22,11 +22,11 @@ export function TentativeApprovalMessageEditorDialog({ open, onClose, template }
         { name: 'WHATSAPP_LINK' },
         {
           name: 'NEXT_OFFICIAL_EVENT',
-          hint: '"here\'s the next official event:" plus the event; blank if none',
+          hint: "the next official event's name, date and link; with none, its paragraph is left out",
         },
         {
           name: 'CLUB_EVENT',
-          hint: 'a club event 7+ days out from a club they picked, else from a club open to anyone; blank if none',
+          hint: 'a club event 7+ days out from a club they picked, else from a club open to anyone; with none, its paragraph is left out',
         },
       ]}
       ariaLabel="tentative approval message body"
