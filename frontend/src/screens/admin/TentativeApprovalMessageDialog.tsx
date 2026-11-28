@@ -9,10 +9,10 @@ import { SendLink } from '@/components/ui/SendLink';
 import { hasPermission, Permission } from '@/models/permissions';
 import { formatPhone } from '@/utils/formatPhone';
 import {
-  buildEventSection,
   buildMagicLinkUrl,
   buildSmsHref,
   buildWhatsAppHref,
+  formatSuggestedEvent,
   renderWelcomeMessage,
 } from '@/utils/welcomeMessage';
 
@@ -29,7 +29,7 @@ interface Props {
 }
 
 const DEFAULT_TENTATIVE_MESSAGE =
-  "hi ${FIRST_NAME} 🌱 you're tentatively in! sign in here: ${MAGIC_LINK} — come to an event in person and we'll get you fully approved.\n\n${NEXT_OFFICIAL_EVENT}\n\n${CLUB_EVENT}";
+  "hi ${FIRST_NAME} 🌱 you're tentatively in! sign in here: ${MAGIC_LINK} — come to an event in person and we'll get you fully approved.\n\nhere's the next official event:\n${NEXT_OFFICIAL_EVENT}\n\nhere's a club event coming up:\n${CLUB_EVENT}";
 
 export function TentativeApprovalMessageDialog({
   open,
@@ -53,16 +53,8 @@ export function TentativeApprovalMessageDialog({
     senderName,
     magicLink: magicLinkToken ? buildMagicLinkUrl(magicLinkToken) : '',
     whatsappLink: whatsappLinkQ.data?.link ?? '',
-    nextOfficialEvent: buildEventSection(
-      "here's the next official event:",
-      eventsQ.data?.nextOfficialEvent ?? null,
-    ),
-    clubEvent: buildEventSection(
-      eventsQ.data?.clubEventFromPickedClub
-        ? "here's a club event we think you'd love:"
-        : "here's a club event coming up:",
-      eventsQ.data?.clubEvent ?? null,
-    ),
+    nextOfficialEvent: formatSuggestedEvent(eventsQ.data?.nextOfficialEvent ?? null),
+    clubEvent: formatSuggestedEvent(eventsQ.data?.clubEvent ?? null),
   });
   const smsHref = buildSmsHref(phoneNumber, message);
   const whatsappHref = buildWhatsAppHref(phoneNumber, message);
