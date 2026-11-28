@@ -1,3 +1,10 @@
+# [0.304.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.303.0...v0.304.0) (2026-11-28)
+
+
+### Features
+
+* **mcp:** mark_attended tool backfills attendance without rsvps ([#2720](https://github.com/ProteinDeficientsAnonymous/pda/issues/2720)) ([917354a](https://github.com/ProteinDeficientsAnonymous/pda/commit/917354a1552a2d15f317f881428a392630da7fe7))
+
 # [0.303.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.302.0...v0.303.0) (2026-11-28)
 
 
