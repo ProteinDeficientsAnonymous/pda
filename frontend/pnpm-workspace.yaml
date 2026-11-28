@@ -2,3 +2,11 @@ overrides:
   brace-expansion: 2.1.8
   js-yaml: 4.3.2
   moment: 2.31.0
+  # drops the peer (it would resolve to root TS 7); the npm: alias below doesn't match ^5.x, so it survives
+  openapi-typescript>typescript@^5.x: '-'
+
+# openapi-typescript needs the TypeScript 5 compiler API, which TypeScript 7 doesn't expose.
+packageExtensions:
+  openapi-typescript:
+    dependencies:
+      typescript: npm:typescript@5.9.3
