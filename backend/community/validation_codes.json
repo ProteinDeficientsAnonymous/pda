@@ -307,6 +307,16 @@
         "name": "PAYPAL_OFFICIAL_ONLY",
         "value": "event.paypal_official_only",
         "params": []
+      },
+      {
+        "name": "PAYPAL_NOT_ACCEPTED",
+        "value": "event.paypal_not_accepted",
+        "params": []
+      },
+      {
+        "name": "PAYPAL_NOTHING_TO_PAY",
+        "value": "event.paypal_nothing_to_pay",
+        "params": []
       }
     ],
     "Poll": [

@@ -51,6 +51,7 @@ from community.message_templates.tentative_approval import (
 )
 from community.message_templates.welcome import router as welcome_template_router
 from community.message_templates.whatsapp_link import router as whatsapp_link_router
+from community.paypal.checkout import router as paypal_checkout_router
 from community.planning.availability import router as planning_availability_router
 from community.planning.checklist import router as planning_checklist_router
 from community.planning.event_link import router as planning_event_link_router
@@ -102,6 +103,7 @@ router.add_router("", clubs_router)
 router.add_router("", event_description_templates_router)
 router.add_router("", official_event_defaults_router)
 router.add_router("", event_rsvps_router)
+router.add_router("", paypal_checkout_router)
 router.add_router("", event_rsvp_questions_router)
 router.add_router("", event_host_actions_router)
 router.add_router("", event_host_rsvps_router)

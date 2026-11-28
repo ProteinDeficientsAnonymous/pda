@@ -70,6 +70,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'only official events can be a walk or restaurant';
     case Code.Event.PaypalOfficialOnly:
       return 'only official events can take paypal';
+    case Code.Event.PaypalNotAccepted:
+      return "this event doesn't take paypal";
+    case Code.Event.PaypalNothingToPay:
+      return 'you have no rsvp here that needs paying';
     case Code.Event.InvalidCreateStatus:
       return 'new events can only be saved as active or draft';
     case Code.Event.DateLockedByPoll:

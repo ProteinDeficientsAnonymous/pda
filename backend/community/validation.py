@@ -67,6 +67,8 @@ class Code:
         INVALID_EVENT_FORMAT = "event.invalid_event_format"
         CLUB_REQUIRED = "event.club_required"
         PAYPAL_OFFICIAL_ONLY = "event.paypal_official_only"
+        PAYPAL_NOT_ACCEPTED = "event.paypal_not_accepted"
+        PAYPAL_NOTHING_TO_PAY = "event.paypal_nothing_to_pay"
 
     class Poll:
         NOT_FOUND = "poll.not_found"

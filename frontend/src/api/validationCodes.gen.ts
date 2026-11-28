@@ -65,6 +65,8 @@ export const Code = {
     InvalidEventFormat: 'event.invalid_event_format',
     ClubRequired: 'event.club_required',
     PaypalOfficialOnly: 'event.paypal_official_only',
+    PaypalNotAccepted: 'event.paypal_not_accepted',
+    PaypalNothingToPay: 'event.paypal_nothing_to_pay',
   },
   Poll: {
     NotFound: 'poll.not_found',
@@ -411,6 +413,8 @@ export type ValidationCode =
   | 'event.invalid_event_format'
   | 'event.club_required'
   | 'event.paypal_official_only'
+  | 'event.paypal_not_accepted'
+  | 'event.paypal_nothing_to_pay'
   | 'poll.not_found'
   | 'poll.options_required'
   | 'poll.options_must_be_future'
@@ -675,6 +679,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.invalid_event_format': [],
   'event.club_required': [],
   'event.paypal_official_only': [],
+  'event.paypal_not_accepted': [],
+  'event.paypal_nothing_to_pay': [],
   'poll.not_found': [],
   'poll.options_required': [],
   'poll.options_must_be_future': [],
