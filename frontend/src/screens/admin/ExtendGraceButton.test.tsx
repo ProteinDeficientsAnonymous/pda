@@ -44,4 +44,28 @@ describe('ExtendGraceButton', () => {
     expect(mutateAsync).toHaveBeenCalledWith('2027-03-01');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+
+  it('resets an unsaved pick when the dialog reopens', async () => {
+    const user = userEvent.setup();
+    render(<ExtendGraceButton row={row} />);
+
+    await user.click(screen.getByRole('button', { name: 'extend grace' }));
+    await user.click(screen.getByRole('button', { name: 'monday, march 1, 2027' }));
+    await user.click(screen.getByRole('button', { name: /march 15/i }));
+    expect(screen.getByText('monday, march 15, 2027')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'close' }));
+
+    await user.click(screen.getByRole('button', { name: 'extend grace' }));
+    expect(screen.getByText('monday, march 1, 2027')).toBeInTheDocument();
+  });
+
+  it('blocks saving a deadline that is not in the future', async () => {
+    const user = userEvent.setup();
+    render(<ExtendGraceButton row={{ ...row, deadline: new Date(2020, 0, 1) }} />);
+
+    await user.click(screen.getByRole('button', { name: 'extend grace' }));
+
+    expect(screen.getByText('pick a date after today')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'save' })).toBeDisabled();
+  });
 });
