@@ -46,6 +46,7 @@ function renderAt(token: string, redirect?: string) {
         <Route path="/onboarding" element={<div>onboarding page</div>} />
         <Route path="/consent" element={<div>consent page</div>} />
         <Route path="/calendar" element={<div>calendar page</div>} />
+        <Route path="/login" element={<div>login page</div>} />
         <Route path="/events/:slug" element={<div>event page</div>} />
       </Routes>
     </MemoryRouter>,
@@ -63,6 +64,23 @@ describe('MagicLoginScreen', () => {
     renderAt('tok-rejected');
     expect(await screen.findByText(/request to join again/i)).toHaveAttribute('href', '/join');
     expect(screen.queryByText(/send me a new link/i)).toBeNull();
+  });
+
+  it('should point a user with a password to password sign-in when the link expired', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(400, Code.Auth.MagicLinkExpiredHasPassword));
+    renderAt('tok-has-pw');
+    expect(
+      await screen.findByText("you've already got a password — use that instead"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/grab a fresh one/i)).toBeNull();
+    screen.getByRole('button', { name: 'sign in with your password' }).click();
+    expect(await screen.findByText('login page')).toBeInTheDocument();
+  });
+
+  it('should offer a fresh link when an expired link has no password behind it', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(400, Code.Auth.MagicLinkAlreadyUsed));
+    renderAt('tok-no-pw');
+    expect(await screen.findByText(/grab a fresh one/i)).toBeInTheDocument();
   });
 
   it('tells a non-member they cannot sign in', async () => {

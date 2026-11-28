@@ -12,7 +12,7 @@ import { AuthLayout } from './AuthLayout';
 import { safeRedirect } from './redirect';
 import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
 
-type State = 'pending' | 'expired' | 'cross_user' | 'blocked' | 'rejected';
+type State = 'pending' | 'expired' | 'expired_has_password' | 'cross_user' | 'blocked' | 'rejected';
 
 export default function MagicLoginScreen() {
   const { token } = useParams();
@@ -48,6 +48,10 @@ export default function MagicLoginScreen() {
         void navigate(safeRedirect(params.get('redirect')), { replace: true });
       })
       .catch((err: unknown) => {
+        if (hasErrorCode(err, Code.Auth.MagicLinkExpiredHasPassword)) {
+          setState('expired_has_password');
+          return;
+        }
         if (hasErrorCode(err, Code.Auth.AccountRejected)) {
           setState('rejected');
           return;
@@ -117,6 +121,40 @@ export default function MagicLoginScreen() {
         >
           back to calendar
         </Button>
+      </AuthLayout>
+    );
+  }
+
+  if (state === 'expired_has_password') {
+    return (
+      <AuthLayout title="link expired" subtitle="you've already got a password — use that instead">
+        <Button
+          fullWidth
+          className="mt-4"
+          onClick={() => {
+            void navigate('/login', { replace: true });
+          }}
+        >
+          sign in with your password
+        </Button>
+        <p className="text-foreground-tertiary mt-4 text-sm">
+          forgot it?{' '}
+          <button
+            type="button"
+            className="text-brand-700 hover:text-brand-900"
+            onClick={() => {
+              setLinkDialogOpen(true);
+            }}
+          >
+            send me a new link
+          </button>
+        </p>
+        <RequestLoginLinkDialog
+          open={linkDialogOpen}
+          onClose={() => {
+            setLinkDialogOpen(false);
+          }}
+        />
       </AuthLayout>
     );
   }

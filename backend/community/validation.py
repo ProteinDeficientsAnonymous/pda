@@ -138,6 +138,7 @@ class Code:
         NOT_A_MEMBER = "auth.not_a_member"
         MAGIC_LINK_INVALID_OR_EXPIRED = "auth.magic_link_invalid_or_expired"
         MAGIC_LINK_ALREADY_USED = "auth.magic_link_already_used"
+        MAGIC_LINK_EXPIRED_HAS_PASSWORD = "auth.magic_link_expired_has_password"
         ALREADY_SIGNED_IN_AS_DIFFERENT_USER = "auth.already_signed_in_as_different_user"
         REFRESH_TOKEN_INVALID = "auth.refresh_token_invalid"
         REFRESH_FAILED = "auth.refresh_failed"

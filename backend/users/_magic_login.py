@@ -90,7 +90,12 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
                     details={"reason": "used_or_expired"},
                 ),
             )
-            raise_validation(Code.Auth.MAGIC_LINK_ALREADY_USED, status_code=400)
+            raise_validation(
+                Code.Auth.MAGIC_LINK_EXPIRED_HAS_PASSWORD
+                if magic.user.has_usable_password()
+                else Code.Auth.MAGIC_LINK_ALREADY_USED,
+                status_code=400,
+            )
         magic.used = True
         magic.save(update_fields=["used"])
         if magic.requires_password_reset:
