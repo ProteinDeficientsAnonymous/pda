@@ -3,6 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { Code, type FieldError, messageForCode, messagesFromFieldErrors } from './validationCodes';
 
 describe('messageForCode', () => {
+  it('asks for a future date when an attendance grace is not after today', () => {
+    expect(messageForCode({ code: Code.User.GraceNotInFuture, field: 'grace_until' })).toBe(
+      'pick a date after today',
+    );
+  });
+
   it('returns friendly copy for known event-form codes', () => {
     expect(
       messageForCode({
