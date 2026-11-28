@@ -12,7 +12,14 @@ import { AuthLayout } from './AuthLayout';
 import { safeRedirect } from './redirect';
 import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
 
-type State = 'pending' | 'expired' | 'expired_has_password' | 'cross_user' | 'blocked' | 'rejected';
+type State =
+  | 'pending'
+  | 'expired'
+  | 'expired_no_password'
+  | 'expired_has_password'
+  | 'cross_user'
+  | 'blocked'
+  | 'rejected';
 
 export default function MagicLoginScreen() {
   const { token } = useParams();
@@ -50,6 +57,10 @@ export default function MagicLoginScreen() {
       .catch((err: unknown) => {
         if (hasErrorCode(err, Code.Auth.MagicLinkExpiredHasPassword)) {
           setState('expired_has_password');
+          return;
+        }
+        if (hasErrorCode(err, Code.Auth.MagicLinkAlreadyUsed)) {
+          setState('expired_no_password');
           return;
         }
         if (hasErrorCode(err, Code.Auth.AccountRejected)) {
@@ -162,14 +173,20 @@ export default function MagicLoginScreen() {
     );
   }
 
-  if (state === 'expired') {
+  if (state === 'expired' || state === 'expired_no_password') {
     return (
       <AuthLayout title="link expired" subtitle="this login link didn't work">
         <p className="text-foreground-tertiary text-sm">
-          grab a fresh one below, or{' '}
-          <a href="/login" className="text-brand-700 hover:text-brand-900">
-            sign in with your password
-          </a>
+          {state === 'expired_no_password' ? (
+            'grab a fresh one below'
+          ) : (
+            <>
+              grab a fresh one below, or{' '}
+              <a href="/login" className="text-brand-700 hover:text-brand-900">
+                sign in with your password
+              </a>
+            </>
+          )}
         </p>
         <Button
           fullWidth

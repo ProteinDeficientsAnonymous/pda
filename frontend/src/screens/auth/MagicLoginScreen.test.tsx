@@ -81,6 +81,13 @@ describe('MagicLoginScreen', () => {
     magicLoginMock.mockRejectedValueOnce(apiError(400, Code.Auth.MagicLinkAlreadyUsed));
     renderAt('tok-no-pw');
     expect(await screen.findByText(/grab a fresh one/i)).toBeInTheDocument();
+    expect(screen.queryByText('sign in with your password')).toBeNull();
+  });
+
+  it('should keep the password option when the link is unknown', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(400, Code.Auth.MagicLinkInvalidOrExpired));
+    renderAt('tok-unknown');
+    expect(await screen.findByText('sign in with your password')).toHaveAttribute('href', '/login');
   });
 
   it('tells a non-member they cannot sign in', async () => {
