@@ -22,7 +22,7 @@ def _summary(member: User) -> dict[str, str]:
     return {"id": str(member.pk), "name": member.full_name}
 
 
-async def _active_members(member_ids: list[UUID]) -> dict[UUID, User]:
+async def _members(member_ids: list[UUID]) -> dict[UUID, User]:
     found = {m.pk: m async for m in User.objects.members_or_archived().filter(pk__in=member_ids)}
     missing = [str(i) for i in member_ids if i not in found]
     if missing:
@@ -53,7 +53,7 @@ def _skip_reason(current: date | None, grace_until: date) -> str | None:
 
 async def _plan(member_ids: list[UUID], grace_until: date) -> tuple[list[dict], list[dict]]:
     ids = list(dict.fromkeys(member_ids))
-    members = await _active_members(ids)
+    members = await _members(ids)
     deadlines = await _deadlines(ids)
     batch, skipped = [], []
     for member_id in ids:
@@ -89,7 +89,7 @@ async def _extend(user: User, batch: list[dict], grace_until: date) -> tuple[lis
     description=(
         "push one or more members' 2-event deadline out to grace_until (up to "
         f"{MAX_BATCH} ids), like the attendance tab's extend grace button; the pause-side "
-        "partner of set_attendance_pauses. until then they aren't pause candidates and their "
+        "partner of set_attendance_pause. until then they aren't pause candidates and their "
         "attendance reminders don't come due. members whose deadline is already on or after "
         "grace_until, or who aren't active members, are listed under skipped. the first call "
         "changes nothing and returns each member's current deadline and one confirm_token: "
@@ -99,7 +99,9 @@ async def _extend(user: User, batch: list[dict], grace_until: date) -> tuple[lis
 async def extend_attendance_graces(
     member_ids: Annotated[
         list[UUID],
-        Field(min_length=1, max_length=MAX_BATCH, description="the members' ids, from find_members"),
+        Field(
+            min_length=1, max_length=MAX_BATCH, description="the members' ids, from find_members"
+        ),
     ],
     grace_until: Annotated[date, Field(description="the new deadline, after today")],
     confirm_token: ConfirmToken = None,
