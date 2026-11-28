@@ -5,6 +5,7 @@ from io import StringIO
 from unittest.mock import MagicMock
 
 import pytest
+from community.attendance.clock import milestone_due_date
 from community.models import AttendanceReminder, AttendanceStatus, Event, EventRSVP, EventType
 from django.core.management import call_command
 from django.db import connection
@@ -125,22 +126,37 @@ class TestSendAttendanceRemindersCommand:
         assert reminders.first().milestone == "m11"
 
 
-@pytest.mark.django_db
-def test_anchors_on_last_qualifying_attendance(fake_sender):
-    user = _make_member("+12025550123")
-    attended_at = datetime.now(tz=UTC) - timedelta(days=320)
+def _rsvp(user, days_ago: int, attendance=AttendanceStatus.ATTENDED) -> datetime:
+    start = datetime.now(tz=UTC) - timedelta(days=days_ago)
     event = Event.objects.create(
-        title="official", event_type=EventType.OFFICIAL, start_datetime=attended_at
+        title="official", event_type=EventType.OFFICIAL, start_datetime=start
     )
-    EventRSVP.objects.create(
-        user=user, event=event, status="attending", attendance=AttendanceStatus.ATTENDED
-    )
+    EventRSVP.objects.create(user=user, event=event, status="attending", attendance=attendance)
+    return start
+
+
+@pytest.mark.django_db
+def test_anchors_on_second_last_qualifying_attendance(fake_sender):
+    user = _make_member("+12025550123")
+    second_last = _rsvp(user, days_ago=320)
+    _rsvp(user, days_ago=10)
     with override_settings(ATTENDANCE_CLOCK_FLOOR=_PAST_JOINED.date()):
         call_command("send_attendance_reminders")
     fake_sender.send.assert_called_once()
     reminder = AttendanceReminder.objects.get(user=user)
     assert reminder.milestone == "m10"
-    assert reminder.anchor_date == attended_at.date()
+    assert reminder.anchor_date == second_last.date()
+    deadline = milestone_due_date(second_last.date(), "m12")
+    assert f"{deadline:%B} {deadline.day}".lower() in fake_sender.send.call_args.kwargs["text"]
+
+
+@pytest.mark.django_db
+def test_skips_member_with_upcoming_attending_rsvp(fake_sender):
+    user = _make_member("+12025550124")
+    _rsvp(user, days_ago=-7, attendance=AttendanceStatus.UNKNOWN)
+    with override_settings(ATTENDANCE_CLOCK_FLOOR=_PAST_JOINED.date()):
+        call_command("send_attendance_reminders")
+    fake_sender.send.assert_not_called()
 
 
 def _run_counting_queries(new_members: int, start: int) -> int:
