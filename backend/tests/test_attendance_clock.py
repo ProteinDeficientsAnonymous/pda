@@ -170,7 +170,8 @@ class TestAttendanceDeadline:
         assert attendance_deadline(date(2020, 1, 1), None, date(2028, 6, 1)) == date(2028, 6, 1)
 
     def test_leap_day_grace_is_not_a_day_early(self):
-        assert attendance_deadline(date(2020, 1, 1), None, date(2028, 2, 29)) == date(2028, 2, 29)
+        # no anchor + 12mo lands on Feb 29, so the nearest deadline that isn't early is Mar 1
+        assert attendance_deadline(date(2020, 1, 1), None, date(2028, 2, 29)) == date(2028, 3, 1)
 
 
 class TestMilestoneDueDate:
