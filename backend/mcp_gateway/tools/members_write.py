@@ -3,7 +3,12 @@ from uuid import UUID
 
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
-from users.api import attendance_pause_preview, update_user
+from users.api import (
+    attendance_pause_preview,
+    delete_user,
+    guidelines_pause_preview,
+    update_user,
+)
 from users.models import User
 from users.permissions import PermissionKey
 from users.schemas import UserPatchIn
@@ -80,3 +85,40 @@ async def set_attendance_pause(
         "attendance_paused_at": result["attendance_paused_at"],
         "events": events,
     }
+
+
+@pda_tool(
+    PermissionKey.MANAGE_USERS,
+    description=(
+        "archive a member, like the admin members screen's archive action. they lose access "
+        "at once; restoring them takes a new approved join request. archiving drops all their "
+        "upcoming rsvps (official and club too), takes them off as co-host where others host, "
+        "moves events they host alone back to draft (guests are told), rescinds their pending "
+        "co-host invites, and strips their roles. the first call changes nothing and returns "
+        "the member, the events affected (each with a role and outcome), the roles stripped "
+        "and a confirm_token: show that, get an explicit yes, then call again with the same "
+        "member_id and the token."
+    ),
+)
+async def archive_member(
+    member_id: Annotated[UUID, Field(description="the member's id, from find_members")],
+    confirm_token: ConfirmToken = None,
+) -> dict[str, Any]:
+    user = await current_user()
+    member = await _member(member_id)
+    summary = {"id": str(member.pk), "name": member.full_name}
+    if member.is_archived:
+        raise ToolError(f"{member.full_name} is already archived; nothing to do")
+
+    # Archiving releases exactly what a guidelines pause does (pause_impact treats them alike).
+    preview = await call_view(guidelines_pause_preview, user, user_id=member.pk)
+    impact = {"events": preview["events"], "stripped_roles": preview["stripped_roles"]}
+    bound = Confirmed(
+        user.pk, target_id=str(member.pk), action="archive_member", changes=True, state=impact
+    )
+    if confirm_token is None:
+        return {"member": summary, **impact, "confirm_token": issue_confirm_token(bound)}
+
+    await use_confirm_token(confirm_token, bound)
+    await call_view(delete_user, user, user_id=str(member.pk))
+    return {"member": summary, "archived": True, **impact}
