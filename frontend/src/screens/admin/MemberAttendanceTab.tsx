@@ -15,6 +15,7 @@ import { ContentError, ContentLoading } from '@/screens/public/ContentContainer'
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
 
+import { ExtendGraceButton } from './ExtendGraceButton';
 import { usePauseConfirm } from './usePauseConfirm';
 
 type Filter = 'all' | 'at-risk' | 'needs-second-event';
@@ -171,6 +172,7 @@ function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
       {paused ? null : (
         <p className="text-muted text-xs">
           2-event deadline: {format(row.deadline, 'MMM d, yyyy').toLowerCase()}
+          {row.graceUntil ? ' (extended)' : null}
         </p>
       )}
 
@@ -181,7 +183,12 @@ function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
         <Stat label="cancels" value={row.cancelCount} />
       </div>
 
-      {canPause && !paused ? <PauseButton row={row} /> : null}
+      {canPause && !paused ? (
+        <div className="flex gap-4">
+          <PauseButton row={row} />
+          <ExtendGraceButton row={row} />
+        </div>
+      ) : null}
     </article>
   );
 }
