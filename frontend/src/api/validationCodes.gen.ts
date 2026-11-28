@@ -136,6 +136,7 @@ export const Code = {
     NotAMember: 'auth.not_a_member',
     MagicLinkInvalidOrExpired: 'auth.magic_link_invalid_or_expired',
     MagicLinkAlreadyUsed: 'auth.magic_link_already_used',
+    MagicLinkExpiredHasPassword: 'auth.magic_link_expired_has_password',
     AlreadySignedInAsDifferentUser: 'auth.already_signed_in_as_different_user',
     RefreshTokenInvalid: 'auth.refresh_token_invalid',
     RefreshFailed: 'auth.refresh_failed',
@@ -459,6 +460,7 @@ export type ValidationCode =
   | 'auth.not_a_member'
   | 'auth.magic_link_invalid_or_expired'
   | 'auth.magic_link_already_used'
+  | 'auth.magic_link_expired_has_password'
   | 'auth.already_signed_in_as_different_user'
   | 'auth.refresh_token_invalid'
   | 'auth.refresh_failed'
@@ -722,6 +724,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'auth.not_a_member': [],
   'auth.magic_link_invalid_or_expired': [],
   'auth.magic_link_already_used': [],
+  'auth.magic_link_expired_has_password': [],
   'auth.already_signed_in_as_different_user': [],
   'auth.refresh_token_invalid': [],
   'auth.refresh_failed': [],

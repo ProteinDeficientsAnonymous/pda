@@ -1,5 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Code } from '@/api/validationCodes.gen';
@@ -36,6 +36,11 @@ vi.mock('@/auth/store', () => ({
   ),
 }));
 
+function LoginProbe() {
+  const { state } = useLocation() as { state: { phone?: string } | null };
+  return <div>login page {state?.phone}</div>;
+}
+
 function renderAt(token: string, redirect?: string) {
   const query = redirect === undefined ? '' : `?redirect=${encodeURIComponent(redirect)}`;
   return render(
@@ -46,6 +51,7 @@ function renderAt(token: string, redirect?: string) {
         <Route path="/onboarding" element={<div>onboarding page</div>} />
         <Route path="/consent" element={<div>consent page</div>} />
         <Route path="/calendar" element={<div>calendar page</div>} />
+        <Route path="/login" element={<LoginProbe />} />
         <Route path="/events/:slug" element={<div>event page</div>} />
       </Routes>
     </MemoryRouter>,
@@ -63,6 +69,33 @@ describe('MagicLoginScreen', () => {
     renderAt('tok-rejected');
     expect(await screen.findByText(/request to join again/i)).toHaveAttribute('href', '/join');
     expect(screen.queryByText(/send me a new link/i)).toBeNull();
+  });
+
+  it('should send an expired link to the password step with the entered phone', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(400, Code.Auth.MagicLinkExpiredHasPassword));
+    renderAt('tok-expired');
+    fireEvent.change(await screen.findByLabelText(/phone number/i), {
+      target: { value: '+12025550101' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'continue' }));
+    expect(await screen.findByText('login page +12025550101')).toBeInTheDocument();
+  });
+
+  it('should offer a new link instead of the phone prompt when there is no password', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(400, Code.Auth.MagicLinkAlreadyUsed));
+    renderAt('tok-no-pw');
+    expect(
+      await screen.findByText("you haven't set a password yet — grab a fresh link below"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'send me a new link' })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/phone number/i)).toBeNull();
+  });
+
+  it('should reject an invalid phone on the expired-link screen', async () => {
+    magicLoginMock.mockRejectedValueOnce(apiError(400, Code.Auth.MagicLinkInvalidOrExpired));
+    renderAt('tok-bad');
+    fireEvent.click(await screen.findByRole('button', { name: 'continue' }));
+    expect(await screen.findByText('enter a valid phone number')).toBeInTheDocument();
   });
 
   it('tells a non-member they cannot sign in', async () => {

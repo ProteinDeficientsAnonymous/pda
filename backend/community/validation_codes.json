@@ -582,6 +582,11 @@
         "params": []
       },
       {
+        "name": "MAGIC_LINK_EXPIRED_HAS_PASSWORD",
+        "value": "auth.magic_link_expired_has_password",
+        "params": []
+      },
+      {
         "name": "ALREADY_SIGNED_IN_AS_DIFFERENT_USER",
         "value": "auth.already_signed_in_as_different_user",
         "params": []
