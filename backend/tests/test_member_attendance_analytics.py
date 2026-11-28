@@ -1,6 +1,6 @@
 """Tests for the admin member attendance analytics endpoint."""
 
-from datetime import timedelta
+from datetime import date, timedelta
 
 import pytest
 from community.models import (
@@ -349,7 +349,7 @@ class TestExtendAttendanceGrace:
 
     def test_pushes_the_deadline_out(self, api_client, member):
         admin = make_user(PermissionKey.MANAGE_USERS)
-        grace = (timezone.now() + timedelta(days=800)).date()
+        grace = date(timezone.now().year + 3, 6, 1)
 
         response = api_client.post(
             self._url(member),
