@@ -1,3 +1,10 @@
+## [0.306.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.306.0...v0.306.1) (2026-11-28)
+
+
+### Bug Fixes
+
+* **auth:** route expired login links by whether the account has a password ([#2731](https://github.com/ProteinDeficientsAnonymous/pda/issues/2731)) ([11378ef](https://github.com/ProteinDeficientsAnonymous/pda/commit/11378efd71e1c208e9cd460c42c7649f847a24e5))
+
 # [0.306.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.305.1...v0.306.0) (2026-11-28)
 
 
