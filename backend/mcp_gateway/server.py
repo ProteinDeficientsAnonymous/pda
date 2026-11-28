@@ -1,8 +1,11 @@
+import logging
+import time
 from collections.abc import Callable
 from typing import Any, TypeVar
 from urllib.parse import urlsplit
 
 from asgiref.sync import sync_to_async
+from config.audit import AuditTarget, actor_request, audit_log
 from django.conf import settings
 from django.db.models import aprefetch_related_objects
 from mcp.server.auth.middleware.auth_context import get_access_token
@@ -43,6 +46,22 @@ def _may_use(user: User, tool_name: str) -> bool:
     return keys is not None and (not keys or _has_any(user, keys))
 
 
+def _record_call(user: User, tool: str, started: float, error: str | None) -> None:
+    details: dict[str, Any] = {
+        "tool": tool,
+        "ok": error is None,
+        "duration_ms": round((time.monotonic() - started) * 1000),
+    }
+    if error:
+        details["error"] = error
+    audit_log(
+        logging.WARNING if error else logging.INFO,
+        "mcp_tool_called",
+        actor_request(None, user),
+        target=AuditTarget(details=details),
+    )
+
+
 async def require_tool_permission(user: User, *keys: str) -> None:
     if not await sync_to_async(_has_any)(user, keys):
         raise ToolError(FORBIDDEN)
@@ -61,7 +80,14 @@ class PdaMCPServer(MCPServer):
         user = await current_user()
         if not await sync_to_async(_may_use)(user, name):
             raise ToolError(FORBIDDEN)
-        return await super().call_tool(name, arguments, context)
+        started, error = time.monotonic(), None
+        try:
+            return await super().call_tool(name, arguments, context)
+        except BaseException as exc:
+            error = type(exc).__name__
+            raise
+        finally:
+            await sync_to_async(_record_call)(user, name, started, error)
 
 
 pda_mcp = PdaMCPServer(
