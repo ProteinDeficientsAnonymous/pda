@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { HtmlContent } from './HtmlContent';
 
@@ -28,6 +28,17 @@ describe('HtmlContent', () => {
     // DOMPurify drops the unsafe href attribute entirely rather than rewriting it.
     const href = anchor?.getAttribute('href') ?? '';
     expect(href).not.toMatch(/^javascript:/i);
+  });
+
+  it('anchors headings and scrolls to the url hash once rendered', () => {
+    const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+    window.history.replaceState(null, '', '#do-i-have-to-be-vegan');
+    const { container } = render(<HtmlContent html="<h2>Do I have to be vegan?</h2>" />);
+    const heading = container.querySelector('h2');
+    expect(heading?.id).toBe('do-i-have-to-be-vegan');
+    expect(scrollSpy.mock.contexts).toContain(heading);
+    window.history.replaceState(null, '', '#');
+    scrollSpy.mockRestore();
   });
 
   it('strips iframes', () => {
