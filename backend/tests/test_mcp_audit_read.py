@@ -66,8 +66,9 @@ def test_pages_follow_next_offset(auditor, test_user):
     for action in ("user_paused", "user_unpaused", "user_archived"):
         _entry(action, auditor, (AuditTargetType.USER, str(test_user.pk)))
 
-    first = run_tool(auditor, "audit_history", limit=2)
-    last = run_tool(auditor, "audit_history", limit=2, offset=first["next_offset"])
+    users = {"target_type": AuditTargetType.USER}
+    first = run_tool(auditor, "audit_history", filters=users, limit=2)
+    last = run_tool(auditor, "audit_history", filters=users, limit=2, offset=first["next_offset"])
 
     assert (first["total"], first["next_offset"]) == (3, 2)
     assert (len(last["entries"]), last["next_offset"]) == (1, None)

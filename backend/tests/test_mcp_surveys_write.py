@@ -125,7 +125,7 @@ def test_creates_switched_off_with_every_type(surveys_admin):
     saved = SurveyQuestion.objects.filter(survey_id=summary["id"]).order_by("display_order")
     assert [q.field_type for q in saved] == [q.get("field_type", "text") for q in questions]
     assert [q.required for q in saved] == [True, False, False, False]
-    entries = AuditLogEntry.objects.filter(actor=surveys_admin)
+    entries = AuditLogEntry.objects.filter(actor=surveys_admin).exclude(action="mcp_tool_called")
     assert entries.count() == 5 and all(e.details["via"] == "mcp" for e in entries)
 
 
