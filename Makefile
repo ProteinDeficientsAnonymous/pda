@@ -289,7 +289,7 @@ generate-codes:
 
 # CI parity check — fails when any backend-generated artifact is out of
 # date. types.gen.ts is checked separately in frontend-types-check, since
-# the openapi-typescript invocation requires pnpm (not on the backend job).
+# the openapi-typesafe invocation requires pnpm (not on the backend job).
 check-codes:
 	cd backend && uv run python manage.py dump_validation_codes --check
 	node frontend/scripts/generate-validation-codes.mjs --check
