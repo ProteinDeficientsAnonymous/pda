@@ -27,6 +27,8 @@ from mcp_gateway.event_templates import template_slots
 from mcp_gateway.server import current_user, pda_tool
 from mcp_gateway.view_calls import call_view
 
+_BACKFILL = "past events only; needs manage_events or manage_users"
+
 
 @pda_tool(
     description=(
@@ -34,12 +36,27 @@ from mcp_gateway.view_calls import call_view
         "ask for anything missing of the meetup spot, the route (a google maps link) and the food "
         "spot. for an official event, call get_official_event_templates and fill the template's "
         "[ALL CAPS] slots without rewording the rest. after saving, show the user the full summary "
-        "and ask whether to publish now (publish_event) or keep it as a draft."
+        "and ask whether to publish now (publish_event) or keep it as a draft. to backfill a past "
+        "event, set legacy or partiful_import instead: it saves as published right away, off the "
+        "calendar, without notifying anyone."
     )
 )
-async def create_event(fields: EventFields) -> dict[str, Any]:
+async def create_event(
+    fields: EventFields,
+    legacy: Annotated[
+        bool, Field(description=f"recorded for attendance history; {_BACKFILL}")
+    ] = False,
+    partiful_import: Annotated[bool, Field(description=f"ran on partiful; {_BACKFILL}")] = False,
+) -> dict[str, Any]:
     user = await current_user()
-    payload = await to_event_in(fields, user, status=EventStatus.DRAFT)
+    imported = legacy or partiful_import
+    payload = await to_event_in(
+        fields,
+        user,
+        status=EventStatus.ACTIVE if imported else EventStatus.DRAFT,
+        is_legacy=legacy,
+        is_partiful_import=partiful_import,
+    )
     return event_summary(await call_view(create_event_view, user, payload))
 
 

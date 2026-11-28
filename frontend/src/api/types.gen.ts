@@ -4261,6 +4261,16 @@ export interface components {
              * @default all_members
              */
             invite_permission: string;
+            /**
+             * Is Legacy
+             * @default false
+             */
+            is_legacy: boolean;
+            /**
+             * Is Partiful Import
+             * @default false
+             */
+            is_partiful_import: boolean;
             /** Latitude */
             latitude?: number | null;
             /**
